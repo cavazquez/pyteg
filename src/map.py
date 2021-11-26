@@ -1,5 +1,8 @@
-class Map():
-    def __init__(self, countries, adjacent):
+from src.country import Country
+
+
+class Map:
+    def __init__(self, countries: set[Country], adjacent: list[tuple]):
         self._countries = countries
         self._adjacent = dict(set())
 

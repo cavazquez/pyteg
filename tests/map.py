@@ -6,7 +6,7 @@ from src.map import Map
 
 class TestMap(unittest.TestCase):
     def test_creation_instance(self):
-        self.assertTrue(Map({}, {}))
+        self.assertTrue(Map(set(), {}))
 
     def test_add_one_country(self):
         an_country = Country('Argentina')
@@ -23,7 +23,7 @@ class TestMap(unittest.TestCase):
         self.assertTrue(
             Map({an_country, other_country}, {(an_country, other_country)}).is_adjacent(an_country, other_country))
 
-    def test_countries_are_not_adjancet(self):
+    def test_countries_are_not_adjacent(self):
         an_country = Country('Argentina')
         other_country = Country('Brazil')
         self.assertFalse(
