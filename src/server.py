@@ -2,6 +2,15 @@
 # -*- coding: utf-8 -*-
 
 import socket
+import threading
+
+
+def client(conn, clients):
+    while True:
+        data = conn.recv(1024)
+        for c in clients:
+            if conn != c:
+                c.sendall(data)
 
 
 def main():
@@ -12,15 +21,13 @@ def main():
 
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.bind((host, port))
-        s.listen()
-        conn, addr = s.accept()
-        clients.append(conn)
-        with conn:
+        while True:
+            s.listen()
+            conn, addr = s.accept()
             print('Connected by', addr)
-            while True:
-                data = conn.recv(1024)
-                for c in clients:
-                    c.sendall(data)
+            clients.append(conn)
+            t = threading.Thread(target=client, args=[conn, clients])
+            t.start()
 
 
 if __name__ == '__main__':
