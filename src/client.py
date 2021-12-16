@@ -9,9 +9,11 @@ def sender(s):
 
 
 def receiver(s):
-    while True:
+    data = ""
+    while data != b'':
         data = s.recv(1024)
-        print(data)
+        if data:
+            print(data)
 
 
 def main():
