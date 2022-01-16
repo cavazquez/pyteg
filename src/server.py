@@ -3,14 +3,19 @@
 
 import socket
 import threading
+import json
 
 
 def client(conn, clients):
     while True:
-        data = conn.recv(1024)
-        for c in clients:
-            if conn != c:
-                c.sendall(data)
+        data_b = conn.recv(1024)
+        data = data_b.decode()
+        data_json = json.loads(data)
+
+        if 'chat' in data_json:
+            for c in clients:
+                if conn != c:
+                    c.sendall(data_b)
 
 
 def main():
@@ -21,6 +26,7 @@ def main():
 
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.bind((host, port))
+        print('host:',host,'port:',port)
         while True:
             s.listen()
             conn, addr = s.accept()

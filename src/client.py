@@ -1,19 +1,23 @@
 import socket
 import threading
+import json
 
 
 def sender(s):
     while True:
         data = input()
-        s.sendall(data.encode())
+        json_data = json.dumps({'chat': data})
+        s.sendall(json_data.encode())
 
 
 def receiver(s):
     data = ""
     while data != b'':
-        data = s.recv(1024)
-        if data:
-            print(data)
+        data_b = s.recv(1024)
+        data = data_b.decode()
+        data_json = json.loads(data)
+        if 'chat' in data_json:
+            print(data_json['chat'])
 
 
 def main():
