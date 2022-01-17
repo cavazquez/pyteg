@@ -4,6 +4,9 @@ import json
 
 
 def sender(s):
+    username = input('username: ')
+    username_data = json.dumps({'username': username})
+    s.sendall(username_data.encode())
     while True:
         data = input()
         json_data = json.dumps({'chat': data})
@@ -28,8 +31,9 @@ def main():
     s.connect((host, port))
     t = threading.Thread(target=receiver, args=[s])
     t.start()
-    t = threading.Thread(target=sender, args=[s])
-    t.start()
+    #t = threading.Thread(target=sender, args=[s])
+    #t.start()
+    sender(s)
 
 
 if __name__ == '__main__':

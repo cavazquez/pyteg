@@ -7,15 +7,21 @@ import json
 
 
 def client(conn, clients):
+    username_str = conn.recv(1024).decode()
+    username_json = json.loads(username_str)
+    if 'username' in username_json:
+        username = username_json['username']
     while True:
-        data_b = conn.recv(1024)
-        data = data_b.decode()
-        data_json = json.loads(data)
+        data_b_r = conn.recv(1024)
+        data_r = data_b_r.decode()
+        data_json_r = json.loads(data_r)
 
-        if 'chat' in data_json:
+        if 'chat' in data_json_r:
             for c in clients:
                 if conn != c:
-                    c.sendall(data_b)
+                    msg = username + ': ' + data_json_r['chat']
+                    data_json_s = json.dumps({'chat': msg})
+                    c.sendall(data_json_s.encode())
 
 
 def main():
@@ -28,12 +34,16 @@ def main():
         s.bind((host, port))
         print('host:',host,'port:',port)
         while True:
-            s.listen()
-            conn, addr = s.accept()
-            print('Connected by', addr)
-            clients.append(conn)
-            t = threading.Thread(target=client, args=[conn, clients])
-            t.start()
+            try:
+                s.listen()
+                conn, addr = s.accept()
+                print('Connected by', addr)
+                clients.append(conn)
+                t = threading.Thread(target=client, args=[conn, clients])
+                t.start()
+            except KeyboardInterrupt:
+                s.shutdown(socket.SHUT_RDWR)
+                break
 
 
 if __name__ == '__main__':
