@@ -1,10 +1,10 @@
 from src.country import Country
-
+from typing import Dict, Set
 
 class Map:
     def __init__(self, countries: set[Country], adjacent: list[tuple]):
         self._countries = countries
-        self._adjacent = dict(set())
+        self._adjacent: Dict[str, Set[str]] = dict(set())
 
         for elems in adjacent:
             try:
