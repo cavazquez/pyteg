@@ -11,6 +11,7 @@ def client(conn, clients):
     username_json = json.loads(username_str)
     if 'username' in username_json:
         username = username_json['username']
+        print(conn, "username = ", username)
     while True:
         data_b_r = conn.recv(1024)
         data_r = data_b_r.decode()
