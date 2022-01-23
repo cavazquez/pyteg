@@ -4,47 +4,133 @@
 import socket
 import threading
 import json
+import time
+import logging
+
+logging.basicConfig(level=logging.DEBUG)
+
+class Server:
 
 
-def client(conn, clients):
-    username_str = conn.recv(1024).decode()
-    username_json = json.loads(username_str)
-    if 'username' in username_json:
-        username = username_json['username']
-        print(conn, "username = ", username)
-    while True:
-        data_b_r = conn.recv(1024)
-        data_r = data_b_r.decode()
-        data_json_r = json.loads(data_r)
+    def __init__(self, clients, mapa):
+        self._mapa = mapa
+        self._clients = clients
+
+
+class Connection:
+
+    def __init__(self, connection, addr):
+        self._conn = connection
+        self._addr = addr
+
+    def receiver(self):
+        data_r = self._conn.recv(1024).decode()
+        if not data_r:
+            return None
+
+        return json.loads(data_r)
+
+    def send(self, data):
+        self._conn.sendall(data.encode())
+
+    def close(self):
+        self._conn.shutdown(socket.SHUT_RDWR)
+        self._conn.close()
+
+
+class ServerListen:
+
+    def __init__(self):
+        host = '127.0.0.1'  
+        port = 65432 
+        print(host, port)
+        self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self._socket.bind((host, port))
+        self._esperando_jugadores = True
+        self._conns = []
+
+    def registrar_jugadores(self):
+        print('Esperando jugadores...')
+        while self._esperando_jugadores:
+            try:
+                self._socket.listen()
+                conn, addr = self._socket.accept()
+                print('Connected by', addr)
+                connection = Connection(conn, addr)
+                threading.Thread(target=client, args=[connection, self]).start()
+                self.registrar_conexion(connection)
+
+
+                if self.cant_clients() == 1:
+                    self._esperando_jugadores = False
+
+            except Exception as e:
+                print(e)
+                exit(1)
+
+    def cant_clients(self):
+        return len(self._conns)
+
+    def registrar_conexion(self, conn):
+        self._conns.append(conn)
+
+
+    def send_all(self, data, ignore_conn=None):
+        for conn in self._conns:
+            if ignore_conn != conn:
+                conn.send(data, conn)
+
+    def send(self, data, conn):
+        conn.send(data)
+
+    def close_connections(self):
+        for conn in self._conns:
+            print("Removiendo:",conn)
+            self._conns.remove(conn)
+            conn.close()
+
+
+def client(conn, server_listen):
+    username_set = False
+    username = ""
+    vivo = True
+    while vivo:
+        data_json_r = conn.receiver()
+
+        if not data_json_r:
+            vivo = False
+            continue
+
+        if 'username' in data_json_r and not username_set:
+            username = data_json_r['username']
+            print("username = ", username)
+            username_set = True
 
         if 'chat' in data_json_r:
-            for c in clients:
-                if conn != c:
-                    msg = username + ': ' + data_json_r['chat']
-                    data_json_s = json.dumps({'chat': msg})
-                    c.sendall(data_json_s.encode())
+            msg = username + ': ' + data_json_r['chat']
+            data_json_s = json.dumps({'chat': msg})
+            server_listen.send_all(data_json_s, ignore_conn=conn)
+
 
 
 def main():
-    host = '127.0.0.1'  # Standard loopback interface address (localhost)
-    port = 65432  # Port to listen on (non-privileged ports are > 1023)
 
     clients = []
+    mapa = ["Argentina", "Francia"]
+    server = Server(clients, mapa)
 
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.bind((host, port))
-        print('host:',host,'port:',port)
-        while True:
-            try:
-                s.listen()
-                conn, addr = s.accept()
-                print('Connected by', addr)
-                clients.append(conn)
-                t = threading.Thread(target=client, args=[conn, clients])
-                t.start()
-            except KeyboardInterrupt:
-                s.shutdown(socket.SHUT_RDWR)
-                break
+    server_listen = ServerListen()
+    thread = server_listen.registrar_jugadores()
+
+    loop = True
+    while loop:
+        print("Entrando en un loop")
+        time.sleep(2)
+        loop = False
+
+    server_listen.close_connections()
+    print("Cerrando")
+
 
 
 if __name__ == '__main__':
