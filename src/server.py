@@ -5,16 +5,9 @@ import socket
 import threading
 import json
 import time
-import logging
+import sys
+import signal
 
-logging.basicConfig(level=logging.DEBUG)
-
-class Server:
-
-
-    def __init__(self, clients, mapa):
-        self._mapa = mapa
-        self._clients = clients
 
 
 class Connection:
@@ -25,10 +18,7 @@ class Connection:
 
     def receiver(self):
         data_r = self._conn.recv(1024).decode()
-        if not data_r:
-            return None
-
-        return json.loads(data_r)
+        return data_r
 
     def send(self, data):
         self._conn.sendall(data.encode())
@@ -95,11 +85,13 @@ def client(conn, server_listen):
     username = ""
     vivo = True
     while vivo:
-        data_json_r = conn.receiver()
+        data = conn.receiver()
 
-        if not data_json_r:
+        if not data:
             vivo = False
             continue
+
+        data_json_r = json.loads(data)
 
         if 'username' in data_json_r and not username_set:
             username = data_json_r['username']
@@ -112,12 +104,9 @@ def client(conn, server_listen):
             server_listen.send_all(data_json_s, ignore_conn=conn)
 
 
-
 def main():
 
     clients = []
-    mapa = ["Argentina", "Francia"]
-    server = Server(clients, mapa)
 
     server_listen = ServerListen()
     thread = server_listen.registrar_jugadores()
