@@ -9,7 +9,6 @@ import sys
 import signal
 
 
-
 class Connection:
 
     def __init__(self, connection, addr):
@@ -68,7 +67,7 @@ class ServerListen:
     def send_all(self, data, ignore_conn=None):
         for conn in self._conns:
             if ignore_conn != conn:
-                conn.send(data, conn)
+                conn.send(data)
 
     def send(self, data, conn):
         conn.send(data)
@@ -84,6 +83,7 @@ def client(conn, server_listen):
     username_set = False
     username = ""
     vivo = True
+    estado_global = "chau"
     while vivo:
         data = conn.receiver()
 
@@ -110,6 +110,12 @@ def main():
 
     server_listen = ServerListen()
     thread = server_listen.registrar_jugadores()
+
+    # Enviando estado global
+
+    estado_global = "hola"
+    json_estado_global = json.dumps({'update_global': estado_global})
+    server_listen.send_all(json_estado_global)
 
     loop = True
     while loop:
