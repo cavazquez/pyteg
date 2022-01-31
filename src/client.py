@@ -2,6 +2,18 @@ import socket
 import threading
 import json
 
+class Client:
+
+    def __init__(self):
+        self._global_state = "chau"
+
+    def update_global_state(self, state):
+        print(f"estado global a {self._global_state}")
+        self._global_state = state
+        print(f"Actualizando estado global a {self._global_state}")
+
+
+
 class Connection:
 
     def __init__(self, host='127.0.0.1', port=65432):
@@ -27,7 +39,7 @@ class Connection:
 class Transceiver:
 
     @staticmethod
-    def receiver(connection):
+    def receiver(connection, client):
         data_b = ""
         while connection.is_connected():
             data_b =  connection.get_data()
@@ -40,6 +52,8 @@ class Transceiver:
 
             if 'chat' in data_json:
                 print(data_json['chat'])
+            if 'update_global' in data_json:
+                client.update_global_state(data_json['update_global'])
 
     @staticmethod
     def sender(connection):
@@ -53,8 +67,9 @@ class Transceiver:
 
 
 def main():
+    client = Client()
     connection = Connection()
-    t = threading.Thread(target=Transceiver.receiver, args=[connection])
+    t = threading.Thread(target=Transceiver.receiver, args=[connection, client])
     t.start()
     Transceiver.sender(connection)
     t.join()
