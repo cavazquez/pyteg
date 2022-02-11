@@ -27,6 +27,46 @@ class Connection:
         self._conn.close()
 
 
+
+class Client:
+
+    def __init__(self, conn):
+        self._conn = conn
+
+    def send(self, data):
+        self._conn.send(data)
+
+    def receiver(self):
+        return self._conn.receiver()
+
+    def close(self):
+        self._conn.close()
+
+    def run(self, server_listen):
+        username_set = False
+        username = ""
+        vivo = True
+        estado_global = "chau"
+        while vivo:
+            data = self.receiver()
+
+            if not data:
+                vivo = False
+                continue
+
+            data_json_r = json.loads(data)
+
+            if 'username' in data_json_r and not username_set:
+                username = data_json_r['username']
+                print("username = ", username)
+                username_set = True
+
+            if 'chat' in data_json_r:
+                print("Enviando mensaje de chat")
+                msg = username + ': ' + data_json_r['chat']
+                data_json_s = json.dumps({'chat': msg})
+                server_listen.send_all(data_json_s, ignore_conn=self._conn)
+
 class ServerListen:
 
     def __init__(self):
@@ -36,7 +76,7 @@ class ServerListen:
         self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._socket.bind((host, port))
         self._esperando_jugadores = True
-        self._conns = []
+        self._clients = []
 
     def registrar_jugadores(self):
         print('Esperando jugadores...')
@@ -46,8 +86,9 @@ class ServerListen:
                 conn, addr = self._socket.accept()
                 print('Connected by', addr)
                 connection = Connection(conn, addr)
-                threading.Thread(target=client, args=[connection, self]).start()
-                self.registrar_conexion(connection)
+                client = Client(connection)
+                self.registrar_cliente(client)
+                threading.Thread(target=client.run, args=[self]).start()
 
 
                 #if self.cant_clients() == 1:
@@ -60,26 +101,25 @@ class ServerListen:
     def cant_clients(self):
         return len(self._conns)
 
-    def registrar_conexion(self, conn):
-        self._conns.append(conn)
+    def registrar_cliente(self, client):
+        self._clients.append(client)
 
 
     def send_all(self, data, ignore_conn=None):
-        for conn in self._conns:
-            if ignore_conn != conn:
-                conn.send(data)
+        for client in self._clients:
+            if ignore_conn != client:
+                client.send(data)
 
-    def send(self, conn, data):
-        conn.send(data)
+    def send(self, client, data):
+        client.send(data)
 
     def start(self):
         print("Empezando partida")
-        conn = self._conns[0]
-        print(conn)
-        mapa = {conn:'kamchatka'}
+        client = self._clients[0]
 
+        mapa = {'asd':'Kamchatka', 'exactas':'Francia'}
         data_j = json.dumps({'mapa': mapa})
-        self.send(conn, data_j)
+        self.send(client, data_j)
 
     def close_connections(self):
         for conn in self._conns:
@@ -88,30 +128,6 @@ class ServerListen:
             conn.close()
 
 
-def client(conn, server_listen):
-    username_set = False
-    username = ""
-    vivo = True
-    estado_global = "chau"
-    while vivo:
-        data = conn.receiver()
-
-        if not data:
-            vivo = False
-            continue
-
-        data_json_r = json.loads(data)
-
-        if 'username' in data_json_r and not username_set:
-            username = data_json_r['username']
-            print("username = ", username)
-            username_set = True
-
-        if 'chat' in data_json_r:
-            print("Enviando mensaje de chat")
-            msg = username + ': ' + data_json_r['chat']
-            data_json_s = json.dumps({'chat': msg})
-            server_listen.send_all(data_json_s, ignore_conn=conn)
 
 
 #def main():

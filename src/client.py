@@ -9,12 +9,13 @@ from server import ServerListen
 class Client:
 
     def __init__(self):
-        self._global_state = "chau"
+        self._mapa = ""
 
-    def update_global_state(self, state):
-        print(f"estado global a {self._global_state}")
-        self._global_state = state
-        print(f"Actualizando estado global a {self._global_state}")
+    def update_mapa(self, state):
+        print("Actualizando mapa")
+        print(f"mapa: {self._mapa}")
+        self._mapa = state
+        print(f"mapa: {self._mapa}")
 
 
 
@@ -57,9 +58,10 @@ class Transceiver:
 
             if 'chat' in data_json:
                 print(data_json['chat'])
-            if 'update_global' in data_json:
-                print("Actualizando global state")
-                client.update_global_state(data_json['update_global'])
+            elif 'mapa' in data_json:
+                client.update_mapa(data_json['mapa'])
+            else:
+                print('Comadno no reconocido')
 
     @staticmethod
     def sender(connection, server):
@@ -68,7 +70,7 @@ class Transceiver:
         username_data = json.dumps({'username': username})
         connection.send_data(username_data.encode())
         while connection.is_connected():
-            data = input()
+            data = input('')
 
             if data.startswith('chat'):
                 data = data[len('chat'):]
