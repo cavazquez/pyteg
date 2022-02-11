@@ -1,6 +1,10 @@
 import socket
 import threading
 import json
+import argparse
+import time
+import random
+from server import ServerListen
 
 class Client:
 
@@ -19,6 +23,7 @@ class Connection:
     def __init__(self, host='127.0.0.1', port=65432):
         self._socket  = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._socket.connect((host, port))
+        print(f"Conectado con {host}:{port}")
         self._connected = True
 
     def is_connected(self):
@@ -53,26 +58,50 @@ class Transceiver:
             if 'chat' in data_json:
                 print(data_json['chat'])
             if 'update_global' in data_json:
+                print("Actualizando global state")
                 client.update_global_state(data_json['update_global'])
 
     @staticmethod
-    def sender(connection):
-        username = input('username: ')
+    def sender(connection, server):
+        numero = random.randint(1, 10)
+        username = f'cliente-{numero}'
         username_data = json.dumps({'username': username})
         connection.send_data(username_data.encode())
         while connection.is_connected():
             data = input()
-            json_data = json.dumps({'chat': data})
-            connection.send_data(json_data.encode())
+
+            if data.startswith('chat'):
+                data = data[len('chat'):]
+                json_data = json.dumps({'chat': data})
+                connection.send_data(json_data.encode())
+            elif data.startswith('start'):
+                server.start()
+            else:
+                print("Error: Comando desconocido")
+
 
 
 def main():
+    parser = argparse.ArgumentParser(description='PyTeg')
+    parser.add_argument('--server', action='store_true', help='Iniciar servidor')
+
+    args = parser.parse_args()
+
+    if vars(args)['server']:
+        print('Iniciando Server')
+        server = ServerListen()
+        server_th = threading.Thread(target=server.registrar_jugadores)
+        server_th.start()
+   
+    # Espero a que se inicie el servidor
+    time.sleep(0.5)
+
     client = Client()
     connection = Connection()
-    t = threading.Thread(target=Transceiver.receiver, args=[connection, client])
-    t.start()
-    Transceiver.sender(connection)
-    t.join()
+    receiver_th = threading.Thread(target=Transceiver.receiver, args=[connection, client])
+    receiver_th.start()
+    Transceiver.sender(connection, server)
+    receiver_th.join()
 
 
 if __name__ == '__main__':

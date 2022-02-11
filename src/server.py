@@ -50,8 +50,8 @@ class ServerListen:
                 self.registrar_conexion(connection)
 
 
-                if self.cant_clients() == 1:
-                    self._esperando_jugadores = False
+                #if self.cant_clients() == 1:
+                #    self._esperando_jugadores = False
 
             except Exception as e:
                 print(e)
@@ -69,8 +69,17 @@ class ServerListen:
             if ignore_conn != conn:
                 conn.send(data)
 
-    def send(self, data, conn):
+    def send(self, conn, data):
         conn.send(data)
+
+    def start(self):
+        print("Empezando partida")
+        conn = self._conns[0]
+        print(conn)
+        mapa = {conn:'kamchatka'}
+
+        data_j = json.dumps({'mapa': mapa})
+        self.send(conn, data_j)
 
     def close_connections(self):
         for conn in self._conns:
@@ -99,34 +108,35 @@ def client(conn, server_listen):
             username_set = True
 
         if 'chat' in data_json_r:
+            print("Enviando mensaje de chat")
             msg = username + ': ' + data_json_r['chat']
             data_json_s = json.dumps({'chat': msg})
             server_listen.send_all(data_json_s, ignore_conn=conn)
 
 
-def main():
-
-    clients = []
-
-    server_listen = ServerListen()
-    thread = server_listen.registrar_jugadores()
-
-    # Enviando estado global
-
-    estado_global = "hola"
-    json_estado_global = json.dumps({'update_global': estado_global})
-    server_listen.send_all(json_estado_global)
-
-    loop = True
-    while loop:
-        print("Entrando en un loop")
-        time.sleep(2)
-        loop = False
-
-    server_listen.close_connections()
-    print("Cerrando")
-
-
-
-if __name__ == '__main__':
-    main()
+#def main():
+#
+#    clients = []
+#
+#    server_listen = ServerListen()
+#    thread = ServerListen().registrar_jugadores()
+#
+#    # Enviando estado global
+#
+#    estado_global = "hola"
+#    json_estado_global = json.dumps({'update_global': estado_global})
+#    server_listen.send_all(json_estado_global)
+#
+#    loop = True
+#    while loop:
+#        print("Entrando en un loop")
+#        time.sleep(2)
+#        loop = False
+#
+#    server_listen.close_connections()
+#    print("Cerrando")
+#
+#
+#
+#if __name__ == '__main__':
+#    main()
