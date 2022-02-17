@@ -6,7 +6,6 @@ import threading
 import json
 import time
 import sys
-import signal
 
 
 class Connection:
