@@ -7,8 +7,18 @@ import json
 import time
 import sys
 
+class Ronda:
 
-class Connection:
+    def __init__(self):
+        pass
+
+class Game:
+
+    def __init__(self):
+        self._ronda = Ronda()
+
+
+class ConnectionServer:
 
     def __init__(self, connection, addr):
         self._conn = connection
@@ -76,6 +86,7 @@ class ServerListen:
         self._socket.bind((host, port))
         self._esperando_jugadores = True
         self._clients = []
+        self._game = Game()
 
     def registrar_jugadores(self):
         print('Esperando jugadores...')
@@ -84,7 +95,7 @@ class ServerListen:
                 self._socket.listen()
                 conn, addr = self._socket.accept()
                 print('Connected by', addr)
-                connection = Connection(conn, addr)
+                connection = ConnectionServer(conn, addr)
                 client = Client(connection)
                 self.registrar_cliente(client)
                 threading.Thread(target=client.run, args=[self]).start()
@@ -127,31 +138,3 @@ class ServerListen:
             conn.close()
 
 
-
-
-#def main():
-#
-#    clients = []
-#
-#    server_listen = ServerListen()
-#    thread = ServerListen().registrar_jugadores()
-#
-#    # Enviando estado global
-#
-#    estado_global = "hola"
-#    json_estado_global = json.dumps({'update_global': estado_global})
-#    server_listen.send_all(json_estado_global)
-#
-#    loop = True
-#    while loop:
-#        print("Entrando en un loop")
-#        time.sleep(2)
-#        loop = False
-#
-#    server_listen.close_connections()
-#    print("Cerrando")
-#
-#
-#
-#if __name__ == '__main__':
-#    main()
