@@ -19,7 +19,7 @@ class Client:
 
 
 
-class Connection:
+class ConnectionClient:
 
     def __init__(self, host='127.0.0.1', port=65432):
         self._socket  = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -99,7 +99,7 @@ def main():
     time.sleep(0.5)
 
     client = Client()
-    connection = Connection()
+    connection = ConnectionClient()
     receiver_th = threading.Thread(target=Transceiver.receiver, args=[connection, client])
     receiver_th.start()
     Transceiver.sender(connection, server)
