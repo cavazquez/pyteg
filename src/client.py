@@ -4,7 +4,9 @@ import json
 import argparse
 import time
 import random
-from server import ServerListen
+from server import Server, Game, registrar_jugadores
+
+
 
 class Client:
 
@@ -78,6 +80,10 @@ class Transceiver:
                 connection.send_data(json_data.encode())
             elif data.startswith('start'):
                 server.start()
+            elif data.startswith('agregar'):
+                data = data[len('agregar'):]
+                json_data = json.dumps({'agregar_una_unidad': 'Argentina'})
+                connection.send_data(json_data.encode())
             else:
                 print("Error: Comando desconocido")
 
@@ -91,8 +97,10 @@ def main():
 
     if vars(args)['server']:
         print('Iniciando Server')
-        server = ServerListen()
-        server_th = threading.Thread(target=server.registrar_jugadores)
+        mapa = {'Argentina': 0}
+        game = Game(mapa)
+        server = Server()
+        server_th = threading.Thread(target=registrar_jugadores, args=[server, game])
         server_th.start()
    
     # Espero a que se inicie el servidor

@@ -7,15 +7,15 @@ import json
 import time
 import sys
 
-class Ronda:
-
-    def __init__(self):
-        pass
-
 class Game:
 
-    def __init__(self):
-        self._ronda = Ronda()
+    def __init__(self, mapa):
+        self._mapa = mapa
+
+    def agregar_una_unidad(self, pais):
+        print(self._mapa)
+        self._mapa[pais] += 1
+        print(self._mapa)
 
 
 class ConnectionServer:
@@ -51,7 +51,7 @@ class Client:
     def close(self):
         self._conn.close()
 
-    def run(self, server_listen):
+    def run(self, server, game):
         username_set = False
         username = ""
         vivo = True
@@ -74,39 +74,16 @@ class Client:
                 print("Enviando mensaje de chat")
                 msg = username + ': ' + data_json_r['chat']
                 data_json_s = json.dumps({'chat': msg})
-                server_listen.send_all(data_json_s, ignore_conn=self._conn)
+                server.send_all(data_json_s, ignore_conn=self._conn)
 
-class ServerListen:
+            if 'agregar_una_unidad' in data_json_r:
+                print("Añandiendo una unidad")
+                game.agregar_una_unidad(data_json_r['agregar_una_unidad'])
+
+class Server:
 
     def __init__(self):
-        host = '127.0.0.1'  
-        port = 65432 
-        print(host, port)
-        self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self._socket.bind((host, port))
-        self._esperando_jugadores = True
         self._clients = []
-        self._game = Game()
-
-    def registrar_jugadores(self):
-        print('Esperando jugadores...')
-        while self._esperando_jugadores:
-            try:
-                self._socket.listen()
-                conn, addr = self._socket.accept()
-                print('Connected by', addr)
-                connection = ConnectionServer(conn, addr)
-                client = Client(connection)
-                self.registrar_cliente(client)
-                threading.Thread(target=client.run, args=[self]).start()
-
-
-                #if self.cant_clients() == 1:
-                #    self._esperando_jugadores = False
-
-            except Exception as e:
-                print(e)
-                exit(1)
 
     def cant_clients(self):
         return len(self._conns)
@@ -138,3 +115,23 @@ class ServerListen:
             conn.close()
 
 
+def registrar_jugadores(server, game):
+    print('Esperando jugadores...')
+    host = '127.0.0.1'  
+    port = 65432 
+    print(host, port)
+    socket_server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    socket_server.bind((host, port))
+    while True:
+        try:
+            socket_server.listen()
+            conn, addr = socket_server.accept()
+            print('Connected by', addr)
+            connection = ConnectionServer(conn, addr)
+            client = Client(connection)
+            server.registrar_cliente(client)
+            threading.Thread(target=client.run, args=[server, game]).start()
+
+        except Exception as e:
+            print(e)
+            exit(1)
