@@ -7,14 +7,47 @@ import json
 import time
 import sys
 
-class Game:
+class Mapa:
 
-    def __init__(self, mapa):
-        self._mapa = mapa
+    def __init__(self):
+        self._mapa = {'Argentina': 0}
 
     def agregar_una_unidad(self, pais):
-        print(self._mapa)
         self._mapa[pais] += 1
+
+    def __str__(self):
+        return json.dumps(self._mapa)
+
+class PrimeraRonda:
+
+    def __init__(self, jugadores):
+        self._unidades = dict()
+        for id_jugador in jugadores:
+            self._unidades[id_jugador] = 6
+
+    def usar_unidad(self, jugador):
+        self._unidades[jugador] -= 1
+        print(self._unidades)
+
+class Game:
+
+    def __init__(self, server):
+        self._mapa = Mapa()
+        self._start = False
+        self._ronda = None
+        self._jugadores = []
+        self._server = server
+
+    def agregar_una_unidad(self, jugador, pais):
+        self._mapa.agregar_una_unidad(pais)
+        self._ronda.usar_unidad(jugador)
+
+    def start(self):
+        self._jugadores = self._server.dame_jugadores()
+        self._ronda = PrimeraRonda(self._jugadores)
+        self._start = True
+
+    def ver_mapa(self):
         print(self._mapa)
 
 
@@ -39,7 +72,8 @@ class ConnectionServer:
 
 class Client:
 
-    def __init__(self, conn):
+    def __init__(self, user_id, conn):
+        self._user_id = user_id
         self._conn = conn
 
     def send(self, data):
@@ -78,44 +112,40 @@ class Client:
 
             if 'agregar_una_unidad' in data_json_r:
                 print("Añandiendo una unidad")
-                game.agregar_una_unidad(data_json_r['agregar_una_unidad'])
+                game.agregar_una_unidad(self._user_id, data_json_r['agregar_una_unidad'])
 
 class Server:
 
     def __init__(self):
-        self._clients = []
+        self._clients = dict()
 
     def cant_clients(self):
-        return len(self._conns)
+        return len(self._clients)
 
-    def registrar_cliente(self, client):
-        self._clients.append(client)
+    def registrar_cliente(self, user_id, client):
+        self._clients[user_id] = client
 
 
     def send_all(self, data, ignore_conn=None):
-        for client in self._clients:
+        for _ , client in self._clients:
             if ignore_conn != client:
                 client.send(data)
 
     def send(self, client, data):
         client.send(data)
 
-    def start(self):
-        print("Empezando partida")
-        client = self._clients[0]
-
-        mapa = {'asd':'Kamchatka', 'exactas':'Francia'}
-        data_j = json.dumps({'mapa': mapa})
-        self.send(client, data_j)
+    def dame_jugadores(self):
+        return self._clients.keys()
 
     def close_connections(self):
-        for conn in self._conns:
+        for conn in self._clients:
             print("Removiendo:",conn)
             self._conns.remove(conn)
             conn.close()
 
 
 def registrar_jugadores(server, game):
+    user_id = 1 
     print('Esperando jugadores...')
     host = '127.0.0.1'  
     port = 65432 
@@ -128,9 +158,10 @@ def registrar_jugadores(server, game):
             conn, addr = socket_server.accept()
             print('Connected by', addr)
             connection = ConnectionServer(conn, addr)
-            client = Client(connection)
-            server.registrar_cliente(client)
+            client = Client(user_id, connection)
+            server.registrar_cliente(user_id, client)
             threading.Thread(target=client.run, args=[server, game]).start()
+            user_id += 1
 
         except Exception as e:
             print(e)
