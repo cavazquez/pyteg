@@ -114,6 +114,12 @@ class Client:
                 print("Añandiendo una unidad")
                 game.agregar_una_unidad(self._user_id, data_json_r['agregar_una_unidad'])
 
+            if 'mapa' in data_json_r:
+                game.ver_mapa()
+
+            if 'start' in data_json_r:
+                game.start()
+
 class Server:
 
     def __init__(self):
