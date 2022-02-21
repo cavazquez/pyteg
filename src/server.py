@@ -7,10 +7,23 @@ import json
 import time
 import sys
 
+
+class PrimerTurno:
+
+    def __init__(self, jugador):
+        self._jugador = jugador
+        self._unidades = 6
+
+    def jugador_actual(self):
+        return self._jugador
+
+    def usar_unidad(self):
+        self._unidades -= 1
+
 class Mapa:
 
     def __init__(self):
-        self._mapa = {'Argentina': 0}
+        self._mapa = {'Argentina': 0, 'Francia': 0}
 
     def agregar_una_unidad(self, pais):
         self._mapa[pais] += 1
@@ -20,14 +33,22 @@ class Mapa:
 
 class PrimeraRonda:
 
-    def __init__(self, jugadores):
-        self._unidades = dict()
-        for id_jugador in jugadores:
-            self._unidades[id_jugador] = 6
+    def __proximo_turno(self, jugadores):
+        for turno in [ PrimerTurno(id_jugador) for id_jugador in jugadores]:
+            yield turno
 
-    def usar_unidad(self, jugador):
-        self._unidades[jugador] -= 1
+    def __init__(self, jugadores):
+        print("Primera ronda")
+        self._unidades = dict()
+        self._turnos = self.__proximo_turno(jugadores)
+        self._turno_actual = next(self._turnos)
+
+    def usar_unidad(self):
+        self._turno_actual.usar_unidad()
         print(self._unidades)
+
+    def turno_actual(self):
+        return self._turno_actual
 
 class Game:
 
@@ -44,11 +65,15 @@ class Game:
 
     def start(self):
         self._jugadores = self._server.dame_jugadores()
+        print("jugadores: ", self._jugadores)
         self._ronda = PrimeraRonda(self._jugadores)
         self._start = True
+        print(self._ronda.turno_actual().jugador_actual())
+        print(self._ronda.turno_siguiente().jugador_actual())
 
     def ver_mapa(self):
         print(self._mapa)
+
 
 
 class ConnectionServer:
@@ -111,7 +136,7 @@ class Client:
                 server.send_all(data_json_s, ignore_conn=self._conn)
 
             if 'agregar_una_unidad' in data_json_r:
-                print("Añandiendo una unidad")
+                print("Añadiendo una unidad")
                 game.agregar_una_unidad(self._user_id, data_json_r['agregar_una_unidad'])
 
             if 'mapa' in data_json_r:
