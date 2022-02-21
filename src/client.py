@@ -66,7 +66,7 @@ class Transceiver:
                 print('Comadno no reconocido')
 
     @staticmethod
-    def sender(connection, server, game):
+    def sender(connection, game):
         numero = random.randint(1, 10)
         username = f'cliente-{numero}'
         username_data = json.dumps({'username': username})
@@ -111,7 +111,7 @@ def main():
     connection = ConnectionClient()
     receiver_th = threading.Thread(target=Transceiver.receiver, args=[connection, client])
     receiver_th.start()
-    Transceiver.sender(connection, server, game)
+    Transceiver.sender(connection, game)
     receiver_th.join()
 
 
