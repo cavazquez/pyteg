@@ -66,7 +66,7 @@ class Transceiver:
                 print('Comadno no reconocido')
 
     @staticmethod
-    def sender(connection, game):
+    def sender(connection):
         numero = random.randint(1, 10)
         username = f'cliente-{numero}'
         username_data = json.dumps({'username': username})
@@ -79,13 +79,15 @@ class Transceiver:
                 json_data = json.dumps({'chat': data})
                 connection.send_data(json_data.encode())
             elif data.startswith('start'):
-                game.start()
+                json_data = json.dumps({'start': ''})
+                connection.send_data(json_data.encode())
             elif data.startswith('agregar'):
                 data = data[len('agregar'):]
                 json_data = json.dumps({'agregar_una_unidad': 'Argentina'})
                 connection.send_data(json_data.encode())
             elif data.startswith('mapa'):
-                game.ver_mapa()
+                json_data = json.dumps({'mapa': ''})
+                connection.send_data(json_data.encode())
             else:
                 print("Error: Comando desconocido")
 
@@ -111,7 +113,7 @@ def main():
     connection = ConnectionClient()
     receiver_th = threading.Thread(target=Transceiver.receiver, args=[connection, client])
     receiver_th.start()
-    Transceiver.sender(connection, game)
+    Transceiver.sender(connection)
     receiver_th.join()
 
 
