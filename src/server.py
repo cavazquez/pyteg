@@ -46,8 +46,8 @@ class Batalla:
         print("cant_atacantes:", cant_atacantes)
         print("cant_defensores:", cant_defensores)
 
-        mapa.set_unidades(atacante, max(1, cant_atacantes)
-        mapa.set_unidades(defensor, max(0, cant_defensores)
+        mapa.set_unidades(atacante, max(1, cant_atacantes))
+        mapa.set_unidades(defensor, max(0, cant_defensores))
 
 
 
