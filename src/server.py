@@ -46,8 +46,8 @@ class Batalla:
         print("cant_atacantes:", cant_atacantes)
         print("cant_defensores:", cant_defensores)
 
-        mapa.set_unidades(atacante, cant_atacantes)
-        mapa.set_unidades(defensor, cant_defensores)
+        mapa.set_unidades(atacante, max(1, cant_atacantes)
+        mapa.set_unidades(defensor, max(0, cant_defensores)
 
 
 
@@ -66,7 +66,7 @@ class PrimerTurno:
 class Mapa:
 
     def __init__(self):
-        self._mapa = {'Argentina': 5, 'Francia': 5}
+        self._mapa = {'Argentina': 2, 'Francia': 2}
 
     def agregar_una_unidad(self, pais):
         self._mapa[pais] += 1
