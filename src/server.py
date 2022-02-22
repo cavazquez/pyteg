@@ -6,6 +6,49 @@ import threading
 import json
 import time
 import sys
+from random import choices
+
+class Dados:
+
+    @staticmethod
+    def tirar_dados_ordenados(cant):
+        return sorted(choices(range(1,6), k=cant), reverse=True)
+
+
+class Batalla:
+
+    @staticmethod
+    def ataquen(mapa, atacante, defensor):
+        cant_atacantes =  mapa.cantidad_unidades(atacante)
+        cant_defensores = mapa.cantidad_unidades(defensor)
+
+        print("cant_atacantes:", cant_atacantes)
+        print("cant_defensores:", cant_defensores)
+
+        cant_dados_atacantes = min(cant_atacantes, 3)
+        cant_dados_defensores = min(cant_defensores, 3)
+
+        print("cant_dados_atacantes:", cant_dados_atacantes)
+        print("cant_dados_defensores:", cant_dados_defensores)
+
+        dados_atacantes = Dados.tirar_dados_ordenados(cant_dados_atacantes)
+        dados_defensores = Dados.tirar_dados_ordenados(cant_dados_defensores)
+
+        print("dados_atacantes:", dados_atacantes)
+        print("dados_defensores:", dados_defensores)
+
+        for combate in range(min(len(dados_atacantes), len(dados_defensores))):
+            if dados_defensores[combate] < dados_atacantes[combate]:
+                cant_defensores -= 1
+            else:
+                cant_atacantes -= 1
+
+        print("cant_atacantes:", cant_atacantes)
+        print("cant_defensores:", cant_defensores)
+
+        mapa.set_unidades(atacante, cant_atacantes)
+        mapa.set_unidades(defensor, cant_defensores)
+
 
 
 class PrimerTurno:
@@ -23,10 +66,16 @@ class PrimerTurno:
 class Mapa:
 
     def __init__(self):
-        self._mapa = {'Argentina': 0, 'Francia': 0}
+        self._mapa = {'Argentina': 5, 'Francia': 5}
 
     def agregar_una_unidad(self, pais):
         self._mapa[pais] += 1
+
+    def cantidad_unidades(self, pais):
+        return self._mapa[pais]
+
+    def set_unidades(self, pais, cant):
+        self._mapa[pais] = cant
 
     def __str__(self):
         return json.dumps(self._mapa)
@@ -69,10 +118,12 @@ class Game:
         self._ronda = PrimeraRonda(self._jugadores)
         self._start = True
         print(self._ronda.turno_actual().jugador_actual())
-        print(self._ronda.turno_siguiente().jugador_actual())
 
     def ver_mapa(self):
         print(self._mapa)
+
+    def atacar(self, atacante, defensor):
+        Batalla.ataquen(self._mapa, atacante, defensor)
 
 
 
@@ -144,6 +195,11 @@ class Client:
 
             if 'start' in data_json_r:
                 game.start()
+
+            if 'atacar' in data_json_r:
+                atacante, defensor = data_json_r['atacar'].split()
+                
+                game.atacar(atacante, defensor)
 
 class Server:
 

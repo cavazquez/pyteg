@@ -85,6 +85,10 @@ class Transceiver:
                 data = data[len('agregar'):]
                 json_data = json.dumps({'agregar_una_unidad': data})
                 connection.send_data(json_data.encode())
+            elif data.startswith('atacar'):
+                data = data[len('atacar'):]
+                json_data = json.dumps({'atacar': data})
+                connection.send_data(json_data.encode())
             elif data.startswith('mapa'):
                 json_data = json.dumps({'mapa': ''})
                 connection.send_data(json_data.encode())
