@@ -22,29 +22,17 @@ class Batalla:
         cant_atacantes =  mapa.cantidad_unidades(atacante)
         cant_defensores = mapa.cantidad_unidades(defensor)
 
-        print("cant_atacantes:", cant_atacantes)
-        print("cant_defensores:", cant_defensores)
-
         cant_dados_atacantes = min(cant_atacantes, 3)
         cant_dados_defensores = min(cant_defensores, 3)
 
-        print("cant_dados_atacantes:", cant_dados_atacantes)
-        print("cant_dados_defensores:", cant_dados_defensores)
-
         dados_atacantes = Dados.tirar_dados_ordenados(cant_dados_atacantes)
         dados_defensores = Dados.tirar_dados_ordenados(cant_dados_defensores)
-
-        print("dados_atacantes:", dados_atacantes)
-        print("dados_defensores:", dados_defensores)
 
         for combate in range(min(len(dados_atacantes), len(dados_defensores))):
             if dados_defensores[combate] < dados_atacantes[combate]:
                 cant_defensores -= 1
             else:
                 cant_atacantes -= 1
-
-        print("cant_atacantes:", cant_atacantes)
-        print("cant_defensores:", cant_defensores)
 
         mapa.set_unidades(atacante, max(1, cant_atacantes))
         mapa.set_unidades(defensor, max(0, cant_defensores))
@@ -76,6 +64,10 @@ class Mapa:
 
     def set_unidades(self, pais, cant):
         self._mapa[pais] = cant
+
+    def mover(self, desde, hacia, cantidad):
+        self._mapa[desde] -= cantidad
+        self._mapa[hacia] += cantidad
 
     def __str__(self):
         return json.dumps(self._mapa)
@@ -124,6 +116,9 @@ class Game:
 
     def atacar(self, atacante, defensor):
         Batalla.ataquen(self._mapa, atacante, defensor)
+
+    def reagrupar(self, desde, hacia, cantidad):
+        self._mapa.mover(desde,hacia,cantidad)
 
 
 
@@ -198,8 +193,11 @@ class Client:
 
             if 'atacar' in data_json_r:
                 atacante, defensor = data_json_r['atacar'].split()
-                
                 game.atacar(atacante, defensor)
+
+            if 'reagrupar' in data_json_r:
+                desde, hacia, cantidad = data_json_r['reagrupar'].split()
+                game.reagrupar(desde, hacia, int(cantidad))
 
 class Server:
 
