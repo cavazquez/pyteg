@@ -109,7 +109,7 @@ class SegundaRonda:
         try:
             self._turno_actual = next(self._turnos)
         except StopIteration:
-            self._game.ronda = SegundaRonda(self._jugadores, self._game)
+            self._game._ronda = SegundaRonda(self._jugadores, self._game)
 
 class PrimeraRonda:
 
@@ -136,7 +136,7 @@ class PrimeraRonda:
         try:
             self._turno_actual = next(self._turnos)
         except StopIteration:
-            self._game.ronda = SegundaRonda(self._jugadores, self._game)
+            self._game._ronda = SegundaRonda(self._jugadores, self._game)
 
 class Game:
 
