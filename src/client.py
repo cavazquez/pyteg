@@ -96,6 +96,9 @@ class Transceiver:
             elif data.startswith('mapa'):
                 json_data = json.dumps({'mapa': ''})
                 connection.send_data(json_data.encode())
+            elif data.startswith('finalizar_turno'):
+                json_data = json.dumps({'finalizar_turno': ''})
+                connection.send_data(json_data.encode())
             else:
                 print("Error: Comando desconocido")
 

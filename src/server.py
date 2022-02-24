@@ -38,6 +38,17 @@ class Batalla:
         mapa.set_unidades(defensor, max(0, cant_defensores))
 
 
+class SegundoTurno:
+
+    def __init__(self, jugador):
+        self._jugador = jugador
+        self._unidades = 3
+
+    def jugador_actual(self):
+        return self._jugador
+
+    def usar_unidad(self):
+        self._unidades -= 1
 
 class PrimerTurno:
 
@@ -72,17 +83,20 @@ class Mapa:
     def __str__(self):
         return json.dumps(self._mapa)
 
-class PrimeraRonda:
+
+class SegundaRonda:
 
     def __proximo_turno(self, jugadores):
-        for turno in [ PrimerTurno(id_jugador) for id_jugador in jugadores]:
+        for turno in [ SegundoTurno(id_jugador) for id_jugador in jugadores]:
             yield turno
 
-    def __init__(self, jugadores):
-        print("Primera ronda")
+    def __init__(self, jugadores, game):
+        print("Segunda ronda")
         self._unidades = dict()
+        self._jugadores = jugadores
         self._turnos = self.__proximo_turno(jugadores)
         self._turno_actual = next(self._turnos)
+        self._game = game
 
     def usar_unidad(self):
         self._turno_actual.usar_unidad()
@@ -90,6 +104,39 @@ class PrimeraRonda:
 
     def turno_actual(self):
         return self._turno_actual
+
+    def finalizar_turno(self):
+        try:
+            self._turno_actual = next(self._turnos)
+        except StopIteration:
+            self._game.ronda = SegundaRonda(self._jugadores, self._game)
+
+class PrimeraRonda:
+
+    def __proximo_turno(self, jugadores):
+        for turno in [ PrimerTurno(id_jugador) for id_jugador in jugadores]:
+            yield turno
+
+    def __init__(self, jugadores, game):
+        print("Primera ronda")
+        self._unidades = dict()
+        self._jugadores = jugadores
+        self._turnos = self.__proximo_turno(jugadores)
+        self._turno_actual = next(self._turnos)
+        self._game = game
+
+    def usar_unidad(self):
+        self._turno_actual.usar_unidad()
+        print(self._unidades)
+
+    def turno_actual(self):
+        return self._turno_actual
+
+    def finalizar_turno(self):
+        try:
+            self._turno_actual = next(self._turnos)
+        except StopIteration:
+            self._game.ronda = SegundaRonda(self._jugadores, self._game)
 
 class Game:
 
@@ -107,7 +154,7 @@ class Game:
     def start(self):
         self._jugadores = self._server.dame_jugadores()
         print("jugadores: ", self._jugadores)
-        self._ronda = PrimeraRonda(self._jugadores)
+        self._ronda = PrimeraRonda(self._jugadores, self)
         self._start = True
         print(self._ronda.turno_actual().jugador_actual())
 
@@ -120,6 +167,8 @@ class Game:
     def reagrupar(self, desde, hacia, cantidad):
         self._mapa.mover(desde,hacia,cantidad)
 
+    def ronda(self):
+        return self._ronda
 
 
 class ConnectionServer:
@@ -198,6 +247,9 @@ class Client:
             if 'reagrupar' in data_json_r:
                 desde, hacia, cantidad = data_json_r['reagrupar'].split()
                 game.reagrupar(desde, hacia, int(cantidad))
+
+            if 'finalizar_turno' in data_json_r:
+                game.ronda().finalizar_turno()
 
 class Server:
 
