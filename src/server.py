@@ -104,8 +104,10 @@ class Mapa:
         paises = self.paises()
         cant = len(paises) // len(jugadores)
         for jug in jugadores:
-            for pais in sample(paises, k=cant):
+            paises_elegidos = sample(paises, k=cant)
+            for pais in paises_elegidos:
                 self.asignar_pais(jug, pais)
+            paises = [elem for elem in paises if elem not in paises_elegidos]
 
     def asignar_pais(self, jugador, pais):
         self._mapa[pais][2] = jugador

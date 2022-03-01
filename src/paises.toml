@@ -5,3 +5,6 @@ continente = "America_del_sur"
 
 [Francia]
 continente = "Europa"
+
+[Italia]
+continente = "Europa"
