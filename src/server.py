@@ -6,7 +6,8 @@ import threading
 import json
 import time
 import sys
-from random import choices
+import toml
+from random import choices, sample
 
 class Dados:
 
@@ -62,23 +63,53 @@ class PrimerTurno:
     def usar_unidad(self):
         self._unidades -= 1
 
+def build_mapa():
+    with open('paises.toml') as f:
+        toml_string = f.read()
+        parsed_toml = toml.loads(toml_string)
+
+    mapa = { k:[1, parsed_toml[k]['continente'], None] for k in parsed_toml }
+
+    return mapa
+
+
 class Mapa:
 
     def __init__(self):
-        self._mapa = {'Argentina': 2, 'Francia': 2}
+        self._mapa = build_mapa()
 
     def agregar_una_unidad(self, pais):
-        self._mapa[pais] += 1
+        self._mapa[pais][0] += 1
 
     def cantidad_unidades(self, pais):
-        return self._mapa[pais]
+        return self._mapa[pais][0]
 
     def set_unidades(self, pais, cant):
-        self._mapa[pais] = cant
+        self._mapa[pais][0] = cant
 
     def mover(self, desde, hacia, cantidad):
-        self._mapa[desde] -= cantidad
-        self._mapa[hacia] += cantidad
+        self._mapa[desde][0] -= cantidad
+        self._mapa[hacia][0] += cantidad
+
+    def continente(self, pais):
+        return self._mapa[pais][1]
+
+    def ocupado_por(self, pais):
+        return self._mapa[pais][2]
+
+    def paises(self):
+        return [pais for pais in self._mapa]
+
+    def asignar_paises(self, jugadores):
+        paises = self.paises()
+        cant = len(paises) // len(jugadores)
+        for jug in jugadores:
+            for pais in sample(paises, k=cant):
+                self.asignar_pais(jug, pais)
+
+    def asignar_pais(self, jugador, pais):
+        self._mapa[pais][2] = jugador
+
 
     def __str__(self):
         return json.dumps(self._mapa)
@@ -100,7 +131,6 @@ class SegundaRonda:
 
     def usar_unidad(self):
         self._turno_actual.usar_unidad()
-        print(self._unidades)
 
     def turno_actual(self):
         return self._turno_actual
@@ -138,6 +168,7 @@ class PrimeraRonda:
         except StopIteration:
             self._game._ronda = SegundaRonda(self._jugadores, self._game)
 
+
 class Game:
 
     def __init__(self, server):
@@ -153,10 +184,9 @@ class Game:
 
     def start(self):
         self._jugadores = self._server.dame_jugadores()
-        print("jugadores: ", self._jugadores)
         self._ronda = PrimeraRonda(self._jugadores, self)
+        self._mapa.asignar_paises(self._jugadores)
         self._start = True
-        print(self._ronda.turno_actual().jugador_actual())
 
     def ver_mapa(self):
         print(self._mapa)
