@@ -7,13 +7,18 @@ import json
 import time
 import sys
 import toml
-from random import choices, sample
+from random import choices, sample, shuffle
 
 class Dados:
 
     @staticmethod
+    def tirar_dados(cant):
+        return choices(range(1,6), k=cant)
+
+    @staticmethod
     def tirar_dados_ordenados(cant):
         return sorted(choices(range(1,6), k=cant), reverse=True)
+
 
 
 class Batalla:
@@ -109,6 +114,10 @@ class Mapa:
                 self.asignar_pais(jug, pais)
             paises = [elem for elem in paises if elem not in paises_elegidos]
 
+        shuffle(jugadores)
+        for jug, pais in zip(jugadores, paises):
+            self.asignar_pais(jug, pais)
+
     def asignar_pais(self, jugador, pais):
         self._mapa[pais][2] = jugador
 
@@ -185,7 +194,7 @@ class Game:
         self._ronda.usar_unidad(jugador)
 
     def start(self):
-        self._jugadores = self._server.dame_jugadores()
+        self._jugadores = self._server.dame_lista_jugadores()
         self._ronda = PrimeraRonda(self._jugadores, self)
         self._mapa.asignar_paises(self._jugadores)
         self._start = True
@@ -303,8 +312,8 @@ class Server:
     def send(self, client, data):
         client.send(data)
 
-    def dame_jugadores(self):
-        return self._clients.keys()
+    def dame_lista_jugadores(self):
+        return list(self._clients.keys())
 
     def close_connections(self):
         for conn in self._clients:
