@@ -45,15 +45,50 @@ class Batalla:
 
 def calcular_unidades_generales(mapa, jugador):
     cant_unidades = max(mapa.cantidad_de_paises_del_jugador(jugador) // 2 , 3)
-    print("cant_unidades_generales:", cant_unidades)
     return cant_unidades
 
+def calcular_unidades_europa(mapa, jugador):
+    if mapa.tiene_toda_europa(jugador):
+        return 5
+    return 0
+
+def calcular_unidades_asia(mapa, jugador):
+    if mapa.tiene_toda_asia(jugador):
+        return 7
+    return 0
+
+def calcular_unidades_africa(mapa, jugador):
+    if mapa.tiene_toda_africa(jugador):
+        return 3
+    return 0
+
+def calcular_unidades_oceania(mapa, jugador):
+    if mapa.tiene_toda_oceania(jugador):
+        return 2
+    return 0
+
+
+def calcular_unidades_america_del_sur(mapa, jugador):
+    if mapa.tiene_toda_america_del_sur(jugador):
+        return 3
+    return 0
+
+def calcular_unidades_america_del_norte(mapa, jugador):
+    if mapa.tiene_toda_america_del_norte(jugador):
+        return 5
+    return 0
 
 class SiguientesTurnos:
 
     def __init__(self, jugador, mapa):
         self._jugador = jugador
         self._unidades = calcular_unidades_generales(mapa, jugador)
+        self._unidades_europa = calcular_unidades_europa(mapa, jugador)
+        self._unidades_africa = calcular_unidades_africa(mapa, jugador)
+        self._unidades_america_del_sur = calcular_unidades_america_del_sur(mapa, jugador)
+        self._unidades_america_del_norte = calcular_unidades_america_del_norte(mapa, jugador)
+        self._unidades_asia = calcular_unidades_asia(mapa, jugador)
+        self._unidades_oceania = calcular_unidades_oceania(mapa, jugador)
 
     def jugador_actual(self):
         return self._jugador
@@ -135,12 +170,41 @@ class Mapa:
         for jug, pais in zip(jugadores, paises):
             self.asignar_pais(jug, pais)
 
+    def cantidad_de_paises_por_continente(self, continente):
+        return len([pais for pais in self.paises() if self.continente(pais) == continente])
+
     def asignar_pais(self, jugador, pais):
         self._mapa[pais][2] = jugador
 
     def cantidad_de_paises_del_jugador(self, jugador):
         return len([ pais for pais in self.paises() if self.ocupado_por(pais) == jugador])
 
+    def cantidad_de_paises_del_jugador_por_continente(self, jugador, continente):
+        return len([ pais for pais in self.paises() if self.ocupado_por(pais) == jugador and self.continente(pais) == continente])
+
+    def tiene_toda_europa(self, jugador):
+        continente = 'Europa'
+        return self.cantidad_de_paises_del_jugador_por_continente(jugador, continente) == self.cantidad_de_paises_por_continente(continente)
+
+    def tiene_toda_asia(self, jugador):
+        continente = 'Asia'
+        return self.cantidad_de_paises_del_jugador_por_continente(jugador, continente) == self.cantidad_de_paises_por_continente(continente)
+
+    def tiene_toda_oceania(self, jugador):
+        continente = 'Oceania'
+        return self.cantidad_de_paises_del_jugador_por_continente(jugador, continente) == self.cantidad_de_paises_por_continente(continente)
+
+    def tiene_toda_africa(self, jugador):
+        continente = 'Africa'
+        return self.cantidad_de_paises_del_jugador_por_continente(jugador, continente) == self.cantidad_de_paises_por_continente(continente)
+
+    def tiene_toda_america_del_sur(self, jugador):
+        continente = 'America_del_sur'
+        return self.cantidad_de_paises_del_jugador_por_continente(jugador, continente) == self.cantidad_de_paises_por_continente(continente)
+
+    def tiene_toda_america_del_norte(self, jugador):
+        continente = 'America_del_norte'
+        return self.cantidad_de_paises_del_jugador_por_continente(jugador, continente) == self.cantidad_de_paises_por_continente(continente)
 
     def __str__(self):
         return json.dumps(self._mapa)
