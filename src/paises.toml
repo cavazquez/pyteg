@@ -1,10 +1,149 @@
-
-
 [Argentina]
-continente = "America_del_sur"
+continente = "Sudamerica"
+
+[Brasil]
+continente = "Sudamerica"
+
+[Peru]
+continente = "Sudamerica"
+
+[Colombia]
+continente = "Sudamerica"
+
+[Chile]
+continente = "Sudamerica"
+
+[Uruguay]
+continente = "Sudamerica"
+
+[Sumatra]
+continente = "Oceania"
+
+[Borneo]
+continente = "Oceania"
+
+[Java]
+continente = "Oceania"
+
+[Australia]
+continente = "Oceania"
 
 [Francia]
 continente = "Europa"
 
+[Espana]
+continente = "Europa"
+
+[Islandia]
+continente = "Europa"
+
+[GranBretana]
+continente = "Europa"
+
+[Alemania]
+continente = "Europa"
+
 [Italia]
 continente = "Europa"
+
+[Polonia]
+continente = "Europa"
+
+[Rusia]
+continente = "Europa"
+
+[Suecia]
+continente = "Europa"
+
+[Sahara]
+continente = "Africa"
+
+[Etiopia]
+continente = "Africa"
+
+[Egipto]
+continente = "Africa"
+
+[Madagascar]
+continente = "Africa"
+
+[Zaire]
+continente = "Africa"
+
+[Sudafrica]
+continente = "Africa"
+
+
+[Canada]
+continente = "Norteamerica"
+
+[Yukon]
+continente = "Norteamerica"
+
+[Alaska]
+continente = "Norteamerica"
+
+[Groenlandia]
+continente = "Norteamerica"
+
+[Oregon]
+continente = "Norteamerica"
+
+[California]
+continente = "Norteamerica"
+
+[Mexico]
+continente = "Norteamerica"
+
+[NuevaYork]
+continente = "Norteamerica"
+
+[Terranova]
+continente = "Norteamerica"
+
+[Labrador]
+continente = "Norteamerica"
+
+
+[Arabia]
+continente = "Asia"
+
+[Aral]
+continente = "Asia"
+
+[China]
+continente = "Asia"
+
+[India]
+continente = "Asia"
+
+[Iran]
+continente = "Asia"
+
+[Tartaria]
+continente = "Asia"
+
+[Taimiria]
+continente = "Asia"
+
+[Japon]
+continente = "Asia"
+
+[Kamchatka]
+continente = "Asia"
+
+[Siberia]
+continente = "Asia"
+
+[Mongolia]
+continente = "Asia"
+
+[Gobi]
+continente = "Asia"
+
+[Turquia]
+continente = "Asia"
+
+[Israel]
+continente = "Asia"
+
