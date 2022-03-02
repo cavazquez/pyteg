@@ -43,6 +43,23 @@ class Batalla:
         mapa.set_unidades(atacante, max(1, cant_atacantes))
         mapa.set_unidades(defensor, max(0, cant_defensores))
 
+def calcular_unidades_generales(mapa, jugador):
+    cant_unidades = max(mapa.cantidad_de_paises_del_jugador(jugador) // 2 , 3)
+    print("cant_unidades_generales:", cant_unidades)
+    return cant_unidades
+
+
+class SiguientesTurnos:
+
+    def __init__(self, jugador, mapa):
+        self._jugador = jugador
+        self._unidades = calcular_unidades_generales(mapa, jugador)
+
+    def jugador_actual(self):
+        return self._jugador
+
+    def usar_unidad(self):
+        self._unidades -= 1
 
 class SegundoTurno:
 
@@ -112,7 +129,7 @@ class Mapa:
             paises_elegidos = sample(paises, k=cant)
             for pais in paises_elegidos:
                 self.asignar_pais(jug, pais)
-            paises = [elem for elem in paises if elem not in paises_elegidos]
+            paises = [pais for pais in paises if pais not in paises_elegidos]
 
         shuffle(jugadores)
         for jug, pais in zip(jugadores, paises):
@@ -121,9 +138,39 @@ class Mapa:
     def asignar_pais(self, jugador, pais):
         self._mapa[pais][2] = jugador
 
+    def cantidad_de_paises_del_jugador(self, jugador):
+        return len([ pais for pais in self.paises() if self.ocupado_por(pais) == jugador])
+
 
     def __str__(self):
         return json.dumps(self._mapa)
+
+
+class SiguientesRondas:
+
+    def __proximo_turno(self, jugadores, mapa):
+        for turno in [ SiguientesTurnos(id_jugador, mapa) for id_jugador in jugadores]:
+            yield turno
+
+    def __init__(self, jugadores, game):
+        print("Siguientes ronda")
+        self._unidades = dict()
+        self._jugadores = jugadores
+        self._turnos = self.__proximo_turno(jugadores, game.mapa())
+        self._turno_actual = next(self._turnos)
+        self._game = game
+
+    def usar_unidad(self):
+        self._turno_actual.usar_unidad()
+
+    def turno_actual(self):
+        return self._turno_actual
+
+    def finalizar_turno(self):
+        try:
+            self._turno_actual = next(self._turnos)
+        except StopIteration:
+            self._game._ronda = SiguientesRondas(self._jugadores, self._game)
 
 
 class SegundaRonda:
@@ -150,7 +197,7 @@ class SegundaRonda:
         try:
             self._turno_actual = next(self._turnos)
         except StopIteration:
-            self._game._ronda = SegundaRonda(self._jugadores, self._game)
+            self._game._ronda = SiguientesRondas(self._jugadores, self._game)
 
 class PrimeraRonda:
 
@@ -211,6 +258,8 @@ class Game:
     def ronda(self):
         return self._ronda
 
+    def mapa(self):
+        return self._mapa
 
 class ConnectionServer:
 
