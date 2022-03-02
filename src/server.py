@@ -199,11 +199,11 @@ class Mapa:
         return self.cantidad_de_paises_del_jugador_por_continente(jugador, continente) == self.cantidad_de_paises_por_continente(continente)
 
     def tiene_toda_america_del_sur(self, jugador):
-        continente = 'America_del_sur'
+        continente = 'Sudamerica'
         return self.cantidad_de_paises_del_jugador_por_continente(jugador, continente) == self.cantidad_de_paises_por_continente(continente)
 
     def tiene_toda_america_del_norte(self, jugador):
-        continente = 'America_del_norte'
+        continente = 'Norteamerica'
         return self.cantidad_de_paises_del_jugador_por_continente(jugador, continente) == self.cantidad_de_paises_por_continente(continente)
 
     def __str__(self):
