@@ -7,6 +7,7 @@ import json
 import time
 import sys
 import toml
+import itertools
 from random import choices, sample, shuffle
 
 class Dados:
@@ -311,6 +312,7 @@ class Game:
         self._start = True
 
     def ver_mapa(self):
+        print("jugadores:", self._jugadores)
         print(self._mapa)
 
     def atacar(self, atacante, defensor):
