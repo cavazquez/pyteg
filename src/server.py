@@ -220,7 +220,7 @@ class SiguientesRondas:
     def __init__(self, jugadores, game):
         print("Siguientes ronda")
         self._unidades = dict()
-        self._jugadores = jugadores
+        self._jugadores = rotar_jugadores(jugadores)
         self._turnos = self.__proximo_turno(jugadores, game.mapa())
         self._turno_actual = next(self._turnos)
         self._game = game
@@ -237,6 +237,12 @@ class SiguientesRondas:
         except StopIteration:
             self._game._ronda = SiguientesRondas(self._jugadores, self._game)
 
+def rotar_jugadores(jugadores):
+    print('Rotar jugadores')
+    primer_elemento = jugadores[0]
+    jugadores = jugadores[1:]
+    jugadores.append(primer_elemento)
+    return jugadores
 
 class SegundaRonda:
 
@@ -313,6 +319,8 @@ class Game:
 
     def ver_mapa(self):
         print("jugadores:", self._jugadores)
+        print("jugadores_ronda:", self._ronda._jugadores)
+        print("turno_actual:", self._ronda._turno.turno_actual())
         print(self._mapa)
 
     def atacar(self, atacante, defensor):
