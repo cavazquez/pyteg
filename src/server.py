@@ -62,7 +62,7 @@ class Client:
         username_set = False
         username = ""
         vivo = True
-        estado_global = "chau"
+        "chau"
         while vivo:
             data = self.receiver()
 
@@ -126,12 +126,6 @@ class Server:
 
     def dame_lista_jugadores(self):
         return list(self._clients.keys())
-
-    def close_connections(self):
-        for conn in self._clients:
-            print("Removiendo:", conn)
-            self._conns.remove(conn)
-            conn.close()
 
 
 def registrar_jugadores(server, game):
