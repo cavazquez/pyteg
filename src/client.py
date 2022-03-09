@@ -4,8 +4,8 @@ import json
 import argparse
 import time
 import random
-from server import Server, Game, registrar_jugadores
-
+from server import Server, registrar_jugadores
+from src.game import Game
 
 
 class Client:
@@ -20,11 +20,10 @@ class Client:
         print(f"mapa: {self._mapa}")
 
 
-
 class ConnectionClient:
 
     def __init__(self, host='127.0.0.1', port=65432):
-        self._socket  = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._socket.connect((host, port))
         print(f"Conectado con {host}:{port}")
         self._connected = True
@@ -44,13 +43,14 @@ class ConnectionClient:
         except BrokenPipeError:
             self._connected = False
 
+
 class Transceiver:
 
     @staticmethod
     def receiver(connection, client):
         data_b = ""
         while connection.is_connected():
-            data_b =  connection.get_data()
+            data_b = connection.get_data()
             if not data_b:
                 print("socket connection broken")
                 break
@@ -63,7 +63,7 @@ class Transceiver:
             elif 'mapa' in data_json:
                 client.update_mapa(data_json['mapa'])
             else:
-                print('Comadno no reconocido')
+                print('Comando no reconocido')
 
     @staticmethod
     def sender(connection):
@@ -103,7 +103,6 @@ class Transceiver:
                 print("Error: Comando desconocido")
 
 
-
 def main():
     parser = argparse.ArgumentParser(description='PyTeg')
     parser.add_argument('--server', action='store_true', help='Iniciar servidor')
@@ -116,7 +115,7 @@ def main():
         game = Game(server)
         server_th = threading.Thread(target=registrar_jugadores, args=[server, game])
         server_th.start()
-   
+
     # Espero a que se inicie el servidor
     time.sleep(0.5)
 
