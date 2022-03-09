@@ -319,8 +319,9 @@ class Game:
 
     def ver_mapa(self):
         print("jugadores:", self._jugadores)
-        print("jugadores_ronda:", self._ronda._jugadores)
-        print("turno_actual:", self._ronda._turno_actual.jugador_actual())
+        if self._ronda:
+            print("jugadores_ronda:", self._ronda._jugadores)
+            print("turno_actual:", self._ronda._turno_actual.jugador_actual())
         print(self._mapa)
 
     def atacar(self, atacante, defensor):
