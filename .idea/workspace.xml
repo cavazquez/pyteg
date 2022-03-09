@@ -5,6 +5,13 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="0f47ecc4-6c00-4af3-aecc-b7b81efed5b4" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/src/batalla.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/calculos.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/dados.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/game.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/mapa.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/rondas.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/turnos.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/client.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/client.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/server.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/server.py" afterDir="false" />
@@ -24,6 +31,9 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
+  <component name="MarkdownSettingsMigration">
+    <option name="stateVersion" value="1" />
+  </component>
   <component name="ProjectId" id="21RGDXNg3g7c9rxIZtn4U9RyPYL" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
@@ -39,22 +49,22 @@
     <property name="node.js.selected.package.tslint" value="(autodetect)" />
     <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable" />
   </component>
-  <component name="RunManager" selected="Python.Server">
-    <configuration name="Server" type="PythonConfigurationType" factoryName="Python">
+  <component name="RunManager" selected="Python.Client">
+    <configuration name="Client" type="PythonConfigurationType" factoryName="Python">
       <module name="pyteg" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
       <envs>
         <env name="PYTHONUNBUFFERED" value="1" />
       </envs>
-      <option name="SDK_HOME" value="$USER_HOME$/.pyenv/versions/3.10.0/bin/python" />
-      <option name="WORKING_DIRECTORY" value="" />
-      <option name="IS_MODULE_SDK" value="false" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/src" />
+      <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/src/server.py" />
-      <option name="PARAMETERS" value="" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/src/client.py" />
+      <option name="PARAMETERS" value="--server" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
       <option name="MODULE_MODE" value="false" />
@@ -108,7 +118,7 @@
       <method v="2" />
     </configuration>
     <list>
-      <item itemvalue="Python.Server" />
+      <item itemvalue="Python.Client" />
       <item itemvalue="Python tests.Python tests in cristian" />
       <item itemvalue="Python tests.Unittests in map.py" />
       <item itemvalue="Python tests.Unittests in tests" />
@@ -132,6 +142,7 @@
       <workItem from="1637981662994" duration="2390000" />
       <workItem from="1638765442405" duration="1812000" />
       <workItem from="1639627785347" duration="4039000" />
+      <workItem from="1646852713927" duration="837000" />
     </task>
     <servers />
   </component>
@@ -139,7 +150,7 @@
     <option name="version" value="3" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
-    <SUITE FILE_PATH="coverage/pyteg$Server.coverage" NAME="Server Coverage Results" MODIFIED="1639630277583" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="" />
+    <SUITE FILE_PATH="coverage/pyteg$Server.coverage" NAME="Server Coverage Results" MODIFIED="1646853403026" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="" />
     <SUITE FILE_PATH="coverage/pyteg$Unittests_in_map_py.coverage" NAME="Unittests in map.py Coverage Results" MODIFIED="1637896729856" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/tests" />
     <SUITE FILE_PATH="coverage/pyteg$Unittests_in_tests.coverage" NAME="Unittests in tests Coverage Results" MODIFIED="1637896685769" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/tests" />
   </component>

@@ -4,238 +4,18 @@
 import socket
 import threading
 import json
-import time
-import sys
 import toml
-import itertools
-from random import choices, sample, shuffle
 
-class Dados:
-
-    @staticmethod
-    def tirar_dados(cant):
-        return choices(range(1,6), k=cant)
-
-    @staticmethod
-    def tirar_dados_ordenados(cant):
-        return sorted(choices(range(1,6), k=cant), reverse=True)
-
-
-
-class Batalla:
-
-    @staticmethod
-    def ataquen(mapa, atacante, defensor):
-        cant_atacantes =  mapa.cantidad_unidades(atacante)
-        cant_defensores = mapa.cantidad_unidades(defensor)
-
-        cant_dados_atacantes = min(cant_atacantes, 3)
-        cant_dados_defensores = min(cant_defensores, 3)
-
-        dados_atacantes = Dados.tirar_dados_ordenados(cant_dados_atacantes)
-        dados_defensores = Dados.tirar_dados_ordenados(cant_dados_defensores)
-
-        for combate in range(min(len(dados_atacantes), len(dados_defensores))):
-            if dados_defensores[combate] < dados_atacantes[combate]:
-                cant_defensores -= 1
-            else:
-                cant_atacantes -= 1
-
-        mapa.set_unidades(atacante, max(1, cant_atacantes))
-        mapa.set_unidades(defensor, max(0, cant_defensores))
-
-def calcular_unidades_generales(mapa, jugador):
-    cant_unidades = max(mapa.cantidad_de_paises_del_jugador(jugador) // 2 , 3)
-    return cant_unidades
-
-def calcular_unidades_europa(mapa, jugador):
-    if mapa.tiene_toda_europa(jugador):
-        return 5
-    return 0
-
-def calcular_unidades_asia(mapa, jugador):
-    if mapa.tiene_toda_asia(jugador):
-        return 7
-    return 0
-
-def calcular_unidades_africa(mapa, jugador):
-    if mapa.tiene_toda_africa(jugador):
-        return 3
-    return 0
-
-def calcular_unidades_oceania(mapa, jugador):
-    if mapa.tiene_toda_oceania(jugador):
-        return 2
-    return 0
-
-
-def calcular_unidades_america_del_sur(mapa, jugador):
-    if mapa.tiene_toda_america_del_sur(jugador):
-        return 3
-    return 0
-
-def calcular_unidades_america_del_norte(mapa, jugador):
-    if mapa.tiene_toda_america_del_norte(jugador):
-        return 5
-    return 0
-
-class SiguientesTurnos:
-
-    def __init__(self, jugador, mapa):
-        self._jugador = jugador
-        self._unidades = calcular_unidades_generales(mapa, jugador)
-        self._unidades_europa = calcular_unidades_europa(mapa, jugador)
-        self._unidades_africa = calcular_unidades_africa(mapa, jugador)
-        self._unidades_america_del_sur = calcular_unidades_america_del_sur(mapa, jugador)
-        self._unidades_america_del_norte = calcular_unidades_america_del_norte(mapa, jugador)
-        self._unidades_asia = calcular_unidades_asia(mapa, jugador)
-        self._unidades_oceania = calcular_unidades_oceania(mapa, jugador)
-
-    def jugador_actual(self):
-        return self._jugador
-
-    def usar_unidad(self):
-        self._unidades -= 1
-
-class SegundoTurno:
-
-    def __init__(self, jugador):
-        self._jugador = jugador
-        self._unidades = 3
-
-    def jugador_actual(self):
-        return self._jugador
-
-    def usar_unidad(self):
-        self._unidades -= 1
-
-class PrimerTurno:
-
-    def __init__(self, jugador):
-        self._jugador = jugador
-        self._unidades = 6
-
-    def jugador_actual(self):
-        return self._jugador
-
-    def usar_unidad(self):
-        self._unidades -= 1
 
 def build_mapa():
     with open('paises.toml') as f:
         toml_string = f.read()
         parsed_toml = toml.loads(toml_string)
 
-    mapa = { k:[1, parsed_toml[k]['continente'], None] for k in parsed_toml }
+    mapa = {k: [1, parsed_toml[k]['continente'], None] for k in parsed_toml}
 
     return mapa
 
-
-class Mapa:
-
-    def __init__(self):
-        self._mapa = build_mapa()
-
-    def agregar_una_unidad(self, pais):
-        self._mapa[pais][0] += 1
-
-    def cantidad_unidades(self, pais):
-        return self._mapa[pais][0]
-
-    def set_unidades(self, pais, cant):
-        self._mapa[pais][0] = cant
-
-    def mover(self, desde, hacia, cantidad):
-        self._mapa[desde][0] -= cantidad
-        self._mapa[hacia][0] += cantidad
-
-    def continente(self, pais):
-        return self._mapa[pais][1]
-
-    def ocupado_por(self, pais):
-        return self._mapa[pais][2]
-
-    def paises(self):
-        return [pais for pais in self._mapa]
-
-    def asignar_paises(self, jugadores):
-        paises = self.paises()
-        cant = len(paises) // len(jugadores)
-        for jug in jugadores:
-            paises_elegidos = sample(paises, k=cant)
-            for pais in paises_elegidos:
-                self.asignar_pais(jug, pais)
-            paises = [pais for pais in paises if pais not in paises_elegidos]
-
-        shuffle(jugadores)
-        for jug, pais in zip(jugadores, paises):
-            self.asignar_pais(jug, pais)
-
-    def cantidad_de_paises_por_continente(self, continente):
-        return len([pais for pais in self.paises() if self.continente(pais) == continente])
-
-    def asignar_pais(self, jugador, pais):
-        self._mapa[pais][2] = jugador
-
-    def cantidad_de_paises_del_jugador(self, jugador):
-        return len([ pais for pais in self.paises() if self.ocupado_por(pais) == jugador])
-
-    def cantidad_de_paises_del_jugador_por_continente(self, jugador, continente):
-        return len([ pais for pais in self.paises() if self.ocupado_por(pais) == jugador and self.continente(pais) == continente])
-
-    def tiene_toda_europa(self, jugador):
-        continente = 'Europa'
-        return self.cantidad_de_paises_del_jugador_por_continente(jugador, continente) == self.cantidad_de_paises_por_continente(continente)
-
-    def tiene_toda_asia(self, jugador):
-        continente = 'Asia'
-        return self.cantidad_de_paises_del_jugador_por_continente(jugador, continente) == self.cantidad_de_paises_por_continente(continente)
-
-    def tiene_toda_oceania(self, jugador):
-        continente = 'Oceania'
-        return self.cantidad_de_paises_del_jugador_por_continente(jugador, continente) == self.cantidad_de_paises_por_continente(continente)
-
-    def tiene_toda_africa(self, jugador):
-        continente = 'Africa'
-        return self.cantidad_de_paises_del_jugador_por_continente(jugador, continente) == self.cantidad_de_paises_por_continente(continente)
-
-    def tiene_toda_america_del_sur(self, jugador):
-        continente = 'Sudamerica'
-        return self.cantidad_de_paises_del_jugador_por_continente(jugador, continente) == self.cantidad_de_paises_por_continente(continente)
-
-    def tiene_toda_america_del_norte(self, jugador):
-        continente = 'Norteamerica'
-        return self.cantidad_de_paises_del_jugador_por_continente(jugador, continente) == self.cantidad_de_paises_por_continente(continente)
-
-    def __str__(self):
-        return json.dumps(self._mapa)
-
-
-class SiguientesRondas:
-
-    def __proximo_turno(self, jugadores, mapa):
-        for turno in [ SiguientesTurnos(id_jugador, mapa) for id_jugador in jugadores]:
-            yield turno
-
-    def __init__(self, jugadores, game):
-        print("Siguientes ronda")
-        self._unidades = dict()
-        self._jugadores = rotar_jugadores(jugadores)
-        self._turnos = self.__proximo_turno(jugadores, game.mapa())
-        self._turno_actual = next(self._turnos)
-        self._game = game
-
-    def usar_unidad(self):
-        self._turno_actual.usar_unidad()
-
-    def turno_actual(self):
-        return self._turno_actual
-
-    def finalizar_turno(self):
-        try:
-            self._turno_actual = next(self._turnos)
-        except StopIteration:
-            self._game._ronda = SiguientesRondas(self._jugadores, self._game)
 
 def rotar_jugadores(jugadores):
     print('Rotar jugadores')
@@ -244,97 +24,6 @@ def rotar_jugadores(jugadores):
     jugadores.append(primer_elemento)
     return jugadores
 
-class SegundaRonda:
-
-    def __proximo_turno(self, jugadores):
-        for turno in [ SegundoTurno(id_jugador) for id_jugador in jugadores]:
-            yield turno
-
-    def __init__(self, jugadores, game):
-        print("Segunda ronda")
-        self._unidades = dict()
-        self._jugadores = jugadores
-        self._turnos = self.__proximo_turno(jugadores)
-        self._turno_actual = next(self._turnos)
-        self._game = game
-
-    def usar_unidad(self):
-        self._turno_actual.usar_unidad()
-
-    def turno_actual(self):
-        return self._turno_actual
-
-    def finalizar_turno(self):
-        try:
-            self._turno_actual = next(self._turnos)
-        except StopIteration:
-            self._game._ronda = SiguientesRondas(self._jugadores, self._game)
-
-class PrimeraRonda:
-
-    def __proximo_turno(self, jugadores):
-        for turno in [ PrimerTurno(id_jugador) for id_jugador in jugadores]:
-            yield turno
-
-    def __init__(self, jugadores, game):
-        print("Primera ronda")
-        self._unidades = dict()
-        self._jugadores = jugadores
-        self._turnos = self.__proximo_turno(jugadores)
-        self._turno_actual = next(self._turnos)
-        self._game = game
-
-    def usar_unidad(self):
-        self._turno_actual.usar_unidad()
-        print(self._unidades)
-
-    def turno_actual(self):
-        return self._turno_actual
-
-    def finalizar_turno(self):
-        try:
-            self._turno_actual = next(self._turnos)
-        except StopIteration:
-            self._game._ronda = SegundaRonda(self._jugadores, self._game)
-
-
-class Game:
-
-    def __init__(self, server):
-        self._mapa = Mapa()
-        self._start = False
-        self._ronda = None
-        self._jugadores = []
-        self._server = server
-
-    def agregar_una_unidad(self, jugador, pais):
-        self._mapa.agregar_una_unidad(pais)
-        self._ronda.usar_unidad(jugador)
-
-    def start(self):
-        self._jugadores = self._server.dame_lista_jugadores()
-        self._ronda = PrimeraRonda(self._jugadores, self)
-        self._mapa.asignar_paises(self._jugadores)
-        self._start = True
-
-    def ver_mapa(self):
-        print("jugadores:", self._jugadores)
-        if self._ronda:
-            print("jugadores_ronda:", self._ronda._jugadores)
-            print("turno_actual:", self._ronda._turno_actual.jugador_actual())
-        print(self._mapa)
-
-    def atacar(self, atacante, defensor):
-        Batalla.ataquen(self._mapa, atacante, defensor)
-
-    def reagrupar(self, desde, hacia, cantidad):
-        self._mapa.mover(desde,hacia,cantidad)
-
-    def ronda(self):
-        return self._ronda
-
-    def mapa(self):
-        return self._mapa
 
 class ConnectionServer:
 
@@ -352,7 +41,6 @@ class ConnectionServer:
     def close(self):
         self._conn.shutdown(socket.SHUT_RDWR)
         self._conn.close()
-
 
 
 class Client:
@@ -416,6 +104,7 @@ class Client:
             if 'finalizar_turno' in data_json_r:
                 game.ronda().finalizar_turno()
 
+
 class Server:
 
     def __init__(self):
@@ -427,9 +116,8 @@ class Server:
     def registrar_cliente(self, user_id, client):
         self._clients[user_id] = client
 
-
     def send_all(self, data, ignore_conn=None):
-        for _ , client in self._clients:
+        for _, client in self._clients:
             if ignore_conn != client:
                 client.send(data)
 
@@ -441,16 +129,16 @@ class Server:
 
     def close_connections(self):
         for conn in self._clients:
-            print("Removiendo:",conn)
+            print("Removiendo:", conn)
             self._conns.remove(conn)
             conn.close()
 
 
 def registrar_jugadores(server, game):
-    user_id = 1 
+    user_id = 1
     print('Esperando jugadores...')
-    host = '127.0.0.1'  
-    port = 65432 
+    host = '127.0.0.1'
+    port = 65432
     print(host, port)
     socket_server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     socket_server.bind((host, port))
