@@ -1,6 +1,6 @@
-from src.batalla import Batalla
-from src.mapa import Mapa
-from src.rondas import PrimeraRonda
+from batalla import Batalla
+from mapa import Mapa
+from rondas import PrimeraRonda
 
 
 class Game:
@@ -16,9 +16,9 @@ class Game:
         self._mapa.agregar_una_unidad(pais)
         self._ronda.usar_unidad(jugador)
 
-    def start(self):
+    def start(self, server):
         self._jugadores = self._server.dame_lista_jugadores()
-        self._ronda = PrimeraRonda(self._jugadores, self)
+        self._ronda = PrimeraRonda(self._jugadores, self, server)
         self._mapa.asignar_paises(self._jugadores)
         self._start = True
 

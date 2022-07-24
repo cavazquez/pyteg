@@ -91,7 +91,7 @@ class Client:
                 game.ver_mapa()
 
             if 'start' in data_json_r:
-                game.start()
+                game.start(server)
 
             if 'atacar' in data_json_r:
                 atacante, defensor = data_json_r['atacar'].split()
@@ -117,7 +117,8 @@ class Server:
         self._clients[user_id] = client
 
     def send_all(self, data, ignore_conn=None):
-        for _, client in self._clients:
+        print("clients: ", type(self._clients))
+        for _, client in self._clients.items():
             if ignore_conn != client:
                 client.send(data)
 

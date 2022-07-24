@@ -1,7 +1,7 @@
 import json
 from random import sample, shuffle
 
-from src.server import build_mapa
+from server import build_mapa
 
 
 class Mapa:

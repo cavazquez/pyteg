@@ -5,7 +5,9 @@ import argparse
 import time
 import random
 from server import Server, registrar_jugadores
-from src.game import Game
+from game import Game
+from gui import Gui
+from PySide6.QtWidgets import QApplication
 
 
 class Client:
@@ -47,7 +49,7 @@ class ConnectionClient:
 class Transceiver:
 
     @staticmethod
-    def receiver(connection, client):
+    def receiver(connection, client, gui):
         data_b = ""
         while connection.is_connected():
             data_b = connection.get_data()
@@ -62,6 +64,8 @@ class Transceiver:
                 print(data_json['chat'])
             elif 'mapa' in data_json:
                 client.update_mapa(data_json['mapa'])
+            elif 'jugadores' in data_json:
+                gui.update(data_json['jugadores'])
             else:
                 print('Comando no reconocido')
 
@@ -109,6 +113,10 @@ def main():
 
     args = parser.parse_args()
 
+
+    app = QApplication()
+    gui = Gui()
+
     if vars(args)['server']:
         print('Iniciando Server')
         server = Server()
@@ -121,11 +129,15 @@ def main():
 
     client = Client()
     connection = ConnectionClient()
-    receiver_th = threading.Thread(target=Transceiver.receiver, args=[connection, client])
+    receiver_th = threading.Thread(target=Transceiver.receiver, args=[connection, client, gui])
     receiver_th.start()
-    Transceiver.sender(connection)
-    receiver_th.join()
+    sender_th = threading.Thread(target=Transceiver.sender, args=[connection])
+    sender_th.start()
 
+    app.exec()
+
+    receiver_th.join()
+    sender_th.join()
 
 if __name__ == '__main__':
     main()
