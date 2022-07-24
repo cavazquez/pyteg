@@ -1,5 +1,6 @@
-from src.server import rotar_jugadores
-from src.turnos import SiguientesTurnos, SegundoTurno, PrimerTurno
+from server import rotar_jugadores
+from turnos import SiguientesTurnos, SegundoTurno, PrimerTurno
+import json
 
 
 class SiguientesRondas:
@@ -62,13 +63,17 @@ class PrimeraRonda:
         for turno in [PrimerTurno(id_jugador) for id_jugador in jugadores]:
             yield turno
 
-    def __init__(self, jugadores, game):
+    def __init__(self, jugadores, game, server):
         print("Primera ronda")
         self._unidades = dict()
         self._jugadores = jugadores
         self._turnos = self.__proximo_turno(jugadores)
         self._turno_actual = next(self._turnos)
         self._game = game
+
+        print("Enviando jugadores")
+        data = {'jugadores': jugadores}
+        server.send_all(json.dumps(data))
 
     def usar_unidad(self):
         self._turno_actual.usar_unidad()

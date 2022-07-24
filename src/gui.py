@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QApplication, QWidget, QPushButton, QMainWindow, QRadioButton, QVBoxLayout, QLineEdit, QGridLayout
+from PySide6.QtWidgets import QWidget, QPushButton, QMainWindow, QRadioButton, QVBoxLayout, QLineEdit, QGridLayout
 from PySide6.QtCore import QSize
 
 # Only needed for access to command line arguments
@@ -44,13 +44,10 @@ class Gui(QMainWindow):
 
         self.show()  # IMPORTANT!!!!! Windows are hidden by default.
 
-    def update(self, text):
-        self._jugadores[0].insert(text)
+    def update(self, lista_jugadores):
+        print("lista_jugadores:",  lista_jugadores)
+        for i in range(len(lista_jugadores)):
+            self._jugadores[i].insert(f"{lista_jugadores[i]}")
 
 
-app = QApplication()
-gui = Gui()
-gui.update("Hola")
-
-app.exec()
 
