@@ -4,25 +4,10 @@
 import socket
 import threading
 import json
-import toml
+import tomllib
+from game import Game
 
 
-def build_mapa():
-    with open('paises.toml') as f:
-        toml_string = f.read()
-        parsed_toml = toml.loads(toml_string)
-
-    mapa = {k: [1, parsed_toml[k]['continente'], None] for k in parsed_toml}
-
-    return mapa
-
-
-def rotar_jugadores(jugadores):
-    print('Rotar jugadores')
-    primer_elemento = jugadores[0]
-    jugadores = jugadores[1:]
-    jugadores.append(primer_elemento)
-    return jugadores
 
 
 class ConnectionServer:
@@ -151,3 +136,16 @@ def registrar_jugadores(server, game):
         except Exception as e:
             print(e)
             exit(1)
+
+
+def main():
+
+    server = Server()
+    game = Game(server)
+    registrar_jugadores(server, game)
+    #server_th = threading.Thread(target=registrar_jugadores, args=[server, game])
+    #server_th.start()
+
+
+if __name__ == '__main__':
+    main()

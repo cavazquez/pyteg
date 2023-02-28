@@ -10,6 +10,11 @@ python = "^3.11,<3.12"
 pyside6 = "^6.4.2"
 
 
+[tool.poetry.group.dev.dependencies]
+flake8 = "^6.0.0"
+mypy = "^1.0.1"
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+

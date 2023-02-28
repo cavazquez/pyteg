@@ -1,4 +1,4 @@
-from server import rotar_jugadores
+from utils import rotar_jugadores
 from turnos import SiguientesTurnos, SegundoTurno, PrimerTurno
 import json
 

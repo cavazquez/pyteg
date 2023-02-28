@@ -2,7 +2,6 @@ from batalla import Batalla
 from mapa import Mapa
 from rondas import PrimeraRonda
 
-
 class Game:
 
     def __init__(self, server):

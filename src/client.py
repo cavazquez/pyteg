@@ -4,8 +4,8 @@ import json
 import argparse
 import time
 import random
-from server import Server, registrar_jugadores
-from game import Game
+#from server import Server, registrar_jugadores
+#from game import Game
 from gui import Gui
 from PySide6.QtWidgets import QApplication
 
@@ -117,12 +117,12 @@ def main():
     app = QApplication()
     gui = Gui()
 
-    if vars(args)['server']:
-        print('Iniciando Server')
-        server = Server()
-        game = Game(server)
-        server_th = threading.Thread(target=registrar_jugadores, args=[server, game])
-        server_th.start()
+    #if vars(args)['server']:
+    #    print('Iniciando Server')
+    #    server = Server()
+    #    game = Game(server)
+    #    server_th = threading.Thread(target=registrar_jugadores, args=[server, game])
+    #    server_th.start()
 
     # Espero a que se inicie el servidor
     time.sleep(0.5)
