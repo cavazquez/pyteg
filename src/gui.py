@@ -2,7 +2,7 @@ from PySide6.QtWidgets import QWidget, QPushButton, QMainWindow, QRadioButton, Q
 from PySide6.QtCore import QSize
 
 # Only needed for access to command line arguments
-import sys
+#import sys
 
 # You need one (and only one) QApplication instance per application.
 # Pass in sys.argv to allow command line arguments for your app.
