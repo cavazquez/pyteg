@@ -9,42 +9,42 @@ army_y = 0
 [Brasil]
 continente = "Sudamerica"
 file = "classic/.png"
-pos_x = 
-pos_y = 
-army_x = 
-army_y = 
+pos_x = 30
+pos_y = 8
+army_x = 0
+army_y = 0
 
 [Peru]
 continente = "Sudamerica"
 file = "classic/.png"
-pos_x = 
-pos_y = 
-army_x = 
-army_y = 
+pos_x = 1
+pos_y = 36
+army_x = 0
+army_y = 0
 
 [Colombia]
 continente = "Sudamerica"
 file = "classic/.png"
-pos_x = 
-pos_y = 
-army_x = 
-army_y = 
+pos_x = 0
+pos_y = 0
+army_x = 0
+army_y = 0
 
 [Chile]
 continente = "Sudamerica"
 file = "classic/.png"
-pos_x = 
-pos_y = 
-army_x = 
-army_y = 
+pos_x = 16
+pos_y = 70
+army_x = 0
+army_y = 0
 
 [Uruguay]
 continente = "Sudamerica"
 file = "classic/.png"
-pos_x = 
-pos_y = 
-army_x = 
-army_y = 
+pos_x = 51
+pos_y = 54
+army_x = 0
+army_y = 10
 
 [Sumatra]
 continente = "Oceania"
