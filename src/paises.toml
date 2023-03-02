@@ -202,82 +202,82 @@ army_y = 0
 [Canada]
 continente = "Norteamerica"
 file = "classic/.png"
-pos_x = 
-pos_y = 
-army_x = 
-army_y = 
+pos_x = 83
+pos_y = 4
+army_x = 0
+army_y = 0
 
 [Yukon]
 continente = "Norteamerica"
 file = "classic/.png"
-pos_x = 
-pos_y = 
-army_x = 
-army_y = 
+pos_x = 60
+pos_y = 34
+army_x = 0
+army_y = 0
 
 [Alaska]
 continente = "Norteamerica"
 file = "classic/.png"
-pos_x = 
-pos_y = 
-army_x = 
-army_y = 
+pos_x = 23
+pos_y = 69
+army_x = 0
+army_y = 0
 
 [Groenlandia]
 continente = "Norteamerica"
 file = "classic/.png"
-pos_x = 
-pos_y = 
-army_x = 
-army_y = 
+pos_x = 216
+pos_y = 22
+army_x = 0
+army_y = 0
 
 [Oregon]
 continente = "Norteamerica"
 file = "classic/.png"
-pos_x = 
-pos_y = 
-army_x = 
-army_y = 
+pos_x = 26
+pos_y = 110
+army_x = 0
+army_y = 0
 
 [California]
 continente = "Norteamerica"
 file = "classic/.png"
-pos_x = 
-pos_y = 
-army_x = 
-army_y = 
+pos_x = 71
+pos_y = 153
+army_x = -20
+army_y = -20
 
 [Mexico]
 continente = "Norteamerica"
 file = "classic/.png"
-pos_x = 
-pos_y = 
-army_x = 
-army_y = 
+pos_x = 122
+pos_y = 168
+army_x = 0
+army_y = 0
 
 [NuevaYork]
 continente = "Norteamerica"
 file = "classic/.png"
-pos_x = 
-pos_y = 
-army_x = 
-army_y = 
+pos_x = 117
+pos_y = 96
+army_x = -10
+army_y = 10
 
 [Terranova]
 continente = "Norteamerica"
 file = "classic/.png"
-pos_x = 
-pos_y = 
-army_x = 
-army_y = 
+pos_x = 145
+pos_y = 86
+army_x = 0
+army_y = 0
 
 [Labrador]
 continente = "Norteamerica"
 file = "classic/.png"
-pos_x = 
-pos_y = 
-army_x = 
-army_y = 
+pos_x = 177
+pos_y = 59
+army_x = 0
+army_y = 0
 
 
 [Arabia]
