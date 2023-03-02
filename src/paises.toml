@@ -81,74 +81,74 @@ army_y = 0
 [Francia]
 continente = "Europa"
 file = "classic/.png"
-pos_x = 
-pos_y = 
-army_x = 
-army_y = 
+pos_x = 111
+pos_y = 105
+army_x = 0
+army_y = 10
 
 [Espana]
 continente = "Europa"
 file = "classic/.png"
-pos_x = 
-pos_y = 
-army_x = 
-army_y = 
+pos_x = 69
+pos_y = 126
+army_x = 0
+army_y = 0
 
 [Islandia]
 continente = "Europa"
 file = "classic/.png"
-pos_x = 
-pos_y = 
-army_x = 
-army_y = 
+pos_x = 52
+pos_y = 44
+army_x = 0
+army_y = 0
 
 [GranBretana]
 continente = "Europa"
 file = "classic/.png"
-pos_x = 
-pos_y = 
-army_x = 
-army_y = 
+pos_x = 91
+pos_y = 56
+army_x = 0
+army_y = 0
 
 [Alemania]
 continente = "Europa"
 file = "classic/.png"
-pos_x = 
-pos_y = 
-army_x = 
-army_y = 
+pos_x = 135
+pos_y = 92
+army_x = 0
+army_y = -5
 
 [Italia]
 continente = "Europa"
 file = "classic/.png"
-pos_x = 
-pos_y = 
-army_x = 
-army_y = 
+pos_x = 133
+pos_y = 138
+army_x = 0
+army_y = -5
 
 [Polonia]
 continente = "Europa"
 file = "classic/.png"
-pos_x = 
-pos_y = 
-army_x = 
-army_y = 
+pos_x = 148
+pos_y = 87
+army_x = 5
+army_y = 0
 
 [Rusia]
 continente = "Europa"
 file = "classic/.png"
-pos_x = 
-pos_y = 
-army_x = 
-army_y = 
+pos_x = 115
+pos_y = 20
+army_x = 0
+army_y = 0
 
 [Suecia]
 continente = "Europa"
 file = "classic/.png"
-pos_x = 
-pos_y = 
-army_x = 
-army_y = 
+pos_x = 115
+pos_y = 2
+army_x = 0
+army_y = 0
 
 [Sahara]
 continente = "Africa"
