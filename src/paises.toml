@@ -153,50 +153,50 @@ army_y = 0
 [Sahara]
 continente = "Africa"
 file = "classic/.png"
-pos_x = 
-pos_y = 
-army_x = 
-army_y = 
+pos_x = 1
+pos_y = 4
+army_x = 0
+army_y = 0
 
 [Etiopia]
 continente = "Africa"
 file = "classic/.png"
-pos_x = 
-pos_y = 
-army_x = 
-army_y = 
+pos_x = 65
+pos_y = 19
+army_x = 0
+army_y = 0
 
 [Egipto]
 continente = "Africa"
 file = "classic/.png"
-pos_x = 
-pos_y = 
-army_x = 
-army_y = 
+pos_x = 61
+pos_y = 0
+army_x = 0
+army_y = 0
 
 [Madagascar]
 continente = "Africa"
 file = "classic/.png"
-pos_x = 
-pos_y = 
-army_x = 
-army_y = 
+pos_x = 149
+pos_y = 39
+army_x = 0
+army_y = 0
 
 [Zaire]
 continente = "Africa"
 file = "classic/.png"
-pos_x = 
-pos_y = 
-army_x = 
-army_y = 
+pos_x = 43
+pos_y = 44
+army_x = 0
+army_y = 0
 
 [Sudafrica]
 continente = "Africa"
 file = "classic/.png"
-pos_x = 
-pos_y = 
-army_x = 
-army_y = 
+pos_x = 95
+pos_y = 62
+army_x = 0
+army_y = 0
 
 
 [Canada]
