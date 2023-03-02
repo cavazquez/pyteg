@@ -283,120 +283,120 @@ army_y = 0
 [Arabia]
 continente = "Asia"
 file = "classic/.png"
-pos_x = 
-pos_y = 
-army_x = 
-army_y = 
+pos_x = 169
+pos_y = 148
+army_x = 0
+army_y = 0
 
 [Aral]
 continente = "Asia"
 file = "classic/.png"
-pos_x = 
-pos_y = 
-army_x = 
-army_y = 
+pos_x = 129
+pos_y = 19
+army_x = 0
+army_y = 0
 
 [China]
 continente = "Asia"
 file = "classic/.png"
-pos_x = 
-pos_y = 
-army_x = 
-army_y = 
+pos_x = 205
+pos_y = 16
+army_x = 0
+army_y = 20
 
 [India]
 continente = "Asia"
 file = "classic/.png"
-pos_x = 
-pos_y = 
-army_x = 
-army_y = 
+pos_x = 198
+pos_y = 128
+army_x = 0
+army_y = 0
 
 [Iran]
 continente = "Asia"
 file = "classic/.png"
-pos_x = 
-pos_y = 
-army_x = 
-army_y = 
+pos_x = 141
+pos_y = 57
+army_x = -11
+army_y = 15
 
 [Tartaria]
 continente = "Asia"
 file = "classic/.png"
-pos_x = 
-pos_y = 
-army_x = 
-army_y = 
+pos_x = 141
+pos_y = -1
+army_x = 0
+army_y = 0
 
 [Taimiria]
 continente = "Asia"
 file = "classic/.png"
-pos_x = 
-pos_y = 
-army_x = 
-army_y = 
+pos_x = 173
+pos_y = 0
+army_x = 0
+army_y = 0
 
 [Japon]
 continente = "Asia"
 file = "classic/.png"
-pos_x = 
-pos_y = 
-army_x = 
-army_y = 
+pos_x = 277
+pos_y = 33
+army_x = 0
+army_y = 0
 
 [Kamchatka]
 continente = "Asia"
 file = "classic/.png"
-pos_x = 
-pos_y = 
-army_x = 
-army_y = 
+pos_x = 224
+pos_y = -10
+army_x = 0
+army_y = 0
 
 [Siberia]
 continente = "Asia"
 file = "classic/.png"
-pos_x = 
-pos_y = 
-army_x = 
-army_y = 
+pos_x = 158
+pos_y = -2
+army_x = 27
+army_y = 5
 
 [Mongolia]
 continente = "Asia"
 file = "classic/.png"
-pos_x = 
-pos_y = 
-army_x = 
-army_y = 
+pos_x = 156
+pos_y = 45
+army_x = 22
+army_y = -5
 
 [Gobi]
 continente = "Asia"
 file = "classic/.png"
-pos_x = 
-pos_y = 
-army_x = 
-army_y = 
+pos_x = 164
+pos_y = 67
+army_x = 0
+army_y = 0
 
 [Malasia]
 continente = "Asia"
 file = "classic/.png"
-pos_x = 
-pos_y = 
-army_x = 
-army_y = 
+pos_x = 243
+pos_y = 122
+army_x = 0
+army_y = 0
 
 [Turquia]
 continente = "Asia"
 file = "classic/.png"
-pos_x = 
-pos_y = 
-army_x = 
-army_y = 
+pos_x = 132
+pos_y = 124
+army_x = -12
+army_y = -5
 
 [Israel]
 continente = "Asia"
 file = "classic/.png"
-pos_x = 
-pos_y = 
-army_x = 
-army_y = 
+pos_x = 147
+pos_y = 146
+army_x = 0
+army_y = 0
 
