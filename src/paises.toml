@@ -1,3 +1,10 @@
+[Cartas]
+jocker = "tar_comodin.svg"
+ballon = "tar_globo.svg"
+cannon = "tar_canon.png"
+ship   = "tar_galeon.png"
+
+
 [Argentina]
 continente = "Sudamerica"
 file = "classic/argentina.png"
