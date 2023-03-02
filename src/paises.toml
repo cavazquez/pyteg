@@ -1,152 +1,402 @@
 [Argentina]
 continente = "Sudamerica"
+file = "classic/argentina.png"
+pos_x = 31
+pos_y = 68
+army_x = 0
+army_y = 0
 
 [Brasil]
 continente = "Sudamerica"
+file = "classic/.png"
+pos_x = 
+pos_y = 
+army_x = 
+army_y = 
 
 [Peru]
 continente = "Sudamerica"
+file = "classic/.png"
+pos_x = 
+pos_y = 
+army_x = 
+army_y = 
 
 [Colombia]
 continente = "Sudamerica"
+file = "classic/.png"
+pos_x = 
+pos_y = 
+army_x = 
+army_y = 
 
 [Chile]
 continente = "Sudamerica"
+file = "classic/.png"
+pos_x = 
+pos_y = 
+army_x = 
+army_y = 
 
 [Uruguay]
 continente = "Sudamerica"
+file = "classic/.png"
+pos_x = 
+pos_y = 
+army_x = 
+army_y = 
 
 [Sumatra]
 continente = "Oceania"
+file = "classic/.png"
+pos_x = 
+pos_y = 
+army_x = 
+army_y = 
 
 [Borneo]
 continente = "Oceania"
+file = "classic/.png"
+pos_x = 
+pos_y = 
+army_x = 
+army_y = 
 
 [Java]
 continente = "Oceania"
+file = "classic/.png"
+pos_x = 
+pos_y = 
+army_x = 
+army_y = 
 
 [Australia]
 continente = "Oceania"
+file = "classic/.png"
+pos_x = 
+pos_y = 
+army_x = 
+army_y = 
 
 [Francia]
 continente = "Europa"
+file = "classic/.png"
+pos_x = 
+pos_y = 
+army_x = 
+army_y = 
 
 [Espana]
 continente = "Europa"
+file = "classic/.png"
+pos_x = 
+pos_y = 
+army_x = 
+army_y = 
 
 [Islandia]
 continente = "Europa"
+file = "classic/.png"
+pos_x = 
+pos_y = 
+army_x = 
+army_y = 
 
 [GranBretana]
 continente = "Europa"
+file = "classic/.png"
+pos_x = 
+pos_y = 
+army_x = 
+army_y = 
 
 [Alemania]
 continente = "Europa"
+file = "classic/.png"
+pos_x = 
+pos_y = 
+army_x = 
+army_y = 
 
 [Italia]
 continente = "Europa"
+file = "classic/.png"
+pos_x = 
+pos_y = 
+army_x = 
+army_y = 
 
 [Polonia]
 continente = "Europa"
+file = "classic/.png"
+pos_x = 
+pos_y = 
+army_x = 
+army_y = 
 
 [Rusia]
 continente = "Europa"
+file = "classic/.png"
+pos_x = 
+pos_y = 
+army_x = 
+army_y = 
 
 [Suecia]
 continente = "Europa"
+file = "classic/.png"
+pos_x = 
+pos_y = 
+army_x = 
+army_y = 
 
 [Sahara]
 continente = "Africa"
+file = "classic/.png"
+pos_x = 
+pos_y = 
+army_x = 
+army_y = 
 
 [Etiopia]
 continente = "Africa"
+file = "classic/.png"
+pos_x = 
+pos_y = 
+army_x = 
+army_y = 
 
 [Egipto]
 continente = "Africa"
+file = "classic/.png"
+pos_x = 
+pos_y = 
+army_x = 
+army_y = 
 
 [Madagascar]
 continente = "Africa"
+file = "classic/.png"
+pos_x = 
+pos_y = 
+army_x = 
+army_y = 
 
 [Zaire]
 continente = "Africa"
+file = "classic/.png"
+pos_x = 
+pos_y = 
+army_x = 
+army_y = 
 
 [Sudafrica]
 continente = "Africa"
+file = "classic/.png"
+pos_x = 
+pos_y = 
+army_x = 
+army_y = 
 
 
 [Canada]
 continente = "Norteamerica"
+file = "classic/.png"
+pos_x = 
+pos_y = 
+army_x = 
+army_y = 
 
 [Yukon]
 continente = "Norteamerica"
+file = "classic/.png"
+pos_x = 
+pos_y = 
+army_x = 
+army_y = 
 
 [Alaska]
 continente = "Norteamerica"
+file = "classic/.png"
+pos_x = 
+pos_y = 
+army_x = 
+army_y = 
 
 [Groenlandia]
 continente = "Norteamerica"
+file = "classic/.png"
+pos_x = 
+pos_y = 
+army_x = 
+army_y = 
 
 [Oregon]
 continente = "Norteamerica"
+file = "classic/.png"
+pos_x = 
+pos_y = 
+army_x = 
+army_y = 
 
 [California]
 continente = "Norteamerica"
+file = "classic/.png"
+pos_x = 
+pos_y = 
+army_x = 
+army_y = 
 
 [Mexico]
 continente = "Norteamerica"
+file = "classic/.png"
+pos_x = 
+pos_y = 
+army_x = 
+army_y = 
 
 [NuevaYork]
 continente = "Norteamerica"
+file = "classic/.png"
+pos_x = 
+pos_y = 
+army_x = 
+army_y = 
 
 [Terranova]
 continente = "Norteamerica"
+file = "classic/.png"
+pos_x = 
+pos_y = 
+army_x = 
+army_y = 
 
 [Labrador]
 continente = "Norteamerica"
+file = "classic/.png"
+pos_x = 
+pos_y = 
+army_x = 
+army_y = 
 
 
 [Arabia]
 continente = "Asia"
+file = "classic/.png"
+pos_x = 
+pos_y = 
+army_x = 
+army_y = 
 
 [Aral]
 continente = "Asia"
+file = "classic/.png"
+pos_x = 
+pos_y = 
+army_x = 
+army_y = 
 
 [China]
 continente = "Asia"
+file = "classic/.png"
+pos_x = 
+pos_y = 
+army_x = 
+army_y = 
 
 [India]
 continente = "Asia"
+file = "classic/.png"
+pos_x = 
+pos_y = 
+army_x = 
+army_y = 
 
 [Iran]
 continente = "Asia"
+file = "classic/.png"
+pos_x = 
+pos_y = 
+army_x = 
+army_y = 
 
 [Tartaria]
 continente = "Asia"
+file = "classic/.png"
+pos_x = 
+pos_y = 
+army_x = 
+army_y = 
 
 [Taimiria]
 continente = "Asia"
+file = "classic/.png"
+pos_x = 
+pos_y = 
+army_x = 
+army_y = 
 
 [Japon]
 continente = "Asia"
+file = "classic/.png"
+pos_x = 
+pos_y = 
+army_x = 
+army_y = 
 
 [Kamchatka]
 continente = "Asia"
+file = "classic/.png"
+pos_x = 
+pos_y = 
+army_x = 
+army_y = 
 
 [Siberia]
 continente = "Asia"
+file = "classic/.png"
+pos_x = 
+pos_y = 
+army_x = 
+army_y = 
 
 [Mongolia]
 continente = "Asia"
+file = "classic/.png"
+pos_x = 
+pos_y = 
+army_x = 
+army_y = 
 
 [Gobi]
 continente = "Asia"
+file = "classic/.png"
+pos_x = 
+pos_y = 
+army_x = 
+army_y = 
 
 [Malasia]
 continente = "Asia"
+file = "classic/.png"
+pos_x = 
+pos_y = 
+army_x = 
+army_y = 
 
 [Turquia]
 continente = "Asia"
+file = "classic/.png"
+pos_x = 
+pos_y = 
+army_x = 
+army_y = 
 
 [Israel]
 continente = "Asia"
+file = "classic/.png"
+pos_x = 
+pos_y = 
+army_x = 
+army_y = 
 
