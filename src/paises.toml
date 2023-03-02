@@ -49,34 +49,34 @@ army_y = 10
 [Sumatra]
 continente = "Oceania"
 file = "classic/.png"
-pos_x = 
-pos_y = 
-army_x = 
-army_y = 
+pos_x = 29
+pos_y = 20
+army_x = 0
+army_y = 0
 
 [Borneo]
 continente = "Oceania"
 file = "classic/.png"
-pos_x = 
-pos_y = 
-army_x = 
-army_y = 
+pos_x = 79
+pos_y = 4
+army_x = 0
+army_y = 0
 
 [Java]
 continente = "Oceania"
 file = "classic/.png"
-pos_x = 
-pos_y = 
-army_x = 
-army_y = 
+pos_x = 116
+pos_y = 4
+army_x = 0
+army_y = 0
 
 [Australia]
 continente = "Oceania"
 file = "classic/.png"
-pos_x = 
-pos_y = 
-army_x = 
-army_y = 
+pos_x = 59
+pos_y = 49
+army_x = 0
+army_y = 0
 
 [Francia]
 continente = "Europa"
