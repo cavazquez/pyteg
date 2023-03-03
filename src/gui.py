@@ -1,6 +1,8 @@
 from PySide6.QtWidgets import QWidget, QPushButton, QMainWindow, QRadioButton, QVBoxLayout, QLineEdit, QGridLayout
 from PySide6.QtCore import QSize
 
+from xyz import XYZ
+
 # Only needed for access to command line arguments
 #import sys
 
@@ -15,10 +17,12 @@ class Gui(QMainWindow):
         #window = QMainWindow()
         self.setWindowTitle("PyTeg")
 
-
+        print(XYZ().paises())
         VMap = QVBoxLayout()
         test_jugador = QLineEdit()
         VMap.addWidget(test_jugador)
+
+
 
         Vlayout = QVBoxLayout()
         self._jugadores = []
