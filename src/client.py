@@ -4,14 +4,14 @@ import json
 import argparse
 import time
 import random
-#from server import Server, registrar_jugadores
-#from game import Game
+
+# from server import Server, registrar_jugadores
+# from game import Game
 from gui import Gui
 from PySide6.QtWidgets import QApplication
 
 
 class Client:
-
     def __init__(self):
         self._mapa = ""
 
@@ -23,8 +23,7 @@ class Client:
 
 
 class ConnectionClient:
-
-    def __init__(self, host='127.0.0.1', port=65432):
+    def __init__(self, host="127.0.0.1", port=65432):
         self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._socket.connect((host, port))
         print(f"Conectado con {host}:{port}")
@@ -47,7 +46,6 @@ class ConnectionClient:
 
 
 class Transceiver:
-
     @staticmethod
     def receiver(connection, client, gui):
         data_b = ""
@@ -60,64 +58,63 @@ class Transceiver:
             data = data_b.decode()
             data_json = json.loads(data)
 
-            if 'chat' in data_json:
-                print(data_json['chat'])
-            elif 'mapa' in data_json:
-                client.update_mapa(data_json['mapa'])
-            elif 'jugadores' in data_json:
-                gui.update(data_json['jugadores'])
+            if "chat" in data_json:
+                print(data_json["chat"])
+            elif "mapa" in data_json:
+                client.update_mapa(data_json["mapa"])
+            elif "jugadores" in data_json:
+                gui.update(data_json["jugadores"])
             else:
-                print('Comando no reconocido')
+                print("Comando no reconocido")
 
     @staticmethod
     def sender(connection):
         numero = random.randint(1, 10)
-        username = f'cliente-{numero}'
-        username_data = json.dumps({'username': username})
+        username = f"cliente-{numero}"
+        username_data = json.dumps({"username": username})
         connection.send_data(username_data.encode())
         while connection.is_connected():
-            data = input('')
+            data = input("")
 
-            if data.startswith('chat'):
-                data = data[len('chat'):]
-                json_data = json.dumps({'chat': data})
+            if data.startswith("chat"):
+                data = data[len("chat") :]
+                json_data = json.dumps({"chat": data})
                 connection.send_data(json_data.encode())
-            elif data.startswith('start'):
-                json_data = json.dumps({'start': ''})
+            elif data.startswith("start"):
+                json_data = json.dumps({"start": ""})
                 connection.send_data(json_data.encode())
-            elif data.startswith('agregar'):
-                data = data[len('agregar'):]
-                json_data = json.dumps({'agregar_una_unidad': data})
+            elif data.startswith("agregar"):
+                data = data[len("agregar") :]
+                json_data = json.dumps({"agregar_una_unidad": data})
                 connection.send_data(json_data.encode())
-            elif data.startswith('atacar'):
-                data = data[len('atacar'):]
-                json_data = json.dumps({'atacar': data})
+            elif data.startswith("atacar"):
+                data = data[len("atacar") :]
+                json_data = json.dumps({"atacar": data})
                 connection.send_data(json_data.encode())
-            elif data.startswith('reagrupar'):
-                data = data[len('reagrupar'):]
-                json_data = json.dumps({'reagrupar': data})
+            elif data.startswith("reagrupar"):
+                data = data[len("reagrupar") :]
+                json_data = json.dumps({"reagrupar": data})
                 connection.send_data(json_data.encode())
-            elif data.startswith('mapa'):
-                json_data = json.dumps({'mapa': ''})
+            elif data.startswith("mapa"):
+                json_data = json.dumps({"mapa": ""})
                 connection.send_data(json_data.encode())
-            elif data.startswith('finalizar_turno'):
-                json_data = json.dumps({'finalizar_turno': ''})
+            elif data.startswith("finalizar_turno"):
+                json_data = json.dumps({"finalizar_turno": ""})
                 connection.send_data(json_data.encode())
             else:
                 print("Error: Comando desconocido")
 
 
 def main():
-    parser = argparse.ArgumentParser(description='PyTeg')
-    parser.add_argument('--server', action='store_true', help='Iniciar servidor')
+    parser = argparse.ArgumentParser(description="PyTeg")
+    parser.add_argument("--server", action="store_true", help="Iniciar servidor")
 
     args = parser.parse_args()
-
 
     app = QApplication()
     gui = Gui()
 
-    #if vars(args)['server']:
+    # if vars(args)['server']:
     #    print('Iniciando Server')
     #    server = Server()
     #    game = Game(server)
@@ -129,7 +126,9 @@ def main():
 
     client = Client()
     connection = ConnectionClient()
-    receiver_th = threading.Thread(target=Transceiver.receiver, args=[connection, client, gui])
+    receiver_th = threading.Thread(
+        target=Transceiver.receiver, args=[connection, client, gui]
+    )
     receiver_th.start()
     sender_th = threading.Thread(target=Transceiver.sender, args=[connection])
     sender_th.start()
@@ -139,5 +138,6 @@ def main():
     receiver_th.join()
     sender_th.join()
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

@@ -8,10 +8,7 @@ import tomllib
 from game import Game
 
 
-
-
 class ConnectionServer:
-
     def __init__(self, connection, addr):
         self._conn = connection
         self._addr = addr
@@ -29,7 +26,6 @@ class ConnectionServer:
 
 
 class Client:
-
     def __init__(self, user_id, conn):
         self._user_id = user_id
         self._conn = conn
@@ -57,41 +53,42 @@ class Client:
 
             data_json_r = json.loads(data)
 
-            if 'username' in data_json_r and not username_set:
-                username = data_json_r['username']
+            if "username" in data_json_r and not username_set:
+                username = data_json_r["username"]
                 print("username = ", username)
                 username_set = True
 
-            if 'chat' in data_json_r:
+            if "chat" in data_json_r:
                 print("Enviando mensaje de chat")
-                msg = username + ': ' + data_json_r['chat']
-                data_json_s = json.dumps({'chat': msg})
+                msg = username + ": " + data_json_r["chat"]
+                data_json_s = json.dumps({"chat": msg})
                 server.send_all(data_json_s, ignore_conn=self._conn)
 
-            if 'agregar_una_unidad' in data_json_r:
+            if "agregar_una_unidad" in data_json_r:
                 print("Añadiendo una unidad")
-                game.agregar_una_unidad(self._user_id, data_json_r['agregar_una_unidad'])
+                game.agregar_una_unidad(
+                    self._user_id, data_json_r["agregar_una_unidad"]
+                )
 
-            if 'mapa' in data_json_r:
+            if "mapa" in data_json_r:
                 game.ver_mapa()
 
-            if 'start' in data_json_r:
+            if "start" in data_json_r:
                 game.start(server)
 
-            if 'atacar' in data_json_r:
-                atacante, defensor = data_json_r['atacar'].split()
+            if "atacar" in data_json_r:
+                atacante, defensor = data_json_r["atacar"].split()
                 game.atacar(atacante, defensor)
 
-            if 'reagrupar' in data_json_r:
-                desde, hacia, cantidad = data_json_r['reagrupar'].split()
+            if "reagrupar" in data_json_r:
+                desde, hacia, cantidad = data_json_r["reagrupar"].split()
                 game.reagrupar(desde, hacia, int(cantidad))
 
-            if 'finalizar_turno' in data_json_r:
+            if "finalizar_turno" in data_json_r:
                 game.ronda().finalizar_turno()
 
 
 class Server:
-
     def __init__(self):
         self._clients = dict()
 
@@ -116,8 +113,8 @@ class Server:
 
 def registrar_jugadores(server, game):
     user_id = 1
-    print('Esperando jugadores...')
-    host = '127.0.0.1'
+    print("Esperando jugadores...")
+    host = "127.0.0.1"
     port = 65432
     print(host, port)
     socket_server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -126,7 +123,7 @@ def registrar_jugadores(server, game):
         try:
             socket_server.listen()
             conn, addr = socket_server.accept()
-            print('Connected by', addr)
+            print("Connected by", addr)
             connection = ConnectionServer(conn, addr)
             client = Client(user_id, connection)
             server.registrar_cliente(user_id, client)
@@ -139,13 +136,12 @@ def registrar_jugadores(server, game):
 
 
 def main():
-
     server = Server()
     game = Game(server)
     registrar_jugadores(server, game)
-    #server_th = threading.Thread(target=registrar_jugadores, args=[server, game])
-    #server_th.start()
+    # server_th = threading.Thread(target=registrar_jugadores, args=[server, game])
+    # server_th.start()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

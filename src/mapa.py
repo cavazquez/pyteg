@@ -5,7 +5,6 @@ from utils import build_mapa
 
 
 class Mapa:
-
     def __init__(self):
         self._mapa = build_mapa()
 
@@ -45,40 +44,63 @@ class Mapa:
             self.asignar_pais(jug, pais)
 
     def cantidad_de_paises_por_continente(self, continente):
-        return len([pais for pais in self.paises() if self.continente(pais) == continente])
+        return len(
+            [pais for pais in self.paises() if self.continente(pais) == continente]
+        )
 
     def asignar_pais(self, jugador, pais):
         self._mapa[pais][2] = jugador
 
     def cantidad_de_paises_del_jugador(self, jugador):
-        return len([ pais for pais in self.paises() if self.ocupado_por(pais) == jugador])
+        return len(
+            [pais for pais in self.paises() if self.ocupado_por(pais) == jugador]
+        )
 
     def cantidad_de_paises_del_jugador_por_continente(self, jugador, continente):
-        return len([ pais for pais in self.paises() if self.ocupado_por(pais) == jugador and self.continente(pais) == continente])
+        return len(
+            [
+                pais
+                for pais in self.paises()
+                if self.ocupado_por(pais) == jugador
+                and self.continente(pais) == continente
+            ]
+        )
 
     def tiene_toda_europa(self, jugador):
-        continente = 'Europa'
-        return self.cantidad_de_paises_del_jugador_por_continente(jugador, continente) == self.cantidad_de_paises_por_continente(continente)
+        continente = "Europa"
+        return self.cantidad_de_paises_del_jugador_por_continente(
+            jugador, continente
+        ) == self.cantidad_de_paises_por_continente(continente)
 
     def tiene_toda_asia(self, jugador):
-        continente = 'Asia'
-        return self.cantidad_de_paises_del_jugador_por_continente(jugador, continente) == self.cantidad_de_paises_por_continente(continente)
+        continente = "Asia"
+        return self.cantidad_de_paises_del_jugador_por_continente(
+            jugador, continente
+        ) == self.cantidad_de_paises_por_continente(continente)
 
     def tiene_toda_oceania(self, jugador):
-        continente = 'Oceania'
-        return self.cantidad_de_paises_del_jugador_por_continente(jugador, continente) == self.cantidad_de_paises_por_continente(continente)
+        continente = "Oceania"
+        return self.cantidad_de_paises_del_jugador_por_continente(
+            jugador, continente
+        ) == self.cantidad_de_paises_por_continente(continente)
 
     def tiene_toda_africa(self, jugador):
-        continente = 'Africa'
-        return self.cantidad_de_paises_del_jugador_por_continente(jugador, continente) == self.cantidad_de_paises_por_continente(continente)
+        continente = "Africa"
+        return self.cantidad_de_paises_del_jugador_por_continente(
+            jugador, continente
+        ) == self.cantidad_de_paises_por_continente(continente)
 
     def tiene_toda_america_del_sur(self, jugador):
-        continente = 'Sudamerica'
-        return self.cantidad_de_paises_del_jugador_por_continente(jugador, continente) == self.cantidad_de_paises_por_continente(continente)
+        continente = "Sudamerica"
+        return self.cantidad_de_paises_del_jugador_por_continente(
+            jugador, continente
+        ) == self.cantidad_de_paises_por_continente(continente)
 
     def tiene_toda_america_del_norte(self, jugador):
-        continente = 'Norteamerica'
-        return self.cantidad_de_paises_del_jugador_por_continente(jugador, continente) == self.cantidad_de_paises_por_continente(continente)
+        continente = "Norteamerica"
+        return self.cantidad_de_paises_del_jugador_por_continente(
+            jugador, continente
+        ) == self.cantidad_de_paises_por_continente(continente)
 
     def __str__(self):
         return json.dumps(self._mapa)

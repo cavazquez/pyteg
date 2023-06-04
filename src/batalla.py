@@ -2,7 +2,6 @@ from dados import Dados
 
 
 class Batalla:
-
     @staticmethod
     def ataquen(mapa, atacante, defensor):
         cant_atacantes = mapa.cantidad_unidades(atacante)
