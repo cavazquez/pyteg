@@ -4,7 +4,6 @@ import json
 
 
 class SiguientesRondas:
-
     def __proximo_turno(self, jugadores, mapa):
         for turno in [SiguientesTurnos(id_jugador, mapa) for id_jugador in jugadores]:
             yield turno
@@ -31,7 +30,6 @@ class SiguientesRondas:
 
 
 class SegundaRonda:
-
     def __proximo_turno(self, jugadores):
         for turno in [SegundoTurno(id_jugador) for id_jugador in jugadores]:
             yield turno
@@ -58,7 +56,6 @@ class SegundaRonda:
 
 
 class PrimeraRonda:
-
     def __proximo_turno(self, jugadores):
         for turno in [PrimerTurno(id_jugador) for id_jugador in jugadores]:
             yield turno
@@ -72,7 +69,7 @@ class PrimeraRonda:
         self._game = game
 
         print("Enviando jugadores")
-        data = {'jugadores': jugadores}
+        data = {"jugadores": jugadores}
         server.send_all(json.dumps(data))
 
     def usar_unidad(self):

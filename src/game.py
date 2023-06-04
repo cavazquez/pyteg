@@ -2,8 +2,8 @@ from batalla import Batalla
 from mapa import Mapa
 from rondas import PrimeraRonda
 
-class Game:
 
+class Game:
     def __init__(self, server):
         self._mapa = Mapa()
         self._start = False
@@ -32,7 +32,7 @@ class Game:
         Batalla.ataquen(self._mapa, atacante, defensor)
 
     def reagrupar(self, desde, hacia, cantidad):
-        self._mapa.mover(desde,hacia,cantidad)
+        self._mapa.mover(desde, hacia, cantidad)
 
     def ronda(self):
         return self._ronda

@@ -2,7 +2,7 @@
 jocker = "tar_comodin.png"
 ballon = "tar_globo.png"
 cannon = "tar_canon.png"
-ship   = "tar_galeon.png"
+ship = "tar_galeon.png"
 
 
 [Argentina]
@@ -406,4 +406,3 @@ pos_x = 147
 pos_y = 146
 army_x = 0
 army_y = 0
-
