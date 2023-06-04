@@ -8,6 +8,7 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.11,<3.12"
 pyside6 = "^6.4.2"
+black = "^23.1.0"
 
 
 [tool.poetry.group.dev.dependencies]
