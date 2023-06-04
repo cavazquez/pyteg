@@ -1,5 +1,6 @@
-from PySide6.QtWidgets import QWidget, QPushButton, QMainWindow, QRadioButton, QVBoxLayout, QLineEdit, QGridLayout
-from PySide6.QtCore import QSize
+from PySide6.QtWidgets import QWidget, QPushButton, QMainWindow, QRadioButton, QVBoxLayout, QLineEdit, QGridLayout, QLabel, QGraphicsView
+from PySide6.QtGui import QPixmap, QPainter
+from PySide6.QtCore import QSize, QRect
 
 from xyz import XYZ
 
@@ -17,11 +18,18 @@ class Gui(QMainWindow):
         #window = QMainWindow()
         self.setWindowTitle("PyTeg")
 
-        print(XYZ().paises())
+        #print(XYZ().paises())
         VMap = QVBoxLayout()
-        test_jugador = QLineEdit()
-        VMap.addWidget(test_jugador)
 
+        pixmap = QPixmap('themes/classic/argentina.png')
+        #label = QLabel(self)
+        #label.setPixmap(pixmap)
+        #label.move(2000,2000)
+        #VMap.addWidget(label)
+        #self.resize(pixmap.width(), pixmap.height())
+
+        graphics = QGraphicsView()
+        graphics.addPixmap(pixmap)
 
 
         Vlayout = QVBoxLayout()
@@ -43,7 +51,6 @@ class Gui(QMainWindow):
 
         self.setCentralWidget(container)
 
-        #window.setFixedSize(QSize(800, 600))
         self.setFixedSize(QSize(1024, 768))
 
         self.show()  # IMPORTANT!!!!! Windows are hidden by default.
