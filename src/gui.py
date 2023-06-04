@@ -1,6 +1,8 @@
-from PySide6.QtWidgets import QWidget, QPushButton, QMainWindow, QRadioButton, QVBoxLayout, QLineEdit, QGridLayout, QLabel, QGraphicsView
-from PySide6.QtGui import QPixmap, QPainter
-from PySide6.QtCore import QSize, QRect
+from PySide6.QtCore import QRect, QSize
+from PySide6.QtGui import QPainter, QPixmap
+from PySide6.QtWidgets import (QGraphicsView, QGridLayout, QLabel, QLineEdit,
+                               QMainWindow, QPushButton, QRadioButton,
+                               QVBoxLayout, QWidget, QGraphicsScene)
 
 from xyz import XYZ
 
@@ -29,7 +31,8 @@ class Gui(QMainWindow):
         #self.resize(pixmap.width(), pixmap.height())
 
         graphics = QGraphicsView()
-        graphics.addPixmap(pixmap)
+        scene = QGraphicsScene()
+        scene.addPixmap(pixmap)
 
 
         Vlayout = QVBoxLayout()
