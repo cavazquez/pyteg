@@ -113,6 +113,7 @@ def main():
 
     app = QApplication()
     gui = Gui()
+    gui.show()
 
     # if vars(args)['server']:
     #    print('Iniciando Server')

@@ -1,5 +1,5 @@
-from PySide6.QtCore import QRect, QSize
-from PySide6.QtGui import QPainter, QPixmap
+from PySide6.QtCore import QRect, QSize, Qt
+from PySide6.QtGui import QPainter, QPixmap, QPen
 from PySide6.QtWidgets import (
     QGraphicsView,
     QGridLayout,
@@ -11,6 +11,7 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
     QGraphicsScene,
+    QGraphicsPixmapItem,
 )
 
 from xyz import XYZ
@@ -22,7 +23,6 @@ from xyz import XYZ
 # Pass in sys.argv to allow command line arguments for your app.
 # If you know you won't use command line arguments QApplication([]) works too.
 
-
 class Gui(QMainWindow):
     def __init__(self):
         QMainWindow.__init__(self, parent=None)
@@ -30,41 +30,50 @@ class Gui(QMainWindow):
         self.setWindowTitle("PyTeg")
 
         # print(XYZ().paises())
-        VMap = QVBoxLayout()
-
         pixmap = QPixmap("themes/classic/argentina.png")
-        # label = QLabel(self)
-        # label.setPixmap(pixmap)
-        # label.move(2000,2000)
-        # VMap.addWidget(label)
-        # self.resize(pixmap.width(), pixmap.height())
 
-        graphics = QGraphicsView()
-        scene = QGraphicsScene()
-        scene.addPixmap(pixmap)
+        # Create QGraphicsPixmapItem
+        graphicsPixmapItem = QGraphicsPixmapItem(pixmap)
 
-        Vlayout = QVBoxLayout()
-        self._jugadores = []
-        for i in range(0, 6):
-            jugador = QLineEdit()
-            jugador.setReadOnly(True)
-            self._jugadores.append(jugador)
-            Vlayout.addWidget(jugador)
+        # Create QGraphicsScene
+        self.scene = QGraphicsScene()
+        self.scene.addItem(graphicsPixmapItem)
 
-        grid_layout = QGridLayout()
-        grid_layout.addLayout(VMap, 0, 0)
-        grid_layout.addLayout(Vlayout, 0, 1)
-        grid_layout.setColumnStretch(0, 4)
-        grid_layout.setColumnStretch(1, 1)
+        # Create QGraphicsView
+        self.view = QGraphicsView(self.scene)
 
-        container = QWidget()
-        container.setLayout(grid_layout)
+        # Create QVBoxLayout
+        #VMap = QVBoxLayout()
+        #VMap.addWidget(view)
 
-        self.setCentralWidget(container)
+        self.view.setWindowTitle("Line Drawing Example")
+        self.view.resize(400, 400)
 
-        self.setFixedSize(QSize(1024, 768))
+        self.view.show()
+        
+        # Create QPixmap
+        #Vlayout = QVBoxLayout()
+        #self._jugadores = []
+        #for i in range(0, 6):
+        #    jugador = QLineEdit()
+        #    jugador.setReadOnly(True)
+        #    self._jugadores.append(jugador)
+        #    Vlayout.addWidget(jugador)
 
-        self.show()  # IMPORTANT!!!!! Windows are hidden by default.
+        #grid_layout = QGridLayout()
+        #grid_layout.addLayout(VMap, 0, 0)
+        #grid_layout.addLayout(Vlayout, 0, 1)
+        #grid_layout.setColumnStretch(0, 4)
+        #grid_layout.setColumnStretch(1, 1)
+
+        #container = QWidget()
+        #container.setLayout(VMap)
+        #container.show()
+        self.setCentralWidget(self.view)
+
+        #self.setFixedSize(QSize(1024, 768))
+
+        #self.show()  # IMPORTANT!!!!! Windows are hidden by default.
 
     def update(self, lista_jugadores):
         print("lista_jugadores:", lista_jugadores)
