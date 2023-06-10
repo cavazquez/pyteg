@@ -7,7 +7,7 @@ import random
 
 # from server import Server, registrar_jugadores
 # from game import Game
-from gui import Gui
+from src.gui import Gui
 from PySide6.QtWidgets import QApplication
 
 
@@ -40,10 +40,10 @@ class ConnectionClient:
 
     def get_data(self):
         try:
-            return self._socket.recv(1024)
+            data = self._socket.recv(1024)
         except BrokenPipeError:
             self._connected = False
-
+        return data
 
 class Transceiver:
     @staticmethod
@@ -109,10 +109,11 @@ def main():
     parser = argparse.ArgumentParser(description="PyTeg")
     parser.add_argument("--server", action="store_true", help="Iniciar servidor")
 
-    args = parser.parse_args()
+    parser.parse_args()
 
     app = QApplication()
     gui = Gui()
+    gui.show()
 
     # if vars(args)['server']:
     #    print('Iniciando Server')
