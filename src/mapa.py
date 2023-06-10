@@ -1,7 +1,7 @@
 import json
 from random import sample, shuffle
 
-from utils import build_mapa
+from src.utils import build_mapa
 
 
 class Mapa:
@@ -28,7 +28,7 @@ class Mapa:
         return self._mapa[pais][2]
 
     def paises(self):
-        return [pais for pais in self._mapa]
+        return list(self._mapa)
 
     def asignar_paises(self, jugadores):
         paises = self.paises()

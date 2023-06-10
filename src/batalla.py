@@ -1,4 +1,4 @@
-from dados import Dados
+from src.dados import Dados
 
 
 class Batalla:
