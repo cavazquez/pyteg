@@ -1,20 +1,7 @@
-from PySide6.QtCore import QRect, QSize, Qt
-from PySide6.QtGui import QPainter, QPixmap, QPen
-from PySide6.QtWidgets import (
-    QGraphicsView,
-    QGridLayout,
-    QLabel,
-    QLineEdit,
-    QMainWindow,
-    QPushButton,
-    QRadioButton,
-    QVBoxLayout,
-    QWidget,
-    QGraphicsScene,
-    QGraphicsPixmapItem,
-)
+from PySide6.QtGui import QPixmap
+from PySide6.QtWidgets import (QGraphicsPixmapItem, QGraphicsScene,
+                               QGraphicsView, QMainWindow)
 
-from xyz import XYZ
 
 # Only needed for access to command line arguments
 # import sys

@@ -4,8 +4,7 @@
 import socket
 import threading
 import json
-import tomllib
-from game import Game
+from src.game import Game
 
 
 class ConnectionServer:
