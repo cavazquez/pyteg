@@ -16,7 +16,7 @@ class XYZ:
         p = self.parsed_toml[pais]
         return p["pos_x"], p["pos_y"], p["army_x"], p["army_y"]
 
-    def cartas(self):
+    def get_cartas(self):
         return self.cartas
 
     def img_path(self, pais):
