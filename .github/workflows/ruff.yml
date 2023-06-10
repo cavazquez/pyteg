@@ -21,4 +21,4 @@ jobs:
     - name: Analysing the code with ruff
       run: |
         cd src
-        ruff $(git ls-files '*.py')
+        ruff check $(git ls-files '*.py')
