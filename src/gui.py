@@ -17,37 +17,24 @@ class Gui(QMainWindow):
         QMainWindow.__init__(self, parent=None)
         # window = QMainWindow()
         self.setWindowTitle("PyTeg")
-
-        XYZ()
-
-        pixmap = QPixmap("themes/classic/argentina.png")
-        pixmap_br = QPixmap("themes/classic/brasil.png")
-        pixmap_uy = QPixmap("themes/classic/uruguay.png")
-
-        # Create QGraphicsPixmapItem
-        graphicsPixmapItem = QGraphicsPixmapItem(pixmap)
-        graphicsPixmapItem.setPos(31,68)
-        graphicsPixmapItem_br = QGraphicsPixmapItem(pixmap_br)
-        graphicsPixmapItem_br.setPos(30,8)
-        graphicsPixmapItem_uy = QGraphicsPixmapItem(pixmap_uy)
-        graphicsPixmapItem_uy.setPos(51,54)
-
-        # Create QGraphicsScene
         self.scene = QGraphicsScene()
-        self.scene.addItem(graphicsPixmapItem)
-        self.scene.addItem(graphicsPixmapItem_br)
-        self.scene.addItem(graphicsPixmapItem_uy)
+        folder = "themes/"
+
+        xyz = XYZ()
+        for continente in xyz.get_continentes():
+            cor = xyz.coordenadas_continente(continente)
+            print(cor)
+            for pais in xyz.get_paises(continente):
+                print(pais)
+                pixmap = QPixmap(folder + xyz.img_path(pais, continente))
+                graphicsPixmapItem = QGraphicsPixmapItem(pixmap)
+                pos_x, pos_y, _, _ = xyz.coordenadas(pais, continente)
+                print(pos_x, pos_y)
+                graphicsPixmapItem.setPos(cor[0] + pos_x, cor[1] + pos_y)
+                self.scene.addItem(graphicsPixmapItem)
 
         # Create QGraphicsView
         self.view = QGraphicsView(self.scene)
-
-        # Create QVBoxLayout
-        #VMap = QVBoxLayout()
-        #VMap.addWidget(view)
-
-        self.view.setWindowTitle("Line Drawing Example")
-        self.view.resize(800, 800)
-
         self.view.show()
         
         self.setCentralWidget(self.view)

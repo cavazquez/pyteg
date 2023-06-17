@@ -16,24 +16,26 @@ class XYZ:
             self.continentes[continente] = (datos.get('pos_x'), datos.get('pos_y'))
             del datos['pos_x']
             del datos['pos_y']
-            for k in datos:
-                self.paises[k] = datos.get(k)
+            self.paises[continente] = datos
 
-    def paises(self):
-        return [k for k in self.paises]
+    def get_paises(self, continente):
+        return self.paises[continente]
+
+    def get_continentes(self):
+        return [k for k in self.continentes]
 
     def coordenadas_continente(self, continente):
         return self.continentes[continente]
 
-    def coordenadas(self, pais):
-        p = self.paises[pais]
+    def coordenadas(self, pais, continente):
+        p = self.paises[continente][pais]
         return p["pos_x"], p["pos_y"], p["army_x"], p["army_y"]
 
     def get_cartas(self):
         return self.cartas
 
-    def img_path(self, pais):
-        return self.paises[pais]["file"]
+    def img_path(self, pais, continente):
+        return self.paises[continente][pais]["file"]
 
     def continente(self, pais):
         return self.paises[pais]["continente"]
