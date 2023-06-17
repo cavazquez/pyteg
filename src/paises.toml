@@ -155,7 +155,7 @@ army_y = 0
 [Europa.Rusia]
 continente = "Europa"
 file = "classic/rusia.png"
-pos_x = 115
+pos_x = 155
 pos_y = 20
 army_x = 0
 army_y = 0
@@ -221,7 +221,13 @@ army_x = 0
 army_y = 0
 
 
-[Africa.Canada]
+
+[Norteamerica]
+pos_x = 10
+pos_y = 0
+
+
+[Norteamerica.Canada]
 continente = "Norteamerica"
 file = "classic/canada.png"
 pos_x = 83
@@ -229,17 +235,13 @@ pos_y = 4
 army_x = 0
 army_y = 0
 
-[Africa.Yukon]
+[Norteamerica.Yukon]
 continente = "Norteamerica"
 file = "classic/yukon.png"
 pos_x = 60
 pos_y = 34
 army_x = 0
 army_y = 0
-
-[Norteamerica]
-pos_x = 10
-pos_y = 0
 
 [Norteamerica.Alaska]
 continente = "Norteamerica"
