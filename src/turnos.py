@@ -1,4 +1,4 @@
-from src.calculos import Calculos
+from calculos import Calculos
 
 
 class SiguientesTurnos:

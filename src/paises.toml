@@ -4,8 +4,11 @@ ballon = "tar_globo.png"
 cannon = "tar_canon.png"
 ship = "tar_galeon.png"
 
+[Sudamerica]
+pos_x = 190 
+pos_y = 210
 
-[Argentina]
+[Sudamerica.Argentina]
 continente = "Sudamerica"
 file = "classic/argentina.png"
 pos_x = 31
@@ -13,395 +16,414 @@ pos_y = 68
 army_x = 0
 army_y = 0
 
-[Brasil]
+[Sudamerica.Brasil]
 continente = "Sudamerica"
-file = "classic/.png"
+file = "classic/brasil.png"
 pos_x = 30
 pos_y = 8
 army_x = 0
 army_y = 0
 
-[Peru]
+[Sudamerica.Peru]
 continente = "Sudamerica"
-file = "classic/.png"
+file = "classic/peru.png"
 pos_x = 1
 pos_y = 36
 army_x = 0
 army_y = 0
 
-[Colombia]
+[Sudamerica.Colombia]
 continente = "Sudamerica"
-file = "classic/.png"
+file = "classic/colombia.png"
 pos_x = 0
 pos_y = 0
 army_x = 0
 army_y = 0
 
-[Chile]
+[Sudamerica.Chile]
 continente = "Sudamerica"
-file = "classic/.png"
+file = "classic/chile.png"
 pos_x = 16
 pos_y = 70
 army_x = 0
 army_y = 0
 
-[Uruguay]
+[Sudamerica.Uruguay]
 continente = "Sudamerica"
-file = "classic/.png"
+file = "classic/uruguay.png"
 pos_x = 51
 pos_y = 54
 army_x = 0
 army_y = 10
 
-[Sumatra]
+[Oceania]
+pos_x = 500
+pos_y = 240
+
+[Ocenia.Sumatra]
 continente = "Oceania"
-file = "classic/.png"
+file = "classic/sumatra.png"
 pos_x = 29
 pos_y = 20
 army_x = 0
 army_y = 0
 
-[Borneo]
+[Oceania.Borneo]
 continente = "Oceania"
-file = "classic/.png"
+file = "classic/borneo.png"
 pos_x = 79
 pos_y = 4
 army_x = 0
 army_y = 0
 
-[Java]
+[Oceania.Java]
 continente = "Oceania"
-file = "classic/.png"
+file = "classic/java.png"
 pos_x = 116
 pos_y = 4
 army_x = 0
 army_y = 0
 
-[Australia]
+[Oceania.Australia]
 continente = "Oceania"
-file = "classic/.png"
+file = "classic/australia.png"
 pos_x = 59
 pos_y = 49
 army_x = 0
 army_y = 0
 
-[Francia]
+[Europa]
+pos_x = 260
+pos_y = 25
+
+[Europa.Francia]
 continente = "Europa"
-file = "classic/.png"
+file = "classic/francia.png"
 pos_x = 111
 pos_y = 105
 army_x = 0
 army_y = 10
 
-[Espana]
+[Europa.Espana]
 continente = "Europa"
-file = "classic/.png"
+file = "classic/espania.png"
 pos_x = 69
 pos_y = 126
 army_x = 0
 army_y = 0
 
-[Islandia]
+[Europa.Islandia]
 continente = "Europa"
-file = "classic/.png"
+file = "classic/islandia.png"
 pos_x = 52
 pos_y = 44
 army_x = 0
 army_y = 0
 
-[GranBretana]
+[Europa.GranBretana]
 continente = "Europa"
-file = "classic/.png"
+file = "classic/gran_bretania.png"
 pos_x = 91
 pos_y = 56
 army_x = 0
 army_y = 0
 
-[Alemania]
+[Europa.Alemania]
 continente = "Europa"
-file = "classic/.png"
+file = "classic/alemania.png"
 pos_x = 135
 pos_y = 92
 army_x = 0
 army_y = -5
 
-[Italia]
+[Europa.Italia]
 continente = "Europa"
-file = "classic/.png"
+file = "classic/italia.png"
 pos_x = 133
 pos_y = 138
 army_x = 0
 army_y = -5
 
-[Polonia]
+[Europa.Polonia]
 continente = "Europa"
-file = "classic/.png"
+file = "classic/polonia.png"
 pos_x = 148
 pos_y = 87
 army_x = 5
 army_y = 0
 
-[Rusia]
+[Europa.Rusia]
 continente = "Europa"
-file = "classic/.png"
+file = "classic/rusia.png"
 pos_x = 115
 pos_y = 20
 army_x = 0
 army_y = 0
 
-[Suecia]
+[Europa.Suecia]
 continente = "Europa"
-file = "classic/.png"
+file = "classic/suecia.png"
 pos_x = 115
 pos_y = 2
 army_x = 0
 army_y = 0
 
-[Sahara]
+[Africa]
+pos_x = 340
+pos_y = 240
+
+[Africa.Sahara]
 continente = "Africa"
-file = "classic/.png"
+file = "classic/sahara.png"
 pos_x = 1
 pos_y = 4
 army_x = 0
 army_y = 0
 
-[Etiopia]
+[Africa.Etiopia]
 continente = "Africa"
-file = "classic/.png"
+file = "classic/etiopia.png"
 pos_x = 65
 pos_y = 19
 army_x = 0
 army_y = 0
 
-[Egipto]
+[Africa.Egipto]
 continente = "Africa"
-file = "classic/.png"
+file = "classic/egipto.png"
 pos_x = 61
 pos_y = 0
 army_x = 0
 army_y = 0
 
-[Madagascar]
+[Africa.Madagascar]
 continente = "Africa"
-file = "classic/.png"
+file = "classic/madagascar.png"
 pos_x = 149
 pos_y = 39
 army_x = 0
 army_y = 0
 
-[Zaire]
+[Africa.Zaire]
 continente = "Africa"
-file = "classic/.png"
+file = "classic/zaire.png"
 pos_x = 43
 pos_y = 44
 army_x = 0
 army_y = 0
 
-[Sudafrica]
+[Africa.Sudafrica]
 continente = "Africa"
-file = "classic/.png"
+file = "classic/sudafrica.png"
 pos_x = 95
 pos_y = 62
 army_x = 0
 army_y = 0
 
 
-[Canada]
+[Africa.Canada]
 continente = "Norteamerica"
-file = "classic/.png"
+file = "classic/canada.png"
 pos_x = 83
 pos_y = 4
 army_x = 0
 army_y = 0
 
-[Yukon]
+[Africa.Yukon]
 continente = "Norteamerica"
-file = "classic/.png"
+file = "classic/yukon.png"
 pos_x = 60
 pos_y = 34
 army_x = 0
 army_y = 0
 
-[Alaska]
+[Norteamerica]
+pos_x = 10
+pos_y = 0
+
+[Norteamerica.Alaska]
 continente = "Norteamerica"
-file = "classic/.png"
+file = "classic/alaska.png"
 pos_x = 23
 pos_y = 69
 army_x = 0
 army_y = 0
 
-[Groenlandia]
+[Norteamerica.Groenlandia]
 continente = "Norteamerica"
-file = "classic/.png"
+file = "classic/groenlandia.png"
 pos_x = 216
 pos_y = 22
 army_x = 0
 army_y = 0
 
-[Oregon]
+[Norteamerica.Oregon]
 continente = "Norteamerica"
-file = "classic/.png"
+file = "classic/oregon.png"
 pos_x = 26
 pos_y = 110
 army_x = 0
 army_y = 0
 
-[California]
+[Norteamerica.California]
 continente = "Norteamerica"
-file = "classic/.png"
+file = "classic/california.png"
 pos_x = 71
 pos_y = 153
 army_x = -20
 army_y = -20
 
-[Mexico]
+[Norteamerica.Mexico]
 continente = "Norteamerica"
-file = "classic/.png"
+file = "classic/mexico.png"
 pos_x = 122
 pos_y = 168
 army_x = 0
 army_y = 0
 
-[NuevaYork]
+[Norteamerica.NuevaYork]
 continente = "Norteamerica"
-file = "classic/.png"
+file = "classic/nuevayork.png"
 pos_x = 117
 pos_y = 96
 army_x = -10
 army_y = 10
 
-[Terranova]
+[Norteamerica.Terranova]
 continente = "Norteamerica"
-file = "classic/.png"
+file = "classic/terranova.png"
 pos_x = 145
 pos_y = 86
 army_x = 0
 army_y = 0
 
-[Labrador]
+[Norteamerica.Labrador]
 continente = "Norteamerica"
-file = "classic/.png"
+file = "classic/labrador.png"
 pos_x = 177
 pos_y = 59
 army_x = 0
 army_y = 0
 
+[Asia]
+pos_x = 320
+pos_y = 15
 
-[Arabia]
+[Asia.Arabia]
 continente = "Asia"
-file = "classic/.png"
+file = "classic/arabia.png"
 pos_x = 169
 pos_y = 148
 army_x = 0
 army_y = 0
 
-[Aral]
+[Asia.Aral]
 continente = "Asia"
-file = "classic/.png"
+file = "classic/aral.png"
 pos_x = 129
 pos_y = 19
 army_x = 0
 army_y = 0
 
-[China]
+[Asia.China]
 continente = "Asia"
-file = "classic/.png"
+file = "classic/china.png"
 pos_x = 205
 pos_y = 16
 army_x = 0
 army_y = 20
 
-[India]
+[Asia.India]
 continente = "Asia"
-file = "classic/.png"
+file = "classic/india.png"
 pos_x = 198
 pos_y = 128
 army_x = 0
 army_y = 0
 
-[Iran]
+[Asia.Iran]
 continente = "Asia"
-file = "classic/.png"
+file = "classic/iran.png"
 pos_x = 141
 pos_y = 57
 army_x = -11
 army_y = 15
 
-[Tartaria]
+[Asia.Tartaria]
 continente = "Asia"
-file = "classic/.png"
+file = "classic/tartaria.png"
 pos_x = 141
 pos_y = -1
 army_x = 0
 army_y = 0
 
-[Taimiria]
+[Asia.Taimiria]
 continente = "Asia"
-file = "classic/.png"
+file = "classic/taimiria.png"
 pos_x = 173
 pos_y = 0
 army_x = 0
 army_y = 0
 
-[Japon]
+[Asia.Japon]
 continente = "Asia"
-file = "classic/.png"
+file = "classic/japon.png"
 pos_x = 277
 pos_y = 33
 army_x = 0
 army_y = 0
 
-[Kamchatka]
+[Asia.Kamchatka]
 continente = "Asia"
-file = "classic/.png"
+file = "classic/kamchatka.png"
 pos_x = 224
 pos_y = -10
 army_x = 0
 army_y = 0
 
-[Siberia]
+[Asia.Siberia]
 continente = "Asia"
-file = "classic/.png"
+file = "classic/siberia.png"
 pos_x = 158
 pos_y = -2
 army_x = 27
 army_y = 5
 
-[Mongolia]
+[Asia.Mongolia]
 continente = "Asia"
-file = "classic/.png"
+file = "classic/mongolia.png"
 pos_x = 156
 pos_y = 45
 army_x = 22
 army_y = -5
 
-[Gobi]
+[Asia.Gobi]
 continente = "Asia"
-file = "classic/.png"
+file = "classic/gobi.png"
 pos_x = 164
 pos_y = 67
 army_x = 0
 army_y = 0
 
-[Malasia]
+[Asia.Malasia]
 continente = "Asia"
-file = "classic/.png"
+file = "classic/malasia.png"
 pos_x = 243
 pos_y = 122
 army_x = 0
 army_y = 0
 
-[Turquia]
+[Asia.Turquia]
 continente = "Asia"
-file = "classic/.png"
+file = "classic/turquia.png"
 pos_x = 132
 pos_y = 124
 army_x = -12
 army_y = -5
 
-[Israel]
+[Asia.Israel]
 continente = "Asia"
-file = "classic/.png"
+file = "classic/israel.png"
 pos_x = 147
 pos_y = 146
 army_x = 0
