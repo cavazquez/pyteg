@@ -60,7 +60,7 @@ army_y = 10
 pos_x = 500
 pos_y = 240
 
-[Ocenia.Sumatra]
+[Oceania.Sumatra]
 continente = "Oceania"
 file = "classic/sumatra.png"
 pos_x = 29
