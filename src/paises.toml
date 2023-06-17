@@ -184,7 +184,7 @@ army_y = 0
 continente = "Africa"
 file = "classic/etiopia.png"
 pos_x = 65
-pos_y = 19
+pos_y = 29
 army_x = 0
 army_y = 0
 
