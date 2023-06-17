@@ -2,6 +2,8 @@ from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import (QGraphicsPixmapItem, QGraphicsScene,
                                QGraphicsView, QMainWindow)
 
+from xyz import XYZ
+
 
 # Only needed for access to command line arguments
 # import sys
@@ -16,15 +18,25 @@ class Gui(QMainWindow):
         # window = QMainWindow()
         self.setWindowTitle("PyTeg")
 
-        # print(XYZ().paises())
+        XYZ()
+
         pixmap = QPixmap("themes/classic/argentina.png")
+        pixmap_br = QPixmap("themes/classic/brasil.png")
+        pixmap_uy = QPixmap("themes/classic/uruguay.png")
 
         # Create QGraphicsPixmapItem
         graphicsPixmapItem = QGraphicsPixmapItem(pixmap)
+        graphicsPixmapItem.setPos(31,68)
+        graphicsPixmapItem_br = QGraphicsPixmapItem(pixmap_br)
+        graphicsPixmapItem_br.setPos(30,8)
+        graphicsPixmapItem_uy = QGraphicsPixmapItem(pixmap_uy)
+        graphicsPixmapItem_uy.setPos(51,54)
 
         # Create QGraphicsScene
         self.scene = QGraphicsScene()
         self.scene.addItem(graphicsPixmapItem)
+        self.scene.addItem(graphicsPixmapItem_br)
+        self.scene.addItem(graphicsPixmapItem_uy)
 
         # Create QGraphicsView
         self.view = QGraphicsView(self.scene)
@@ -34,28 +46,10 @@ class Gui(QMainWindow):
         #VMap.addWidget(view)
 
         self.view.setWindowTitle("Line Drawing Example")
-        self.view.resize(400, 400)
+        self.view.resize(800, 800)
 
         self.view.show()
         
-        # Create QPixmap
-        #Vlayout = QVBoxLayout()
-        #self._jugadores = []
-        #for i in range(0, 6):
-        #    jugador = QLineEdit()
-        #    jugador.setReadOnly(True)
-        #    self._jugadores.append(jugador)
-        #    Vlayout.addWidget(jugador)
-
-        #grid_layout = QGridLayout()
-        #grid_layout.addLayout(VMap, 0, 0)
-        #grid_layout.addLayout(Vlayout, 0, 1)
-        #grid_layout.setColumnStretch(0, 4)
-        #grid_layout.setColumnStretch(1, 1)
-
-        #container = QWidget()
-        #container.setLayout(VMap)
-        #container.show()
         self.setCentralWidget(self.view)
 
         #self.setFixedSize(QSize(1024, 768))

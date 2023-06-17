@@ -7,7 +7,7 @@ import random
 
 # from server import Server, registrar_jugadores
 # from game import Game
-from src.gui import Gui
+from gui import Gui
 from PySide6.QtWidgets import QApplication
 
 

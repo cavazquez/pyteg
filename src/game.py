@@ -1,6 +1,6 @@
-from src.batalla import Batalla
-from src.mapa import Mapa
-from src.rondas import PrimeraRonda
+from batalla import Batalla
+from mapa import Mapa
+from rondas import PrimeraRonda
 
 
 class Game:
