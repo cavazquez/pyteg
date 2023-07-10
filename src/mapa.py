@@ -1,8 +1,6 @@
 import json
 from random import sample, shuffle
 
-from src.utils import build_mapa
-
 
 class Mapa:
     def __init__(self, build_mapa):
