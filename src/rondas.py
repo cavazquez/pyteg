@@ -1,7 +1,7 @@
 import json
 
-from utils import rotar_jugadores
-from turnos import SiguientesTurnos, SegundoTurno, PrimerTurno
+from src.utils import rotar_jugadores
+from src.turnos import SiguientesTurnos, SegundoTurno, PrimerTurno
 
 
 

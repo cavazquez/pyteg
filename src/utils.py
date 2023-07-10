@@ -1,13 +1,11 @@
 import tomllib
 
+from src.read_toml import ReadToml
 
 def build_mapa():
-    with open("src/paises.toml") as f:
-        toml_string = f.read()
-        parsed_toml = tomllib.loads(toml_string)
-        del parsed_toml["Cartas"]
 
-    mapa = {k: [1, parsed_toml[k]["continente"], None] for k in parsed_toml}
+    reader = ReadToml()
+    mapa = {pais: [1, reader.continente(pais), None] for pais in reader.todos_los_paises()}
 
     return mapa
 

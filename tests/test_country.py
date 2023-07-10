@@ -9,3 +9,6 @@ class TestCountry(unittest.TestCase):
 
     def test_get_name(self):
         self.assertEqual(Country('Argentina').get_name(), 'Argentina')
+
+if __name__ == '__main__':
+    unittest.main()

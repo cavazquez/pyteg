@@ -2,7 +2,7 @@ from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import (QGraphicsPixmapItem, QGraphicsScene,
                                QGraphicsView, QMainWindow)
 
-from xyz import XYZ
+from read_toml import ReadToml
 
 
 # Only needed for access to command line arguments
@@ -20,15 +20,15 @@ class Gui(QMainWindow):
         self.scene = QGraphicsScene()
         folder = "themes/"
 
-        xyz = XYZ()
-        for continente in xyz.get_continentes():
-            cor = xyz.coordenadas_continente(continente)
+        reader = ReadToml()
+        for continente in reader.get_continentes():
+            cor = reader.coordenadas_continente(continente)
             print(cor)
-            for pais in xyz.get_paises(continente):
+            for pais in reader.get_paises(continente):
                 print(pais)
-                pixmap = QPixmap(folder + xyz.img_path(pais, continente))
+                pixmap = QPixmap(folder + reader.img_path(pais, continente))
                 graphicsPixmapItem = QGraphicsPixmapItem(pixmap)
-                pos_x, pos_y, _, _ = xyz.coordenadas(pais, continente)
+                pos_x, pos_y, _, _ = reader.coordenadas(pais, continente)
                 print(pos_x, pos_y)
                 graphicsPixmapItem.setPos(cor[0] + pos_x, cor[1] + pos_y)
                 self.scene.addItem(graphicsPixmapItem)
