@@ -1,7 +1,7 @@
 import tomllib
 
 
-class XYZ:
+class ReadToml:
     def __init__(self):
         with open("src/paises.toml") as f:
             toml_string = f.read()
@@ -17,6 +17,15 @@ class XYZ:
             del datos['pos_x']
             del datos['pos_y']
             self.paises[continente] = datos
+
+
+    def todos_los_paises(self):
+        res = []
+        for continente in self.get_continentes():
+            for pais in self.get_paises(continente):
+                res.append(pais)
+
+        return res
 
     def get_paises(self, continente):
         return self.paises[continente]
@@ -38,4 +47,6 @@ class XYZ:
         return self.paises[continente][pais]["file"]
 
     def continente(self, pais):
-        return self.paises[pais]["continente"]
+        for continente in self.get_continentes():
+            if pais in self.get_paises(continente):
+                return continente

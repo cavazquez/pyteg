@@ -1,11 +1,12 @@
-from batalla import Batalla
-from mapa import Mapa
-from rondas import PrimeraRonda
+from src.batalla import Batalla
+from src.mapa import Mapa
+from src.rondas import PrimeraRonda
+from src.utils import build_mapa
 
 
 class Game:
     def __init__(self, server):
-        self._mapa = Mapa()
+        self._mapa = Mapa(build_mapa)
         self._start = False
         self._ronda = None
         self._jugadores = []

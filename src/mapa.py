@@ -1,11 +1,11 @@
 import json
 from random import sample, shuffle
 
-from utils import build_mapa
+from src.utils import build_mapa
 
 
 class Mapa:
-    def __init__(self):
+    def __init__(self, build_mapa):
         self._mapa = build_mapa()
 
     def agregar_una_unidad(self, pais):

@@ -4,7 +4,7 @@
 import socket
 import threading
 import json
-from game import Game
+from src.game import Game
 
 
 class ConnectionServer:
