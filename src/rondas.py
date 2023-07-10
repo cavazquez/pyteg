@@ -1,6 +1,5 @@
 import json
 
-from src.utils import rotar_jugadores
 from src.turnos import SiguientesTurnos, SegundoTurno, PrimerTurno
 
 
@@ -13,7 +12,7 @@ class SiguientesRondas:
     def __init__(self, jugadores, game):
         print("Siguientes ronda")
         self._unidades = {}
-        self._jugadores = rotar_jugadores(jugadores)
+        self._jugadores = jugadores
         self._turnos = self.__proximo_turno(jugadores, game.mapa())
         self._turno_actual = next(self._turnos)
         self._game = game
