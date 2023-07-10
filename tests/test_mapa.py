@@ -1,6 +1,5 @@
 import unittest
 
-from src.country import Country
 from src.mapa import Mapa
 
 
@@ -11,7 +10,6 @@ class TestMap(unittest.TestCase):
         self.assertTrue(Mapa(build_mapa))
 
     def test_cant_unidades(self):
-        an_country = Country('Argentina')
         def build_mapa():
             return {'Argentina': [1, 'Pangea', None]}
         mapa = Mapa(build_mapa)
