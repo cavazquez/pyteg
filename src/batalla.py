@@ -1,20 +1,13 @@
-from src.dados import Dados
 
 
 class Batalla:
     @staticmethod
-    def ataquen(mapa, atacante, defensor):
+    def ataquen(mapa, atacante, defensor, dados_atacante, dados_defensor):
         cant_atacantes = mapa.cantidad_unidades(atacante)
         cant_defensores = mapa.cantidad_unidades(defensor)
 
-        cant_dados_atacantes = Batalla.calcular_cant_dados_atacante(cant_atacantes)
-        cant_dados_defensores = Batalla.calcular_cant_dados_defensor(cant_defensores)
-
-        dados_atacantes = Dados.tirar_dados_ordenados(cant_dados_atacantes)
-        dados_defensores = Dados.tirar_dados_ordenados(cant_dados_defensores)
-
-        for combate in range(min(len(dados_atacantes), len(dados_defensores))):
-            if dados_defensores[combate] < dados_atacantes[combate]:
+        for combate in range(min(len(dados_atacante), len(dados_defensor))):
+            if dados_defensor[combate] < dados_atacante[combate]:
                 cant_defensores -= 1
             else:
                 cant_atacantes -= 1
