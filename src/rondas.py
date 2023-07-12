@@ -1,5 +1,3 @@
-import json
-
 from src.turnos import SiguientesTurnos, SegundoTurno, PrimerTurno
 
 
@@ -57,31 +55,31 @@ class SegundaRonda:
 
 
 class PrimeraRonda:
-    def __proximo_turno(self, jugadores):
-        for turno in [PrimerTurno(id_jugador) for id_jugador in jugadores]:
-            yield turno
+    #def __proximo_turno(self, jugadores):
+    #    for turno in [PrimerTurno(id_jugador) for id_jugador in jugadores]:
+    #        yield turno
 
-    def __init__(self, jugadores, game, server):
-        print("Primera ronda")
-        self._unidades = {}
+    def __init__(self, jugadores):
         self._jugadores = jugadores
-        self._turnos = self.__proximo_turno(jugadores)
-        self._turno_actual = next(self._turnos)
-        self._game = game
+        self._turnos = [PrimerTurno(id_jugador) for id_jugador in jugadores] 
+        self._turno_actual = self._turnos[0]
+        self._num_turno_actual = 0
 
-        print("Enviando jugadores")
-        data = {"jugadores": jugadores}
-        server.send_all(json.dumps(data))
+    def jugadores(self):
+        return self._jugadores
+
+    def turnos(self):
+        return self._turnos
 
     def usar_unidad(self):
         self._turno_actual.usar_unidad()
-        print(self._unidades)
 
     def turno_actual(self):
         return self._turno_actual
 
     def finalizar_turno(self):
         try:
-            self._turno_actual = next(self._turnos)
-        except StopIteration:
-            self._game._ronda = SegundaRonda(self._jugadores, self._game)
+            self._num_turno_actual += 1
+            self._turno_actual = self.turnos()[self._num_turno_actual]
+        except IndexError:
+            self._turno_actual = None
