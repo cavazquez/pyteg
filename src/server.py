@@ -4,7 +4,7 @@
 import socket
 import threading
 from src.game import Game
-from src.client import Client, ConnectionServer
+from src.server_client import Client, ConnectionServer
 
 
 
