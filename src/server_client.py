@@ -20,9 +20,10 @@ class ConnectionServer:
 
 
 class Client:
-    def __init__(self, user_id, conn):
+    def __init__(self, user_id, conn, server):
         self._user_id = user_id
         self._conn = conn
+        self._server = server
 
     def send(self, data):
         self._conn.send(data)
@@ -33,11 +34,9 @@ class Client:
     def close(self):
         self._conn.close()
 
-    def run(self, server, game):
-        username_set = False
-        username = ""
+    def run(self, game):
         vivo = True
-        "chau"
+
         while vivo:
             data = self.receiver()
 
@@ -46,37 +45,40 @@ class Client:
                 continue
 
             data_json_r = json.loads(data)
+            self.ejecutar_mensaje(data_json_r, game, self)
 
-            if "username" in data_json_r and not username_set:
-                username = data_json_r["username"]
-                print("username = ", username)
-                username_set = True
 
-            if "chat" in data_json_r:
-                print("Enviando mensaje de chat")
-                msg = username + ": " + data_json_r["chat"]
-                data_json_s = json.dumps({"chat": msg})
-                server.send_all(data_json_s, ignore_conn=self._conn)
+    def ejecutar_mensaje(self, data, game):
 
-            if "agregar_una_unidad" in data_json_r:
-                print("Añadiendo una unidad")
-                game.agregar_una_unidad(
-                    self._user_id, data_json_r["agregar_una_unidad"]
-                )
+        if "username" in data['mensaje']:
+            username = data["nombre"]
+            game.agregar_jugador(self._user_id, username)
 
-            if "mapa" in data_json_r:
-                game.ver_mapa()
+        if "chat" in data:
+            print("Enviando mensaje de chat")
+            msg = username + ": " + data["chat"]
+            data_json_s = json.dumps({"chat": msg})
+            self._server.send_all(data_json_s, ignore_conn=self._conn)
 
-            if "start" in data_json_r:
-                game.start(server)
+        if "agregar_una_unidad" in data:
+            print("Añadiendo una unidad")
+            game.agregar_una_unidad(
+                self._user_id, data["agregar_una_unidad"]
+            )
 
-            if "atacar" in data_json_r:
-                atacante, defensor = data_json_r["atacar"].split()
-                game.atacar(atacante, defensor)
+        if "mapa" in data:
+            game.ver_mapa()
 
-            if "reagrupar" in data_json_r:
-                desde, hacia, cantidad = data_json_r["reagrupar"].split()
-                game.reagrupar(desde, hacia, int(cantidad))
+        if "start" in data:
+            game.start(self._server)
 
-            if "finalizar_turno" in data_json_r:
-                game.ronda().finalizar_turno()
+        if "atacar" in data:
+            atacante, defensor = data["atacar"].split()
+            game.atacar(atacante, defensor)
+
+        if "reagrupar" in data:
+            desde, hacia, cantidad = data["reagrupar"].split()
+            game.reagrupar(desde, hacia, int(cantidad))
+
+        if "finalizar_turno" in data:
+            game.ronda().finalizar_turno()
