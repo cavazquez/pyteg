@@ -12,6 +12,7 @@ class TestEjecutarMensaje(unittest.TestCase):
         cliente = Client(1, "conn", "server")
         cliente.ejecutar_mensaje(data, game)
         self.assertEqual(game.jugadores()[1], 'Fulano')
+        self.assertEqual(cliente.username(), 'Fulano')
 
 
     def test_no_permitir_asignar_2_veces_username(self):
@@ -22,5 +23,12 @@ class TestEjecutarMensaje(unittest.TestCase):
         data = {'mensaje':'username', 'nombre': 'Mengano'}
         cliente.ejecutar_mensaje(data, game)
         self.assertEqual(game.jugadores()[1], 'Fulano')
+        self.assertEqual(cliente.username(), 'Fulano')
 
+
+    def test_enviar_chat(self):
+        data = {'mensaje':'chat', 'chat': 'Hola'}
+        msg = data['chat']
+        cliente = Client(1, "conn", "server")
+        self.assertEqual(f'{cliente.username()}: {msg}', cliente.mensaje_chat(msg))
 
