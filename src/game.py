@@ -5,20 +5,18 @@ from src.utils import build_mapa
 
 
 class Game:
-    def __init__(self, server):
+    def __init__(self):
         self._mapa = Mapa(build_mapa)
         self._start = False
         self._ronda = None
-        self._jugadores = []
-        self._server = server
+        self._jugadores = {}
 
     def agregar_una_unidad(self, pais):
         self._mapa.agregar_una_unidad(pais)
         self._ronda.usar_unidad()
 
-    def start(self, server):
-        self._jugadores = self._server.dame_lista_jugadores()
-        self._ronda = PrimeraRonda(self._jugadores, self, server)
+    def start(self):
+        self._ronda = PrimeraRonda(self._jugadores)
         self._mapa.asignar_paises(self._jugadores)
         self._start = True
 
@@ -40,3 +38,10 @@ class Game:
 
     def mapa(self):
         return self._mapa
+
+    def jugadores(self):
+        return self._jugadores
+
+    def agregar_jugador(self, id_j, nombre):
+        if id_j not in self._jugadores:
+            self._jugadores[id_j] = nombre
