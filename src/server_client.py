@@ -22,6 +22,7 @@ class ConnectionServer:
 class Client:
     def __init__(self, user_id, conn, server):
         self._user_id = user_id
+        self._username = None
         self._conn = conn
         self._server = server
 
@@ -33,6 +34,9 @@ class Client:
 
     def close(self):
         self._conn.close()
+
+    def username(self):
+        return self._username
 
     def run(self, game):
         vivo = True
@@ -53,10 +57,12 @@ class Client:
         if "username" in data['mensaje']:
             username = data["nombre"]
             game.agregar_jugador(self._user_id, username)
+            if not self._username:
+                self._username = username 
 
         if "chat" in data:
             print("Enviando mensaje de chat")
-            msg = username + ": " + data["chat"]
+            msg = self.mensaje_chat(data['chat'])
             data_json_s = json.dumps({"chat": msg})
             self._server.send_all(data_json_s, ignore_conn=self._conn)
 
@@ -66,7 +72,7 @@ class Client:
                 self._user_id, data["agregar_una_unidad"]
             )
 
-        if "mapa" in data:
+        if "mapa" in data['mensaje']:
             game.ver_mapa()
 
         if "start" in data:
@@ -82,3 +88,6 @@ class Client:
 
         if "finalizar_turno" in data:
             game.ronda().finalizar_turno()
+
+    def mensaje_chat(self, data):
+        return f'{self.username()}: {data}'
