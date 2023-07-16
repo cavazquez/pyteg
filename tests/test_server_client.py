@@ -7,6 +7,14 @@ from src.mapa import Mapa
 
 class TestEjecutarMensaje(unittest.TestCase):
 
+    def test_mensaje_inexistente(self):
+        data = {'mensaje': 'noexiste'}
+        game = Game(Mapa(lambda: None))
+        cliente = Client(1, "conn", "server")
+        with self.assertRaises(Exception):
+            cliente.ejecutar_mensaje(data, game)
+
+
     def test_asignar_username(self):
         game = Game(Mapa(lambda: None))
         data = {'mensaje':'username', 'nombre': 'Fulano'}
@@ -45,3 +53,12 @@ class TestEjecutarMensaje(unittest.TestCase):
         cliente = Client(1, "conn", "server")
         self.assertEqual(f'{cliente.username()}: {msg}', cliente.mensaje_chat(msg))
 
+
+    def test_empezar_partida(self):
+        game = Game(Mapa(lambda: None))
+        cliente = Client(1, "conn", "server")
+        data = {'mensaje': 'username', 'nombre': 'Mengano'}
+        cliente.ejecutar_mensaje(data, game)
+        data = {'mensaje': 'start'}
+        cliente.ejecutar_mensaje(data, game)
+        self.assertEqual(game.empezo(), True)

@@ -1,5 +1,6 @@
 from src.batalla import Batalla
 from src.rondas import PrimeraRonda
+from src.turnos import PrimerTurno
 
 
 class Game:
@@ -7,6 +8,7 @@ class Game:
         self._mapa = mapa
         self._start = False
         self._ronda = None
+        self._turno = None
         self._jugadores = {}
 
     def agregar_una_unidad(self, pais):
@@ -15,8 +17,12 @@ class Game:
 
     def start(self):
         self._ronda = PrimeraRonda(self._jugadores)
+        self._turno = PrimerTurno(self._jugadores)
         self._mapa.asignar_paises(self._jugadores)
         self._start = True
+
+    def empezo(self):
+        return self._start
 
     def ver_mapa(self):
         print("jugadores:", self._jugadores)

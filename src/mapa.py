@@ -26,7 +26,9 @@ class Mapa:
         return self._mapa[pais][2]
 
     def paises(self):
-        return list(self._mapa)
+        if self._mapa:
+            return list(self._mapa)
+        return []
 
     def asignar_paises(self, jugadores):
         paises = self.paises()
