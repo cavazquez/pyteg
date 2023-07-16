@@ -1,24 +1,22 @@
 from src.batalla import Batalla
-from src.rondas import PrimeraRonda
-from src.turnos import PrimerTurno
+from src.turnos import PrimerTurno, SegundoTurno, SiguientesTurnos
 
 
 class Game:
     def __init__(self, mapa):
         self._mapa = mapa
         self._start = False
-        self._ronda = None
-        self._turno = None
+        self._turnos = None
         self._jugadores = {}
+        self._num_turno = 0
 
     def agregar_una_unidad(self, pais):
         self._mapa.agregar_una_unidad(pais)
         self._ronda.usar_unidad()
 
-    def start(self):
-        self._ronda = PrimeraRonda(self._jugadores)
-        self._turno = PrimerTurno(self._jugadores)
-        self._mapa.asignar_paises(self._jugadores)
+    def empezar(self):
+        self._turnos = [PrimerTurno(j) for j in self.lista_jugadores()]
+        self._mapa.asignar_paises(self.lista_jugadores())
         self._start = True
 
     def empezo(self):
@@ -37,14 +35,37 @@ class Game:
     def reagrupar(self, desde, hacia, cantidad):
         self._mapa.mover(desde, hacia, cantidad)
 
-    def ronda(self):
-        return self._ronda
+    def turnos(self):
+        return self._turnos
+
+    def turno_actual(self):
+        return self._num_turno
+
+    def cant_jugadores(self):
+        return len(self.lista_jugadores())
 
     def mapa(self):
         return self._mapa
 
+    def finalizar_turno(self):
+        self._num_turno += 1
+        num = self._num_turno 
+        cant_jugadores = self.cant_jugadores()
+        if num == cant_jugadores:
+            self._turnos = [SegundoTurno(j) for j in self.lista_jugadores()]
+            return 
+
+        if num % (cant_jugadores) == 0:
+            self._turnos = [
+                    SiguientesTurnos(j, self.mapa()) for j in self.lista_jugadores()]
+
+
+
     def jugadores(self):
         return self._jugadores
+
+    def lista_jugadores(self):
+        return list(self.jugadores().values())
 
     def agregar_jugador(self, id_j, nombre):
         if id_j not in self._jugadores:
