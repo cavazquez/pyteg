@@ -61,6 +61,38 @@ class TestMap(unittest.TestCase):
         self.assertEqual(mapa.cantidad_de_paises_por_continente('Pangea'), 2)
         self.assertEqual(mapa.cantidad_de_paises_por_continente('America'), 1)
 
+    def test_asignar_paises_2_jugadores_4_paises(self):
+        def build_mapa():
+            return {'Argentina': [1, 'Pangea', None],
+                    'Uruguay': [1, 'Pangea', None],
+                    'Chile': [1, 'America', None],
+                    'Bolivia': [1, 'America', None]
+                    }
+        mapa = Mapa(build_mapa)
+        jugadores = ['Fulano', 'Mengano']
+        mapa.asignar_paises(jugadores)
+        self.assertEqual(mapa.cantidad_de_paises_del_jugador('Fulano'), 2)
+        self.assertEqual(mapa.cantidad_de_paises_del_jugador('Mengano'), 2)
+
+
+    def test_asignar_paises_2_jugadores_5_paises(self):
+        def build_mapa():
+            return {'Argentina': [1, 'Pangea', None],
+                    'Uruguay': [1, 'Pangea', None],
+                    'Chile': [1, 'America', None],
+                    'Bolivia': [1, 'America', None],
+                    'Ecuador': [1, 'America', None]
+                    }
+        mapa = Mapa(build_mapa)
+        jugadores = ['Fulano', 'Mengano']
+        mapa.asignar_paises(jugadores)
+        cant_fulano = mapa.cantidad_de_paises_del_jugador('Fulano')
+        cant_mengano = mapa.cantidad_de_paises_del_jugador('Mengano')
+
+        self.assertEqual(cant_fulano + cant_mengano , 5)
+        self.assertGreaterEqual(cant_fulano , 5 // 2)
+        self.assertGreaterEqual(cant_mengano , 5 // 2)
+
 
     def test_asignar_pais(self):
         def build_mapa():
