@@ -50,7 +50,7 @@ class TestMap(unittest.TestCase):
         def build_mapa():
             return {'Argentina': [1, 'Pangea', None], 'Uruguay': [10, 'Pangea', None]}
         mapa = Mapa(build_mapa)
-        self.assertSetEqual(set(mapa.paises()), set(['Uruguay','Argentina']))
+        self.assertCountEqual(mapa.paises(), ['Uruguay','Argentina'])
 
 
     def test_cant_paises_por_continente(self):
