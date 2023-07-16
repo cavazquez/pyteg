@@ -27,7 +27,7 @@ class Mapa:
 
     def paises(self):
         if self._mapa:
-            return list(self._mapa)
+            return list(self._mapa.keys())
         return []
 
     def asignar_paises(self, jugadores):
@@ -39,6 +39,7 @@ class Mapa:
                 self.asignar_pais(jug, pais)
             paises = [pais for pais in paises if pais not in paises_elegidos]
 
+        # Asignar los países restantes a los jugadores restantes
         shuffle(jugadores)
         for jug, pais in zip(jugadores, paises):
             self.asignar_pais(jug, pais)
