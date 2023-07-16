@@ -59,12 +59,14 @@ class Client:
             game.agregar_jugador(self._user_id, username)
             if not self._username:
                 self._username = username 
+            return None
 
         if "chat" in data:
             print("Enviando mensaje de chat")
             msg = self.mensaje_chat(data['chat'])
             data_json_s = json.dumps({"chat": msg})
             self._server.send_all(data_json_s, ignore_conn=self._conn)
+            return None
 
         if "agregar_una_unidad" in data:
             print("Añadiendo una unidad")
@@ -75,8 +77,9 @@ class Client:
         if "mapa" in data['mensaje']:
             game.ver_mapa()
 
-        if "start" in data:
-            game.start(self._server)
+        if "start" in data['mensaje']:
+            game.start()
+            return None
 
         if "atacar" in data:
             atacante, defensor = data["atacar"].split()
@@ -88,6 +91,8 @@ class Client:
 
         if "finalizar_turno" in data:
             game.ronda().finalizar_turno()
+
+        raise Exception("Mensaje no valido") 
 
     def mensaje_chat(self, data):
         return f'{self.username()}: {data}'
