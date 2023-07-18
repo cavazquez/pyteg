@@ -1,4 +1,5 @@
 from src.batalla import Batalla
+from src.dados import Dados
 from src.turnos import PrimerTurno, SegundoTurno, SiguientesTurnos
 
 
@@ -30,7 +31,13 @@ class Game:
         print(self._mapa)
 
     def atacar(self, atacante, defensor):
-        Batalla.ataquen(self._mapa, atacante, defensor)
+        dados_atacante = Dados.tirar_dados_ordenados(
+                Batalla.calcular_cant_dados_atacante(self.mapa().cantidad_unidades(atacante)))
+        dados_defensor = Dados.tirar_dados_ordenados(
+                Batalla.calcular_cant_dados_defensor(self.mapa().cantidad_unidades(defensor)))
+        resultado = Batalla.ataquen(
+                self.mapa(), atacante, defensor, dados_atacante, dados_defensor)
+        Batalla.aplicar_resultado_batalla(self.mapa(), resultado)
 
     def reagrupar(self, desde, hacia, cantidad):
         self._mapa.mover(desde, hacia, cantidad)
