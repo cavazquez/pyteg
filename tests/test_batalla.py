@@ -26,9 +26,8 @@ class TestBatalla(unittest.TestCase):
             }
 
         mapa = Mapa(build_mapa)
-        Batalla.ataquen(mapa, "Argentina", "Uruguay", [4, 3, 2], [3, 2, 1])
-        self.assertEqual(mapa.cantidad_unidades("Argentina"), 5)
-        self.assertEqual(mapa.cantidad_unidades("Uruguay"), 7)
+        resultado = Batalla.ataquen(mapa, "Argentina", "Uruguay", [4, 3, 2], [3, 2, 1])
+        self.assertCountEqual(resultado, ['Uruguay', 'Uruguay', 'Uruguay'])
 
     def test_batalla_donde_siempre_gana_defensor(self):
         def build_mapa():
@@ -39,9 +38,8 @@ class TestBatalla(unittest.TestCase):
             }
 
         mapa = Mapa(build_mapa)
-        Batalla.ataquen(mapa, "Argentina", "Uruguay", [3, 2, 1], [4, 3, 2])
-        self.assertEqual(mapa.cantidad_unidades("Argentina"), 2)
-        self.assertEqual(mapa.cantidad_unidades("Uruguay"), 10)
+        resultado = Batalla.ataquen(mapa, "Argentina", "Uruguay", [3, 2, 1], [4, 3, 2])
+        self.assertCountEqual(resultado, ['Argentina', 'Argentina', 'Argentina'])
 
     def test_batalla_atacan_2(self):
         def build_mapa():
@@ -52,9 +50,9 @@ class TestBatalla(unittest.TestCase):
             }
 
         mapa = Mapa(build_mapa)
-        Batalla.ataquen(mapa, "Argentina", "Uruguay", [3, 2], [4, 3, 2])
-        self.assertEqual(mapa.cantidad_unidades("Argentina"), 1)
-        self.assertEqual(mapa.cantidad_unidades("Uruguay"), 10)
+        resultado = Batalla.ataquen(mapa, "Argentina", "Uruguay", [3, 2], [4, 3, 2])
+        self.assertCountEqual(resultado, ['Argentina', 'Argentina'])
+
 
     def test_batalla_defiende_2(self):
         def build_mapa():
@@ -65,9 +63,21 @@ class TestBatalla(unittest.TestCase):
             }
 
         mapa = Mapa(build_mapa)
-        Batalla.ataquen(mapa, "Argentina", "Uruguay", [4, 3, 2], [3, 2])
-        self.assertEqual(mapa.cantidad_unidades("Argentina"), 4)
-        self.assertEqual(mapa.cantidad_unidades("Uruguay"), 0)
+        resultado = Batalla.ataquen(mapa, "Argentina", "Uruguay", [4, 3, 2], [3, 2])
+        self.assertCountEqual(resultado, ['Uruguay', 'Uruguay'])
+
+
+    def test_batalla_uno_y_uno(self):
+        def build_mapa():
+            return {
+                "Argentina": [4, "Africa", "Mengano"],
+                "Uruguay": [2, "Africa", "Fulano"],
+                "Chile": [1, "America", None],
+            }
+
+        mapa = Mapa(build_mapa)
+        resultado = Batalla.ataquen(mapa, "Argentina", "Uruguay", [6, 3, 2], [5, 4])
+        self.assertCountEqual(resultado, ['Argentina', 'Uruguay'])
 
     @unittest.skip("wip")
     def test_aplicar_resultado_batalla(self):
