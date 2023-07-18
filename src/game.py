@@ -32,11 +32,18 @@ class Game:
 
     def atacar(self, atacante, defensor):
         dados_atacante = Dados.tirar_dados_ordenados(
-                Batalla.calcular_cant_dados_atacante(self.mapa().cantidad_unidades(atacante)))
+            Batalla.calcular_cant_dados_atacante(
+                self.mapa().cantidad_unidades(atacante)
+            )
+        )
         dados_defensor = Dados.tirar_dados_ordenados(
-                Batalla.calcular_cant_dados_defensor(self.mapa().cantidad_unidades(defensor)))
+            Batalla.calcular_cant_dados_defensor(
+                self.mapa().cantidad_unidades(defensor)
+            )
+        )
         resultado = Batalla.ataquen(
-                self.mapa(), atacante, defensor, dados_atacante, dados_defensor)
+            self.mapa(), atacante, defensor, dados_atacante, dados_defensor
+        )
         Batalla.aplicar_resultado_batalla(self.mapa(), resultado)
 
     def reagrupar(self, desde, hacia, cantidad):
@@ -56,17 +63,16 @@ class Game:
 
     def finalizar_turno(self):
         self._num_turno += 1
-        num = self._num_turno 
+        num = self._num_turno
         cant_jugadores = self.cant_jugadores()
         if num == cant_jugadores:
             self._turnos = [SegundoTurno(j) for j in self.lista_jugadores()]
-            return 
+            return
 
         if num % (cant_jugadores) == 0:
             self._turnos = [
-                    SiguientesTurnos(j, self.mapa()) for j in self.lista_jugadores()]
-
-
+                SiguientesTurnos(j, self.mapa()) for j in self.lista_jugadores()
+            ]
 
     def jugadores(self):
         return self._jugadores

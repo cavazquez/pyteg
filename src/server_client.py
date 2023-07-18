@@ -51,33 +51,29 @@ class Client:
             data_json_r = json.loads(data)
             self.ejecutar_mensaje(data_json_r, game, self)
 
-
     def ejecutar_mensaje(self, data, game):
-
-        if "username" in data['mensaje']:
+        if "username" in data["mensaje"]:
             username = data["nombre"]
             game.agregar_jugador(self._user_id, username)
             if not self._username:
-                self._username = username 
+                self._username = username
             return None
 
         if "chat" in data:
             print("Enviando mensaje de chat")
-            msg = self.mensaje_chat(data['chat'])
+            msg = self.mensaje_chat(data["chat"])
             data_json_s = json.dumps({"chat": msg})
             self._server.send_all(data_json_s, ignore_conn=self._conn)
             return None
 
         if "agregar_una_unidad" in data:
             print("Añadiendo una unidad")
-            game.agregar_una_unidad(
-                self._user_id, data["agregar_una_unidad"]
-            )
+            game.agregar_una_unidad(self._user_id, data["agregar_una_unidad"])
 
-        if "mapa" in data['mensaje']:
+        if "mapa" in data["mensaje"]:
             game.ver_mapa()
 
-        if "start" in data['mensaje']:
+        if "start" in data["mensaje"]:
             game.start()
             return None
 
@@ -92,7 +88,7 @@ class Client:
         if "finalizar_turno" in data:
             game.ronda().finalizar_turno()
 
-        raise Exception("Mensaje no valido") 
+        raise Exception("Mensaje no valido")
 
     def mensaje_chat(self, data):
-        return f'{self.username()}: {data}'
+        return f"{self.username()}: {data}"

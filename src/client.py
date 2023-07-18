@@ -45,6 +45,7 @@ class ConnectionClient:
             self._connected = False
         return data
 
+
 class Transceiver:
     @staticmethod
     def receiver(connection, client, gui):

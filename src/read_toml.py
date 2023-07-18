@@ -12,12 +12,11 @@ class ReadToml:
         del self.parsed_toml["Cartas"]
 
         for continente in self.parsed_toml:
-            datos  = self.parsed_toml[continente]
-            self.continentes[continente] = (datos.get('pos_x'), datos.get('pos_y'))
-            del datos['pos_x']
-            del datos['pos_y']
+            datos = self.parsed_toml[continente]
+            self.continentes[continente] = (datos.get("pos_x"), datos.get("pos_y"))
+            del datos["pos_x"]
+            del datos["pos_y"]
             self.paises[continente] = datos
-
 
     def todos_los_paises(self):
         res = []

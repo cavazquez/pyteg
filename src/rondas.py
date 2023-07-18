@@ -1,9 +1,7 @@
 from src.turnos import SiguientesTurnos, SegundoTurno, PrimerTurno
 
 
-
 class SiguientesRondas:
-
     def __init__(self, jugadores, mapa):
         self._unidades = {}
         self._jugadores = jugadores
@@ -23,7 +21,6 @@ class SiguientesRondas:
     def turno_actual(self):
         return self._turno_actual
 
-
     def finalizar_turno(self):
         try:
             self._num_turno_actual += 1
@@ -33,7 +30,6 @@ class SiguientesRondas:
 
 
 class SegundaRonda:
-
     def __init__(self, jugadores):
         self._unidades = {}
         self._jugadores = jugadores
@@ -62,10 +58,9 @@ class SegundaRonda:
 
 
 class PrimeraRonda:
-
     def __init__(self, jugadores):
         self._jugadores = jugadores
-        self._turnos = [PrimerTurno(id_jugador) for id_jugador in jugadores] 
+        self._turnos = [PrimerTurno(id_jugador) for id_jugador in jugadores]
         self._turno_actual = self._turnos[0]
         self._num_turno_actual = 0
 

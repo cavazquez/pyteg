@@ -1,5 +1,3 @@
-
-
 class Batalla:
     @staticmethod
     def ataquen(mapa, atacante, defensor, dados_atacante, dados_defensor):
@@ -17,8 +15,7 @@ class Batalla:
 
     @staticmethod
     def calcular_cant_dados_atacante(cantidad):
-        return min(cantidad-1, 3)
-
+        return min(cantidad - 1, 3)
 
     @staticmethod
     def calcular_cant_dados_defensor(cantidad):
