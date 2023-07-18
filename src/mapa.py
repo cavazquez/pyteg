@@ -9,6 +9,9 @@ class Mapa:
     def agregar_una_unidad(self, pais):
         self._mapa[pais][0] += 1
 
+    def restar_una_unidad(self, pais):
+        self._mapa[pais][0] -= 1
+
     def cantidad_unidades(self, pais):
         return self._mapa[pais][0]
 
@@ -43,6 +46,10 @@ class Mapa:
         shuffle(jugadores)
         for jug, pais in zip(jugadores, paises):
             self.asignar_pais(jug, pais)
+
+    def aplicar_resultado_batalla(self, resultado):
+        for res in resultado:
+            self.restar_una_unidad(res)
 
     def cantidad_de_paises_por_continente(self, continente):
         return len(

@@ -19,6 +19,15 @@ class TestMap(unittest.TestCase):
         mapa.agregar_una_unidad("Argentina")
         self.assertEqual(mapa.cantidad_unidades("Argentina"), 2)
 
+
+    def test_restar_una_unidad(self):
+        def build_mapa():
+            return {"Argentina": [1, "Pangea", None]}
+
+        mapa = Mapa(build_mapa)
+        mapa.restar_una_unidad("Argentina")
+        self.assertEqual(mapa.cantidad_unidades("Argentina"), 0)
+
     def test_set_unidades(self):
         def build_mapa():
             return {"Argentina": [1, "Pangea", None]}
@@ -229,3 +238,31 @@ class TestMap(unittest.TestCase):
             mapa.__str__(),
             '{"Argentina": [1, "Africa", "Mengano"], "Uruguay": [10, "Africa", null]}',
         )  # noqa: E501
+
+
+    def test_aplicar_resultado_batalla(self):
+        def build_mapa():
+            return {
+                "Argentina": [4, "Africa", "Mengano"],
+                "Uruguay": [2, "Africa", "Fulano"],
+                "Chile": [1, "America", None],
+            }
+
+        resultado = ['Argentina']
+        mapa = Mapa(build_mapa)
+        mapa.aplicar_resultado_batalla(resultado)
+        self.assertEqual(mapa.cantidad_unidades('Argentina'), 3)
+
+    @unittest.skip("wip")
+    def test_aplicar_resultado_batalla_y_ocupar_pais(self):
+        def build_mapa():
+            return {
+                "Argentina": [4, "Africa", "Mengano"],
+                "Uruguay": [2, "Africa", "Fulano"],
+                "Chile": [1, "America", None],
+            }
+
+        resultado = ['Uruguay', 'Uruguay']
+        mapa = Mapa(build_mapa)
+        mapa.aplicar_resultado_batalla(resultado)
+        self.assertEqual(mapa.cantidad_unidades('Uruguay'), 1)

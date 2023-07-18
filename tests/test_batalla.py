@@ -79,6 +79,3 @@ class TestBatalla(unittest.TestCase):
         resultado = Batalla.ataquen(mapa, "Argentina", "Uruguay", [6, 3, 2], [5, 4])
         self.assertCountEqual(resultado, ['Argentina', 'Uruguay'])
 
-    @unittest.skip("wip")
-    def test_aplicar_resultado_batalla(self):
-        pass
