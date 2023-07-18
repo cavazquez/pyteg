@@ -248,12 +248,15 @@ class TestMap(unittest.TestCase):
                 "Chile": [1, "America", None],
             }
 
-        resultado = ['Argentina']
+        resultado = {
+                'atacante': 'Argentina',
+                'defensor': 'Uruguay', 
+                'restar': ['Argentina']
+                }
         mapa = Mapa(build_mapa)
         mapa.aplicar_resultado_batalla(resultado)
         self.assertEqual(mapa.cantidad_unidades('Argentina'), 3)
 
-    @unittest.skip("wip")
     def test_aplicar_resultado_batalla_y_ocupar_pais(self):
         def build_mapa():
             return {
@@ -262,7 +265,12 @@ class TestMap(unittest.TestCase):
                 "Chile": [1, "America", None],
             }
 
-        resultado = ['Uruguay', 'Uruguay']
+        resultado = {
+                'defensor': 'Uruguay',
+                'atacante': 'Argentina', 
+                'restar': ['Uruguay', 'Uruguay']
+                }
         mapa = Mapa(build_mapa)
         mapa.aplicar_resultado_batalla(resultado)
         self.assertEqual(mapa.cantidad_unidades('Uruguay'), 1)
+        self.assertEqual(mapa.ocupado_por('Uruguay'), 'Mengano')

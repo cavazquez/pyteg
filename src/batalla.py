@@ -1,13 +1,13 @@
 class Batalla:
     @staticmethod
     def ataquen(mapa, atacante, defensor, dados_atacante, dados_defensor):
-        res = []
+        res = {'atacante': atacante, 'defensor': defensor, "restar": []}
 
         for combate in range(min(len(dados_atacante), len(dados_defensor))):
             if dados_defensor[combate] < dados_atacante[combate]:
-                res.append(defensor)
+                res["restar"].append(defensor)
             else:
-                res.append(atacante)
+                res["restar"].append(atacante)
 
         return res
 
