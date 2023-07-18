@@ -61,6 +61,7 @@ class SiguientesTurnos:
     def cant_unidades_norteamerica(self):
         return self._unidades_norteamerica
 
+
 class SegundoTurno:
     def __init__(self, jugador):
         self._jugador = jugador

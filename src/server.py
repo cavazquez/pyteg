@@ -7,8 +7,6 @@ from src.game import Game
 from src.server_client import Client, ConnectionServer
 
 
-
-
 class Server:
     def __init__(self):
         self._clients = dict()

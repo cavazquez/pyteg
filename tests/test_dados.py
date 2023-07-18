@@ -4,16 +4,13 @@ from src.dados import Dados
 
 
 class TestDados(unittest.TestCase):
-
     def test_tirar_dados(self):
         tirada = Dados.tirar_dados(3)
         self.assertEqual(len(tirada), 3)
-        self.assertTrue(all(map( lambda n: n >= 1 and n <= 6, tirada)))
-
+        self.assertTrue(all(map(lambda n: n >= 1 and n <= 6, tirada)))
 
     def test_tirar_dados_ordenados(self):
         tirada = Dados.tirar_dados_ordenados(3)
         self.assertEqual(len(tirada), 3)
-        self.assertTrue(all(map( lambda n: n >= 1 and n <= 6, tirada)))
+        self.assertTrue(all(map(lambda n: n >= 1 and n <= 6, tirada)))
         self.assertListEqual(sorted(tirada, reverse=True), tirada)
-
