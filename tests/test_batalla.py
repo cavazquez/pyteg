@@ -62,3 +62,7 @@ class TestBatalla(unittest.TestCase):
         self.assertEqual(mapa.cantidad_unidades('Argentina'), 4)
         self.assertEqual(mapa.cantidad_unidades('Uruguay'), 0)
 
+    @unittest.skip("wip")
+    def test_aplicar_resultado_batalla(self):
+        pass
+

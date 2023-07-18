@@ -23,3 +23,7 @@ class Batalla:
     @staticmethod
     def calcular_cant_dados_defensor(cantidad):
         return min(cantidad, 3)
+
+    @staticmethod
+    def aplicar_resultado_batalla(mapa, resultados):
+        pass
