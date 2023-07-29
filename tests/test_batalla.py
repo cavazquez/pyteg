@@ -44,6 +44,22 @@ class TestBatalla(unittest.TestCase):
         self.assertEqual(resultado['atacante'], 'Argentina')
         self.assertEqual(resultado['defensor'], 'Uruguay')
 
+    
+    def test_batalla_donde_siempre_empatan(self):
+        def build_mapa():
+            return {
+                "Argentina": [5, "Africa", "Mengano"],
+                "Uruguay": [10, "Africa", "Fulano"],
+                "Chile": [1, "America", None],
+            }
+
+        mapa = Mapa(build_mapa)
+        resultado = Batalla.ataquen(mapa, "Argentina", "Uruguay", [3, 3, 3], [3, 3, 3])
+        self.assertCountEqual(
+                resultado['restar'], ['Argentina', 'Argentina', 'Argentina'])
+        self.assertEqual(resultado['atacante'], 'Argentina')
+        self.assertEqual(resultado['defensor'], 'Uruguay')
+
     def test_batalla_atacan_2(self):
         def build_mapa():
             return {
