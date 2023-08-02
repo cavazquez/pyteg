@@ -6,7 +6,7 @@ from PySide6.QtWidgets import (
     QMainWindow,
 )
 
-from read_toml import ReadToml
+from toml_reader import TomlReader
 
 
 # Only needed for access to command line arguments
@@ -25,7 +25,7 @@ class Gui(QMainWindow):
         self.scene = QGraphicsScene()
         folder = "themes/"
 
-        reader = ReadToml('src/paises.toml')
+        reader = TomlReader('src/paises.toml')
         for continente in reader.get_continentes():
             cor = reader.coordenadas_continente(continente)
             print(cor)

@@ -1,8 +1,8 @@
-from src.read_toml import ReadToml
+from src.toml_reader import TomlReader
 
 
 def build_mapa(path):
-    reader = ReadToml(path)
+    reader = TomlReader(path)
     mapa = {
         pais: [1, reader.continente(pais), None] for pais in reader.todos_los_paises()
     }
