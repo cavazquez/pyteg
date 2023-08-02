@@ -1,7 +1,7 @@
 import tomllib
 
 
-class ReadToml:
+class TomlReader:
     def __init__(self, toml_string):
         #with open("src/paises.toml") as f:
         #    toml_string = f.read()
