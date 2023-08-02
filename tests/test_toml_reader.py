@@ -1,13 +1,13 @@
 import unittest
 
-from src.read_toml import ReadToml
+from src.toml_reader import TomlReader
 
-class TestReadToml(unittest.TestCase):
+class TestTomlReader(unittest.TestCase):
     def test_init(self):
         with open('src/paises.toml') as f:
             toml_string = f.read()
             #print(toml_string)
-        self.assertTrue(ReadToml(toml_string))
+        self.assertTrue(TomlReader(toml_string))
 
     def test_continente(self):
         toml_string = '''
@@ -18,7 +18,7 @@ class TestReadToml(unittest.TestCase):
 
         [Pangea.Argentina]
         '''
-        self.assertEqual(ReadToml(toml_string).continente('Argentina'), 'Pangea')
+        self.assertEqual(TomlReader(toml_string).continente('Argentina'), 'Pangea')
 
 
     def test_continente_sin_pais(self):
@@ -30,7 +30,7 @@ class TestReadToml(unittest.TestCase):
 
         [Pangea.Argentina]
         '''
-        self.assertEqual(ReadToml(toml_string).continente('Brasil'), None)
+        self.assertEqual(TomlReader(toml_string).continente('Brasil'), None)
 
 
     def test_todos_los_paises(self):
@@ -50,7 +50,7 @@ class TestReadToml(unittest.TestCase):
         [Africa.Francia]
         '''
         self.assertListEqual(
-                ReadToml(
+                TomlReader(
                     toml_string).todos_los_paises(), ['Argentina', 'Brasil', 'Francia'])
 
     def test_get_paises(self):
@@ -70,10 +70,10 @@ class TestReadToml(unittest.TestCase):
         [Africa.Francia]
         '''
         self.assertDictEqual(
-                ReadToml(
+                TomlReader(
                     toml_string).get_paises('Pangea'), {'Argentina': {}, 'Brasil': {} })
         self.assertDictEqual(
-                ReadToml(
+                TomlReader(
                     toml_string).get_paises('Africa'), {'Francia': {}})
 
 
@@ -94,7 +94,7 @@ class TestReadToml(unittest.TestCase):
         [Africa.Francia]
         '''
         self.assertListEqual(
-                ReadToml(toml_string).get_continentes(), ['Pangea', 'Africa'])
+                TomlReader(toml_string).get_continentes(), ['Pangea', 'Africa'])
 
 
     def test_coordenadas_continente(self):
@@ -105,7 +105,7 @@ class TestReadToml(unittest.TestCase):
         pos_y = 30
         '''
         self.assertTupleEqual(
-                ReadToml(toml_string).coordenadas_continente('Pangea'), (20, 30))
+                TomlReader(toml_string).coordenadas_continente('Pangea'), (20, 30))
 
 
     def test_coordenadas(self):
@@ -122,7 +122,7 @@ class TestReadToml(unittest.TestCase):
         army_y = 300
         '''
         self.assertTupleEqual(
-                ReadToml(toml_string).coordenadas('Argentina'), (100, 120, 200, 300))
+                TomlReader(toml_string).coordenadas('Argentina'), (100, 120, 200, 300))
 
 
     def test_get_cartas(self):
@@ -131,7 +131,7 @@ class TestReadToml(unittest.TestCase):
         ballon = 'ballon.png'
         '''
         self.assertDictEqual(
-                ReadToml(toml_string).get_cartas(), {'ballon': 'ballon.png'})
+                TomlReader(toml_string).get_cartas(), {'ballon': 'ballon.png'})
 
 
     def test_img_path(self):
@@ -145,5 +145,5 @@ class TestReadToml(unittest.TestCase):
         file = 'argentina.png'
         '''
         self.assertEqual(
-                ReadToml(toml_string).img_path('Argentina'), 'argentina.png')
+                TomlReader(toml_string).img_path('Argentina'), 'argentina.png')
 
