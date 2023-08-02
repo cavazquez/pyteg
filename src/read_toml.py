@@ -2,8 +2,8 @@ import tomllib
 
 
 class ReadToml:
-    def __init__(self):
-        with open("src/paises.toml") as f:
+    def __init__(self, path):
+        with open(path) as f:
             toml_string = f.read()
             self.parsed_toml = tomllib.loads(toml_string)
         self.continentes = {}
