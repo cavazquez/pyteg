@@ -35,9 +35,6 @@ class Game:
         )
         self._mapa.aplicar_resultado_batalla(resultado)
 
-    def reagrupar(self, desde, hacia, cantidad):
-        self._mapa.mover(desde, hacia, cantidad)
-
     def turnos(self):
         return self._turnos
 
