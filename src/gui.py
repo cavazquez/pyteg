@@ -31,9 +31,9 @@ class Gui(QMainWindow):
             print(cor)
             for pais in reader.get_paises(continente):
                 print(pais)
-                pixmap = QPixmap(folder + reader.img_path(pais, continente))
+                pixmap = QPixmap(folder + reader.img_path(pais))
                 graphicsPixmapItem = QGraphicsPixmapItem(pixmap)
-                pos_x, pos_y, _, _ = reader.coordenadas(pais, continente)
+                pos_x, pos_y, _, _ = reader.coordenadas(pais)
                 print(pos_x, pos_y)
                 graphicsPixmapItem.setPos(cor[0] + pos_x, cor[1] + pos_y)
                 self.scene.addItem(graphicsPixmapItem)
