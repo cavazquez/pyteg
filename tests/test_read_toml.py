@@ -116,6 +116,15 @@ class TestReadToml(unittest.TestCase):
     def test_get_cartas(self):
         toml_string = '''
         [Cartas]
+        ballon = 'ballon.png'
+        '''
+        self.assertDictEqual(
+                ReadToml(toml_string).get_cartas(), {'ballon': 'ballon.png'})
+
+
+    def test_img_path(self):
+        toml_string = '''
+        [Cartas]
         [Pangea]
         pos_x = 20
         pos_y = 30
