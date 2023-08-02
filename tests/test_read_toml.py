@@ -21,6 +21,18 @@ class TestReadToml(unittest.TestCase):
         self.assertEqual(ReadToml(toml_string).continente('Argentina'), 'Pangea')
 
 
+    def test_continente_sin_pais(self):
+        toml_string = '''
+        [Cartas]
+        [Pangea]
+        pos_x = 20
+        pos_y = 30
+
+        [Pangea.Argentina]
+        '''
+        self.assertEqual(ReadToml(toml_string).continente('Brasil'), None)
+
+
     def test_todos_los_paises(self):
         toml_string = '''
         [Cartas]
