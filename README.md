@@ -15,3 +15,9 @@ Project about implementation game-board Teg.
 
 ### Correr solo los test con coverage
 `coverage run --branch -m unittest`
+
+### Correr black
+`./reformater.sh`
+
+### Mostrar que cambios haria black
+`black -t py311 --diff --check .`
