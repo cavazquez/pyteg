@@ -39,6 +39,7 @@ class ConnectionClient:
             self._connected = False
 
     def get_data(self):
+        data = ""
         try:
             data = self._socket.recv(1024)
         except BrokenPipeError:

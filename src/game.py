@@ -7,13 +7,9 @@ class Game:
     def __init__(self, mapa):
         self._mapa = mapa
         self._start = False
-        self._turnos = None
+        self._turnos = [PrimerTurno("NUllJugador")]
         self._jugadores = {}
         self._num_turno = 0
-
-    def agregar_una_unidad(self, pais):
-        self._mapa.agregar_una_unidad(pais)
-        self._ronda.usar_unidad()
 
     def empezar(self):
         self._turnos = [PrimerTurno(j) for j in self.lista_jugadores()]
@@ -22,13 +18,6 @@ class Game:
 
     def empezo(self):
         return self._start
-
-    def ver_mapa(self):
-        print("jugadores:", self._jugadores)
-        if self._ronda:
-            print("jugadores_ronda:", self._ronda._jugadores)
-            print("turno_actual:", self._ronda._turno_actual.jugador_actual())
-        print(self._mapa)
 
     def atacar(self, atacante, defensor):
         dados_atacante = Dados.tirar_dados_ordenados(
@@ -44,7 +33,7 @@ class Game:
         resultado = Batalla.ataquen(
             self.mapa(), atacante, defensor, dados_atacante, dados_defensor
         )
-        Batalla.aplicar_resultado_batalla(self.mapa(), resultado)
+        self._mapa.aplicar_resultado_batalla(resultado)
 
     def reagrupar(self, desde, hacia, cantidad):
         self._mapa.mover(desde, hacia, cantidad)

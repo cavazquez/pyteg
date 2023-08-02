@@ -11,7 +11,7 @@ class TestGame(unittest.TestCase):
         game = Game(mapa)
         self.assertTrue(game)
         self.assertFalse(game.empezo())
-        self.assertIsNone(game.turnos())
+        self.assertIsInstance(game.turnos()[0], PrimerTurno)
 
     def test_cant_jugadores(self):
         mapa = Mapa(lambda: None)

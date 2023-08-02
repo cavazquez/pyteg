@@ -44,7 +44,7 @@ def registrar_jugadores(server, game):
                 conn, addr = s.accept()
                 print("Connected by", addr)
                 connection = ConnectionServer(conn, addr)
-                client = Client(user_id, connection)
+                client = Client(user_id, connection, server)
                 server.registrar_cliente(user_id, client)
                 threading.Thread(target=client.run, args=[server, game]).start()
                 user_id += 1
