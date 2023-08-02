@@ -49,7 +49,7 @@ class Client:
                 continue
 
             data_json_r = json.loads(data)
-            self.ejecutar_mensaje(data_json_r, game, self)
+            self.ejecutar_mensaje(data_json_r, game)
 
     def ejecutar_mensaje(self, data, game):
         if "username" in data["mensaje"]:
