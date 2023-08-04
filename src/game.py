@@ -5,9 +5,11 @@ from src.tarjeta_de_pais import TarjetaDePais
 from itertools import cycle
 from random import sample
 
+
 def build_tarjetas_de_paises(mapa, simbolos):
-    #return [TarjetaDePais(pais, "Galeon") for pais in mapa.paises()]
+    # return [TarjetaDePais(pais, "Galeon") for pais in mapa.paises()]
     return [TarjetaDePais(*tupla) for tupla in zip(mapa.paises(), cycle(simbolos))]
+
 
 class Game:
     def __init__(self, mapa, tarjetas):
@@ -47,7 +49,8 @@ class Game:
 
     def dame_una_tarjeta(self):
         self._tarjetas_de_paises = sample(
-                self._tarjetas_de_paises, k=len(self._tarjetas_de_paises))
+            self._tarjetas_de_paises, k=len(self._tarjetas_de_paises)
+        )
         return self._tarjetas_de_paises.pop()
 
     def turnos(self):

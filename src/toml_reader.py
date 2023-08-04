@@ -3,7 +3,7 @@ import tomllib
 
 class TomlReader:
     def __init__(self, toml_string):
-        #with open("src/paises.toml") as f:
+        # with open("src/paises.toml") as f:
         #    toml_string = f.read()
         #    self.parsed_toml = tomllib.loads(toml_string)
         self.parsed_toml = tomllib.loads(toml_string)

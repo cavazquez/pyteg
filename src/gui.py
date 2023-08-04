@@ -25,7 +25,7 @@ class Gui(QMainWindow):
         self.scene = QGraphicsScene()
         folder = "themes/"
 
-        reader = TomlReader('src/paises.toml')
+        reader = TomlReader("src/paises.toml")
         for continente in reader.get_continentes():
             cor = reader.coordenadas_continente(continente)
             print(cor)
