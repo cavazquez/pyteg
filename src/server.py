@@ -56,7 +56,7 @@ def registrar_jugadores(server, game):
 
 def main():
     server = Server()
-    game = Game(server)
+    game = Game(server, None)
     registrar_jugadores(server, game)
     # server_th = threading.Thread(target=registrar_jugadores, args=[server, game])
     # server_th.start()
