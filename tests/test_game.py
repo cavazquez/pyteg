@@ -170,3 +170,20 @@ class TestGame(unittest.TestCase):
         self.assertEqual(tarjetas[1].dame_simbolo(), "Globo")
         self.assertEqual(tarjetas[2].dame_simbolo(), "Galeon")
 
+
+    def test_dame_una_tarjeta(self):
+        def build_mapa():
+            return {
+                "Argentina": [4, "Africa", "Mengano"],
+                "Uruguay": [2, "Africa", "Fulano"],
+                "Chile": [1, "America", None],
+            }
+        mapa = Mapa(build_mapa)
+        simbolos = ["Galeon", "Globo"]
+        tarjetas = build_tarjetas_de_paises(mapa, simbolos)
+        long_tarjetas = len(tarjetas)
+        game = Game(mapa, tarjetas)
+        self.assertTrue(game.dame_una_tarjeta() in tarjetas)
+        self.assertEqual(len(game.tarjetas_de_paises()), long_tarjetas - 1)
+
+
