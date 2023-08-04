@@ -93,7 +93,6 @@ class TestGame(unittest.TestCase):
         self.assertNotEqual(game.turnos()[0], turno1)
         self.assertNotEqual(game.turnos()[1], turno2)
 
-
     def test_cantidad_tarjetas_de_paises(self):
         def build_mapa():
             return {
@@ -101,6 +100,7 @@ class TestGame(unittest.TestCase):
                 "Uruguay": [2, "Africa", "Fulano"],
                 "Chile": [1, "America", None],
             }
+
         mapa = Mapa(build_mapa)
         simbolos = ["Galeon", "Globo"]
         tarjetas = build_tarjetas_de_paises(mapa, simbolos)
@@ -114,14 +114,19 @@ class TestGame(unittest.TestCase):
                 "Uruguay": [2, "Africa", "Fulano"],
                 "Chile": [1, "America", None],
             }
+
         mapa = Mapa(build_mapa)
         simbolos = ["Galeon", "Globo"]
         tarjetas = build_tarjetas_de_paises(mapa, simbolos)
         game = Game(mapa, tarjetas)
-        self.assertTrue(all(
-            [ tarjeta.dame_pais() in mapa.paises() 
-                for tarjeta in game.tarjetas_de_paises() ]))
-
+        self.assertTrue(
+            all(
+                [
+                    tarjeta.dame_pais() in mapa.paises()
+                    for tarjeta in game.tarjetas_de_paises()
+                ]
+            )
+        )
 
     def test_cada_pais_tiene_una_tarjeta(self):
         def build_mapa():
@@ -130,15 +135,15 @@ class TestGame(unittest.TestCase):
                 "Uruguay": [2, "Africa", "Fulano"],
                 "Chile": [1, "America", None],
             }
+
         mapa = Mapa(build_mapa)
         simbolos = ["Galeon", "Globo"]
         tarjetas = build_tarjetas_de_paises(mapa, simbolos)
         game = Game(mapa, tarjetas)
-        paises_en_tarjetas = [ tarjeta.dame_pais()
-                for tarjeta in game.tarjetas_de_paises()]
-        self.assertTrue(all(
-            [ pais in paises_en_tarjetas for pais in mapa.paises() ]))
-
+        paises_en_tarjetas = [
+            tarjeta.dame_pais() for tarjeta in game.tarjetas_de_paises()
+        ]
+        self.assertTrue(all([pais in paises_en_tarjetas for pais in mapa.paises()]))
 
     def test_cada_tarjeta_tiene_un_simbolo(self):
         def build_mapa():
@@ -147,14 +152,19 @@ class TestGame(unittest.TestCase):
                 "Uruguay": [2, "Africa", "Fulano"],
                 "Chile": [1, "America", None],
             }
+
         mapa = Mapa(build_mapa)
         simbolos = ["Galeon", "Globo"]
         tarjetas = build_tarjetas_de_paises(mapa, simbolos)
         game = Game(mapa, tarjetas)
-        self.assertTrue(all(
-            [ tarjeta.dame_simbolo() in simbolos 
-                for tarjeta in game.tarjetas_de_paises() ]))
-
+        self.assertTrue(
+            all(
+                [
+                    tarjeta.dame_simbolo() in simbolos
+                    for tarjeta in game.tarjetas_de_paises()
+                ]
+            )
+        )
 
     def test_simbolos_alternados(self):
         def build_mapa():
@@ -163,13 +173,13 @@ class TestGame(unittest.TestCase):
                 "Uruguay": [2, "Africa", "Fulano"],
                 "Chile": [1, "America", None],
             }
+
         mapa = Mapa(build_mapa)
         simbolos = ["Galeon", "Globo"]
         tarjetas = build_tarjetas_de_paises(mapa, simbolos)
         self.assertEqual(tarjetas[0].dame_simbolo(), "Galeon")
         self.assertEqual(tarjetas[1].dame_simbolo(), "Globo")
         self.assertEqual(tarjetas[2].dame_simbolo(), "Galeon")
-
 
     def test_dame_una_tarjeta(self):
         def build_mapa():
@@ -178,6 +188,7 @@ class TestGame(unittest.TestCase):
                 "Uruguay": [2, "Africa", "Fulano"],
                 "Chile": [1, "America", None],
             }
+
         mapa = Mapa(build_mapa)
         simbolos = ["Galeon", "Globo"]
         tarjetas = build_tarjetas_de_paises(mapa, simbolos)
@@ -185,5 +196,3 @@ class TestGame(unittest.TestCase):
         game = Game(mapa, tarjetas)
         self.assertTrue(game.dame_una_tarjeta() in tarjetas)
         self.assertEqual(len(game.tarjetas_de_paises()), long_tarjetas - 1)
-
-

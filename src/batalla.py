@@ -1,7 +1,7 @@
 class Batalla:
     @staticmethod
     def ataquen(mapa, atacante, defensor, dados_atacante, dados_defensor):
-        res = {'atacante': atacante, 'defensor': defensor, "restar": []}
+        res = {"atacante": atacante, "defensor": defensor, "restar": []}
 
         for combate in range(min(len(dados_atacante), len(dados_defensor))):
             if dados_defensor[combate] < dados_atacante[combate]:
@@ -18,5 +18,3 @@ class Batalla:
     @staticmethod
     def calcular_cant_dados_defensor(cantidad):
         return min(cantidad, 3)
-
-

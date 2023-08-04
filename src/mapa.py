@@ -48,11 +48,11 @@ class Mapa:
             self.asignar_pais(jug, pais)
 
     def aplicar_resultado_batalla(self, resultado):
-        for res in resultado['restar']:
+        for res in resultado["restar"]:
             self.restar_una_unidad(res)
 
-        pais_defensor = resultado['defensor']
-        pais_atacante = resultado['atacante']
+        pais_defensor = resultado["defensor"]
+        pais_atacante = resultado["atacante"]
         atacante = self.ocupado_por(pais_atacante)
         if self.cantidad_unidades(pais_defensor) == 0:
             self.agregar_una_unidad(pais_defensor)
