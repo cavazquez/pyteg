@@ -1,15 +1,21 @@
 from src.batalla import Batalla
 from src.dados import Dados
 from src.turnos import PrimerTurno, SegundoTurno, SiguientesTurnos
+from src.tarjeta_de_pais import TarjetaDePais
+from itertools import cycle
 
+def build_tarjetas_de_paises(mapa, simbolos):
+    #return [TarjetaDePais(pais, "Galeon") for pais in mapa.paises()]
+    return [TarjetaDePais(*tupla) for tupla in zip(mapa.paises(), cycle(simbolos))]
 
 class Game:
-    def __init__(self, mapa):
+    def __init__(self, mapa, tarjetas):
         self._mapa = mapa
         self._start = False
         self._turnos = [PrimerTurno("NUllJugador")]
         self._jugadores = {}
         self._num_turno = 0
+        self._tarjetas_de_paises = tarjetas
 
     def empezar(self):
         self._turnos = [PrimerTurno(j) for j in self.lista_jugadores()]
@@ -34,6 +40,9 @@ class Game:
             self.mapa(), atacante, defensor, dados_atacante, dados_defensor
         )
         self._mapa.aplicar_resultado_batalla(resultado)
+
+    def tarjetas_de_paises(self):
+        return self._tarjetas_de_paises
 
     def turnos(self):
         return self._turnos

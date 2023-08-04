@@ -8,13 +8,13 @@ from src.mapa import Mapa
 class TestEjecutarMensaje(unittest.TestCase):
     def test_mensaje_inexistente(self):
         data = {"mensaje": "noexiste"}
-        game = Game(Mapa(lambda: None))
+        game = Game(Mapa(lambda: None), None)
         cliente = Client(1, "conn", "server")
         with self.assertRaises(Exception):
             cliente.ejecutar_mensaje(data, game)
 
     def test_asignar_username(self):
-        game = Game(Mapa(lambda: None))
+        game = Game(Mapa(lambda: None), None)
         data = {"mensaje": "username", "nombre": "Fulano"}
         cliente = Client(1, "conn", "server")
         cliente.ejecutar_mensaje(data, game)
@@ -22,7 +22,7 @@ class TestEjecutarMensaje(unittest.TestCase):
         self.assertEqual(cliente.username(), "Fulano")
 
     def test_no_permitir_asignar_2_veces_username(self):
-        game = Game(Mapa(lambda: None))
+        game = Game(Mapa(lambda: None), None)
         data = {"mensaje": "username", "nombre": "Fulano"}
         cliente = Client(1, "conn", "server")
         cliente.ejecutar_mensaje(data, game)
@@ -32,7 +32,7 @@ class TestEjecutarMensaje(unittest.TestCase):
         self.assertEqual(cliente.username(), "Fulano")
 
     def test_agregar_2_jugadores(self):
-        game = Game(Mapa(lambda: None))
+        game = Game(Mapa(lambda: None), None)
         data = {"mensaje": "username", "nombre": "Fulano"}
         cliente = Client(1, "conn", "server")
         cliente.ejecutar_mensaje(data, game)
