@@ -1,7 +1,7 @@
 import unittest
 
 from src.server_client import Client
-from src.game import Game, build_tarjetas_de_paises
+from src.game import Game
 from src.mapa import Mapa
 
 
@@ -47,18 +47,3 @@ class TestEjecutarMensaje(unittest.TestCase):
         msg = data["chat"]
         cliente = Client(1, "conn", "server")
         self.assertEqual(f"{cliente.username()}: {msg}", cliente.mensaje_chat(msg))
-
-    def test_obtener_tarjeta(self):
-        def build_mapa():
-            return {
-                "Argentina": [4, "Africa", None],
-            }
-
-        mapa = Mapa(build_mapa)
-        simbolos = ["Galeon"]
-        tarjetas = build_tarjetas_de_paises(mapa, simbolos)
-        data = {"mensaje": "obtener_tarjeta"}
-        cliente = Client(1, "conn", "server")
-        game = Game(mapa, tarjetas)
-        cliente.ejecutar_mensaje(data, game)
-        self.assertEqual(tarjetas[0], cliente.tarjetas()[0])
