@@ -25,6 +25,7 @@ class Client:
         self._username = None
         self._conn = conn
         self._server = server
+        self._tarjetas = []
 
     def send(self, data):
         self._conn.send(data)
@@ -34,6 +35,9 @@ class Client:
 
     def close(self):
         self._conn.close()
+
+    def tarjetas(self):
+        return self._tarjetas
 
     def username(self):
         return self._username
@@ -52,41 +56,52 @@ class Client:
             self.ejecutar_mensaje(data_json_r, game)
 
     def ejecutar_mensaje(self, data, game):
-        if "username" in data["mensaje"]:
+        mensaje = data["mensaje"]
+
+        if "username" in mensaje:
             username = data["nombre"]
             game.agregar_jugador(self._user_id, username)
             if not self._username:
                 self._username = username
             return None
 
-        if "chat" in data:
+        if "chat" in mensaje:
             print("Enviando mensaje de chat")
             msg = self.mensaje_chat(data["chat"])
             data_json_s = json.dumps({"chat": msg})
             self._server.send_all(data_json_s, ignore_conn=self._conn)
             return None
 
-        if "agregar_una_unidad" in data:
+        if "agregar_una_unidad" in mensaje:
             print("Añadiendo una unidad")
             game.agregar_una_unidad(self._user_id, data["agregar_una_unidad"])
+            return None
 
-        if "mapa" in data["mensaje"]:
+        if "mapa" in mensaje:
             game.ver_mapa()
+            return None
 
-        if "start" in data["mensaje"]:
+        if "start" in mensaje:
             game.start()
             return None
 
-        if "atacar" in data:
+        if "atacar" in mensaje:
             atacante, defensor = data["atacar"].split()
             game.atacar(atacante, defensor)
+            return None
 
-        if "reagrupar" in data:
+        if "reagrupar" in mensaje:
             desde, hacia, cantidad = data["reagrupar"].split()
             game.reagrupar(desde, hacia, int(cantidad))
+            return None
 
-        if "finalizar_turno" in data:
+        if "obtener_tarjeta" in mensaje:
+            self._tarjetas.append(game.dame_una_tarjeta())
+            return None
+
+        if "finalizar_turno" in mensaje:
             game.ronda().finalizar_turno()
+            return None
 
         raise Exception("Mensaje no valido")
 
