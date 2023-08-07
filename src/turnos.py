@@ -19,6 +19,9 @@ class SiguientesTurnos:
     def jugador_actual(self):
         return self._jugador
 
+    def agregar_unidades_generales(self, num):
+        self._unidades += num
+
     def usar_unidad(self):
         self._unidades -= 1
 
@@ -76,6 +79,9 @@ class SegundoTurno:
     def cant_unidades(self):
         return self._unidades
 
+    def agregar_unidades_generales(self, num):
+        self._unidades += num
+
 
 class PrimerTurno:
     def __init__(self, jugador):
@@ -90,3 +96,6 @@ class PrimerTurno:
 
     def cant_unidades(self):
         return self._unidades
+
+    def agregar_unidades_generales(self, num):
+        self._unidades += num

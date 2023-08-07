@@ -27,4 +27,10 @@ class Mazo:
         for i, tarjeta in enumerate(self.mazo):
             if not self.mazo[i][1]:
                 self.mazo[i][1] = jugador
-                break
+                return self.mazo[i][0]
+
+    def liberar_tarjetas(self, tarjetas):
+        for tarjeta in tarjetas:
+            for elem in self.mazo:
+                if tarjeta == elem[0]:
+                    elem[1] = None

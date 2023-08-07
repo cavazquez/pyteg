@@ -1,6 +1,7 @@
 import unittest
 
 from src.game import Game
+from src.mazo import Mazo
 from src.mapa import Mapa
 from src.turnos import PrimerTurno, SegundoTurno, SiguientesTurnos
 
@@ -92,3 +93,31 @@ class TestGame(unittest.TestCase):
         game.finalizar_turno()
         self.assertNotEqual(game.turnos()[0], turno1)
         self.assertNotEqual(game.turnos()[1], turno2)
+
+    def test_canje_tarjeta(self):
+        def build_mapa():
+            return {
+                "Argentina": [4, "Africa", None],
+                "Uruguay": [2, "Africa", None],
+                "Chile": [1, "America", None],
+            }
+
+        mapa = Mapa(build_mapa)
+        mazo = Mazo(mapa.paises(), ["Globo"])
+        game = Game(mapa, mazo)
+        game.agregar_jugador(1, "Mengano")
+        game.empezar()
+
+        tarjeta1 = mazo.asignar_tarjeta("Mengano")
+        tarjeta2 = mazo.asignar_tarjeta("Mengano")
+        tarjeta3 = mazo.asignar_tarjeta("Mengano")
+        turnos = game.turnos()
+        id_turno = game.turno_actual()
+        turno_actual = turnos[id_turno]
+
+        cant_unidades = turno_actual.cant_unidades()
+
+        game.canjear([tarjeta1, tarjeta2, tarjeta3])
+
+        self.assertEqual(turno_actual.cant_unidades(), cant_unidades + 4)
+        self.assertEqual(mazo.tarjetas_asignadas("Mengano"), 0)
