@@ -12,6 +12,7 @@ class Game:
         self._jugadores = {}
         self._num_turno = 0
         self._mazo = mazo
+        self.cant_canjes = 0
 
     def empezar(self):
         self._turnos = [PrimerTurno(j) for j in self.lista_jugadores()]
@@ -51,6 +52,13 @@ class Game:
 
     def turno_actual(self):
         return self._num_turno
+
+    def canjear(self, tarjetas):
+        if self.cant_canjes == 0:
+            self._turnos[self._num_turno].agregar_unidades_generales(4)
+            self.cant_canjes += 1
+
+        self._mazo.liberar_tarjetas(tarjetas)
 
     def cant_jugadores(self):
         return len(self.lista_jugadores())

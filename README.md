@@ -1,7 +1,7 @@
 ![example workflow](https://github.com/cavazquez/pyteg/actions/workflows/ruff.yml/badge.svg)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![Checked with pyright](https://microsoft.github.io/pyright/img/pyright_badge.svg)](https://microsoft.github.io/pyright/)
-![Coverage](https://progress-bar.dev/96?title=Coverage)
+![Coverage](https://progress-bar.dev/95?title=Coverage)
 # pyteg
 Project about implementation game-board Teg.
 

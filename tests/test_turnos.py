@@ -18,6 +18,12 @@ class TestPrimerTurno(unittest.TestCase):
         primer_turno.usar_unidad()
         self.assertEqual(primer_turno.cant_unidades(), 5)
 
+    def test_agregar_unidades_generales(self):
+        primer_turno = PrimerTurno("Fulano")
+        cant_unidades = primer_turno.cant_unidades()
+        primer_turno.agregar_unidades_generales(10)
+        self.assertEqual(primer_turno.cant_unidades(), cant_unidades + 10)
+
 
 class TestSegundoTurno(unittest.TestCase):
     def test_jugador_actual(self):
@@ -32,6 +38,12 @@ class TestSegundoTurno(unittest.TestCase):
         segundo_turno = SegundoTurno("Fulano")
         segundo_turno.usar_unidad()
         self.assertEqual(segundo_turno.cant_unidades(), 2)
+
+    def test_agregar_unidades_generales(self):
+        turno = SegundoTurno("Fulano")
+        cant_unidades = turno.cant_unidades()
+        turno.agregar_unidades_generales(10)
+        self.assertEqual(turno.cant_unidades(), cant_unidades + 10)
 
 
 class TestSiguientesTurnos(unittest.TestCase):
@@ -71,6 +83,20 @@ class TestSiguientesTurnos(unittest.TestCase):
         siguientes_turnos = SiguientesTurnos("Fulano", mapa)
         siguientes_turnos.usar_unidad()
         self.assertEqual(siguientes_turnos.cant_unidades(), 2)
+
+    def test_agregar_unidades_generales(self):
+        def build_mapa():
+            return {
+                "Argentina": [5, "Africa", "Mengano"],
+                "Uruguay": [10, "Africa", "Fulano"],
+                "Chile": [1, "America", None],
+            }
+
+        mapa = Mapa(build_mapa)
+        turno = SiguientesTurnos("Fulano", mapa)
+        cant_unidades = turno.cant_unidades()
+        turno.agregar_unidades_generales(10)
+        self.assertEqual(turno.cant_unidades(), cant_unidades + 10)
 
     def test_usar_unidad_toda_africa_en_africa(self):
         def build_mapa():

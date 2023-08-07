@@ -66,3 +66,11 @@ class TestMazo(unittest.TestCase):
         mazo.asignar_tarjeta("jug2")
         self.assertEqual(mazo.tarjetas_asignadas("jug1"), 2)
         self.assertEqual(mazo.tarjetas_asignadas("jug2"), 1)
+
+    def test_sin_tarjeta_para_asignar(self):
+        simbolos = ["Galeon", "Globo"]
+        paises = ["Argentina"]
+        mazo = Mazo(paises, simbolos)
+        mazo.asignar_tarjeta("jug1")
+        mazo.asignar_tarjeta("jug1")
+        self.assertEqual(mazo.tarjetas_asignadas("jug1"), 1)
