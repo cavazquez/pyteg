@@ -1,4 +1,4 @@
-name: PyTeg Ruff and Unittest
+name: Ruff, Unittest, Black
 
 on: [push]
 
@@ -30,3 +30,6 @@ jobs:
       - name: Test with unittest
         run: |          
           python -m unittest discover
+      - name: Black Formatter
+        run: |
+          black --check .
