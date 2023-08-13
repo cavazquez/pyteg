@@ -1,6 +1,6 @@
 class Batalla:
     @staticmethod
-    def ataquen(mapa, atacante, defensor, dados_atacante, dados_defensor):
+    def ataquen(atacante, defensor, dados_atacante, dados_defensor):
         res = {"atacante": atacante, "defensor": defensor, "restar": []}
 
         for combate in range(min(len(dados_atacante), len(dados_defensor))):
