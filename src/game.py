@@ -33,9 +33,7 @@ class Game:
                 self.mapa().cantidad_unidades(defensor)
             )
         )
-        resultado = Batalla.ataquen(
-            self.mapa(), atacante, defensor, dados_atacante, dados_defensor
-        )
+        resultado = Batalla.ataquen(atacante, defensor, dados_atacante, dados_defensor)
         self._mapa.aplicar_resultado_batalla(resultado)
 
     def mazo(self):
