@@ -53,10 +53,13 @@ class Game:
     def turno_actual(self):
         return self._num_turno
 
-    def canjear(self, tarjetas):
-        if self.cant_canjes == 0:
+    def canjear(self, tarjetas, cant_canjes):
+        if cant_canjes == 0:
             self._turnos[self._num_turno].agregar_unidades_generales(4)
-            self.cant_canjes += 1
+        if cant_canjes == 1:
+            self._turnos[self._num_turno].agregar_unidades_generales(7)
+        if cant_canjes >= 2:
+            self._turnos[self._num_turno].agregar_unidades_generales(5 * cant_canjes)
 
         self._mazo.liberar_tarjetas(tarjetas)
 

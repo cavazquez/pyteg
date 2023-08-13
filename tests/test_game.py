@@ -117,7 +117,119 @@ class TestGame(unittest.TestCase):
 
         cant_unidades = turno_actual.cant_unidades()
 
-        game.canjear([tarjeta1, tarjeta2, tarjeta3])
+        game.canjear([tarjeta1, tarjeta2, tarjeta3], 0)
 
         self.assertEqual(turno_actual.cant_unidades(), cant_unidades + 4)
+        self.assertEqual(mazo.tarjetas_asignadas("Mengano"), 0)
+
+    def test_segundo_canje(self):
+        def build_mapa():
+            return {
+                "Argentina": [4, "Africa", None],
+                "Uruguay": [2, "Africa", None],
+                "Chile": [1, "America", None],
+            }
+
+        mapa = Mapa(build_mapa)
+        mazo = Mazo(mapa.paises(), ["Globo"])
+        game = Game(mapa, mazo)
+        game.agregar_jugador(1, "Mengano")
+        game.empezar()
+
+        tarjeta1 = mazo.asignar_tarjeta("Mengano")
+        tarjeta2 = mazo.asignar_tarjeta("Mengano")
+        tarjeta3 = mazo.asignar_tarjeta("Mengano")
+        turnos = game.turnos()
+        id_turno = game.turno_actual()
+        turno_actual = turnos[id_turno]
+
+        cant_unidades = turno_actual.cant_unidades()
+
+        game.canjear([tarjeta1, tarjeta2, tarjeta3], 1)
+
+        self.assertEqual(turno_actual.cant_unidades(), cant_unidades + 7)
+        self.assertEqual(mazo.tarjetas_asignadas("Mengano"), 0)
+
+    def test_tercer_canje(self):
+        def build_mapa():
+            return {
+                "Argentina": [4, "Africa", None],
+                "Uruguay": [2, "Africa", None],
+                "Chile": [1, "America", None],
+            }
+
+        mapa = Mapa(build_mapa)
+        mazo = Mazo(mapa.paises(), ["Globo"])
+        game = Game(mapa, mazo)
+        game.agregar_jugador(1, "Mengano")
+        game.empezar()
+
+        tarjeta1 = mazo.asignar_tarjeta("Mengano")
+        tarjeta2 = mazo.asignar_tarjeta("Mengano")
+        tarjeta3 = mazo.asignar_tarjeta("Mengano")
+        turnos = game.turnos()
+        id_turno = game.turno_actual()
+        turno_actual = turnos[id_turno]
+
+        cant_unidades = turno_actual.cant_unidades()
+
+        game.canjear([tarjeta1, tarjeta2, tarjeta3], 2)
+
+        self.assertEqual(turno_actual.cant_unidades(), cant_unidades + 10)
+        self.assertEqual(mazo.tarjetas_asignadas("Mengano"), 0)
+
+    def test_cuarto_canje(self):
+        def build_mapa():
+            return {
+                "Argentina": [4, "Africa", None],
+                "Uruguay": [2, "Africa", None],
+                "Chile": [1, "America", None],
+            }
+
+        mapa = Mapa(build_mapa)
+        mazo = Mazo(mapa.paises(), ["Globo"])
+        game = Game(mapa, mazo)
+        game.agregar_jugador(1, "Mengano")
+        game.empezar()
+
+        tarjeta1 = mazo.asignar_tarjeta("Mengano")
+        tarjeta2 = mazo.asignar_tarjeta("Mengano")
+        tarjeta3 = mazo.asignar_tarjeta("Mengano")
+        turnos = game.turnos()
+        id_turno = game.turno_actual()
+        turno_actual = turnos[id_turno]
+
+        cant_unidades = turno_actual.cant_unidades()
+
+        game.canjear([tarjeta1, tarjeta2, tarjeta3], 3)
+
+        self.assertEqual(turno_actual.cant_unidades(), cant_unidades + 15)
+        self.assertEqual(mazo.tarjetas_asignadas("Mengano"), 0)
+
+    def test_quinto_canje(self):
+        def build_mapa():
+            return {
+                "Argentina": [4, "Africa", None],
+                "Uruguay": [2, "Africa", None],
+                "Chile": [1, "America", None],
+            }
+
+        mapa = Mapa(build_mapa)
+        mazo = Mazo(mapa.paises(), ["Globo"])
+        game = Game(mapa, mazo)
+        game.agregar_jugador(1, "Mengano")
+        game.empezar()
+
+        tarjeta1 = mazo.asignar_tarjeta("Mengano")
+        tarjeta2 = mazo.asignar_tarjeta("Mengano")
+        tarjeta3 = mazo.asignar_tarjeta("Mengano")
+        turnos = game.turnos()
+        id_turno = game.turno_actual()
+        turno_actual = turnos[id_turno]
+
+        cant_unidades = turno_actual.cant_unidades()
+
+        game.canjear([tarjeta1, tarjeta2, tarjeta3], 4)
+
+        self.assertEqual(turno_actual.cant_unidades(), cant_unidades + 20)
         self.assertEqual(mazo.tarjetas_asignadas("Mengano"), 0)
