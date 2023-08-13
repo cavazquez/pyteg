@@ -6,31 +6,63 @@ from random import sample
 class Mazo:
     def __init__(self, paises, simbolos):
         tarjetas = self.build_tarjetas_de_paises(paises, simbolos)
-        self.mazo = []
+        self.mazo = {}
         for tarjeta in tarjetas:
-            self.mazo.append([tarjeta, None])
+            self.mazo[tarjeta] = [None, False]
 
     def build_tarjetas_de_paises(self, paises, simbolos):
         return [TarjetaDePais(*tupla) for tupla in zip(paises, cycle(simbolos))]
 
     def cantidad_tarjetas(self):
-        return len(self.mazo)
+        return len(self.tarjetas())
+
+    def cantidad_tarjetas_usadas(self):
+        return len([key for key in self.mazo.keys() if self.mazo[key][1] is True])
 
     def tarjetas(self):
-        return [tarjeta for tarjeta, _ in self.mazo]
+        return [tarjeta for tarjeta in self.mazo.keys()]
+
+    def jugador(self, tarjeta):
+        return self.mazo[tarjeta][0]
 
     def tarjetas_asignadas(self, jugador):
-        return sum([1 for tarjeta in self.mazo if tarjeta[1] == jugador])
+        return sum(
+            [1 for tarjeta in self.mazo.keys() if self.jugador(tarjeta) == jugador]
+        )
 
-    def asignar_tarjeta(self, jugador):
-        self.mazo = sample(self.mazo, self.cantidad_tarjetas())
-        for i, tarjeta in enumerate(self.mazo):
-            if not self.mazo[i][1]:
-                self.mazo[i][1] = jugador
-                return self.mazo[i][0]
+    def liberar_tarjetas_usadas(self):
+        for tarjeta in self.mazo.keys():
+            if self.fue_usada(tarjeta) and not self.asignada(tarjeta):
+                self.mazo[tarjeta][1] = False
+
+    def asignar_tarjeta(self, jugador, mezclar=sample):
+        if self.cantidad_tarjetas_usadas() == self.cantidad_tarjetas():
+            self.liberar_tarjetas_usadas()
+        tarjetas = mezclar(self.tarjetas(), self.cantidad_tarjetas())
+        for tarjeta in tarjetas:
+            if not (self.asignada(tarjeta) or self.fue_usada(tarjeta)):
+                self.asignar(tarjeta, jugador)
+                return tarjeta
 
     def liberar_tarjetas(self, tarjetas):
         for tarjeta in tarjetas:
-            for elem in self.mazo:
-                if tarjeta == elem[0]:
-                    elem[1] = None
+            self.liberar(tarjeta)
+
+    def asignada(self, tarjeta):
+        return self.mazo[tarjeta][0] is not None
+
+    def asignar(self, tarjeta, jugador):
+        self.mazo[tarjeta][0] = jugador
+        self.mazo[tarjeta][1] = True
+
+    def fue_usada(self, tarjeta):
+        return self.mazo[tarjeta][1]
+
+    def liberar(self, tarjeta):
+        self.mazo[tarjeta][0] = None
+
+    def __str__(self):
+        res = ""
+        for elem in self.mazo:
+            res = res + elem.__str__() + "\n"
+        return res
