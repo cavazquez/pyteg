@@ -4,4 +4,4 @@ coverage==7.2.7
 #PySide6-Addons==6.4.3
 #PySide6-Essentials==6.4.3
 ruff==0.0.282
-pyright==1.1.320
+pyright==1.1.322
