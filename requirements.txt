@@ -5,3 +5,4 @@ coverage==7.3.0
 #PySide6-Essentials==6.4.3
 ruff==0.0.284
 pyright==1.1.322
+isort==5.12.0
