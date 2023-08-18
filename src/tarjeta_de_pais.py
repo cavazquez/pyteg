@@ -1,7 +1,4 @@
-
-
 class TarjetaDePais:
-
     def __init__(self, pais, simbolo):
         self.pais = pais
         self.simbolo = simbolo
@@ -11,4 +8,3 @@ class TarjetaDePais:
 
     def dame_simbolo(self):
         return self.simbolo
-
