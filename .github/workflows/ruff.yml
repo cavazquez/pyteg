@@ -1,4 +1,4 @@
-name: Ruff, Unittest, Black
+name: Ruff, Unittest, Black, Isort
 
 on: [push]
 
@@ -33,3 +33,7 @@ jobs:
       - name: Black Formatter
         run: |
           black --check .
+      - name: Isort
+        run: |
+          isort --check .
+        
