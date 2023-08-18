@@ -1,0 +1,4 @@
+[tool.isort]
+py_version=311
+profile = "black"
+src_paths = ["src", "tests"]
