@@ -79,16 +79,10 @@ class TestMazo(unittest.TestCase):
         simbolos = ["Galeon", "Globo"]
         paises = ["Argentina", "Brasil"]
         mazo = Mazo(paises, simbolos)
-        # print(mazo)
         tarjeta1 = mazo.asignar_tarjeta("jug1")
-        # print(mazo)
         mazo.liberar(tarjeta1)
-        # print(mazo)
-        # print(mazo.asignada(tarjeta1))
-        # print(mazo.fue_usada(tarjeta1))
         tarjeta2 = mazo.asignar_tarjeta("jug1", mezclar=lambda x, y: x)
-        # print(mazo)
-        self.assertNotEqual(tarjeta2.pais, tarjeta1.pais)
+        self.assertNotEqual(tarjeta2.dame_pais(), tarjeta1.dame_pais())
 
     def test_fue_usada(self):
         simbolos = ["Galeon", "Globo"]
