@@ -1,8 +1,8 @@
 import unittest
 
 from src.game import Game
-from src.mazo import Mazo
 from src.mapa import Mapa
+from src.mazo import Mazo
 from src.turnos import PrimerTurno, SegundoTurno, SiguientesTurnos
 
 

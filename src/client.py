@@ -1,14 +1,15 @@
+import argparse
+import json
+import random
 import socket
 import threading
-import json
-import argparse
 import time
-import random
+
+from PySide6.QtWidgets import QApplication
 
 # from server import Server, registrar_jugadores
 # from game import Game
 from gui import Gui
-from PySide6.QtWidgets import QApplication
 
 
 class Client:

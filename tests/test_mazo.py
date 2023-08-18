@@ -1,6 +1,6 @@
-from src.mazo import Mazo
-
 import unittest
+
+from src.mazo import Mazo
 
 
 class TestMazo(unittest.TestCase):

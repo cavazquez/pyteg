@@ -8,7 +8,6 @@ from PySide6.QtWidgets import (
 
 from toml_reader import TomlReader
 
-
 # Only needed for access to command line arguments
 # import sys
 
