@@ -1,6 +1,7 @@
-from src.tarjeta_de_pais import TarjetaDePais
 from itertools import cycle
 from random import sample
+
+from src.tarjeta_de_pais import TarjetaDePais
 
 
 class Mazo:

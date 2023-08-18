@@ -1,7 +1,8 @@
+from random import sample
+
 from src.batalla import Batalla
 from src.dados import Dados
 from src.turnos import PrimerTurno, SegundoTurno, SiguientesTurnos
-from random import sample
 
 
 class Game:

@@ -1,7 +1,7 @@
 import unittest
 
-from src.turnos import PrimerTurno, SegundoTurno, SiguientesTurnos
 from src.mapa import Mapa
+from src.turnos import PrimerTurno, SegundoTurno, SiguientesTurnos
 
 
 class TestPrimerTurno(unittest.TestCase):
