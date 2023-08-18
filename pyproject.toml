@@ -2,3 +2,4 @@
 py_version=311
 profile = "black"
 src_paths = ["src", "tests"]
+overwrite_in_place = true
