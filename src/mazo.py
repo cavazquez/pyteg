@@ -26,14 +26,11 @@ class Mazo:
     def tarjetas(self):
         return list(self.mazo.values())
 
-    def jugador(self, tarjeta):
-        return self.mazo[tarjeta][0]
-
     def tarjetas_asignadas(self, jugador):
         return len([1 for tarjeta in self.tarjetas() if tarjeta.jugador() == jugador])
 
     def liberar_tarjetas_usadas(self):
-        for tarjeta in self.mazo.values():
+        for tarjeta in self.tarjetas():
             if tarjeta.fue_usada() and not tarjeta.asignada():
                 tarjeta.desusar()
 
@@ -43,18 +40,15 @@ class Mazo:
         tarjetas = mezclar(self.tarjetas(), self.cantidad_tarjetas())
         for tarjeta in tarjetas:
             if tarjeta.se_puede_asignar():
-                self.asignar(tarjeta, jugador)
+                tarjeta.asignar(jugador)
                 return tarjeta
 
     def liberar_tarjetas(self, tarjetas):
         for tarjeta in tarjetas:
             tarjeta.desasignar()
 
-    def asignar(self, tarjeta, jugador):
-        tarjeta.asignar(jugador)
-
-    # def liberar(self, tarjeta):
-    #    tarjeta.desasignar()
+    # def asignar(self, tarjeta, jugador):
+    #    tarjeta.asignar(jugador)
 
     def __str__(self):
         res = ""
