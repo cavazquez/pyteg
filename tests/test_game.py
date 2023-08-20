@@ -116,7 +116,6 @@ class TestGame(unittest.TestCase):
         turno_actual = turnos[id_turno]
 
         cant_unidades = turno_actual.cant_unidades()
-
         game.canjear([tarjeta1, tarjeta2, tarjeta3], 0)
 
         self.assertEqual(turno_actual.cant_unidades(), cant_unidades + 4)
