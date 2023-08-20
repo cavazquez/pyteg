@@ -6,3 +6,10 @@ overwrite_in_place = true
 
 [tool.black]
 target-version = ["py311"]
+
+[tool.ruff]
+target-version = "py311"
+
+[tool.pyright]
+pythonVersion = "3.11"
+include = ["src", "tests"]
