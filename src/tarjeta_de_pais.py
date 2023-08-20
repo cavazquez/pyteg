@@ -36,5 +36,5 @@ class TarjetaDePais:
     def __str__(self):
         return (
             f"pais: {self._pais}\n simbolo: {self._simbolo}\n"
-            "usado: {self._usado}\n jugador: {self._jugador}"
+            f"usado: {self._usado}\n jugador: {self._jugador}"
         )

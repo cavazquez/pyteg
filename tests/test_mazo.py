@@ -48,14 +48,14 @@ class TestMazo(unittest.TestCase):
         simbolos = ["Galeon", "Globo"]
         paises = ["Argentina", "Uruguay", "Chile"]
         mazo = Mazo(paises, simbolos)
-        self.assertEqual(mazo.tarjetas_asignadas("jug1"), 0)
+        self.assertEqual(mazo.cant_tarjetas_asignadas("jug1"), 0)
 
     def test_asignar_una_tarjeta(self):
         simbolos = ["Galeon", "Globo"]
         paises = ["Argentina", "Uruguay", "Chile"]
         mazo = Mazo(paises, simbolos)
         mazo.asignar_tarjeta("jug1")
-        self.assertEqual(mazo.tarjetas_asignadas("jug1"), 1)
+        self.assertEqual(mazo.cant_tarjetas_asignadas("jug1"), 1)
         self.assertEqual(mazo.cantidad_tarjetas_asignadas(), 1)
 
     def test_asignar_otra_tarjeta(self):
@@ -65,8 +65,8 @@ class TestMazo(unittest.TestCase):
         mazo.asignar_tarjeta("jug1")
         mazo.asignar_tarjeta("jug1")
         mazo.asignar_tarjeta("jug2")
-        self.assertEqual(mazo.tarjetas_asignadas("jug1"), 2)
-        self.assertEqual(mazo.tarjetas_asignadas("jug2"), 1)
+        self.assertEqual(mazo.cant_tarjetas_asignadas("jug1"), 2)
+        self.assertEqual(mazo.cant_tarjetas_asignadas("jug2"), 1)
         self.assertEqual(mazo.cantidad_tarjetas_asignadas(), 3)
 
     def test_sin_tarjeta_para_asignar(self):
@@ -75,7 +75,7 @@ class TestMazo(unittest.TestCase):
         mazo = Mazo(paises, simbolos)
         mazo.asignar_tarjeta("jug1")
         mazo.asignar_tarjeta("jug1")
-        self.assertEqual(mazo.tarjetas_asignadas("jug1"), 1)
+        self.assertEqual(mazo.cant_tarjetas_asignadas("jug1"), 1)
 
     def test_no_asignar_tarjetas_usadas(self):
         simbolos = ["Galeon", "Globo"]
@@ -104,3 +104,47 @@ class TestMazo(unittest.TestCase):
         tarjeta2.desasignar()
         mazo.asignar_tarjeta("jug1")
         self.assertEqual(mazo.cantidad_tarjetas_usadas(), 1)
+
+    def test_dame_simbolos(self):
+        simbolos = ["Galeon", "Globo"]
+        paises = ["Argentina", "Brasil"]
+        mazo = Mazo(paises, simbolos)
+
+        simbolos = mazo.dame_simbolos()
+        self.assertSetEqual(set(["Galeon", "Globo"]), simbolos)
+
+    def test_existen_3_simbolos_en_tarjeta(self):
+        simbolos = ["Galeon"]
+        paises = ["Argentina", "Brasil", "Uruguay"]
+        mazo = Mazo(paises, simbolos)
+        jugador = "Fulano"
+
+        self.assertListEqual(mazo.simbolo_asignado_almenos_3_tarjetas(jugador), [])
+        mazo.asignar_tarjeta(jugador)
+        mazo.asignar_tarjeta(jugador)
+        mazo.asignar_tarjeta(jugador)
+        self.assertListEqual(
+            mazo.simbolo_asignado_almenos_3_tarjetas(jugador), [("Galeon", 3)]
+        )
+
+    def test_no_existen_3_simbolos_en_tarjeta(self):
+        simbolos = ["Galeon", "Cañon"]
+        paises = ["Argentina", "Brasil", "Uruguay"]
+        mazo = Mazo(paises, simbolos)
+        jugador = "Fulano"
+
+        mazo.asignar_tarjeta(jugador)
+        mazo.asignar_tarjeta(jugador)
+        mazo.asignar_tarjeta(jugador)
+        self.assertFalse(mazo.simbolo_asignado_almenos_3_tarjetas(jugador)[0][1] >= 3)
+
+    def test_dame_3_tarjetas_mismo_simbolo(self):
+        simbolos = ["Galeon"]
+        paises = ["Argentina", "Brasil", "Uruguay"]
+        mazo = Mazo(paises, simbolos)
+        jugador = "Fulano"
+
+        mazo.asignar_tarjeta(jugador)
+        mazo.asignar_tarjeta(jugador)
+        mazo.asignar_tarjeta(jugador)
+        self.assertEqual(len(mazo.dame_3_tarjetas_para_canje(jugador)), 3)

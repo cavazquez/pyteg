@@ -1,5 +1,3 @@
-from random import sample
-
 from src.batalla import Batalla
 from src.dados import Dados
 from src.turnos import PrimerTurno, SegundoTurno, SiguientesTurnos
@@ -42,16 +40,20 @@ class Game:
     def mazo(self):
         return self._mazo
 
-    def dame_una_tarjeta(self):
-        self._tarjetas_de_paises = sample(
-            self._tarjetas_de_paises, k=len(self._tarjetas_de_paises)
-        )
-        return self._tarjetas_de_paises.pop()
+    def dame_una_tarjeta(self, jugador):
+        cant_tarjetas_asignadas = self.mazo().cant_tarjetas_asignadas(jugador)
+        if cant_tarjetas_asignadas == 5:
+            lista_3_tarjetas = self.mazo().dame_3_tarjetas_para_canje(jugador)
+            self.canjear(jugador, lista_3_tarjetas)
+        self.mazo().asignar_tarjeta(jugador)
 
     def turnos(self):
         return self._turnos
 
     def turno_actual(self):
+        return self.turnos()[self.id_turno_actual()]
+
+    def id_turno_actual(self):
         return self._num_turno
 
     def cant_canjes(self, jugador):
