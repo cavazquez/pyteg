@@ -27,7 +27,7 @@ class Mazo:
         return list(self.mazo.values())
 
     def tarjetas_asignadas(self, jugador):
-        return len([1 for tarjeta in self.tarjetas() if tarjeta.jugador() == jugador])
+        return sum([1 for tarjeta in self.tarjetas() if tarjeta.jugador() == jugador])
 
     def liberar_tarjetas_usadas(self):
         for tarjeta in self.tarjetas():
@@ -46,9 +46,6 @@ class Mazo:
     def liberar_tarjetas(self, tarjetas):
         for tarjeta in tarjetas:
             tarjeta.desasignar()
-
-    # def asignar(self, tarjeta, jugador):
-    #    tarjeta.asignar(jugador)
 
     def __str__(self):
         res = ""
