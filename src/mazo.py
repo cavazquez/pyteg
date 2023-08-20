@@ -1,3 +1,4 @@
+from collections import Counter
 from itertools import cycle
 from random import sample
 
@@ -27,7 +28,35 @@ class Mazo:
         return list(self.mazo.values())
 
     def tarjetas_asignadas(self, jugador):
-        return sum([1 for tarjeta in self.tarjetas() if tarjeta.jugador() == jugador])
+        return [tarjeta for tarjeta in self.tarjetas() if tarjeta.jugador() == jugador]
+
+    def cant_tarjetas_asignadas(self, jugador):
+        return sum([1 for tarjeta in self.tarjetas_asignadas(jugador)])
+
+    def simbolo_asignado_almenos_3_tarjetas(self, jugador):
+        return Counter(
+            [tarjeta.dame_simbolo() for tarjeta in self.tarjetas_asignadas(jugador)]
+        ).most_common(1)
+
+    def dame_3_tarjetas_para_canje(self, jugador):
+        simbolo = self.simbolo_asignado_almenos_3_tarjetas(jugador)[0]
+        if simbolo[1] >= 3:
+            return [
+                tarjeta
+                for tarjeta in self.tarjetas_asignadas(jugador)
+                if tarjeta.dame_simbolo() == simbolo[0]
+            ][:3]
+        acum = set()
+        res = []
+        for tarjeta in self.tarjetas_asignadas(jugador):
+            simbolo = tarjeta.dame_simbolo()
+            if simbolo not in acum:
+                res.append(tarjeta)
+                acum.add(simbolo)
+        return res[:3]
+
+    def dame_simbolos(self):
+        return set([tarjeta.dame_simbolo() for tarjeta in self.tarjetas()])
 
     def liberar_tarjetas_usadas(self):
         for tarjeta in self.tarjetas():
@@ -50,5 +79,5 @@ class Mazo:
     def __str__(self):
         res = ""
         for elem in self.mazo:
-            res = res + elem.__str__() + "\n"
+            res = res + elem + "\n"
         return res
