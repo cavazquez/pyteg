@@ -1,5 +1,5 @@
-pyright --pythonversion 3.11 . .
-ruff --format=github --target-version=py311 .
+pyright .
+ruff .
 coverage run --branch -m unittest
 black --check .
 isort --check .
