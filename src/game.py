@@ -13,11 +13,13 @@ class Game:
         self._jugadores = {}
         self._num_turno = 0
         self._mazo = mazo
-        self.cant_canjes = 0
+        self._cant_canjes = {}
 
     def empezar(self):
         self._turnos = [PrimerTurno(j) for j in self.lista_jugadores()]
         self._mapa.asignar_paises(self.lista_jugadores())
+        self._cant_canjes = {jugador: 0 for jugador in self.lista_jugadores()}
+
         self._start = True
 
     def empezo(self):
@@ -52,15 +54,23 @@ class Game:
     def turno_actual(self):
         return self._num_turno
 
-    def canjear(self, tarjetas, cant_canjes):
-        if cant_canjes == 0:
-            self._turnos[self._num_turno].agregar_unidades_generales(4)
-        if cant_canjes == 1:
-            self._turnos[self._num_turno].agregar_unidades_generales(7)
-        if cant_canjes >= 2:
-            self._turnos[self._num_turno].agregar_unidades_generales(5 * cant_canjes)
+    def cant_canjes(self, jugador):
+        return self._cant_canjes[jugador]
 
+    def canjear(self, jugador, tarjetas):
+        cant_canjes = self.cant_canjes(jugador)
+        turno = self._turnos[self._num_turno]
+        cantidad_a_agregar = 0
+        if cant_canjes == 0:
+            cantidad_a_agregar = 4
+        if cant_canjes == 1:
+            cantidad_a_agregar = 7
+        if cant_canjes >= 2:
+            cantidad_a_agregar = 5 * cant_canjes
+
+        turno.agregar_unidades_generales(cantidad_a_agregar)
         self._mazo.desasignar_tarjetas(tarjetas)
+        self._cant_canjes[jugador] += 1
 
     def cant_jugadores(self):
         return len(self.lista_jugadores())
