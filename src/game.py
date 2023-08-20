@@ -60,7 +60,7 @@ class Game:
         if cant_canjes >= 2:
             self._turnos[self._num_turno].agregar_unidades_generales(5 * cant_canjes)
 
-        self._mazo.liberar_tarjetas(tarjetas)
+        self._mazo.desasignar_tarjetas(tarjetas)
 
     def cant_jugadores(self):
         return len(self.lista_jugadores())
