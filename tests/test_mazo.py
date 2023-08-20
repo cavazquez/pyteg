@@ -56,6 +56,7 @@ class TestMazo(unittest.TestCase):
         mazo = Mazo(paises, simbolos)
         mazo.asignar_tarjeta("jug1")
         self.assertEqual(mazo.tarjetas_asignadas("jug1"), 1)
+        self.assertEqual(mazo.cantidad_tarjetas_asignadas(), 1)
 
     def test_asignar_otra_tarjeta(self):
         simbolos = ["Galeon", "Globo"]
@@ -66,6 +67,7 @@ class TestMazo(unittest.TestCase):
         mazo.asignar_tarjeta("jug2")
         self.assertEqual(mazo.tarjetas_asignadas("jug1"), 2)
         self.assertEqual(mazo.tarjetas_asignadas("jug2"), 1)
+        self.assertEqual(mazo.cantidad_tarjetas_asignadas(), 3)
 
     def test_sin_tarjeta_para_asignar(self):
         simbolos = ["Galeon", "Globo"]
@@ -80,26 +82,16 @@ class TestMazo(unittest.TestCase):
         paises = ["Argentina", "Brasil"]
         mazo = Mazo(paises, simbolos)
         tarjeta1 = mazo.asignar_tarjeta("jug1")
-        mazo.liberar(tarjeta1)
+        tarjeta1.desasignar()
         tarjeta2 = mazo.asignar_tarjeta("jug1", mezclar=lambda x, y: x)
         self.assertNotEqual(tarjeta2.dame_pais(), tarjeta1.dame_pais())
-
-    def test_fue_usada(self):
-        simbolos = ["Galeon", "Globo"]
-        paises = ["Argentina"]
-        mazo = Mazo(paises, simbolos)
-        tarjeta = mazo.tarjetas()[0]
-        self.assertFalse(mazo.fue_usada(tarjeta))
-        mazo.asignar_tarjeta("jug1")
-        mazo.liberar(tarjeta)
-        self.assertTrue(mazo.fue_usada(tarjeta))
 
     def test_cantidad_tarjetas_usadas(self):
         simbolos = ["Galeon", "Globo"]
         paises = ["Argentina"]
         mazo = Mazo(paises, simbolos)
         tarjeta = mazo.asignar_tarjeta("jug1")
-        mazo.liberar(tarjeta)
+        tarjeta.desasignar()
         self.assertEqual(mazo.cantidad_tarjetas_usadas(), 1)
 
     def test_liberar_tarjetas_usadas(self):
@@ -108,7 +100,7 @@ class TestMazo(unittest.TestCase):
         mazo = Mazo(paises, simbolos)
         tarjeta1 = mazo.asignar_tarjeta("jug1")
         tarjeta2 = mazo.asignar_tarjeta("jug1")
-        mazo.liberar(tarjeta1)
-        mazo.liberar(tarjeta2)
+        tarjeta1.desasignar()
+        tarjeta2.desasignar()
         mazo.asignar_tarjeta("jug1")
         self.assertEqual(mazo.cantidad_tarjetas_usadas(), 1)
