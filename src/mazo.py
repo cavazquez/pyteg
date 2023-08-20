@@ -43,7 +43,7 @@ class Mazo:
                 tarjeta.asignar(jugador)
                 return tarjeta
 
-    def liberar_tarjetas(self, tarjetas):
+    def desasignar_tarjetas(self, tarjetas):
         for tarjeta in tarjetas:
             tarjeta.desasignar()
 
