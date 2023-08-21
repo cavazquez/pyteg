@@ -1,4 +1,5 @@
 ![example workflow](https://github.com/cavazquez/pyteg/actions/workflows/ruff.yml/badge.svg)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![Checked with pyright](https://microsoft.github.io/pyright/img/pyright_badge.svg)](https://microsoft.github.io/pyright/)
 ![Coverage](https://progress-bar.dev/95?title=Coverage)
