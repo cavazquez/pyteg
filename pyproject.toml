@@ -12,6 +12,7 @@ target-version = "py311"
 select = ["E", # default
 	  "F", # default
 	  "I", # isort
+	  "UP", # pyupgrade
 	 ]
 
 [tool.pyright]
