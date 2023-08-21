@@ -5,7 +5,6 @@ from PySide6.QtWidgets import (
     QGraphicsView,
     QMainWindow,
 )
-
 from toml_reader import TomlReader
 
 # Only needed for access to command line arguments

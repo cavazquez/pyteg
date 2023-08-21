@@ -5,11 +5,10 @@ import socket
 import threading
 import time
 
-from PySide6.QtWidgets import QApplication
-
 # from server import Server, registrar_jugadores
 # from game import Game
 from gui import Gui
+from PySide6.QtWidgets import QApplication
 
 
 class Client:
