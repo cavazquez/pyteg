@@ -1,4 +1,4 @@
-name: Ruff, Unittest, Black, Isort
+name: Ruff, Unittest, Black
 
 on: [push]
 
@@ -32,8 +32,4 @@ jobs:
           python -m unittest discover
       - name: Black Formatter
         run: |
-          black --check .
-      - name: Isort
-        run: |
-          isort --check .
-        
+          black --check .        
