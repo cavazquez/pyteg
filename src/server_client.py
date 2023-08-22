@@ -8,8 +8,7 @@ class ConnectionServer:
         self._addr = addr
 
     def receiver(self):
-        data_r = self._conn.recv(1024).decode()
-        return data_r
+        return self._conn.recv(1024).decode()
 
     def send(self, data):
         self._conn.sendall(data.encode())
@@ -63,45 +62,45 @@ class Client:
             game.agregar_jugador(self._user_id, username)
             if not self._username:
                 self._username = username
-            return None
+            return
 
         if "chat" in mensaje:
             print("Enviando mensaje de chat")
             msg = self.mensaje_chat(data["chat"])
             data_json_s = json.dumps({"chat": msg})
             self._server.send_all(data_json_s, ignore_conn=self._conn)
-            return None
+            return
 
         if "agregar_una_unidad" in mensaje:
             print("Añadiendo una unidad")
             game.agregar_una_unidad(self._user_id, data["agregar_una_unidad"])
-            return None
+            return
 
         if "mapa" in mensaje:
             game.ver_mapa()
-            return None
+            return
 
         if "start" in mensaje:
             game.start()
-            return None
+            return
 
         if "atacar" in mensaje:
             atacante, defensor = data["atacar"].split()
             game.atacar(atacante, defensor)
-            return None
+            return
 
         if "reagrupar" in mensaje:
             desde, hacia, cantidad = data["reagrupar"].split()
             game.reagrupar(desde, hacia, int(cantidad))
-            return None
+            return
 
         if "obtener_tarjeta" in mensaje:
             self._tarjetas.append(game.dame_una_tarjeta())
-            return None
+            return
 
         if "finalizar_turno" in mensaje:
             game.ronda().finalizar_turno()
-            return None
+            return
 
         raise Exception("Mensaje no valido")
 

@@ -1,8 +1,7 @@
 class Calculos:
     @staticmethod
     def calcular_unidades_generales(mapa, jugador):
-        cant_unidades = max(mapa.cantidad_de_paises_del_jugador(jugador) // 2, 3)
-        return cant_unidades
+        return max(mapa.cantidad_de_paises_del_jugador(jugador) // 2, 3)
 
     @staticmethod
     def calcular_unidades_europa(mapa, jugador):
