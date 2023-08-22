@@ -31,7 +31,7 @@ class TomlReader:
         return self.paises[continente]
 
     def get_continentes(self):
-        return [k for k in self.continentes]
+        return list(self.continentes)
 
     def coordenadas_continente(self, continente):
         return self.continentes[continente]

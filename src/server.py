@@ -9,7 +9,7 @@ from src.server_client import Client, ConnectionServer
 
 class Server:
     def __init__(self):
-        self._clients = dict()
+        self._clients = {}
 
     def cant_clients(self):
         return len(self._clients)

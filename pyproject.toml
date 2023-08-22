@@ -13,6 +13,7 @@ select = ["E", # default
 	  "F", # default
 	  "I", # isort
 	  "UP", # pyupgrade
+	  "C4", # flake8-comprehensions
 	 ]
 
 [tool.pyright]

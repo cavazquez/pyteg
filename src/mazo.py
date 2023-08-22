@@ -56,7 +56,7 @@ class Mazo:
         return res[:3]
 
     def dame_simbolos(self):
-        return set([tarjeta.dame_simbolo() for tarjeta in self.tarjetas()])
+        return {tarjeta.dame_simbolo() for tarjeta in self.tarjetas()}
 
     def liberar_tarjetas_usadas(self):
         for tarjeta in self.tarjetas():

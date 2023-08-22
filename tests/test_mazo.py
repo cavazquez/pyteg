@@ -18,7 +18,7 @@ class TestMazo(unittest.TestCase):
         paises = ["Argentina", "Uruguay", "Chile"]
         mazo = Mazo(paises, simbolos)
         self.assertTrue(
-            all([tarjeta.dame_pais() in paises for tarjeta in mazo.tarjetas()])
+            all(tarjeta.dame_pais() in paises for tarjeta in mazo.tarjetas())
         )
 
     def test_cada_pais_tiene_una_tarjeta(self):
@@ -26,14 +26,14 @@ class TestMazo(unittest.TestCase):
         paises = ["Argentina", "Uruguay", "Chile"]
         mazo = Mazo(paises, simbolos)
         paises_en_tarjetas = [tarjeta.dame_pais() for tarjeta in mazo.tarjetas()]
-        self.assertTrue(all([pais in paises_en_tarjetas for pais in paises]))
+        self.assertTrue(all(pais in paises_en_tarjetas for pais in paises))
 
     def test_cada_tarjeta_tiene_un_simbolo(self):
         simbolos = ["Galeon", "Globo"]
         paises = ["Argentina", "Uruguay", "Chile"]
         mazo = Mazo(paises, simbolos)
         self.assertTrue(
-            all([tarjeta.dame_simbolo() in simbolos for tarjeta in mazo.tarjetas()])
+            all(tarjeta.dame_simbolo() in simbolos for tarjeta in mazo.tarjetas())
         )
 
     def test_simbolos_alternados(self):
@@ -111,7 +111,7 @@ class TestMazo(unittest.TestCase):
         mazo = Mazo(paises, simbolos)
 
         simbolos = mazo.dame_simbolos()
-        self.assertSetEqual(set(["Galeon", "Globo"]), simbolos)
+        self.assertSetEqual({"Galeon", "Globo"}, simbolos)
 
     def test_existen_3_simbolos_en_tarjeta(self):
         simbolos = ["Galeon"]
