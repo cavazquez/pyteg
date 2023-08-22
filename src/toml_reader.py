@@ -52,3 +52,4 @@ class TomlReader:
         for continente in self.get_continentes():
             if pais in self.get_paises(continente):
                 return continente
+        return None

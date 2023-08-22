@@ -71,6 +71,7 @@ class Mazo:
             if tarjeta.se_puede_asignar():
                 tarjeta.asignar(jugador)
                 return tarjeta
+        return None
 
     def desasignar_tarjetas(self, tarjetas):
         for tarjeta in tarjetas:
