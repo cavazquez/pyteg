@@ -44,7 +44,7 @@ class Mapa:
 
         # Asignar los países restantes a los jugadores restantes
         shuffle(jugadores)
-        for jug, pais in zip(jugadores, paises):
+        for jug, pais in zip(jugadores, paises, strict=False):
             self.asignar_pais(jug, pais)
 
     def aplicar_resultado_batalla(self, resultado):
