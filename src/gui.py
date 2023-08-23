@@ -1,22 +1,23 @@
-from PySide6.QtGui import QPixmap, QAction
 from PySide6.QtCore import QSize
+from PySide6.QtGui import QAction, QPixmap
 from PySide6.QtWidgets import (
-    QVBoxLayout,
-    QLineEdit,
-    QTextEdit,
-    QToolBar,
-    QPushButton,
-    QWidget,
     QGraphicsPixmapItem,
     QGraphicsScene,
     QGraphicsView,
+    QLineEdit,
     QMainWindow,
+    QPushButton,
+    QTextEdit,
+    QToolBar,
+    QVBoxLayout,
+    QWidget,
 )
 from toml_reader import TomlReader
 
+
 class Gui(QMainWindow):
     def __init__(self):
-        #QMainWindow.__init__(self, parent=None)
+        # QMainWindow.__init__(self, parent=None)
         super().__init__()
         self.setWindowTitle("PyTeg")
         self.setFixedSize(QSize(1024, 768))
@@ -79,4 +80,3 @@ class Gui(QMainWindow):
     def send_message(self):
         self.text_field.append(self.input_field.text())
         self.input_field.clear()
-
