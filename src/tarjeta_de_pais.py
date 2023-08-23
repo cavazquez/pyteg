@@ -5,10 +5,12 @@ class TarjetaDePais:
         self._usado = False
         self._jugador = None
 
-    def dame_pais(self):
+    @property
+    def pais(self):
         return self._pais
 
-    def dame_simbolo(self):
+    @property
+    def simbolo(self):
         return self._simbolo
 
     def fue_usada(self):

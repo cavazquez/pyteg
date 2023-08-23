@@ -17,32 +17,28 @@ class TestMazo(unittest.TestCase):
         simbolos = ["Galeon", "Globo"]
         paises = ["Argentina", "Uruguay", "Chile"]
         mazo = Mazo(paises, simbolos)
-        self.assertTrue(
-            all(tarjeta.dame_pais() in paises for tarjeta in mazo.tarjetas())
-        )
+        self.assertTrue(all(tarjeta.pais in paises for tarjeta in mazo.tarjetas()))
 
     def test_cada_pais_tiene_una_tarjeta(self):
         simbolos = ["Galeon", "Globo"]
         paises = ["Argentina", "Uruguay", "Chile"]
         mazo = Mazo(paises, simbolos)
-        paises_en_tarjetas = [tarjeta.dame_pais() for tarjeta in mazo.tarjetas()]
+        paises_en_tarjetas = [tarjeta.pais for tarjeta in mazo.tarjetas()]
         self.assertTrue(all(pais in paises_en_tarjetas for pais in paises))
 
     def test_cada_tarjeta_tiene_un_simbolo(self):
         simbolos = ["Galeon", "Globo"]
         paises = ["Argentina", "Uruguay", "Chile"]
         mazo = Mazo(paises, simbolos)
-        self.assertTrue(
-            all(tarjeta.dame_simbolo() in simbolos for tarjeta in mazo.tarjetas())
-        )
+        self.assertTrue(all(tarjeta.simbolo in simbolos for tarjeta in mazo.tarjetas()))
 
     def test_simbolos_alternados(self):
         simbolos = ["Galeon", "Globo"]
         paises = ["Argentina", "Uruguay", "Chile"]
         tarjetas = Mazo(paises, simbolos).tarjetas()
-        self.assertEqual(tarjetas[0].dame_simbolo(), "Galeon")
-        self.assertEqual(tarjetas[1].dame_simbolo(), "Globo")
-        self.assertEqual(tarjetas[2].dame_simbolo(), "Galeon")
+        self.assertEqual(tarjetas[0].simbolo, "Galeon")
+        self.assertEqual(tarjetas[1].simbolo, "Globo")
+        self.assertEqual(tarjetas[2].simbolo, "Galeon")
 
     def test_cantidad_de_tarjetas(self):
         simbolos = ["Galeon", "Globo"]
@@ -84,7 +80,7 @@ class TestMazo(unittest.TestCase):
         tarjeta1 = mazo.asignar_tarjeta("jug1")
         tarjeta1.desasignar()
         tarjeta2 = mazo.asignar_tarjeta("jug1", mezclar=lambda x, y: x)
-        self.assertNotEqual(tarjeta2.dame_pais(), tarjeta1.dame_pais())
+        self.assertNotEqual(tarjeta2.pais, tarjeta1.pais)
 
     def test_cantidad_tarjetas_usadas(self):
         simbolos = ["Galeon", "Globo"]
