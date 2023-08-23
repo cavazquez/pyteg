@@ -5,9 +5,7 @@ import socket
 import threading
 import time
 
-# from server import Server, registrar_jugadores
-# from game import Game
-from gui import Gui
+from src.gui import Gui
 from PySide6.QtWidgets import QApplication
 
 
@@ -25,9 +23,11 @@ class Client:
 class ConnectionClient:
     def __init__(self, host="127.0.0.1", port=65432):
         self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self._connected = True
+
+    def connectar(self):
         self._socket.connect((host, port))
         print(f"Conectado con {host}:{port}")
-        self._connected = True
 
     def is_connected(self):
         return self._connected
@@ -108,24 +108,10 @@ class Transceiver:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="PyTeg")
-    parser.add_argument("--server", action="store_true", help="Iniciar servidor")
-
-    parser.parse_args()
 
     app = QApplication()
     gui = Gui()
     gui.show()
-
-    # if vars(args)['server']:
-    #    print('Iniciando Server')
-    #    server = Server()
-    #    game = Game(server)
-    #    server_th = threading.Thread(target=registrar_jugadores, args=[server, game])
-    #    server_th.start()
-
-    # Espero a que se inicie el servidor
-    time.sleep(0.5)
 
     client = Client()
     connection = ConnectionClient()

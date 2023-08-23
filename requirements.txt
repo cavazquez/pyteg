@@ -1,7 +1,5 @@
 black==23.7.0
 coverage==7.3.0
-#PySide6==6.4.3
-#PySide6-Addons==6.4.3
-#PySide6-Essentials==6.4.3
+PySide6==6.5.2
 ruff==0.0.285
 pyright==1.1.323
