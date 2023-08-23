@@ -10,7 +10,7 @@ class Mazo:
         tarjetas = self.build_tarjetas_de_paises(paises, simbolos)
         self.mazo = {}
         for tarjeta in tarjetas:
-            self.mazo[tarjeta.dame_pais()] = tarjeta
+            self.mazo[tarjeta.pais] = tarjeta
 
     def build_tarjetas_de_paises(self, paises, simbolos):
         return [TarjetaDePais(*tupla) for tupla in zip(paises, cycle(simbolos))]
@@ -35,7 +35,7 @@ class Mazo:
 
     def simbolo_asignado_almenos_3_tarjetas(self, jugador):
         return Counter(
-            [tarjeta.dame_simbolo() for tarjeta in self.tarjetas_asignadas(jugador)]
+            [tarjeta.simbolo for tarjeta in self.tarjetas_asignadas(jugador)]
         ).most_common(1)
 
     def dame_3_tarjetas_para_canje(self, jugador):
@@ -44,19 +44,19 @@ class Mazo:
             return [
                 tarjeta
                 for tarjeta in self.tarjetas_asignadas(jugador)
-                if tarjeta.dame_simbolo() == simbolo[0]
+                if tarjeta.simbolo == simbolo[0]
             ][:3]
         acum = set()
         res = []
         for tarjeta in self.tarjetas_asignadas(jugador):
-            simbolo = tarjeta.dame_simbolo()
+            simbolo = tarjeta.simbolo
             if simbolo not in acum:
                 res.append(tarjeta)
                 acum.add(simbolo)
         return res[:3]
 
     def dame_simbolos(self):
-        return {tarjeta.dame_simbolo() for tarjeta in self.tarjetas()}
+        return {tarjeta.simbolo for tarjeta in self.tarjetas()}
 
     def liberar_tarjetas_usadas(self):
         for tarjeta in self.tarjetas():
