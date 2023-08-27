@@ -1,0 +1,4 @@
+black==23.7.0
+coverage==7.3.0
+ruff==0.0.285
+pyright==1.1.323
