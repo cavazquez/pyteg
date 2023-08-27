@@ -1,5 +1,4 @@
 import json
-import random
 import socket
 import threading
 
@@ -24,7 +23,7 @@ class ConnectionClient:
         self._host = host
         self._port = port
         self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self._connected = True
+        self._connected = False
 
     def connectar(self):
         self._socket.connect((self._host, self._port))
@@ -35,14 +34,16 @@ class ConnectionClient:
 
     def send_data(self, data):
         try:
-            self._socket.sendall(data)
+            if self.is_connected():
+                self._socket.sendall(data)
         except BrokenPipeError:
             self._connected = False
 
     def get_data(self):
         data = ""
         try:
-            data = self._socket.recv(1024)
+            if self.is_connected():
+                data = self._socket.recv(1024)
         except BrokenPipeError:
             self._connected = False
         return data
@@ -72,10 +73,6 @@ class Transceiver:
 
     @staticmethod
     def sender(connection):
-        numero = random.randint(1, 10)
-        username = f"cliente-{numero}"
-        username_data = json.dumps({"username": username})
-        connection.send_data(username_data.encode())
         while connection.is_connected():
             data = input("")
 
