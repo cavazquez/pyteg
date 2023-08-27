@@ -1,9 +1,10 @@
-from PySide6.QtCore import QSize
-from PySide6.QtGui import QAction, QPixmap
+from PySide6.QtCore import QSize, Qt
+from PySide6.QtGui import QAction, QIntValidator, QPixmap
 from PySide6.QtWidgets import (
     QGraphicsPixmapItem,
     QGraphicsScene,
     QGraphicsView,
+    QLabel,
     QLineEdit,
     QMainWindow,
     QPushButton,
@@ -12,13 +13,40 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from toml_reader import TomlReader
+
+from src.toml_reader import TomlReader
+
+
+class VentanaConectar(QWidget):
+    """
+    This "window" is a QWidget. If it has no parent, it
+    will appear as a free-floating window as we want.
+    """
+
+    def __init__(self):
+        super().__init__()
+        layout = QVBoxLayout()
+        self.setWindowTitle("Conectar")
+        self.setFixedSize(QSize(300, 150))
+        self.setWindowFlags(self.windowFlags() & ~Qt.WindowMinimizeButtonHint)
+        label_addr = QLabel("Direccion")
+        addr = QLineEdit()
+        label_port = QLabel("Puerto")
+        port = QLineEdit()
+        port.setValidator(QIntValidator())
+        buton_conectar = QPushButton("Conectar")
+        layout.addWidget(label_addr)
+        layout.addWidget(addr)
+        layout.addWidget(label_port)
+        layout.addWidget(port)
+        layout.addWidget(buton_conectar)
+        self.setLayout(layout)
 
 
 class Gui(QMainWindow):
     def __init__(self):
-        # QMainWindow.__init__(self, parent=None)
         super().__init__()
+        self.w = None
         self.setWindowTitle("PyTeg")
         self.setFixedSize(QSize(1024, 768))
 
@@ -44,8 +72,9 @@ class Gui(QMainWindow):
 
         toolbar = QToolBar("My main toolbar")
         self.addToolBar(toolbar)
-        button_action = QAction("Your button", self)
-        toolbar.addAction(button_action)
+        button_conectar = QAction("Conectar", self)
+        button_conectar.triggered.connect(self.ventana_conectar)
+        toolbar.addAction(button_conectar)
 
         self.scene = QGraphicsScene()
         self.view = QGraphicsView(self.scene)
@@ -58,6 +87,11 @@ class Gui(QMainWindow):
         main_widget.setLayout(main_layout)
         self.setCentralWidget(main_widget)
         self.view.show()
+
+    def ventana_conectar(self):
+        self.w = None
+        self.w = VentanaConectar()
+        self.w.show()
 
     def load_map_data(self):
         folder = "themes/"
