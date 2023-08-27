@@ -79,7 +79,7 @@ class TestMazo(unittest.TestCase):
         mazo = Mazo(paises, simbolos)
         tarjeta1 = mazo.asignar_tarjeta("jug1")
         tarjeta1.desasignar()
-        tarjeta2 = mazo.asignar_tarjeta("jug1", mezclar=lambda x, y: x)
+        tarjeta2 = mazo.asignar_tarjeta("jug1", mezclar=lambda x, _: x)
         self.assertNotEqual(tarjeta2.pais, tarjeta1.pais)
 
     def test_cantidad_tarjetas_usadas(self):

@@ -15,6 +15,7 @@ select = ["E", # default
 	  "UP", # pyupgrade
 	  "C4", # flake8-comprehensions
 	  "RET", # flake8-return
+	  "ARG", # flake8-unused-arguments
 	 ]
 
 [tool.pyright]
