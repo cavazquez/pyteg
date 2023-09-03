@@ -14,6 +14,10 @@ class Server:
     def cant_clients(self):
         return len(self._clients)
 
+    def quitarme(self, user_id):
+        print(f"Quitando {user_id}")
+        self._clients.pop(user_id)
+
     def registrar_cliente(self, user_id, client):
         self._clients[user_id] = client
 
@@ -21,7 +25,11 @@ class Server:
         print("clients: ", type(self._clients))
         for _, client in self._clients.items():
             if ignore_conn != client:
-                client.send(data)
+                print('send_all:', data)
+                try:
+                    client.send(data)
+                except:
+                    print("Exception")
 
     def send(self, client, data):
         client.send(data)
@@ -46,7 +54,7 @@ def registrar_jugadores(server, game):
                 connection = ConnectionServer(conn, addr)
                 client = Client(user_id, connection, server)
                 server.registrar_cliente(user_id, client)
-                threading.Thread(target=client.run, args=[server, game]).start()
+                threading.Thread(target=client.run, args=[game]).start()
                 user_id += 1
 
             except Exception as e:
@@ -58,8 +66,6 @@ def main():
     server = Server()
     game = Game(server, None)
     registrar_jugadores(server, game)
-    # server_th = threading.Thread(target=registrar_jugadores, args=[server, game])
-    # server_th.start()
 
 
 if __name__ == "__main__":

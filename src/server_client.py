@@ -65,10 +65,9 @@ class Client:
             return
 
         if "chat" in mensaje:
-            print("Enviando mensaje de chat")
             msg = self.mensaje_chat(data["chat"])
             data_json_s = json.dumps({"chat": msg})
-            self._server.send_all(data_json_s, ignore_conn=self._conn)
+            self._server.send_all(data_json_s)
             return
 
         if "agregar_una_unidad" in mensaje:
@@ -100,6 +99,10 @@ class Client:
 
         if "finalizar_turno" in mensaje:
             game.ronda().finalizar_turno()
+            return
+
+        if "cerrar" in mensaje:
+            self._server.quitarme(self._user_id)
             return
 
         raise Exception("Mensaje no valido")
