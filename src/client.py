@@ -1,6 +1,5 @@
 import json
 import socket
-import threading
 import time
 
 from PySide6.QtWidgets import QApplication
@@ -20,13 +19,14 @@ class Client:
         return self._connection.is_connected()
 
     def send_chat(self, text):
-        msg = json.dumps({"mensaje":"chat", "chat":text})
+        msg = json.dumps({"mensaje": "chat", "chat": text})
         self._connection.send_data(msg)
 
     def cerrar(self):
-        msg = json.dumps({"mensaje":"cerrar"})
+        msg = json.dumps({"mensaje": "cerrar"})
         self._connection.send_data(msg)
         self._connection.close()
+
 
 class ConnectionClient:
     def __init__(self, host="127.0.0.1", port=65432):
@@ -66,7 +66,6 @@ class ConnectionClient:
 
 
 class Transceiver:
-
     def __init__(self, client, gui):
         self.client = client
         self.gui = gui
@@ -92,11 +91,11 @@ class Transceiver:
 
             if "chat" in data_json:
                 msg = data_json["chat"]
-                gui.msg_chat(msg)
+                self.gui.msg_chat(msg)
             elif "mapa" in data_json:
-                client.update_mapa(data_json["mapa"])
+                self.client.update_mapa(data_json["mapa"])
             elif "jugadores" in data_json:
-                gui.update(data_json["jugadores"])
+                self.gui.update(data_json["jugadores"])
             else:
                 print("Comando no reconocido")
 

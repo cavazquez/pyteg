@@ -25,11 +25,11 @@ class Server:
         print("clients: ", type(self._clients))
         for _, client in self._clients.items():
             if ignore_conn != client:
-                print('send_all:', data)
+                print("send_all:", data)
                 try:
                     client.send(data)
-                except:
-                    print("Exception")
+                except Exception as ex:
+                    print(ex)
 
     def send(self, client, data):
         client.send(data)

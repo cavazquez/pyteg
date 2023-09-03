@@ -7,15 +7,16 @@ from PySide6.QtWidgets import (
     QLabel,
     QLineEdit,
     QMainWindow,
+    QMessageBox,
     QPushButton,
     QTextEdit,
     QToolBar,
     QVBoxLayout,
     QWidget,
-    QMessageBox,
 )
 
 from src.toml_reader import TomlReader
+
 
 class VentanaConectar(QWidget):
     """
@@ -48,14 +49,13 @@ class VentanaConectar(QWidget):
         try:
             self.client.conectar()
             self.close()
-        except ConnectionRefusedError as e:
+        except ConnectionRefusedError:
             msgBox = QMessageBox()
             msgBox.setWindowTitle("Advertencia")
             msgBox.setIcon(QMessageBox.Warning)
             msgBox.setText("Conexión rehusada.")
             msgBox.setModal(True)
             msgBox.exec()
-
 
 
 class Gui(QMainWindow):
@@ -140,4 +140,3 @@ class Gui(QMainWindow):
         print(event)
         self.client.cerrar()
         self.close()
-
