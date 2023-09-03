@@ -1,6 +1,7 @@
 import json
 import socket
 import threading
+import time
 
 from PySide6.QtWidgets import QApplication
 
@@ -8,15 +9,24 @@ from src.gui import Gui
 
 
 class Client:
-    def __init__(self):
+    def __init__(self, connection):
         self._mapa = ""
+        self._connection = connection
 
-    def update_mapa(self, state):
-        print("Actualizando mapa")
-        print(f"mapa: {self._mapa}")
-        self._mapa = state
-        print(f"mapa: {self._mapa}")
+    def conectar(self):
+        self._connection.conectar()
 
+    def is_connected(self):
+        return self._connection.is_connected()
+
+    def send_chat(self, text):
+        msg = json.dumps({"mensaje":"chat", "chat":text})
+        self._connection.send_data(msg)
+
+    def cerrar(self):
+        msg = json.dumps({"mensaje":"cerrar"})
+        self._connection.send_data(msg)
+        self._connection.close()
 
 class ConnectionClient:
     def __init__(self, host="127.0.0.1", port=65432):
@@ -25,9 +35,13 @@ class ConnectionClient:
         self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._connected = False
 
-    def connectar(self):
+    def conectar(self):
         self._socket.connect((self._host, self._port))
+        self._connected = True
         print(f"Conectado con {self._host}:{self._port}")
+
+    def close(self):
+        self._socket.close()
 
     def is_connected(self):
         return self._connected
@@ -35,7 +49,9 @@ class ConnectionClient:
     def send_data(self, data):
         try:
             if self.is_connected():
-                self._socket.sendall(data)
+                self._socket.sendall(data.encode())
+            else:
+                print("No conectado")
         except BrokenPipeError:
             self._connected = False
 
@@ -50,20 +66,33 @@ class ConnectionClient:
 
 
 class Transceiver:
-    @staticmethod
-    def receiver(connection, client, gui):
+
+    def __init__(self, client, gui):
+        self.client = client
+        self.gui = gui
+        self.vivo = True
+
+    def cerrar(self):
+        self.vivo = False
+
+    def receiver(self):
         data_b = ""
-        while connection.is_connected():
-            data_b = connection.get_data()
-            if not data_b:
-                print("socket connection broken")
-                break
+        while self.vivo:
+            while not self.client.is_connected():
+                time.sleep(0.1)
+            if self.client.is_connected():
+                data_b = self.client.get_data()
+                if not data_b:
+                    print("socket connection broken")
+                    break
 
             data = data_b.decode()
             data_json = json.loads(data)
+            print(data_json)
 
             if "chat" in data_json:
-                print(data_json["chat"])
+                msg = data_json["chat"]
+                gui.msg_chat(msg)
             elif "mapa" in data_json:
                 client.update_mapa(data_json["mapa"])
             elif "jugadores" in data_json:
@@ -71,58 +100,21 @@ class Transceiver:
             else:
                 print("Comando no reconocido")
 
-    @staticmethod
-    def sender(connection):
-        while connection.is_connected():
-            data = input("")
-
-            if data.startswith("chat"):
-                data = data[len("chat") :]
-                json_data = json.dumps({"chat": data})
-                connection.send_data(json_data.encode())
-            elif data.startswith("start"):
-                json_data = json.dumps({"start": ""})
-                connection.send_data(json_data.encode())
-            elif data.startswith("agregar"):
-                data = data[len("agregar") :]
-                json_data = json.dumps({"agregar_una_unidad": data})
-                connection.send_data(json_data.encode())
-            elif data.startswith("atacar"):
-                data = data[len("atacar") :]
-                json_data = json.dumps({"atacar": data})
-                connection.send_data(json_data.encode())
-            elif data.startswith("reagrupar"):
-                data = data[len("reagrupar") :]
-                json_data = json.dumps({"reagrupar": data})
-                connection.send_data(json_data.encode())
-            elif data.startswith("mapa"):
-                json_data = json.dumps({"mapa": ""})
-                connection.send_data(json_data.encode())
-            elif data.startswith("finalizar_turno"):
-                json_data = json.dumps({"finalizar_turno": ""})
-                connection.send_data(json_data.encode())
-            else:
-                print("Error: Comando desconocido")
-
 
 def main():
+    connection = ConnectionClient()
+    client = Client(connection)
     app = QApplication()
-    gui = Gui()
+    gui = Gui(client)
     gui.show()
 
-    client = Client()
-    connection = ConnectionClient()
-    receiver_th = threading.Thread(
-        target=Transceiver.receiver, args=[connection, client, gui]
-    )
-    receiver_th.start()
-    sender_th = threading.Thread(target=Transceiver.sender, args=[connection])
-    sender_th.start()
+    tr = Transceiver(client, gui)
 
     app.exec()
-
-    receiver_th.join()
-    sender_th.join()
+    tr.receiver()
+    print("BB")
+    tr.cerrar()
+    print("AA")
 
 
 if __name__ == "__main__":

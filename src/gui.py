@@ -12,10 +12,10 @@ from PySide6.QtWidgets import (
     QToolBar,
     QVBoxLayout,
     QWidget,
+    QMessageBox,
 )
 
 from src.toml_reader import TomlReader
-
 
 class VentanaConectar(QWidget):
     """
@@ -23,29 +23,45 @@ class VentanaConectar(QWidget):
     will appear as a free-floating window as we want.
     """
 
-    def __init__(self):
+    def __init__(self, client):
+        self.client = client
         super().__init__()
         layout = QVBoxLayout()
         self.setWindowTitle("Conectar")
         self.setFixedSize(QSize(300, 150))
         self.setWindowFlags(self.windowFlags() & ~Qt.WindowMinimizeButtonHint)
         label_addr = QLabel("Direccion")
-        addr = QLineEdit()
+        addr = QLineEdit("localhost")
         label_port = QLabel("Puerto")
-        port = QLineEdit()
+        port = QLineEdit("65432")
         port.setValidator(QIntValidator())
-        buton_conectar = QPushButton("Conectar")
+        button_conectar = QPushButton("Conectar")
+        button_conectar.clicked.connect(self.connect)
         layout.addWidget(label_addr)
         layout.addWidget(addr)
         layout.addWidget(label_port)
         layout.addWidget(port)
-        layout.addWidget(buton_conectar)
+        layout.addWidget(button_conectar)
         self.setLayout(layout)
+
+    def connect(self):
+        try:
+            self.client.conectar()
+            self.close()
+        except ConnectionRefusedError as e:
+            msgBox = QMessageBox()
+            msgBox.setWindowTitle("Advertencia")
+            msgBox.setIcon(QMessageBox.Warning)
+            msgBox.setText("Conexión rehusada.")
+            msgBox.setModal(True)
+            msgBox.exec()
+
 
 
 class Gui(QMainWindow):
-    def __init__(self):
+    def __init__(self, client):
         super().__init__()
+        self.client = client
         self.w = None
         self.setWindowTitle("PyTeg")
         self.setFixedSize(QSize(1024, 768))
@@ -90,7 +106,7 @@ class Gui(QMainWindow):
 
     def ventana_conectar(self):
         self.w = None
-        self.w = VentanaConectar()
+        self.w = VentanaConectar(self.client)
         self.w.show()
 
     def load_map_data(self):
@@ -112,5 +128,16 @@ class Gui(QMainWindow):
                 pass
 
     def send_message(self):
-        self.text_field.append(self.input_field.text())
-        self.input_field.clear()
+        text = self.input_field.text()
+        if text:
+            self.client.send_chat(text)
+            self.input_field.clear()
+
+    def msg_chat(self, text):
+        self.text_field.append(text)
+
+    def closeEvent(self, event):
+        print(event)
+        self.client.cerrar()
+        self.close()
+
