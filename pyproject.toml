@@ -16,6 +16,8 @@ select = ["E", # default
 	  "C4", # flake8-comprehensions
 	  "RET", # flake8-return
 	  "ARG", # flake8-unused-arguments
+	  "FURB", # refurb
+	  "PIE", # flake8-pie
 	 ]
 
 [tool.pyright]
