@@ -22,14 +22,18 @@ class Server:
         self._clients[user_id] = client
 
     def send_all(self, data, ignore_conn=None):
-        print("clients: ", type(self._clients))
-        for _, client in self._clients.items():
+        for user_id, client in self._clients.items():
+            print(user_id, client)
+        for user_id, client in self._clients.items():
             if ignore_conn != client:
                 print("send_all:", data)
                 try:
                     client.send(data)
+                except BrokenPipeError as ex:
+                    print("BrokenPipeError:", ex)
+                    del self._clients[user_id]
                 except Exception as ex:
-                    print(ex)
+                    print("Exception:", ex)
 
     def send(self, client, data):
         client.send(data)

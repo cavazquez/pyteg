@@ -8,7 +8,10 @@ class ConnectionServer:
         self._addr = addr
 
     def receiver(self):
-        return self._conn.recv(1024).decode()
+        try:
+            return self._conn.recv(1024).decode()
+        except ConnectionResetError:
+            return None
 
     def send(self, data):
         self._conn.sendall(data.encode())
@@ -65,6 +68,7 @@ class Client:
             return
 
         if "chat" in mensaje:
+            print(f"Chat user_id: {self._user_id}")
             msg = self.mensaje_chat(data["chat"])
             data_json_s = json.dumps({"chat": msg})
             self._server.send_all(data_json_s)
@@ -102,6 +106,7 @@ class Client:
             return
 
         if "cerrar" in mensaje:
+            print(f"Cerrando  user_id: {self._user_id}")
             self._server.quitarme(self._user_id)
             return
 

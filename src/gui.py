@@ -61,6 +61,7 @@ class VentanaConectar(QWidget):
 class Gui(QMainWindow):
     def __init__(self, client):
         super().__init__()
+        self._vivo = True
         self.client = client
         self.w = None
         self.setWindowTitle("PyTeg")
@@ -70,6 +71,9 @@ class Gui(QMainWindow):
         self.load_map_data()
 
         self.show()  # IMPORTANT!!!!! Windows are hidden by default.
+
+    def vivo(self):
+        return self._vivo
 
     def setup_graphics_view(self):
         input_layout = QVBoxLayout()
@@ -137,6 +141,8 @@ class Gui(QMainWindow):
         self.text_field.append(text)
 
     def closeEvent(self, event):
+        self._vivo = False
         print(event)
         self.client.cerrar()
-        self.close()
+        print("Aceptando Evento")
+        event.accept()
