@@ -2,4 +2,4 @@ black==23.9.1
 coverage==7.3.0
 PySide6==6.5.2
 ruff==0.0.287
-pyright==1.1.325
+pyright==1.1.326
