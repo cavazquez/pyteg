@@ -9,6 +9,7 @@ target-version = ["py311"]
 
 [tool.ruff]
 target-version = "py311"
+preview = true
 select = ["E", # default
 	  "F", # default
 	  "I", # isort
