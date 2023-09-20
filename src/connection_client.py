@@ -20,7 +20,8 @@ class ConnectionClient:
     def close(self):
         logging.info("Cerrando Socket")
         print("Cerrando Socket")
-        self._socket.close()
+        if self.is_connected():
+            self._socket.close()
 
     def is_connected(self):
         logging.info("Consultando si está conectado")
