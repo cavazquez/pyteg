@@ -68,14 +68,24 @@ class Gui(QMainWindow):
         self.w = None
         self.setWindowTitle("PyTeg")
         self.setFixedSize(QSize(1024, 768))
+        self.setMouseTracking(True)
 
         self.setup_graphics_view()
         self.load_map_data()
+        self.cor_mouse()
 
         self.show()  # IMPORTANT!!!!! Windows are hidden by default.
 
     def vivo(self):
         return self._vivo
+
+    def cor_mouse(self):
+        self.statusBar().showMessage("Coordenadas: (0, 0)")
+
+    def mouseMoveEvent(self, event):
+        x = event.x()
+        y = event.y()
+        self.statusBar().showMessage(f"Coordenadas: ({x}, {y})")
 
     def setup_graphics_view(self):
         input_layout = QVBoxLayout()
@@ -102,12 +112,12 @@ class Gui(QMainWindow):
         self.view = QGraphicsView(self.scene)
 
         # Create a widget to hold the QGraphicsView and input area
-        main_widget = QWidget(self)
+        self.main_widget = QWidget(self)
         main_layout = QVBoxLayout()
         main_layout.addWidget(self.view)
         main_layout.addLayout(input_layout)
-        main_widget.setLayout(main_layout)
-        self.setCentralWidget(main_widget)
+        self.main_widget.setLayout(main_layout)
+        self.setCentralWidget(self.main_widget)
         self.view.show()
 
     def ventana_conectar(self):
@@ -125,16 +135,18 @@ class Gui(QMainWindow):
             cor_x, cor_y = reader.coordenadas_continente(continente)
             for pais in reader.get_paises(continente):
                 # Paises
+                print(pais)
                 pixmap = QPixmap(folder + reader.img_path(pais))
                 graphicsPixmapItem = QGraphicsPixmapItem(pixmap)
                 pos_x, pos_y, army_x, army_y = reader.coordenadas(pais)
                 graphicsPixmapItem.setPos(cor_x + pos_x, cor_y + pos_y)
+                print(cor_x + pos_x, cor_y + pos_y)
                 self.scene.addItem(graphicsPixmapItem)
 
                 # Circulos en paises
                 # Crear un objeto círculo
-                pos_x_abs = cor_x + pos_x + army_x + 5
-                pos_y_abs = cor_y + pos_y + army_y + 20
+                pos_x_abs = cor_x + pos_x + army_x
+                pos_y_abs = cor_y + pos_y + army_y
 
                 circle = QGraphicsEllipseItem(pos_x_abs, pos_y_abs, 15, 15)
                 # (x, y, width, height)
@@ -151,9 +163,10 @@ class Gui(QMainWindow):
                 # Calcular el centro del círculo
                 center_x = circle.rect().center().x()
                 center_y = circle.rect().center().y()
+                print(center_x, center_y)
 
                 center_text = QGraphicsTextItem("1")
-                center_text.setFont(QFont("Arial", 14))
+                center_text.setFont(QFont("Helvetica [Cronyx]", 14))
                 center_text.setPos(center_x - 8, center_y - 12)
                 self.scene.addItem(center_text)
 
