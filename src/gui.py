@@ -1,8 +1,10 @@
 from PySide6.QtCore import QSize, Qt
-from PySide6.QtGui import QAction, QIntValidator, QPixmap
+from PySide6.QtGui import QAction, QBrush, QColor, QFont, QIntValidator, QPen, QPixmap
 from PySide6.QtWidgets import (
+    QGraphicsEllipseItem,
     QGraphicsPixmapItem,
     QGraphicsScene,
+    QGraphicsTextItem,
     QGraphicsView,
     QLabel,
     QLineEdit,
@@ -120,16 +122,40 @@ class Gui(QMainWindow):
             reader = TomlReader(fs.read())
 
         for continente in reader.get_continentes():
-            cor = reader.coordenadas_continente(continente)
+            cor_x, cor_y = reader.coordenadas_continente(continente)
             for pais in reader.get_paises(continente):
+                # Paises
                 pixmap = QPixmap(folder + reader.img_path(pais))
                 graphicsPixmapItem = QGraphicsPixmapItem(pixmap)
-                pos_x, pos_y, _, _ = reader.coordenadas(pais)
-                graphicsPixmapItem.setPos(cor[0] + pos_x, cor[1] + pos_y)
+                pos_x, pos_y, army_x, army_y = reader.coordenadas(pais)
+                graphicsPixmapItem.setPos(cor_x + pos_x, cor_y + pos_y)
                 self.scene.addItem(graphicsPixmapItem)
 
-            for pais in reader.get_paises(continente):
-                pass
+                # Circulos en paises
+                # Crear un objeto círculo
+                pos_x_abs = cor_x + pos_x + army_x + 5
+                pos_y_abs = cor_y + pos_y + army_y + 20
+
+                circle = QGraphicsEllipseItem(pos_x_abs, pos_y_abs, 15, 15)
+                # (x, y, width, height)
+
+                # Establecer el color del borde y del relleno del círculo
+                pen = QPen(Qt.blue)
+                brush = QBrush(QColor(255, 0, 0))  # Color rojo
+                circle.setPen(pen)
+                circle.setBrush(brush)
+
+                # Agregar el círculo a la escena
+                self.scene.addItem(circle)
+
+                # Calcular el centro del círculo
+                center_x = circle.rect().center().x()
+                center_y = circle.rect().center().y()
+
+                center_text = QGraphicsTextItem("1")
+                center_text.setFont(QFont("Arial", 14))
+                center_text.setPos(center_x - 8, center_y - 12)
+                self.scene.addItem(center_text)
 
     def send_message(self):
         text = self.input_field.text()
