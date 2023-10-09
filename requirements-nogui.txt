@@ -1,4 +1,4 @@
 black==23.9.1
 coverage==7.3.2
-ruff==0.0.291
+ruff==0.0.292
 pyright==1.1.330.post0
