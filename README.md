@@ -19,6 +19,8 @@ Project about implementation game-board Teg.
 
 ### Correr solo los test con coverage
 `coverage run --branch -m unittest`
+### Mostrar el coverage
+`coverage report`
 
 ### Mostrar que cambios haria black
 `black -t py311 --diff --check .`
