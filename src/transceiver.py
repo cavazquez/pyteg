@@ -9,9 +9,12 @@ class Transceiver:
 
     def receiver(self):
         data_b = ""
+        print("receiver")
         while self.gui.vivo():
             if self.client.is_connected():
                 data_b = self.client.get_data()
+
+            print(data_b)
 
             if data_b:
                 data = data_b.decode()
@@ -25,6 +28,8 @@ class Transceiver:
                     self.client.update_mapa(data_json["mapa"])
                 elif "jugadores" in data_json:
                     self.gui.update(data_json["jugadores"])
+                elif "username" in data_json:
+                    self.client.set_username(data_json["username"])
                 else:
                     print("Comando no reconocido")
 

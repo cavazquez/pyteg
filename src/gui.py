@@ -84,12 +84,12 @@ class Gui(QMainWindow):
             cor_x, cor_y = reader.coordenadas_continente(continente)
             for pais in reader.get_paises(continente):
                 # Paises
-                print(pais)
+                # print(pais)
                 pixmap = QPixmap(folder + reader.img_path(pais))
                 graphicsPixmapItem = QGraphicsPixmapItem(pixmap)
                 pos_x, pos_y, army_x, army_y = reader.coordenadas(pais)
                 graphicsPixmapItem.setPos(cor_x + pos_x, cor_y + pos_y)
-                print(cor_x + pos_x, cor_y + pos_y)
+                # print(cor_x + pos_x, cor_y + pos_y)
                 self.scene.addItem(graphicsPixmapItem)
 
                 # Circulos en paises
@@ -112,7 +112,7 @@ class Gui(QMainWindow):
                 # Calcular el centro del círculo
                 center_x = circle.rect().center().x()
                 center_y = circle.rect().center().y()
-                print(center_x, center_y)
+                # print(center_x, center_y)
 
                 center_text = QGraphicsTextItem("1")
                 center_text.setFont(QFont("Helvetica [Cronyx]", 14))

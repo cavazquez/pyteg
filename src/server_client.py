@@ -22,9 +22,9 @@ class ConnectionServer:
 
 
 class Client:
-    def __init__(self, user_id, conn, server):
+    def __init__(self, user_id, conn, server, username):
         self._user_id = user_id
-        self._username = None
+        self._username = username
         self._conn = conn
         self._server = server
         self._tarjetas = []
@@ -59,12 +59,19 @@ class Client:
 
     def ejecutar_mensaje(self, data, game):
         mensaje = data["mensaje"]
+        print(mensaje)
 
         if "username" in mensaje:
             username = data["nombre"]
             game.agregar_jugador(self._user_id, username)
             if not self._username:
                 self._username = username
+            return
+
+        if "obtener_username" in mensaje:
+            print(f"Enviando username: {self._username}")
+            data_json_s = json.dumps({"username": self._username})
+            self._server.send(self._conn, data_json_s)
             return
 
         if "chat" in mensaje:
