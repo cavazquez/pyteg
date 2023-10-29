@@ -13,12 +13,22 @@ class Client:
     def __init__(self, connection):
         self._mapa = ""
         self._connection = connection
+        self._username = None
 
     def conectar(self):
         self._connection.conectar()
+        self.obtener_username()
 
     def is_connected(self):
         return self._connection.is_connected()
+
+    def obtener_username(self):
+        msg = json.dumps({"mensaje": "obtener_username"})
+        self._connection.send_data(msg)
+
+    def set_username(self, username):
+        print(f"username: {username}")
+        self._username = username
 
     def send_chat(self, text):
         msg = json.dumps({"mensaje": "chat", "chat": text})
@@ -39,9 +49,12 @@ def main():
     client = Client(connection)
     app = QApplication()
     gui = Gui(client)
+
+    print("gui show")
     gui.show()
     sys.exit(app.exec())
 
+    print("Transceiver")
     tr = Transceiver(client, gui)
     t = Thread(target=tr.receiver, args=[])
     t.run()

@@ -48,6 +48,7 @@ def registrar_jugadores(server, game):
     host = "127.0.0.1"
     port = 65432
     print(host, port)
+    usernames = ["Cortazar", "Borges", "Sabato", "Arlt", "Bioy", "Saer"]
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.bind((host, port))
         while True:
@@ -56,7 +57,8 @@ def registrar_jugadores(server, game):
                 conn, addr = s.accept()
                 print("Connected by", addr)
                 connection = ConnectionServer(conn, addr)
-                client = Client(user_id, connection, server)
+
+                client = Client(user_id, connection, server, usernames[user_id])
                 server.registrar_cliente(user_id, client)
                 threading.Thread(target=client.run, args=[game]).start()
                 user_id += 1
