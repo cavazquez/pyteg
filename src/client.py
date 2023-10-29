@@ -27,7 +27,6 @@ class Client:
         self._connection.send_data(msg)
 
     def set_username(self, username):
-        print(f"username: {username}")
         self._username = username
 
     def send_chat(self, text):
@@ -50,14 +49,14 @@ def main():
     app = QApplication()
     gui = Gui(client)
 
-    print("gui show")
-    gui.show()
-    sys.exit(app.exec())
-
     print("Transceiver")
     tr = Transceiver(client, gui)
     t = Thread(target=tr.receiver, args=[])
-    t.run()
+    t.start()
+
+    print("gui show")
+    gui.show()
+    sys.exit(app.exec())
 
 
 if __name__ == "__main__":
