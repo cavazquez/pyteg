@@ -59,42 +59,41 @@ class Client:
 
     def ejecutar_mensaje(self, data, game):
         mensaje = data["mensaje"]
-        print(mensaje)
+        # print(mensaje)
 
-        if "username" in mensaje:
+        if "username" == mensaje:
             username = data["nombre"]
             game.agregar_jugador(self._user_id, username)
             if not self._username:
                 self._username = username
             return
 
-        if "obtener_username" in mensaje:
-            print(f"Enviando username: {self._username}")
+        if "obtener_username" == mensaje:
             data_json_s = json.dumps({"username": self._username})
             self._server.send(self._conn, data_json_s)
             return
 
-        if "chat" in mensaje:
+        if "chat" == mensaje:
             print(f"Chat user_id: {self._user_id}")
             msg = self.mensaje_chat(data["chat"])
             data_json_s = json.dumps({"chat": msg})
             self._server.send_all(data_json_s)
             return
 
-        if "agregar_una_unidad" in mensaje:
+        if "agregar_una_unidad" == mensaje:
             print("Añadiendo una unidad")
             game.agregar_una_unidad(self._user_id, data["agregar_una_unidad"])
             return
 
-        if "mapa" in mensaje:
+        if "mapa" == mensaje:
             game.ver_mapa()
             return
 
-        if "start" in mensaje:
+        if "start" == mensaje:
             game.start()
             return
 
-        if "atacar" in mensaje:
+        if "atacar" == mensaje:
             atacante, defensor = data["atacar"].split()
             game.atacar(atacante, defensor)
             return
