@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from PySide6.QtCore import QSize, Qt
 from PySide6.QtGui import QAction, QBrush, QColor, QFont, QPen, QPixmap
 from PySide6.QtWidgets import (
@@ -77,8 +79,7 @@ class Gui(QMainWindow):
     def load_map_data(self):
         folder = "themes/"
 
-        with open("src/paises.toml") as fs:
-            reader = TomlReader(fs.read())
+        reader = TomlReader(Path("src/paises.toml").read_text())
 
         for continente in reader.get_continentes():
             cor_x, cor_y = reader.coordenadas_continente(continente)
