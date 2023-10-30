@@ -1,13 +1,12 @@
 import unittest
+from pathlib import Path
 
 from src.toml_reader import TomlReader
 
 
 class TestTomlReader(unittest.TestCase):
     def test_init(self):
-        with open("src/paises.toml") as f:
-            toml_string = f.read()
-            # print(toml_string)
+        toml_string = Path("src/paises.toml").read_text()
         self.assertTrue(TomlReader(toml_string))
 
     def test_continente(self):
