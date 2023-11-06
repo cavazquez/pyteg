@@ -34,3 +34,5 @@ class Transceiver:
                     print("Comando no reconocido")
 
             time.sleep(1)
+            print("self.gui.vivo(): ", self.gui.vivo())
+        print("Saliendo Transceiver.receiver")
