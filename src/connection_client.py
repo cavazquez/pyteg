@@ -21,6 +21,7 @@ class ConnectionClient:
         logging.info("Cerrando Socket")
         print("Cerrando Socket")
         if self.is_connected():
+            self._socket.shutdown(socket.SHUT_RDWR)
             self._socket.close()
 
     def is_connected(self):
