@@ -1,0 +1,12 @@
+    -> Gui : closeEvent(event)
+Gui -> Client ++ : cerrar()
+Client -> Connection ++ : send_data()
+Client <- Connection --
+Client -> Connection ++ : close()
+Connection -> Socket ++ : shutdown(socket.SHUT_RDWR)
+Connection <- Socket --
+Connection -> Socket ++ : close()
+Connection <- Socket --
+Client <- Connection --
+Gui <- Client --
+
