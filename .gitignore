@@ -64,3 +64,4 @@ target/
 
 *.swp
 poetry.lock
+diagram/*.png
