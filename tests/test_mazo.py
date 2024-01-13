@@ -120,7 +120,8 @@ class TestMazo(unittest.TestCase):
         mazo.asignar_tarjeta(jugador)
         mazo.asignar_tarjeta(jugador)
         self.assertListEqual(
-            mazo.simbolo_asignado_almenos_3_tarjetas(jugador), [("Galeon", 3)]
+            mazo.simbolo_asignado_almenos_3_tarjetas(jugador),
+            [("Galeon", 3)],
         )
 
     def test_no_existen_3_simbolos_en_tarjeta(self):

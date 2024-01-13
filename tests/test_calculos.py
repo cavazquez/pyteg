@@ -171,7 +171,8 @@ class TestCalculos(unittest.TestCase):
 
         mapa = Mapa(build_mapa)
         self.assertEqual(
-            Calculos.calcular_unidades_america_del_norte(mapa, "Mengano"), 5
+            Calculos.calcular_unidades_america_del_norte(mapa, "Mengano"),
+            5,
         )
 
     def test_calcular_unidades_sin_toda_america_del_norte(self):
@@ -185,5 +186,6 @@ class TestCalculos(unittest.TestCase):
 
         mapa = Mapa(build_mapa)
         self.assertEqual(
-            Calculos.calcular_unidades_america_del_norte(mapa, "Mengano"), 0
+            Calculos.calcular_unidades_america_del_norte(mapa, "Mengano"),
+            0,
         )

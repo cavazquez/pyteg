@@ -146,11 +146,13 @@ class TestMap(unittest.TestCase):
         mapa.asignar_pais("Mengano", "Argentina")
         mapa.asignar_pais("Mengano", "Uruguay")
         self.assertEqual(
-            mapa.cantidad_de_paises_del_jugador_por_continente("Mengano", "Pangea"), 2
-        )  # noqa: E501
+            mapa.cantidad_de_paises_del_jugador_por_continente("Mengano", "Pangea"),
+            2,
+        )
         self.assertEqual(
-            mapa.cantidad_de_paises_del_jugador_por_continente("Mengano", "America"), 0
-        )  # noqa: E501
+            mapa.cantidad_de_paises_del_jugador_por_continente("Mengano", "America"),
+            0,
+        )
 
     def test_tiene_toda_europa(self):
         def build_mapa():
@@ -236,7 +238,7 @@ class TestMap(unittest.TestCase):
         self.assertEqual(
             mapa.__str__(),
             '{"Argentina": [1, "Africa", "Mengano"], "Uruguay": [10, "Africa", null]}',
-        )  # noqa: E501
+        )
 
     def test_aplicar_resultado_batalla(self):
         def build_mapa():

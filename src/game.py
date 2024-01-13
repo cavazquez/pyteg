@@ -26,13 +26,13 @@ class Game:
     def atacar(self, atacante, defensor):
         dados_atacante = Dados.tirar_dados_ordenados(
             Batalla.calcular_cant_dados_atacante(
-                self.mapa().cantidad_unidades(atacante)
-            )
+                self.mapa().cantidad_unidades(atacante),
+            ),
         )
         dados_defensor = Dados.tirar_dados_ordenados(
             Batalla.calcular_cant_dados_defensor(
-                self.mapa().cantidad_unidades(defensor)
-            )
+                self.mapa().cantidad_unidades(defensor),
+            ),
         )
         resultado = Batalla.ataquen(atacante, defensor, dados_atacante, dados_defensor)
         self._mapa.aplicar_resultado_batalla(resultado)
