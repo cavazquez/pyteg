@@ -73,7 +73,8 @@ class TestTomlReader(unittest.TestCase):
             {"Argentina": {}, "Brasil": {}},
         )
         self.assertDictEqual(
-            TomlReader(toml_string).get_paises("Africa"), {"Francia": {}}
+            TomlReader(toml_string).get_paises("Africa"),
+            {"Francia": {}},
         )
 
     def test_get_continentes(self):
@@ -93,7 +94,8 @@ class TestTomlReader(unittest.TestCase):
         [Africa.Francia]
         """
         self.assertListEqual(
-            TomlReader(toml_string).get_continentes(), ["Pangea", "Africa"]
+            TomlReader(toml_string).get_continentes(),
+            ["Pangea", "Africa"],
         )
 
     def test_coordenadas_continente(self):
@@ -104,7 +106,8 @@ class TestTomlReader(unittest.TestCase):
         pos_y = 30
         """
         self.assertTupleEqual(
-            TomlReader(toml_string).coordenadas_continente("Pangea"), (20, 30)
+            TomlReader(toml_string).coordenadas_continente("Pangea"),
+            (20, 30),
         )
 
     def test_coordenadas(self):
@@ -121,7 +124,8 @@ class TestTomlReader(unittest.TestCase):
         army_y = 300
         """
         self.assertTupleEqual(
-            TomlReader(toml_string).coordenadas("Argentina"), (100, 120, 200, 300)
+            TomlReader(toml_string).coordenadas("Argentina"),
+            (100, 120, 200, 300),
         )
 
     def test_get_cartas(self):
@@ -130,7 +134,8 @@ class TestTomlReader(unittest.TestCase):
         ballon = 'ballon.png'
         """
         self.assertDictEqual(
-            TomlReader(toml_string).get_cartas(), {"ballon": "ballon.png"}
+            TomlReader(toml_string).get_cartas(),
+            {"ballon": "ballon.png"},
         )
 
     def test_img_path(self):

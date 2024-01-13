@@ -35,7 +35,7 @@ class Mazo:
 
     def simbolo_asignado_almenos_3_tarjetas(self, jugador):
         return Counter(
-            [tarjeta.simbolo for tarjeta in self.tarjetas_asignadas(jugador)]
+            [tarjeta.simbolo for tarjeta in self.tarjetas_asignadas(jugador)],
         ).most_common(1)
 
     def dame_3_tarjetas_para_canje(self, jugador):

@@ -8,10 +8,12 @@ class SiguientesTurnos:
         self._unidades_europa = Calculos.calcular_unidades_europa(mapa, jugador)
         self._unidades_africa = Calculos.calcular_unidades_africa(mapa, jugador)
         self._unidades_sudamerica = Calculos.calcular_unidades_america_del_sur(
-            mapa, jugador
+            mapa,
+            jugador,
         )
         self._unidades_norteamerica = Calculos.calcular_unidades_america_del_norte(
-            mapa, jugador
+            mapa,
+            jugador,
         )
         self._unidades_asia = Calculos.calcular_unidades_asia(mapa, jugador)
         self._unidades_oceania = Calculos.calcular_unidades_oceania(mapa, jugador)

@@ -23,7 +23,8 @@ class TestBatalla(unittest.TestCase):
     def test_batalla_donde_siempre_gana_defensor(self):
         resultado = Batalla.ataquen("Argentina", "Uruguay", [3, 2, 1], [4, 3, 2])
         self.assertCountEqual(
-            resultado["restar"], ["Argentina", "Argentina", "Argentina"]
+            resultado["restar"],
+            ["Argentina", "Argentina", "Argentina"],
         )
         self.assertEqual(resultado["atacante"], "Argentina")
         self.assertEqual(resultado["defensor"], "Uruguay")
@@ -31,7 +32,8 @@ class TestBatalla(unittest.TestCase):
     def test_batalla_donde_siempre_empatan(self):
         resultado = Batalla.ataquen("Argentina", "Uruguay", [3, 3, 3], [3, 3, 3])
         self.assertCountEqual(
-            resultado["restar"], ["Argentina", "Argentina", "Argentina"]
+            resultado["restar"],
+            ["Argentina", "Argentina", "Argentina"],
         )
         self.assertEqual(resultado["atacante"], "Argentina")
         self.assertEqual(resultado["defensor"], "Uruguay")
