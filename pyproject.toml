@@ -28,7 +28,7 @@ select = ["E", # default
 	  "PIE", # flake8-pie
 	  "LOG", # flake8-logging
 	  "PGH", # pygrep-hooks
-	  "RUF", # 
+	  "RUF", # Ruff-specific rules 
 	  "PERF101", # unnecessary-list-cast
 	  "FURB132", # check-and-remove-from-set
 	  "PERF401", # manual-list-comprehension
