@@ -16,7 +16,7 @@ class Game:
     def empezar(self):
         self._turnos = [PrimerTurno(j) for j in self.lista_jugadores()]
         self._mapa.asignar_paises(self.lista_jugadores())
-        self._cant_canjes = {jugador: 0 for jugador in self.lista_jugadores()}
+        self._cant_canjes = dict.fromkeys(self.lista_jugadores(), 0)
 
         self._start = True
 
