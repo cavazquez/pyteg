@@ -1,5 +1,3 @@
-#pyright .
-ruff .
+ruff check .
 coverage run --branch -m unittest
 black --check .
-#isort --check .

@@ -1,6 +1,8 @@
 import json
 import socket
 
+from src.exception import MensajeNoValidoError
+
 
 class ConnectionServer:
     def __init__(self, connection, addr):
@@ -61,39 +63,39 @@ class Client:
         mensaje = data["mensaje"]
         # print(mensaje)
 
-        if "username" == mensaje:
+        if mensaje == "username":
             username = data["nombre"]
             game.agregar_jugador(self._user_id, username)
             if not self._username:
                 self._username = username
             return
 
-        if "obtener_username" == mensaje:
+        if mensaje == "obtener_username":
             data_json_s = json.dumps({"username": self._username})
             self._server.send(self._conn, data_json_s)
             return
 
-        if "chat" == mensaje:
+        if mensaje == "chat":
             print(f"Chat user_id: {self._user_id}")
             msg = self.mensaje_chat(data["chat"])
             data_json_s = json.dumps({"chat": msg})
             self._server.send_all(data_json_s)
             return
 
-        if "agregar_una_unidad" == mensaje:
+        if mensaje == "agregar_una_unidad":
             print("Añadiendo una unidad")
             game.agregar_una_unidad(self._user_id, data["agregar_una_unidad"])
             return
 
-        if "mapa" == mensaje:
+        if mensaje == "mapa":
             game.ver_mapa()
             return
 
-        if "start" == mensaje:
+        if mensaje == "start":
             game.start()
             return
 
-        if "atacar" == mensaje:
+        if mensaje == "atacar":
             atacante, defensor = data["atacar"].split()
             game.atacar(atacante, defensor)
             return
@@ -116,7 +118,7 @@ class Client:
             self._server.quitarme(self._user_id)
             return
 
-        raise Exception("Mensaje no valido")
+        raise MensajeNoValidoError
 
     def mensaje_chat(self, data):
         return f"{self.username()}: {data}"
