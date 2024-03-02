@@ -236,7 +236,7 @@ class TestMap(unittest.TestCase):
 
         mapa = Mapa(build_mapa)
         self.assertEqual(
-            mapa.__str__(),
+            str(mapa),
             '{"Argentina": [1, "Africa", "Mengano"], "Uruguay": [10, "Africa", null]}',
         )
 

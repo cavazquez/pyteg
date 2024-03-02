@@ -41,7 +41,7 @@ class Gui(QMainWindow):
     def cor_mouse(self):
         self.statusBar().showMessage("Coordenadas: (0, 0)")
 
-    def mouseMoveEvent(self, event):
+    def mouse_move_event(self, event):
         x = event.x()
         y = event.y()
         self.statusBar().showMessage(f"Coordenadas: ({x}, {y})")
@@ -87,11 +87,11 @@ class Gui(QMainWindow):
                 # Paises
                 # print(pais)
                 pixmap = QPixmap(folder + reader.img_path(pais))
-                graphicsPixmapItem = QGraphicsPixmapItem(pixmap)
+                graphics_pixmap_item = QGraphicsPixmapItem(pixmap)
                 pos_x, pos_y, army_x, army_y = reader.coordenadas(pais)
-                graphicsPixmapItem.setPos(cor_x + pos_x, cor_y + pos_y)
+                graphics_pixmap_item.setPos(cor_x + pos_x, cor_y + pos_y)
                 # print(cor_x + pos_x, cor_y + pos_y)
-                self.scene.addItem(graphicsPixmapItem)
+                self.scene.addItem(graphics_pixmap_item)
 
                 # Circulos en paises
                 # Crear un objeto círculo
@@ -129,7 +129,7 @@ class Gui(QMainWindow):
     def msg_chat(self, text):
         self.text_field.append(text)
 
-    def closeEvent(self, event):
+    def close_event(self, event):
         self._vivo = False
         print(event)
         self.client.cerrar()

@@ -1,5 +1,6 @@
 import unittest
 
+from src.exception import MensajeNoValidoError
 from src.game import Game
 from src.mapa import Mapa
 from src.server_client import Client
@@ -10,7 +11,7 @@ class TestEjecutarMensaje(unittest.TestCase):
         data = {"mensaje": "noexiste"}
         game = Game(Mapa(lambda: None), None)
         cliente = Client(1, "conn", "server", None)
-        with self.assertRaises(Exception):
+        with self.assertRaises(MensajeNoValidoError):
             cliente.ejecutar_mensaje(data, game)
 
     def test_asignar_username(self):

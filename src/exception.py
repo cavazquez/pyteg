@@ -1,0 +1,2 @@
+class MensajeNoValidoError(Exception):
+    pass

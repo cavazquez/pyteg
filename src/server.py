@@ -1,6 +1,5 @@
-#!/usr/bin/env python
-
 import socket
+import sys
 import threading
 
 from src.game import Game
@@ -65,7 +64,7 @@ def registrar_jugadores(server, game):
 
             except Exception as e:
                 print(e)
-                exit(1)
+                sys.exit(1)
 
 
 def main():
