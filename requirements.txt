@@ -1,4 +1,4 @@
 black==24.3.0
-coverage==7.4.3
+coverage==7.4.4
 PySide6==6.6.3
 ruff==0.3.4
