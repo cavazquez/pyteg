@@ -19,10 +19,10 @@ class Mazo:
         return len(self.tarjetas())
 
     def cantidad_tarjetas_usadas(self):
-        return sum([1 for tarjeta in self.tarjetas() if tarjeta.fue_usada() is True])
+        return sum(1 for tarjeta in self.tarjetas() if tarjeta.fue_usada() is True)
 
     def cantidad_tarjetas_asignadas(self):
-        return sum([1 for tarjeta in self.tarjetas() if tarjeta.asignada() is True])
+        return sum(1 for tarjeta in self.tarjetas() if tarjeta.asignada() is True)
 
     def tarjetas(self):
         return list(self.mazo.values())
@@ -31,7 +31,7 @@ class Mazo:
         return [tarjeta for tarjeta in self.tarjetas() if tarjeta.jugador() == jugador]
 
     def cant_tarjetas_asignadas(self, jugador):
-        return sum([1 for tarjeta in self.tarjetas_asignadas(jugador)])
+        return sum(1 for tarjeta in self.tarjetas_asignadas(jugador))
 
     def simbolo_asignado_almenos_3_tarjetas(self, jugador):
         return Counter(
