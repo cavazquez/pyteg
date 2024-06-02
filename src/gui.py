@@ -79,7 +79,9 @@ class Gui(QMainWindow):
     def load_map_data(self):
         folder = "themes/"
 
-        reader = TomlReader(Path("themes/classic/paises.toml").read_text())
+        reader = TomlReader(
+            Path("themes/classic/paises.toml").read_text(encoding="locale"),
+        )
 
         for continente in reader.get_continentes():
             cor_x, cor_y = reader.coordenadas_continente(continente)
