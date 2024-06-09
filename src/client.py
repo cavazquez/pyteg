@@ -29,6 +29,12 @@ class Client:
     def set_username(self, username):
         self._username = username
 
+    def agregar_unidades(self, cantidad):
+        msg = json.dumps(
+            {"mensaje": "agregar", "pais": "Circulo", "unidades": cantidad},
+        )
+        self._connection.send_data(msg)
+
     def send_chat(self, text):
         msg = json.dumps({"mensaje": "chat", "chat": text})
         self._connection.send_data(msg)
