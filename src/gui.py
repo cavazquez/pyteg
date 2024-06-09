@@ -29,6 +29,10 @@ class Gui(QMainWindow):
         self.setFixedSize(QSize(1024, 768))
         self.setMouseTracking(True)
 
+        self.unidades = {}
+        self.continente = {}
+        self.circulo = {}
+
         self.setup_graphics_view()
         self.load_map_data()
         self.cor_mouse()
@@ -58,6 +62,9 @@ class Gui(QMainWindow):
         button_conectar = QAction("Conectar", self)
         button_conectar.triggered.connect(self.ventana_conectar)
         toolbar.addAction(button_conectar)
+        button_agregar_5 = QAction("Agregar 5", self)
+        button_agregar_5.triggered.connect(self.agregar_5)
+        toolbar.addAction(button_agregar_5)
 
         self.scene = QGraphicsScene()
         self.view = QGraphicsView(self.scene)
@@ -76,18 +83,28 @@ class Gui(QMainWindow):
         self.w = VentanaConectar(self.client)
         self.w.show()
 
+    def agregar_5(self):
+        self.client.agregar_unidades(5)
+
+    def update_unidades(self, pais, cantidad):
+        print(f"{pais} tiene {self.unidades[pais]}")
+        self.unidades[pais] += cantidad
+        print(f"{pais} tiene {self.unidades[pais]}")
+
     def load_map_data(self):
         folder = "themes/"
 
         reader = TomlReader(
-            Path("themes/classic/paises.toml").read_text(encoding="locale"),
+            Path("themes/test/paises.toml").read_text(encoding="locale"),
         )
 
         for continente in reader.get_continentes():
             cor_x, cor_y = reader.coordenadas_continente(continente)
             for pais in reader.get_paises(continente):
+
+                self.unidades.update({pais: 1})
+                self.continente.update({pais: continente})
                 # Paises
-                # print(pais)
                 pixmap = QPixmap(folder + reader.img_path(pais))
                 graphics_pixmap_item = QGraphicsPixmapItem(pixmap)
                 pos_x, pos_y, army_x, army_y = reader.coordenadas(pais)
@@ -100,12 +117,12 @@ class Gui(QMainWindow):
                 pos_x_abs = cor_x + pos_x + army_x
                 pos_y_abs = cor_y + pos_y + army_y
 
-                circle = QGraphicsEllipseItem(pos_x_abs, pos_y_abs, 15, 15)
+                circle = QGraphicsEllipseItem(pos_x_abs, pos_y_abs, 30, 30)
                 # (x, y, width, height)
 
                 # Establecer el color del borde y del relleno del círculo
                 pen = QPen(Qt.blue)
-                brush = QBrush(QColor(255, 0, 0))  # Color rojo
+                brush = QBrush(QColor(0, 255, 0))  # Color verde
                 circle.setPen(pen)
                 circle.setBrush(brush)
 
@@ -120,6 +137,7 @@ class Gui(QMainWindow):
                 center_text = QGraphicsTextItem("1")
                 center_text.setFont(QFont("Helvetica [Cronyx]", 14))
                 center_text.setPos(center_x - 8, center_y - 12)
+                self.circulo.update({pais: center_text})
                 self.scene.addItem(center_text)
 
     def send_message(self):

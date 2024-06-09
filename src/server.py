@@ -2,7 +2,9 @@ import socket
 import sys
 import threading
 
+from src.build_mapa import build_mapa
 from src.game import Game
+from src.mapa import Mapa
 from src.server_client import Client, ConnectionServer
 
 
@@ -69,7 +71,8 @@ def registrar_jugadores(server, game):
 
 def main():
     server = Server()
-    game = Game(server, None)
+    mapa = Mapa(build_mapa())
+    game = Game(mapa, None)
     registrar_jugadores(server, game)
 
 

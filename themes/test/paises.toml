@@ -1,0 +1,18 @@
+[Cartas]
+jocker = "tar_comodin.png"
+ballon = "tar_globo.png"
+cannon = "tar_canon.png"
+ship = "tar_galeon.png"
+
+[Sudamerica]
+pos_x = 190 
+pos_y = 210
+
+[Sudamerica.Circulo]
+continente = "Sudamerica"
+file = "test/circle.svg"
+pos_x = 31
+pos_y = 68
+army_x = 120
+army_y = 170
+

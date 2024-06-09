@@ -30,6 +30,10 @@ class Transceiver:
                     self.gui.update(data_json["jugadores"])
                 elif "username" in data_json:
                     self.client.set_username(data_json["username"])
+                elif "unidades" in data_json:
+                    pais = data_json["pais"]
+                    cant = data_json["unidades"]
+                    self.gui.update_unidades(pais, cant)
                 else:
                     print("Comando no reconocido")
 

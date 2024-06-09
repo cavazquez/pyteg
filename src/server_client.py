@@ -59,9 +59,9 @@ class Client:
             data_json_r = json.loads(data)
             self.ejecutar_mensaje(data_json_r, game)
 
-    def ejecutar_mensaje(self, data, game):
+    def ejecutar_mensaje(self, data, game):  # noqa: PLR0912
         mensaje = data["mensaje"]
-        # print(mensaje)
+        print(mensaje)
 
         if mensaje == "username":
             username = data["nombre"]
@@ -82,9 +82,23 @@ class Client:
             self._server.send_all(data_json_s)
             return
 
-        if mensaje == "agregar_una_unidad":
-            print("Añadiendo una unidad")
-            game.agregar_una_unidad(self._user_id, data["agregar_una_unidad"])
+        if mensaje == "agregar":
+            pais = data["pais"]
+            cant = int(data["unidades"])
+            print("cant", cant)
+            print(f"Añadiendo una unidad a pais {pais}")
+            for _i in range(cant):
+                print(f"Añadiendo una unidad a pais {pais}")
+                mapa = game.mapa()
+                mapa.agregar_una_unidad(pais)
+            data_json_s = json.dumps(
+                {
+                    "mensaje": "unidades",
+                    "pais": pais,
+                    "unidades": game.mapa().cantidad_unidades(pais),
+                },
+            )
+            self._server.send(self._conn, data_json_s)
             return
 
         if mensaje == "mapa":
