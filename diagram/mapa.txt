@@ -1,0 +1,22 @@
+class Mapa {
+  mapa
+  void agregar_una_unidad(pais)
+  void restar_una_unidad(pais)
+  void cantidad_unidades(pais)
+  void mover(desde, hacia, cantidad)
+  str continente(pais)
+  str ocupado_por(pais)
+  [pais] paises()
+  void  asignar_paises(jugadores)
+  void aplicar_resultados_batalla(resultados)
+  int cantidad_de_paises_por_continente(continente)
+  void asignar_pais(jugador, pais)
+  int cantidad_de_paises_del_jugador(jugador)
+  int cantidad_de_paises_del_jugador_por_continente(jugador, continente)
+  bool tiene_toda_europa(jugador)
+  bool tiene_toda_asia(jugador)
+  bool tiene_toda_oceania(jugador)
+  bool tiene_toda_africa(jugador)
+  bool tiene_toda_america_del_sur(jugador)
+  bool tiene_toda_america_del_norte(jugador)
+}
