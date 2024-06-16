@@ -147,7 +147,7 @@ class Gui(QMainWindow):
             self.input_field.clear()
 
     def msg_chat(self, text):
-        self.text_field.append(text)
+        self.chat.append(text)
 
     def close_event(self, event):
         self._vivo = False

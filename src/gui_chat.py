@@ -31,3 +31,6 @@ class Chat(QWidget):
         if text:
             self.client.send_chat(text)
             self.input_field.clear()
+
+    def append(self, text):
+        self.text_field.append(text)
