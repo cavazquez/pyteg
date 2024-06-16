@@ -71,7 +71,7 @@ def registrar_jugadores(server, game):
 
 def main():
     server = Server()
-    mapa = Mapa(build_mapa())
+    mapa = Mapa(build_mapa)
     game = Game(mapa, None)
     registrar_jugadores(server, game)
 
