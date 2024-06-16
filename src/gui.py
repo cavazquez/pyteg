@@ -85,6 +85,8 @@ class Gui(QMainWindow):
 
     def agregar_5(self):
         self.client.agregar_unidades(5)
+        texto = self.circulo.get("Circulo")
+        texto.setPlainText("10")
 
     def update_unidades(self, pais, cantidad):
         print(f"{pais} tiene {self.unidades[pais]}")
