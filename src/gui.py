@@ -5,10 +5,9 @@ from PySide6.QtGui import QAction, QBrush, QColor, QFont, QPen, QPixmap
 from PySide6.QtWidgets import (
     QGraphicsEllipseItem,
     QGraphicsPixmapItem,
-    QGraphicsScene,
     QGraphicsTextItem,
-    QGraphicsView,
     QMainWindow,
+    QStatusBar,
     QToolBar,
     QVBoxLayout,
     QWidget,
@@ -16,6 +15,8 @@ from PySide6.QtWidgets import (
 
 from src.gui_chat import Chat
 from src.gui_conectar import VentanaConectar
+from src.gui_scene import QCustomGraphicsScene
+from src.gui_view import QCustomGraphicsView
 from src.toml_reader import TomlReader
 
 
@@ -35,20 +36,14 @@ class Gui(QMainWindow):
 
         self.setup_graphics_view()
         self.load_map_data()
-        self.cor_mouse()
+
+        self.status_bar = QStatusBar()
+        self.setStatusBar(self.status_bar)
 
         self.show()  # IMPORTANT!!!!! Windows are hidden by default.
 
     def vivo(self):
         return self._vivo
-
-    def cor_mouse(self):
-        self.statusBar().showMessage("Coordenadas: (0, 0)")
-
-    def mouse_move_event(self, event):
-        x = event.x()
-        y = event.y()
-        self.statusBar().showMessage(f"Coordenadas: ({x}, {y})")
 
     def setup_graphics_view(self):
         input_layout = QVBoxLayout()
@@ -66,8 +61,9 @@ class Gui(QMainWindow):
         button_agregar_5.triggered.connect(self.agregar_5)
         toolbar.addAction(button_agregar_5)
 
-        self.scene = QGraphicsScene()
-        self.view = QGraphicsView(self.scene)
+        # self.scene = QGraphicsScene()
+        self.scene = QCustomGraphicsScene(self)
+        self.view = QCustomGraphicsView(self.scene, self)
 
         # Create a widget to hold the QGraphicsView and input area
         self.main_widget = QWidget(self)
@@ -147,6 +143,12 @@ class Gui(QMainWindow):
         if text:
             self.client.send_chat(text)
             self.input_field.clear()
+
+    def update_status_bar(self, text):
+        self.status_bar.showMessage(text)
+
+    def clear_status_bar(self):
+        self.status_bar.clearMessage()
 
     def msg_chat(self, text):
         self.chat.append(text)
