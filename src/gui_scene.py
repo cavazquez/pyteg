@@ -1,12 +1,22 @@
 from pathlib import Path
 
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QBrush, QColor, QFont, QMouseEvent, QPen, QPixmap
+from PySide6.QtGui import (
+    QAction,
+    QBrush,
+    QColor,
+    QFont,
+    QMouseEvent,
+    QPen,
+    QPixmap,
+    QTransform,
+)
 from PySide6.QtWidgets import (
     QGraphicsEllipseItem,
     QGraphicsPixmapItem,
     QGraphicsScene,
     QGraphicsTextItem,
+    QMenu,
 )
 
 from src.toml_reader import TomlReader
@@ -17,6 +27,15 @@ class QCustomGraphicsScene(QGraphicsScene):
         super().__init__(parent)
         self.main_window = main_window
         self.load_map_data(main_window)
+
+        # Crear menú desplegable
+        self.menu = QMenu()
+
+        action1 = QAction("Opción 1", self)
+        action2 = QAction("Opción 2", self)
+
+        self.menu.addAction(action1)
+        self.menu.addAction(action2)
 
     def mouseMoveEvent(self, event: QMouseEvent):  # noqa: N802
         # Obtener las coordenadas del mouse en la escena
@@ -30,6 +49,13 @@ class QCustomGraphicsScene(QGraphicsScene):
     def leaveEvent(self, event: QMouseEvent):  # noqa: N802
         self.main_window.clear_status_bar()
         super().leaveEvent(event)
+
+    def contextMenuEvent(self, event):  # noqa: N802
+        # Verificar si se hizo clic derecho sobre el QGraphicsPixmapItem
+        item = self.itemAt(event.scenePos(), QTransform())
+        print(item)
+        if isinstance(item, QGraphicsPixmapItem):
+            self.menu.exec_(event.screenPos())
 
     def load_map_data(self, main_window):
         folder = "themes/"
