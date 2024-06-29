@@ -1,11 +1,6 @@
-from pathlib import Path
-
-from PySide6.QtCore import QSize, Qt
-from PySide6.QtGui import QAction, QBrush, QColor, QFont, QPen, QPixmap
+from PySide6.QtCore import QSize
+from PySide6.QtGui import QAction
 from PySide6.QtWidgets import (
-    QGraphicsEllipseItem,
-    QGraphicsPixmapItem,
-    QGraphicsTextItem,
     QMainWindow,
     QStatusBar,
     QToolBar,
@@ -17,7 +12,6 @@ from src.gui_chat import Chat
 from src.gui_conectar import VentanaConectar
 from src.gui_scene import QCustomGraphicsScene
 from src.gui_view import QCustomGraphicsView
-from src.toml_reader import TomlReader
 
 
 class Gui(QMainWindow):
@@ -35,7 +29,6 @@ class Gui(QMainWindow):
         self.circulo = {}
 
         self.setup_graphics_view()
-        self.load_map_data()
 
         self.status_bar = QStatusBar()
         self.setStatusBar(self.status_bar)
@@ -88,55 +81,6 @@ class Gui(QMainWindow):
         print(f"{pais} tiene {self.unidades[pais]}")
         self.unidades[pais] += cantidad
         print(f"{pais} tiene {self.unidades[pais]}")
-
-    def load_map_data(self):
-        folder = "themes/"
-
-        reader = TomlReader(
-            Path("themes/test/paises.toml").read_text(encoding="locale"),
-        )
-
-        for continente in reader.get_continentes():
-            cor_x, cor_y = reader.coordenadas_continente(continente)
-            for pais in reader.get_paises(continente):
-
-                self.unidades.update({pais: 1})
-                self.continente.update({pais: continente})
-                # Paises
-                pixmap = QPixmap(folder + reader.img_path(pais))
-                graphics_pixmap_item = QGraphicsPixmapItem(pixmap)
-                pos_x, pos_y, army_x, army_y = reader.coordenadas(pais)
-                graphics_pixmap_item.setPos(cor_x + pos_x, cor_y + pos_y)
-                # print(cor_x + pos_x, cor_y + pos_y)
-                self.scene.addItem(graphics_pixmap_item)
-
-                # Circulos en paises
-                # Crear un objeto círculo
-                pos_x_abs = cor_x + pos_x + army_x
-                pos_y_abs = cor_y + pos_y + army_y
-
-                circle = QGraphicsEllipseItem(pos_x_abs, pos_y_abs, 30, 30)
-                # (x, y, width, height)
-
-                # Establecer el color del borde y del relleno del círculo
-                pen = QPen(Qt.blue)
-                brush = QBrush(QColor(0, 255, 0))  # Color verde
-                circle.setPen(pen)
-                circle.setBrush(brush)
-
-                # Agregar el círculo a la escena
-                self.scene.addItem(circle)
-
-                # Calcular el centro del círculo
-                center_x = circle.rect().center().x()
-                center_y = circle.rect().center().y()
-                # print(center_x, center_y)
-
-                center_text = QGraphicsTextItem("1")
-                center_text.setFont(QFont("Helvetica [Cronyx]", 14))
-                center_text.setPos(center_x - 8, center_y - 12)
-                self.circulo.update({pais: center_text})
-                self.scene.addItem(center_text)
 
     def send_message(self):
         text = self.input_field.text()
