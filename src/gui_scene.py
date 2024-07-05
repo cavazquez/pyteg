@@ -9,7 +9,6 @@ from PySide6.QtGui import (
     QMouseEvent,
     QPen,
     QPixmap,
-    QTransform,
 )
 from PySide6.QtWidgets import (
     QGraphicsEllipseItem,
@@ -52,10 +51,10 @@ class QCustomGraphicsScene(QGraphicsScene):
 
     def contextMenuEvent(self, event):  # noqa: N802
         # Verificar si se hizo clic derecho sobre el QGraphicsPixmapItem
-        item = self.itemAt(event.scenePos(), QTransform())
-        print(item)
-        if isinstance(item, QGraphicsPixmapItem):
-            self.menu.exec_(event.screenPos())
+        items = self.items(event.scenePos())
+        for item in items:
+            if isinstance(item, QGraphicsPixmapItem):
+                self.menu.exec_(event.screenPos())
 
     def load_map_data(self, main_window):
         folder = "themes/"
