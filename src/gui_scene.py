@@ -8,7 +8,6 @@ from PySide6.QtGui import (
     QFont,
     QMouseEvent,
     QPen,
-    QPixmap,
 )
 from PySide6.QtWidgets import (
     QGraphicsEllipseItem,
@@ -18,6 +17,7 @@ from PySide6.QtWidgets import (
     QMenu,
 )
 
+from src.gui_pais import Pais
 from src.toml_reader import TomlReader
 
 
@@ -70,8 +70,8 @@ class QCustomGraphicsScene(QGraphicsScene):
                 main_window.unidades.update({pais: 1})
                 main_window.continente.update({pais: continente})
                 # Paises
-                pixmap = QPixmap(folder + reader.img_path(pais))
-                graphics_pixmap_item = QGraphicsPixmapItem(pixmap)
+                pais_pixmap = Pais(folder + reader.img_path(pais), pais)
+                graphics_pixmap_item = QGraphicsPixmapItem(pais_pixmap)
                 pos_x, pos_y, army_x, army_y = reader.coordenadas(pais)
                 graphics_pixmap_item.setPos(cor_x + pos_x, cor_y + pos_y)
                 # print(cor_x + pos_x, cor_y + pos_y)
