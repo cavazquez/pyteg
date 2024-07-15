@@ -1,15 +1,14 @@
 from pathlib import Path
 
 from PySide6.QtGui import (
-    QAction,
     QMouseEvent,
 )
 from PySide6.QtWidgets import (
     QGraphicsPixmapItem,
     QGraphicsScene,
-    QMenu,
 )
 
+from src.gui_menu import Menu
 from src.gui_pais import Pais
 from src.toml_reader import TomlReader
 
@@ -19,15 +18,6 @@ class QCustomGraphicsScene(QGraphicsScene):
         super().__init__(parent)
         self.main_window = main_window
         self.load_map_data(main_window)
-
-        # Crear menú desplegable
-        self.menu = QMenu()
-
-        action1 = QAction("Opción 1", self)
-        action2 = QAction("Opción 2", self)
-
-        self.menu.addAction(action1)
-        self.menu.addAction(action2)
 
     def mouseMoveEvent(self, event: QMouseEvent):  # noqa: N802
         # Obtener las coordenadas del mouse en la escena
@@ -48,9 +38,10 @@ class QCustomGraphicsScene(QGraphicsScene):
         items = self.items(event.scenePos())
         for item in items:
             if isinstance(item, QGraphicsPixmapItem):
-                self.menu.exec_(event.screenPos())
+                pais = item.nombre()
+                Menu(pais).exec_(event.screenPos())
 
-    def load_map_data(self, main_window):
+    def load_map_data(self):
         folder = "themes/"
 
         reader = TomlReader(
@@ -61,12 +52,14 @@ class QCustomGraphicsScene(QGraphicsScene):
             cor_x, cor_y = reader.coordenadas_continente(continente)
             for pais in reader.get_paises(continente):
 
-                main_window.unidades.update({pais: 0})
-                main_window.continente.update({pais: continente})
                 # Paises
                 pos_x, pos_y, army_x, army_y = reader.coordenadas(pais)
                 x = cor_x + pos_x
                 y = cor_y + pos_y
                 abs_img_path = folder + reader.img_path(pais)
-                pixmap_item = Pais(abs_img_path, pais, (x, y, army_x, army_y))
+                pixmap_item = Pais(
+                    abs_img_path,
+                    (pais, continente),
+                    (x, y, army_x, army_y),
+                )
                 self.addItem(pixmap_item)

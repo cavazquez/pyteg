@@ -24,10 +24,6 @@ class Gui(QMainWindow):
         self.setFixedSize(QSize(1024, 768))
         self.setMouseTracking(True)
 
-        self.unidades = {}
-        self.continente = {}
-        self.circulo = {}
-
         self.setup_graphics_view()
 
         self.status_bar = QStatusBar()
@@ -73,14 +69,10 @@ class Gui(QMainWindow):
         self.w.show()
 
     def agregar_5(self):
-        self.client.agregar_unidades(5)
-        texto = self.circulo.get("Circulo")
-        texto.setPlainText("10")
+        pass
 
     def update_unidades(self, pais, cantidad):
-        print(f"{pais} tiene {self.unidades[pais]}")
-        self.unidades[pais] += cantidad
-        print(f"{pais} tiene {self.unidades[pais]}")
+        pass
 
     def send_message(self):
         text = self.input_field.text()
