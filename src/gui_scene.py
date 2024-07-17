@@ -17,7 +17,7 @@ class QCustomGraphicsScene(QGraphicsScene):
     def __init__(self, main_window, parent=None):
         super().__init__(parent)
         self.main_window = main_window
-        self.load_map_data(main_window)
+        self.load_map_data()
 
     def mouseMoveEvent(self, event: QMouseEvent):  # noqa: N802
         # Obtener las coordenadas del mouse en la escena
