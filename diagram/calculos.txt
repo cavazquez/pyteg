@@ -1,0 +1,10 @@
+class Calculos {
+    int calcular_unidades_generales(mapa, jugador):
+    int calcular_unidades_europa(mapa, jugador):
+    int calcular_unidades_asia(mapa, jugador):
+    int calcular_unidades_africa(mapa, jugador):
+    int calcular_unidades_oceania(mapa, jugador):
+    int calcular_unidades_america_del_sur(mapa, jugador):
+    int calcular_unidades_america_del_norte(mapa, jugador):
+
+}

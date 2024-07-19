@@ -1,0 +1,5 @@
+class Batalla {
+  dict[list[]] ataquen(atacante, defensor, dados_atancante, dados_defensor)
+  int calcular_cant_dados_atacante(int cantidad)
+  int calcular_cant_dados_defensor(int cantidad)
+}
