@@ -1,4 +1,4 @@
-from PySide6.QtCore import QSize
+from PySide6.QtCore import QSize, QThreadPool
 from PySide6.QtGui import QAction
 from PySide6.QtWidgets import (
     QMainWindow,
@@ -19,6 +19,7 @@ class Gui(QMainWindow):
         super().__init__()
         self._vivo = True
         self.client = client
+        self.threadpool = QThreadPool()
         self.w = None
         self.setWindowTitle("PyTeg")
         self.setFixedSize(QSize(1024, 768))
@@ -65,7 +66,7 @@ class Gui(QMainWindow):
 
     def ventana_conectar(self):
         self.w = None
-        self.w = VentanaConectar(self.client)
+        self.w = VentanaConectar(self)
         self.w.show()
 
     def agregar_5(self):
