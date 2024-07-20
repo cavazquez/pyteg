@@ -9,6 +9,9 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from src.connection_client import ConnectionClient
+from src.transceiver import Transceiver
+
 
 class VentanaConectar(QWidget):
     """
@@ -16,8 +19,8 @@ class VentanaConectar(QWidget):
     will appear as a free-floating window as we want.
     """
 
-    def __init__(self, client):
-        self.client = client
+    def __init__(self, main_window):
+        self._main_window = main_window
         super().__init__()
         layout = QVBoxLayout()
         self.setWindowTitle("Conectar")
@@ -39,8 +42,16 @@ class VentanaConectar(QWidget):
 
     def connect(self):
         try:
-            self.client.conectar()
-            self.close()
+            self._conexion = ConnectionClient()
+            self._conexion.conectar()
+            print(f"self._conexion {self._conexion}")
+            self._main_window.threadpool.start(
+                Transceiver(
+                    self._main_window.client,
+                    self._main_window,
+                    self._conexion,
+                ),
+            )
         except ConnectionRefusedError:
             msg_box = QMessageBox()
             msg_box.setWindowTitle("Advertencia")
@@ -48,3 +59,5 @@ class VentanaConectar(QWidget):
             msg_box.setText("Conexión rehusada.")
             msg_box.setModal(True)
             msg_box.exec()
+        finally:
+            self.close()
