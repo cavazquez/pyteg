@@ -53,11 +53,6 @@ class VentanaConectar(QWidget):
                 ),
             )
         except ConnectionRefusedError:
-            msg_box = QMessageBox()
-            msg_box.setWindowTitle("Advertencia")
-            msg_box.setIcon(QMessageBox.Warning)
-            msg_box.setText("Conexión rehusada.")
-            msg_box.setModal(True)
-            msg_box.exec()
+            QMessageBox.warning(self, "Advertencia", "conexión rehusada.")
         finally:
             self.close()
