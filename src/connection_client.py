@@ -65,7 +65,9 @@ class ConnectionClient:
         data = ""
         try:
             if self.is_connected():
-                data = self._socket.recv(1024)
+                data = self._socket.recv(1024, socket.MSG_DONTWAIT)
         except BrokenPipeError:
             self._connected = False
+        except BlockingIOError:
+            pass
         return data
