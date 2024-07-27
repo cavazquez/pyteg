@@ -1,4 +1,4 @@
-from PySide6.QtCore import QSize, QThreadPool
+from PySide6.QtCore import QSize, QThreadPool, QTimer
 from PySide6.QtGui import QAction
 from PySide6.QtWidgets import (
     QMainWindow,
@@ -90,9 +90,22 @@ class Gui(QMainWindow):
     def msg_chat(self, text):
         self.chat.append(text)
 
-    def close_event(self, event):
+    def closeEvent(self, event):  # noqa: N802
         self._vivo = False
-        print(event)
-        self.client.cerrar()
-        print("Aceptando Evento")
-        event.accept()
+        thread_activos = self.threadpool.activeThreadCount()
+        if thread_activos > 0:
+            self.time = QTimer(self)
+            self.time.timeout.connect(self.check_and_close)
+            self.time.start(100)
+            event.ignore()
+        else:
+            print(event)
+            print("Aceptando Evento")
+            event.accept()
+
+    def check_and_close(self):
+        self.threadpool.activeThreadCount()
+        if self.threadpool.activeThreadCount() == 0:
+            self.time.stop()
+            print("close")
+            self.close()
