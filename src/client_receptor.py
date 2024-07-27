@@ -4,7 +4,7 @@ import time
 from PySide6.QtCore import QRunnable, Slot
 
 
-class Transceiver(QRunnable):
+class Receptor(QRunnable):
 
     def __init__(self, client, gui, conn):
         super().__init__()
@@ -15,7 +15,7 @@ class Transceiver(QRunnable):
     @Slot()
     def run(self):
         data_b = ""
-        print("receiver")
+        print("Receptor")
         while self._gui.vivo():
             if self._conn.is_connected():
                 print("Obteniendo datos")
@@ -31,16 +31,6 @@ class Transceiver(QRunnable):
                 if "chat" in data_json:
                     msg = data_json["chat"]
                     self._gui.msg_chat(msg)
-                elif "mapa" in data_json:
-                    self._client.update_mapa(data_json["mapa"])
-                elif "jugadores" in data_json:
-                    self._gui.update(data_json["jugadores"])
-                elif "username" in data_json:
-                    self._client.set_username(data_json["username"])
-                elif "unidades" in data_json:
-                    pais = data_json["pais"]
-                    cant = data_json["unidades"]
-                    self._gui.update_unidades(pais, cant)
                 else:
                     print("Comando no reconocido")
 
