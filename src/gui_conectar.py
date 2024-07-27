@@ -9,8 +9,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from src.client_receptor import Receptor
 from src.connection_client import ConnectionClient
-from src.transceiver import Transceiver
 
 
 class VentanaConectar(QWidget):
@@ -46,7 +46,7 @@ class VentanaConectar(QWidget):
             self._conexion.conectar()
             print(f"self._conexion {self._conexion}")
             self._main_window.threadpool.start(
-                Transceiver(
+                Receptor(
                     self._main_window.client,
                     self._main_window,
                     self._conexion,
