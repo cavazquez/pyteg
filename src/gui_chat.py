@@ -9,9 +9,9 @@ from PySide6.QtWidgets import (
 
 
 class Chat(QWidget):
-    def __init__(self, client):
-        self.client = client
+    def __init__(self, main_window):
         super().__init__()
+        self.main_window = main_window
         self.setFixedSize(QSize(1024, 200))
         layout = QVBoxLayout()
         layout.setSpacing(1)
@@ -29,7 +29,7 @@ class Chat(QWidget):
     def send_message(self):
         text = self.input_field.text()
         if text:
-            self.client.send_chat(text)
+            self.main_window.transmisor.enviar_chat(text)
             self.input_field.clear()
 
     def append(self, text):

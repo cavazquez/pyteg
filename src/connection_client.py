@@ -1,5 +1,8 @@
+import json
 import logging
 import socket
+
+from src.codecs import Utf8
 
 logging.basicConfig(filename="example.log", encoding="utf-8", level=logging.DEBUG)
 
@@ -54,7 +57,8 @@ class ConnectionClient:
         logging.info("Send Data")
         try:
             if self.is_connected():
-                self._socket.sendall(data.encode())
+                encode_data = Utf8.encode(data)
+                self._socket.sendall(encode_data)
             else:
                 print("No conectado")
         except BrokenPipeError as e:
@@ -62,12 +66,16 @@ class ConnectionClient:
 
     def get_data(self):
         logging.info("Get Data")
-        data = ""
+        data_json = ""
         try:
             if self.is_connected():
-                data = self._socket.recv(1024, socket.MSG_DONTWAIT)
+                encode_data = self._socket.recv(1024, socket.MSG_DONTWAIT)
+                data = Utf8.decode(encode_data)
+                data_json = json.loads(data)
         except BrokenPipeError:
             self._connected = False
         except BlockingIOError:
+            print("BlockingIOError")
+        except json.decoder.JSONDecodeError:
             pass
-        return data
+        return data_json

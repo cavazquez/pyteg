@@ -1,26 +1,7 @@
 import json
-import socket
 
-from src.exception import MensajeNoValidoError
-
-
-class ConnectionServer:
-    def __init__(self, connection, addr):
-        self._conn = connection
-        self._addr = addr
-
-    def receiver(self):
-        try:
-            return self._conn.recv(1024).decode()
-        except ConnectionResetError:
-            return None
-
-    def send(self, data):
-        self._conn.sendall(data.encode())
-
-    def close(self):
-        self._conn.shutdown(socket.SHUT_RDWR)
-        self._conn.close()
+from src.server_tasks import ServerTask
+from src.server_transmisor import ServerTransmisor
 
 
 class Client:
@@ -30,6 +11,7 @@ class Client:
         self._conn = conn
         self._server = server
         self._tarjetas = []
+        self._transmisor = ServerTransmisor(self._conn)
 
     def send(self, data):
         self._conn.send(data)
@@ -59,7 +41,9 @@ class Client:
             data_json_r = json.loads(data)
             self.ejecutar_mensaje(data_json_r, game)
 
-    def ejecutar_mensaje(self, data, game):  # noqa: PLR0912
+    def ejecutar_mensaje(self, data, game):
+        task = ServerTask.msg_to_task(data)
+        task.run(self._transmisor)
         mensaje = data["mensaje"]
         print(mensaje)
 
@@ -75,12 +59,12 @@ class Client:
             self._server.send(self._conn, data_json_s)
             return
 
-        if mensaje == "chat":
-            print(f"Chat user_id: {self._user_id}")
-            msg = self.mensaje_chat(data["chat"])
-            data_json_s = json.dumps({"chat": msg})
-            self._server.send_all(data_json_s)
-            return
+        # if mensaje == "chat":
+        #    print(f"Chat user_id: {self._user_id}")
+        #    msg = self.mensaje_chat(data["chat"])
+        #    data_json_s = json.dumps({"chat": msg})
+        #    self._server.send_all(data_json_s)
+        #    return
 
         if mensaje == "agregar":
             pais = data["pais"]
@@ -132,7 +116,7 @@ class Client:
             self._server.quitarme(self._user_id)
             return
 
-        raise MensajeNoValidoError
+        # raise MensajeNoValidoError
 
     def mensaje_chat(self, data):
         return f"{self.username()}: {data}"
