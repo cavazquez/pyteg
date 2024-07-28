@@ -10,6 +10,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.client_receptor import Receptor
+from src.client_transmisor import ClientTransmisor
 from src.connection_client import ConnectionClient
 
 
@@ -20,8 +21,8 @@ class VentanaConectar(QWidget):
     """
 
     def __init__(self, main_window):
-        self._main_window = main_window
         super().__init__()
+        self._main_window = main_window
         layout = QVBoxLayout()
         self.setWindowTitle("Conectar")
         self.setFixedSize(QSize(300, 150))
@@ -52,6 +53,7 @@ class VentanaConectar(QWidget):
                     self._conexion,
                 ),
             )
+            self._main_window.transmisor = ClientTransmisor(self._conexion)
         except ConnectionRefusedError:
             QMessageBox.warning(self, "Advertencia", "conexión rehusada.")
         finally:

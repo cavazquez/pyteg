@@ -8,6 +8,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from src.client_transmisor import ClientNullTransmisor
 from src.gui_chat import Chat
 from src.gui_conectar import VentanaConectar
 from src.gui_scene import QCustomGraphicsScene
@@ -19,6 +20,7 @@ class Gui(QMainWindow):
         super().__init__()
         self._vivo = True
         self.client = client
+        self.transmisor = ClientNullTransmisor()
         self.threadpool = QThreadPool()
         self.w = None
         self.setWindowTitle("PyTeg")
@@ -38,7 +40,7 @@ class Gui(QMainWindow):
     def setup_graphics_view(self):
         input_layout = QVBoxLayout()
 
-        self.chat = Chat(self.client)
+        self.chat = Chat(self)
         self.chat.show()
         input_layout.addWidget(self.chat)
 

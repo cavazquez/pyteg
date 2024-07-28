@@ -5,7 +5,8 @@ import threading
 from src.build_mapa import build_mapa
 from src.game import Game
 from src.mapa import Mapa
-from src.server_client import Client, ConnectionServer
+from src.server_client import Client
+from src.server_connection import ConnectionServer
 
 
 class Server:
