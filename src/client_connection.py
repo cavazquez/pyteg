@@ -17,6 +17,7 @@ class ConnectionClient:
     def conectar(self):
         logging.info("Conectando")
         self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self._socket.settimeout(0.5)
         self._socket.connect((self._host, self._port))
         print(f"Conectado con {self._host}:{self._port}")
 
@@ -29,28 +30,20 @@ class ConnectionClient:
 
     def is_connected(self):
         logging.info("Consultando si está conectado")
-        print("Consultando si está conectado")
         try:
             if self._socket:
                 self._socket.recv(1024, socket.MSG_DONTWAIT | socket.MSG_PEEK)
             else:
-                print("Socket es None")
                 return False
         except ConnectionResetError as e:
-            print("ConnectionResetError")
-            print(e)
             return False
         except OSError:
             return True
         except BlockingIOError as e:
-            print("BlockingIOError")
-            print(e)
             return True
         except Exception as e:
-            print(e)
             return False
 
-        print("SI, esta conectado")
         return True
 
     def send_data(self, data):
@@ -72,6 +65,8 @@ class ConnectionClient:
                 encode_data = self._socket.recv(1024, socket.MSG_DONTWAIT)
                 data = Utf8.decode(encode_data)
                 data_json = json.loads(data)
+        except TimeoutError:
+            pass
         except BrokenPipeError:
             self._connected = False
         except BlockingIOError:

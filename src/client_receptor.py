@@ -24,6 +24,4 @@ class Receptor(QRunnable):
                 task.run(self._main_window)
             else:
                 print("Data esta vacio")
-
-            time.sleep(1)
         print("Saliendo Transceiver.receiver")
