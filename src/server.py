@@ -51,9 +51,10 @@ def registrar_jugadores(server, game):
     port = 65432
     print(host, port)
     usernames = ["Cortazar", "Borges", "Sabato", "Arlt", "Bioy", "Saer"]
+    vivo = True
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.bind((host, port))
-        while True:
+        while vivo:
             try:
                 s.listen()
                 conn, addr = s.accept()
@@ -68,6 +69,9 @@ def registrar_jugadores(server, game):
             except Exception as e:
                 print(e)
                 sys.exit(1)
+            except KeyboardInterrupt:
+                print("KeyboardInterrupt")
+                vivo = False
 
 
 def main():
