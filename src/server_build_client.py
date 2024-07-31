@@ -7,7 +7,7 @@ class ServerBuildClient:
 
     def __init__(self):
         self._user_id = 1
-        self._username = cycle["Cortazar", "Borges", "Sabato", "Arlt", "Bioy", "Saer"]
+        self._username = cycle(["Cortazar", "Borges", "Sabato", "Arlt", "Bioy", "Saer"])
 
     def build(self, connection, server):
         username = next(self._username)

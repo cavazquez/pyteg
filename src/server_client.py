@@ -23,7 +23,7 @@ class Client:
     def close(self):
         self._conn.close()
 
-    def run(self, game):
+    def run(self):
         vivo = True
 
         while vivo:
@@ -33,85 +33,12 @@ class Client:
                 vivo = False
                 continue
 
-            data_json_r = json.loads(data)
-            self.ejecutar_mensaje(data_json_r, game)
+            data_json = json.loads(data)
+            self.ejecutar_mensaje(data_json)
 
-    def ejecutar_mensaje(self, data, game):
+    def ejecutar_mensaje(self, data):
         task = ServerTask.msg_to_task(data)
         task.run(self)
+
         mensaje = data["mensaje"]
         print(mensaje)
-
-        if mensaje == "username":
-            username = data["nombre"]
-            game.agregar_jugador(self._user_id, username)
-            if not self._username:
-                self._username = username
-            return
-
-        if mensaje == "obtener_username":
-            data_json_s = json.dumps({"username": self._username})
-            self._server.send(self._conn, data_json_s)
-            return
-
-        # if mensaje == "chat":
-        #    print(f"Chat user_id: {self._user_id}")
-        #    msg = self.mensaje_chat(data["chat"])
-        #    data_json_s = json.dumps({"chat": msg})
-        #    self._server.send_all(data_json_s)
-        #    return
-
-        if mensaje == "agregar":
-            pais = data["pais"]
-            cant = int(data["unidades"])
-            print("cant", cant)
-            print(f"Añadiendo una unidad a pais {pais}")
-            for _i in range(cant):
-                print(f"Añadiendo una unidad a pais {pais}")
-                mapa = game.mapa()
-                mapa.agregar_una_unidad(pais)
-            data_json_s = json.dumps(
-                {
-                    "mensaje": "unidades",
-                    "pais": pais,
-                    "unidades": game.mapa().cantidad_unidades(pais),
-                },
-            )
-            self._server.send(self._conn, data_json_s)
-            return
-
-        if mensaje == "mapa":
-            game.ver_mapa()
-            return
-
-        if mensaje == "start":
-            game.start()
-            return
-
-        if mensaje == "atacar":
-            atacante, defensor = data["atacar"].split()
-            game.atacar(atacante, defensor)
-            return
-
-        if "reagrupar" in mensaje:
-            desde, hacia, cantidad = data["reagrupar"].split()
-            game.reagrupar(desde, hacia, int(cantidad))
-            return
-
-        if "obtener_tarjeta" in mensaje:
-            self._tarjetas.append(game.dame_una_tarjeta())
-            return
-
-        if "finalizar_turno" in mensaje:
-            game.ronda().finalizar_turno()
-            return
-
-        if "cerrar" in mensaje:
-            print(f"Cerrando  user_id: {self._user_id}")
-            self._server.quitarme(self._user_id)
-            return
-
-        # raise MensajeNoValidoError
-
-    def mensaje_chat(self, data):
-        return f"{self.username()}: {data}"
