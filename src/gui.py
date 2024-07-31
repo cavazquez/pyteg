@@ -1,4 +1,4 @@
-from PySide6.QtCore import QSize, QThreadPool, QTimer
+from PySide6.QtCore import QSize, Qt, QThreadPool, QTimer
 from PySide6.QtGui import QAction
 from PySide6.QtWidgets import (
     QMainWindow,
@@ -92,6 +92,10 @@ class Gui(QMainWindow):
     def msg_chat(self, text):
         self.chat.append(text)
 
+    def keyPressEvent(self, event):  # noqa: N802
+        if event.key() == Qt.Key_Enter or event.key() == Qt.Key_Return:
+            self.chat.send_message()
+
     def closeEvent(self, event):  # noqa: N802
         self._vivo = False
         thread_activos = self.threadpool.activeThreadCount()
@@ -101,13 +105,10 @@ class Gui(QMainWindow):
             self.time.start(100)
             event.ignore()
         else:
-            print(event)
-            print("Aceptando Evento")
             event.accept()
 
     def check_and_close(self):
         self.threadpool.activeThreadCount()
         if self.threadpool.activeThreadCount() == 0:
             self.time.stop()
-            print("close")
             self.close()
