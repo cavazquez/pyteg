@@ -1,11 +1,13 @@
 import json
 from abc import ABC, abstractmethod
 
+
 class IMsg(ABC):
 
     @abstractmethod
     def to_json(self):
         pass
+
 
 class MsgChat(IMsg):
 
