@@ -1,17 +1,18 @@
 import json
 
+from src.server_player import Player
 from src.server_tasks import ServerTask
 from src.server_transmisor import ServerTransmisor
 
 
 class Client:
     def __init__(self, user_id, conn, server, username):
-        self._user_id = user_id
         self.username = username
-        self._conn = conn
         self.server = server
-        self._tarjetas = []
+        self._conn = conn
         self.transmisor = ServerTransmisor(self._conn)
+        self._player = Player()
+        self._user_id = user_id
 
     def send(self, data):
         self._conn.send(data)
@@ -21,9 +22,6 @@ class Client:
 
     def close(self):
         self._conn.close()
-
-    def tarjetas(self):
-        return self._tarjetas
 
     def run(self, game):
         vivo = True
