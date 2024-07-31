@@ -3,8 +3,11 @@ class ServerTaskChat:
     def __init__(self, msg):
         self._msg = msg
 
-    def run(self, server_transmisor):
-        server_transmisor.enviar_chat_a_todos(self._msg)
+    def run(self, client):
+        clientes = client._server.dame_clientes()
+        username = client._username
+        for c in clientes:
+            c._transmisor.enviar_chat(f'{username}: {self._msg}')
 
 
 class ServerTask:
