@@ -1,7 +1,13 @@
 import json
+from abc import ABC, abstractmethod
 
+class IMsg(ABC):
 
-class MsgChat:
+    @abstractmethod
+    def to_json(self):
+        pass
+
+class MsgChat(IMsg):
 
     def __init__(self, msg):
         self._tipo = "chat"
