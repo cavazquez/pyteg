@@ -12,6 +12,7 @@ def registrar_jugadores(server):
     vivo = True
     server_build_client = ServerBuildClient()
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         s.bind((host, port))
         while vivo:
             try:
