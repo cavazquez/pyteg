@@ -7,11 +7,11 @@ from src.server_transmisor import ServerTransmisor
 class Client:
     def __init__(self, user_id, conn, server, username):
         self._user_id = user_id
-        self._username = username
+        self.username = username
         self._conn = conn
-        self._server = server
+        self.server = server
         self._tarjetas = []
-        self._transmisor = ServerTransmisor(self._conn)
+        self.transmisor = ServerTransmisor(self._conn)
 
     def send(self, data):
         self._conn.send(data)
@@ -24,9 +24,6 @@ class Client:
 
     def tarjetas(self):
         return self._tarjetas
-
-    def username(self):
-        return self._username
 
     def run(self, game):
         vivo = True

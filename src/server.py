@@ -26,7 +26,7 @@ class Server:
     def send_all(self, data, ignore_conn=None):
         for user_id, client in self._clients.items():
             print(user_id, client)
-        for user_id, client in self._clients.items():
+        for _, client in self._clients.values():
             if ignore_conn != client:
                 print("send_all:", data)
                 client.send(data)
@@ -38,7 +38,7 @@ class Server:
         return list(self._clients.keys())
 
     def dame_clientes(self):
-        return [cliente for _, cliente in self._clients.items()]
+        return self._clients.values()
 
 
 def registrar_jugadores(server, game):

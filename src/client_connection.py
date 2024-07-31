@@ -35,13 +35,13 @@ class ConnectionClient:
                 self._socket.recv(1024, socket.MSG_DONTWAIT | socket.MSG_PEEK)
             else:
                 return False
-        except ConnectionResetError as e:
+        except ConnectionResetError:
             return False
         except OSError:
             return True
-        except BlockingIOError as e:
+        except BlockingIOError:
             return True
-        except Exception as e:
+        except Exception:
             return False
 
         return True
