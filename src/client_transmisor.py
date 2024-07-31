@@ -1,13 +1,29 @@
+from abc import ABC, abstractmethod
+
 from src.msg import MsgChat
 
 
-class ClientNullTransmisor:
+class IClientTransmisor(ABC):
+
+    @abstractmethod
+    def __init__(self):
+        pass
+
+    @abstractmethod
+    def enviar_chat(self, msg):
+        pass
+
+
+class ClientNullTransmisor(IClientTransmisor):
 
     def __init__(self):
         pass
 
+    def enviar_chat(self, _):
+        print("No estas conectado")
 
-class ClientTransmisor:
+
+class ClientTransmisor(IClientTransmisor):
 
     def __init__(self, conn):
         self._conn = conn
