@@ -18,10 +18,10 @@ class Receptor(QRunnable):
         print("Receptor")
         while self._main_window.vivo():
             data = self._conn.get_data()
-            print(f"data: {data}")
             if data:
+                print(f"data: {data}")
                 task = ClientTask.msg_to_task(data)
                 task.run(self._main_window)
             else:
-                print("Data esta vacio")
+                pass
         print("Saliendo Transceiver.receiver")

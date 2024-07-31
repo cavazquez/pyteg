@@ -43,7 +43,7 @@ class Client:
 
     def ejecutar_mensaje(self, data, game):
         task = ServerTask.msg_to_task(data)
-        task.run(self._transmisor)
+        task.run(self)
         mensaje = data["mensaje"]
         print(mensaje)
 

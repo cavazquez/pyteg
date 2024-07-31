@@ -6,7 +6,7 @@ from src.build_mapa import build_mapa
 from src.game import Game
 from src.mapa import Mapa
 from src.server_client import Client
-from src.server_connection import ConnectionServer
+from src.server_client_connection import ConnectionServer
 
 
 class Server:
@@ -29,19 +29,16 @@ class Server:
         for user_id, client in self._clients.items():
             if ignore_conn != client:
                 print("send_all:", data)
-                try:
-                    client.send(data)
-                except BrokenPipeError as ex:
-                    print("BrokenPipeError:", ex)
-                    del self._clients[user_id]
-                except Exception as ex:
-                    print("Exception:", ex)
+                client.send(data)
 
     def send(self, client, data):
         client.send(data)
 
     def dame_lista_jugadores(self):
         return list(self._clients.keys())
+
+    def dame_clientes(self):
+        return [cliente for _, cliente in self._clients.items()]
 
 
 def registrar_jugadores(server, game):

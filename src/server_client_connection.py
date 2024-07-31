@@ -14,10 +14,19 @@ class ConnectionServer:
             return Utf8.decode(encode_data)
         except ConnectionResetError:
             return None
+        except BrokenPipeError as ex:
+            print("BrokenPipeError:", ex)
+        except Exception as ex:
+            print("Exception:", ex)
 
     def send(self, data):
         encode_data = Utf8.encode(data)
-        self._conn.sendall(encode_data)
+        try:
+            self._conn.sendall(encode_data)
+        except BrokenPipeError as ex:
+            print("BrokenPipeError:", ex)
+        except Exception as ex:
+            print("Exception:", ex)
 
     def close(self):
         self._conn.shutdown(socket.SHUT_RDWR)
