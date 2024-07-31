@@ -7,10 +7,6 @@ class IClientTask(ABC):
     def run(self, main_window):
         pass
 
-    @abstractmethod
-    def asd(self, main_window):
-        pass
-
 
 class ClientTaskChat(IClientTask):
 

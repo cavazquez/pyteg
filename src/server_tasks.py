@@ -1,4 +1,14 @@
-class ServerTaskChat:
+from abc import ABC, abstractmethod
+
+
+class IServerTask(ABC):
+
+    @abstractmethod
+    def run(self, main_window):
+        pass
+
+
+class ServerTaskChat(IServerTask):
 
     def __init__(self, msg):
         self._msg = msg
