@@ -17,7 +17,7 @@ class ConnectionClient:
     def conectar(self):
         logging.info("Conectando")
         self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self._socket.settimeout(0.2)
+        self._socket.settimeout(0.4)
         self._socket.connect((self._host, self._port))
         print(f"Conectado con {self._host}:{self._port}")
 
