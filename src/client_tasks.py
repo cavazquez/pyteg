@@ -1,4 +1,16 @@
-class ClientTaskChat:
+from abc import ABC, abstractmethod
+
+class IClientTask(ABC):
+
+    @abstractmethod
+    def run(self, main_window):
+        pass
+
+    @abstractmethod
+    def asd(self, main_window):
+        pass
+
+class ClientTaskChat(IClientTask):
 
     def __init__(self, msg):
         self._msg = msg
