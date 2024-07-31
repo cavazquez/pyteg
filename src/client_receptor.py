@@ -1,5 +1,3 @@
-import time
-
 from PySide6.QtCore import QRunnable, Slot
 
 from src.client_tasks import ClientTask

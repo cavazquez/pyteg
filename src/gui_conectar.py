@@ -9,9 +9,9 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from src.client_connection import ConnectionClient
 from src.client_receptor import Receptor
 from src.client_transmisor import ClientTransmisor
-from src.client_connection import ConnectionClient
 
 
 class VentanaConectar(QWidget):

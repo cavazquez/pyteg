@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 
+
 class IClientTask(ABC):
 
     @abstractmethod
@@ -9,6 +10,7 @@ class IClientTask(ABC):
     @abstractmethod
     def asd(self, main_window):
         pass
+
 
 class ClientTaskChat(IClientTask):
 

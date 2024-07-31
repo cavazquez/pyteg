@@ -4,10 +4,10 @@ class ServerTaskChat:
         self._msg = msg
 
     def run(self, client):
-        clientes = client._server.dame_clientes()
-        username = client._username
+        clientes = client.server.dame_clientes()
+        username = client.username
         for c in clientes:
-            c._transmisor.enviar_chat(f'{username}: {self._msg}')
+            c.transmisor.enviar_chat(f"{username}: {self._msg}")
 
 
 class ServerTask:
