@@ -1,5 +1,6 @@
 from PySide6.QtWidgets import (
     QVBoxLayout,
+    QPushButton,
     QWidget,
 )
 
@@ -13,6 +14,7 @@ class VentanaAdmin(QWidget):
     def __init__(self, main_window):
         super().__init__()
         self._main_window = main_window
-        self.setFixedSize(400, 300)
         layout = QVBoxLayout()
+        boton = QPushButton("Empezar")
+        layout.addWidget(boton)
         self.setLayout(layout)
