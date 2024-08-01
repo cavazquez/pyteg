@@ -6,7 +6,7 @@ from src.server_transmisor import ServerTransmisor
 
 
 class Client:
-    def __init__(self, user_id, conn, server, username, soy_admin):  # noqa: PLR0913
+    def __init__(self, user_id, conn, server, username, soy_admin):
         self.username = username
         self.server = server
         self._conn = conn
