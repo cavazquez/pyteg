@@ -1,6 +1,6 @@
 from PySide6.QtWidgets import (
-    QVBoxLayout,
     QPushButton,
+    QVBoxLayout,
     QWidget,
 )
 
