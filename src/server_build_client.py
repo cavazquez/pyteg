@@ -13,5 +13,6 @@ class ServerBuildClient:
         username = next(self._username)
         user_id = self._user_id
         self._user_id += 1
-        client = Client(user_id, connection, server, username)
+        es_admin = user_id == 1
+        client = Client(user_id, connection, server, username, es_admin)
         return user_id, client
