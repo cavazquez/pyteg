@@ -19,6 +19,7 @@ class Receptor(QRunnable):
             if data:
                 print(f"data: {data}")
                 task = ClientTask.msg_to_task(data)
+                print(f"task: {task}")
                 task.run(self._main_window)
             else:
                 pass

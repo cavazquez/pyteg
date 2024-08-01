@@ -9,6 +9,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.client_transmisor import ClientNullTransmisor
+from src.gui_admin import VentanaAdmin
 from src.gui_chat import Chat
 from src.gui_conectar import VentanaConectar
 from src.gui_scene import QCustomGraphicsScene
@@ -70,6 +71,11 @@ class Gui(QMainWindow):
         self.w = None
         self.w = VentanaConectar(self)
         self.w.show()
+
+    def ventana_admin(self):
+        self._ventana_admin = None
+        self._ventana_admin = VentanaAdmin(self)
+        self._ventana_admin.show()
 
     def agregar_5(self):
         pass

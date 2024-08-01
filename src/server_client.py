@@ -6,13 +6,17 @@ from src.server_transmisor import ServerTransmisor
 
 
 class Client:
-    def __init__(self, user_id, conn, server, username):
+    def __init__(self, user_id, conn, server, username, soy_admin):  # noqa: PLR0913
         self.username = username
         self.server = server
         self._conn = conn
         self.transmisor = ServerTransmisor(self._conn)
         self._player = Player()
         self._user_id = user_id
+        self._soy_admin = soy_admin
+
+        if soy_admin:
+            self.transmisor.sos_admin()
 
     def send(self, data):
         self._conn.send(data)

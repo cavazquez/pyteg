@@ -9,6 +9,18 @@ class IMsg(ABC):
         pass
 
 
+class MsgSosAdmin(IMsg):
+
+    def __init__(self):
+        self._tipo = "sosadmin"
+
+    def to_json(self):
+        data = {
+            "mensaje": self._tipo,
+        }
+        return json.dumps(data)
+
+
 class MsgChat(IMsg):
 
     def __init__(self, msg):
