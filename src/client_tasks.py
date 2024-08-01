@@ -10,8 +10,8 @@ class IClientTask(ABC):
 
 class ClientTaskChat(IClientTask):
 
-    def __init__(self, msg):
-        self._msg = msg
+    def __init__(self, data):
+        self._msg = data.get("msg")
 
     def run(self, main_window):
         main_window.chat.append(self._msg)
@@ -19,7 +19,7 @@ class ClientTaskChat(IClientTask):
 
 class ClientTaskSerAdmin(IClientTask):
 
-    def __init__(self):
+    def __init__(self, data):
         pass
 
     def run(self, main_window):
@@ -27,17 +27,16 @@ class ClientTaskSerAdmin(IClientTask):
         main_window.ventana_admin()
 
 
-class ClientTask:
+class ClientTaskNull(IClientTask):
 
-    @staticmethod
-    def msg_to_task(data):
-        try:
-            mensaje = data["mensaje"]
-            if mensaje == "chat":
-                msg = data["msg"]
-                return ClientTaskChat(msg)
-            if mensaje == "sosadmin":
-                return ClientTaskSerAdmin()
-        except KeyError as e:
-            print(e)
-        return None
+    def __init__(self, data):
+        pass
+
+    def run(self, main_window):
+        pass
+
+
+dict_task = {
+    "chat": ClientTaskChat,
+    "sosadmin": ClientTaskSerAdmin,
+}

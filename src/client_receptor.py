@@ -1,6 +1,6 @@
 from PySide6.QtCore import QRunnable, Slot
 
-from src.client_tasks import ClientTask
+from src.client_tasks_manager import ClientTaskManager
 
 
 class Receptor(QRunnable):
@@ -18,7 +18,7 @@ class Receptor(QRunnable):
             data = self._conn.get_data()
             if data:
                 print(f"data: {data}")
-                task = ClientTask.msg_to_task(data)
+                task = ClientTaskManager.msg_to_task(data)
                 print(f"task: {task}")
                 task.run(self._main_window)
             else:
