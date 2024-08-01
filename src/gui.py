@@ -73,9 +73,9 @@ class Gui(QMainWindow):
         self.w.show()
 
     def ventana_admin(self):
-        self._ventana_admin = None
-        self._ventana_admin = VentanaAdmin(self)
-        self._ventana_admin.show()
+        self.w = None
+        self.w = VentanaAdmin(self)
+        self.w.show()
 
     def agregar_5(self):
         pass
