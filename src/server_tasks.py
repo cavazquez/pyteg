@@ -4,14 +4,18 @@ from abc import ABC, abstractmethod
 class IServerTask(ABC):
 
     @abstractmethod
-    def run(self, main_window):
+    def __init__(self, data):
+        pass
+
+    @abstractmethod
+    def run(self, client):
         pass
 
 
 class ServerTaskChat(IServerTask):
 
-    def __init__(self, msg):
-        self._msg = msg
+    def __init__(self, data):
+        self._msg = data.get("msg")
 
     def run(self, client):
         clientes = client.server.dame_clientes()
@@ -20,13 +24,15 @@ class ServerTaskChat(IServerTask):
             c.transmisor.enviar_chat(f"{username}: {self._msg}")
 
 
-class ServerTask:
+class ServerTaskNull(IServerTask):
 
-    @staticmethod
-    def msg_to_task(data):
+    def __init__(self, data):
+        pass
 
-        if data["mensaje"] == "chat":
-            msg = data["msg"]
-            return ServerTaskChat(msg)
+    def run(self, client):
+        pass
 
-        return None
+
+dict_task = {
+    "chat": ServerTaskChat,
+}

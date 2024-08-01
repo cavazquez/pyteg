@@ -1,7 +1,7 @@
 import json
 
 from src.server_player import Player
-from src.server_tasks import ServerTask
+from src.server_tasks_manager import ServerTaskManager
 from src.server_transmisor import ServerTransmisor
 
 
@@ -41,7 +41,7 @@ class Client:
             self.ejecutar_mensaje(data_json)
 
     def ejecutar_mensaje(self, data):
-        task = ServerTask.msg_to_task(data)
+        task = ServerTaskManager.msg_to_task(data)
         task.run(self)
 
         mensaje = data["mensaje"]
