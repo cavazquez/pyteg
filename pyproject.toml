@@ -4,52 +4,28 @@ target-version = ["py311"]
 [tool.ruff]
 target-version = "py311"
 
-#[tool.ruff.lint]
-#preview = true
-#select = ["E", # default
-#	  "F", # default
-#	  "I", # isort
-#	  "Q", # flake8-quotes 
-#	  "G", # flake8-logging-format
-#	  "ISC", # flake8-implicit-str-concat
-#	  "DTZ", # flake8-datetimez
-#	  "COM", # flake8-commas
-#	  "UP", # pyupgrade
-#	  "C4", # flake8-comprehensions
-#	  "RET", # flake8-return
-#	  "ARG", # flake8-unused-arguments
-#	  "FURB", # refurb
-#	  "PIE", # flake8-pie
-#	  "LOG", # flake8-logging
-#	  "PGH", # pygrep-hooks
-#	  "RUF", # Ruff-specific rules 
-#	  "PERF101", # unnecessary-list-cast
-#	  "FURB132", # check-and-remove-from-set
-#	  "PERF401", # manual-list-comprehension
-#	 ]
-
 [tool.ruff.lint]
 preview = true
 select = [
 	  "ALL", 
 	 ]
 ignore = [
-	"D",
-	"CPY",
-	"DJ",
-	"T20",
-	"PT",
-	"AIR",
-	"ANN",
+	"D", # pydocstyle
+	"CPY", # flake8-copyright
+	"DJ",  # flake8-django
+	"T20", # flake8-print
+	"PT",  # flake8-pytest-style
+	"AIR", # Airflow
+	"ANN", # flake8-annotations 
 	# Revisar los siguientes
-	"BLE001",
-	"PLR2004",
-	"PLR0914",
-	"PLR0911",
-	"PLR0904",
-	"PLR6301",
-	"ERA001",
-	"C901",
-	"PERF402",
+	"BLE001", # blind-except
+	"PLR0904", # too-many-public-methods 	
+	"PLR0911", # too-many-return-statements
+	"PLR0914", # too-many-locals
+	"PLR2004", # magic-value-comparison
+	"PLR6301", # no-self-use
+	"ERA001",  # commented-out-code
+	"C901",    # complex-structure
+	"PERF402", # manual-list-copy
 	]
 
