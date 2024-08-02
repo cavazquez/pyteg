@@ -15,9 +15,7 @@ class MsgSosAdmin(IMsg):
         self._tipo = "sosadmin"
 
     def to_json(self):
-        data = {
-            "mensaje": self._tipo,
-        }
+        data = {"mensaje": self._tipo}
         return json.dumps(data)
 
 
@@ -32,4 +30,24 @@ class MsgChat(IMsg):
             "mensaje": self._tipo,
             "msg": self._msg,
         }
+        return json.dumps(data)
+
+
+class MsgEmpezar(IMsg):
+
+    def __init__(self):
+        self._tipo = "empezar"
+
+    def to_json(self):
+        data = {"mensaje": self._tipo}
+        return json.dumps(data)
+
+
+class MsgEsperarJugadores(IMsg):
+
+    def __init__(self):
+        self._tipo = "esperar_jugadores"
+
+    def to_json(self):
+        data = {"mensaje": self._tipo}
         return json.dumps(data)

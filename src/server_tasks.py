@@ -1,5 +1,7 @@
 from abc import ABC, abstractmethod
 
+from src.exception import MensajeNoValidoError
+
 
 class IServerTask(ABC):
 
@@ -10,6 +12,16 @@ class IServerTask(ABC):
     @abstractmethod
     def run(self, client):
         pass
+
+
+class ServerTaskNull(IServerTask):
+
+    def __init__(self, data):
+        self._data = data
+
+    def run(self, _):
+        msg = f"{self._data}"
+        raise MensajeNoValidoError(msg)
 
 
 class ServerTaskChat(IServerTask):
@@ -24,15 +36,18 @@ class ServerTaskChat(IServerTask):
             c.transmisor.enviar_chat(f"{username}: {self._msg}")
 
 
-class ServerTaskNull(IServerTask):
+class ServerTaskEmpezar(IServerTask):
 
     def __init__(self, data):
         pass
 
     def run(self, client):
-        pass
+        clientes = client.server.dame_clientes()
+        for c in clientes:
+            c.transmisor.esperar_jugadores()
 
 
 dict_task = {
     "chat": ServerTaskChat,
+    "empezar": ServerTaskEmpezar,
 }

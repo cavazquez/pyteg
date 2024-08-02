@@ -6,15 +6,21 @@ from PySide6.QtWidgets import (
 
 
 class VentanaAdmin(QWidget):
-    """
-    This "window" is a QWidget. If it has no parent, it
-    will appear as a free-floating window as we want.
-    """
 
     def __init__(self, main_window):
         super().__init__()
-        self._main_window = main_window
-        layout = QVBoxLayout()
-        boton = QPushButton("Empezar")
-        layout.addWidget(boton)
-        self.setLayout(layout)
+        self.main_window = main_window
+        self.setWindowTitle("Admin")
+
+        self.layout = QVBoxLayout()
+
+        self.button = QPushButton("Empezar")
+        self.button.clicked.connect(self.empezar)
+
+        self.layout.addWidget(self.button)
+        self.setLayout(self.button)
+
+    def empezar(self):
+        print("VentanaAdmin.empezar()")
+        self.main_window.transmisor.empezar()
+        self.close()
