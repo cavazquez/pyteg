@@ -5,9 +5,8 @@ from src.client_tasks_manager import ClientTaskManager
 
 class Receptor(QRunnable):
 
-    def __init__(self, client, main_window, conn):
+    def __init__(self, main_window, conn):
         super().__init__()
-        self._client = client
         self._main_window = main_window
         self._conn = conn
 
