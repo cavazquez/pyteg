@@ -18,7 +18,7 @@ class VentanaAdmin(QWidget):
         self.button.clicked.connect(self.empezar)
 
         self.layout.addWidget(self.button)
-        self.setLayout(self.button)
+        self.setLayout(self.layout)
 
     def empezar(self):
         print("VentanaAdmin.empezar()")
