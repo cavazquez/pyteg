@@ -47,12 +47,10 @@ class VentanaConectar(QWidget):
         try:
             self._conexion = ConnectionClient()
             self._conexion.conectar()
-            print(f"self._conexion {self._conexion}")
 
             # Iniciar receptor en thread separado
             self._main_window.threadpool.start(
                 Receptor(
-                    self._main_window.client,
                     self._main_window,
                     self._conexion,
                 ),
