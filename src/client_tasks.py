@@ -8,6 +8,15 @@ class IClientTask(ABC):
         pass
 
 
+class ClientTaskNull(IClientTask):
+
+    def __init__(self, data):
+        pass
+
+    def run(self, main_window):
+        pass
+
+
 class ClientTaskChat(IClientTask):
 
     def __init__(self, data):
@@ -27,16 +36,17 @@ class ClientTaskSerAdmin(IClientTask):
         main_window.ventana_admin()
 
 
-class ClientTaskNull(IClientTask):
+class ClientTaskEsperarJugadores(IClientTask):
 
     def __init__(self, data):
         pass
 
     def run(self, main_window):
-        pass
+        main_window.ventana_esperar_jugadores()
 
 
 dict_task = {
     "chat": ClientTaskChat,
     "sosadmin": ClientTaskSerAdmin,
+    "esperar_jugadores": ClientTaskEsperarJugadores,
 }

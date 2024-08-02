@@ -12,9 +12,11 @@ class Chat(QWidget):
     def __init__(self, main_window):
         super().__init__()
         self.main_window = main_window
+
         self.setFixedSize(QSize(1024, 200))
         layout = QVBoxLayout()
         layout.setSpacing(1)
+
         self.input_field = QLineEdit()
         self.text_field = QTextEdit()
         self.text_field.setReadOnly(True)
@@ -24,6 +26,7 @@ class Chat(QWidget):
         layout.addWidget(self.text_field)
         layout.addWidget(self.input_field)
         layout.addWidget(self.send_button)
+
         self.setLayout(layout)
 
     def send_message(self):

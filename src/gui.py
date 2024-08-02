@@ -12,6 +12,7 @@ from src.client_transmisor import ClientNullTransmisor
 from src.gui_admin import VentanaAdmin
 from src.gui_chat import Chat
 from src.gui_conectar import VentanaConectar
+from src.gui_esperar_jugadores import VentanaEsperarJugadores
 from src.gui_scene import QCustomGraphicsScene
 from src.gui_view import QCustomGraphicsView
 
@@ -75,6 +76,11 @@ class Gui(QMainWindow):
     def ventana_admin(self):
         self.w = None
         self.w = VentanaAdmin(self)
+        self.w.show()
+
+    def ventana_esperar_jugadores(self):
+        self.w = None
+        self.w = VentanaEsperarJugadores(self)
         self.w.show()
 
     def agregar_5(self):
