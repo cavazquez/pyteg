@@ -15,18 +15,17 @@ from src.client_transmisor import ClientTransmisor
 
 
 class VentanaConectar(QWidget):
-    """
-    This "window" is a QWidget. If it has no parent, it
-    will appear as a free-floating window as we want.
-    """
 
     def __init__(self, main_window):
         super().__init__()
         self._main_window = main_window
+
         layout = QVBoxLayout()
         self.setWindowTitle("Conectar")
         self.setFixedSize(QSize(300, 150))
         self.setWindowFlags(self.windowFlags() & ~Qt.WindowMinimizeButtonHint)
+
+        # Crear widget
         label_addr = QLabel("Direccion")
         addr = QLineEdit("localhost")
         label_port = QLabel("Puerto")
@@ -34,11 +33,14 @@ class VentanaConectar(QWidget):
         port.setValidator(QIntValidator())
         button_conectar = QPushButton("Conectar")
         button_conectar.clicked.connect(self.connect)
+
+        # Agregar widget al layout
         layout.addWidget(label_addr)
         layout.addWidget(addr)
         layout.addWidget(label_port)
         layout.addWidget(port)
         layout.addWidget(button_conectar)
+
         self.setLayout(layout)
 
     def connect(self):
@@ -46,6 +48,8 @@ class VentanaConectar(QWidget):
             self._conexion = ConnectionClient()
             self._conexion.conectar()
             print(f"self._conexion {self._conexion}")
+
+            # Iniciar receptor en thread separado
             self._main_window.threadpool.start(
                 Receptor(
                     self._main_window.client,
@@ -53,8 +57,14 @@ class VentanaConectar(QWidget):
                     self._conexion,
                 ),
             )
+
+            # Iniciar transmisor
             self._main_window.transmisor = ClientTransmisor(self._conexion)
+
         except ConnectionRefusedError:
             QMessageBox.warning(self, "Advertencia", "conexión rehusada.")
+
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Error al conectar: {e!s}")
         finally:
             self.close()
