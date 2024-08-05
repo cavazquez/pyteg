@@ -52,9 +52,6 @@ class Gui(QMainWindow):
         button_conectar = QAction("Conectar", self)
         button_conectar.triggered.connect(self.abrir_ventana_conectar)
         toolbar.addAction(button_conectar)
-        button_agregar_5 = QAction("Agregar 5", self)
-        button_agregar_5.triggered.connect(self.agregar_5)
-        toolbar.addAction(button_agregar_5)
 
         # self.scene = QGraphicsScene()
         self.scene = QCustomGraphicsScene(self)
@@ -84,26 +81,11 @@ class Gui(QMainWindow):
         self.w = VentanaEsperarJugadores(self)
         self.w.show()
 
-    def agregar_5(self):
-        pass
-
-    def update_unidades(self, pais, cantidad):
-        pass
-
-    def send_message(self):
-        text = self.input_field.text()
-        if text:
-            self.client.send_chat(text)
-            self.input_field.clear()
-
     def update_status_bar(self, text):
         self.status_bar.showMessage(text)
 
     def clear_status_bar(self):
         self.status_bar.clearMessage()
-
-    def msg_chat(self, text):
-        self.chat.append(text)
 
     def keyPressEvent(self, event):  # noqa: N802
         if event.key() == Qt.Key_Enter or event.key() == Qt.Key_Return:
