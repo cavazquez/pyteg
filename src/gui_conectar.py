@@ -10,7 +10,6 @@ from PySide6.QtWidgets import (
 )
 
 from src.client_connection import ConnectionClient
-from src.client_receptor import Receptor
 from src.client_transmisor import ClientTransmisor
 
 
@@ -26,35 +25,29 @@ class VentanaConectar(QWidget):
         self.setWindowFlags(self.windowFlags() & ~Qt.WindowMinimizeButtonHint)
 
         # Crear widget
-        label_addr = QLabel("Direccion")
-        addr = QLineEdit("localhost")
-        label_port = QLabel("Puerto")
-        port = QLineEdit("65432")
-        port.setValidator(QIntValidator())
+        self.label_addr = QLabel("Direccion")
+        self.addr = QLineEdit("localhost")
+        self.label_port = QLabel("Puerto")
+        self.port = QLineEdit("65432")
+        self.port.setValidator(QIntValidator())
         button_conectar = QPushButton("Conectar")
         button_conectar.clicked.connect(self.connect)
 
         # Agregar widget al layout
-        layout.addWidget(label_addr)
-        layout.addWidget(addr)
-        layout.addWidget(label_port)
-        layout.addWidget(port)
+        layout.addWidget(self.label_addr)
+        layout.addWidget(self.addr)
+        layout.addWidget(self.label_port)
+        layout.addWidget(self.port)
         layout.addWidget(button_conectar)
 
         self.setLayout(layout)
 
     def connect(self):
         try:
-            self._conexion = ConnectionClient()
+            addr = self.addr.text()
+            port = int(self.port.text())
+            self._conexion = ConnectionClient(self._main_window, addr, port)
             self._conexion.conectar()
-
-            # Iniciar receptor en thread separado
-            self._main_window.threadpool.start(
-                Receptor(
-                    self._main_window,
-                    self._conexion,
-                ),
-            )
 
             # Iniciar transmisor
             self._main_window.transmisor = ClientTransmisor(self._conexion)
