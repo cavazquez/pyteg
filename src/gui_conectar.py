@@ -1,4 +1,4 @@
-from PySide6.QtCore import QSize, Qt
+from PySide6.QtCore import QSize
 from PySide6.QtGui import QIntValidator
 from PySide6.QtWidgets import (
     QLabel,
@@ -10,7 +10,6 @@ from PySide6.QtWidgets import (
 )
 
 from src.client_connection import ConnectionClient
-from src.client_transmisor import ClientTransmisor
 
 
 class VentanaConectar(QWidget):
@@ -22,7 +21,6 @@ class VentanaConectar(QWidget):
         layout = QVBoxLayout()
         self.setWindowTitle("Conectar")
         self.setFixedSize(QSize(300, 150))
-        self.setWindowFlags(self.windowFlags() & ~Qt.WindowMinimizeButtonHint)
 
         # Crear widget
         self.label_addr = QLabel("Direccion")
@@ -49,13 +47,5 @@ class VentanaConectar(QWidget):
             self._conexion = ConnectionClient(self._main_window, addr, port)
             self._conexion.conectar()
 
-            # Iniciar transmisor
-            self._main_window.transmisor = ClientTransmisor(self._conexion)
-
-        except ConnectionRefusedError:
-            QMessageBox.warning(self, "Advertencia", "conexión rehusada.")
-
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Error al conectar: {e!s}")
-        finally:
-            self.close()

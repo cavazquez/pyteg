@@ -1,4 +1,4 @@
-from PySide6.QtCore import QSize, Qt, QThreadPool, QTimer
+from PySide6.QtCore import QSize, Qt
 from PySide6.QtGui import QAction
 from PySide6.QtWidgets import (
     QMainWindow,
@@ -23,8 +23,9 @@ class Gui(QMainWindow):
         self._vivo = True
         self.client = client
         self.transmisor = ClientNullTransmisor()
-        self.threadpool = QThreadPool()
+        self.conexion = None
         self.w = None
+        self.ventana_conectar = None
         self.setWindowTitle("PyTeg")
         self.setFixedSize(QSize(1024, 768))
         self.setMouseTracking(True)
@@ -49,7 +50,7 @@ class Gui(QMainWindow):
         toolbar = QToolBar("My main toolbar")
         self.addToolBar(toolbar)
         button_conectar = QAction("Conectar", self)
-        button_conectar.triggered.connect(self.ventana_conectar)
+        button_conectar.triggered.connect(self.abrir_ventana_conectar)
         toolbar.addAction(button_conectar)
         button_agregar_5 = QAction("Agregar 5", self)
         button_agregar_5.triggered.connect(self.agregar_5)
@@ -68,10 +69,10 @@ class Gui(QMainWindow):
         self.setCentralWidget(self.main_widget)
         self.view.show()
 
-    def ventana_conectar(self):
-        self.w = None
-        self.w = VentanaConectar(self)
-        self.w.show()
+    def abrir_ventana_conectar(self):
+        self.ventana_conectar = None
+        self.ventana_conectar = VentanaConectar(self)
+        self.ventana_conectar.show()
 
     def ventana_admin(self):
         self.w = None
@@ -108,19 +109,5 @@ class Gui(QMainWindow):
         if event.key() == Qt.Key_Enter or event.key() == Qt.Key_Return:
             self.chat.send_message()
 
-    def closeEvent(self, event):  # noqa: N802
+    def closeEvent(self, _):  # noqa: N802
         self._vivo = False
-        thread_activos = self.threadpool.activeThreadCount()
-        if thread_activos > 0:
-            self.time = QTimer(self)
-            self.time.timeout.connect(self.check_and_close)
-            self.time.start(100)
-            event.ignore()
-        else:
-            event.accept()
-
-    def check_and_close(self):
-        self.threadpool.activeThreadCount()
-        if self.threadpool.activeThreadCount() == 0:
-            self.time.stop()
-            self.close()
