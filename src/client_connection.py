@@ -1,76 +1,38 @@
 import json
-import logging
-import socket
 
+from PySide6.QtNetwork import QTcpSocket
+
+from src.client_tasks_manager import ClientTaskManager
 from src.codecs import Utf8
-
-logging.basicConfig(filename="example.log", encoding="utf-8", level=logging.DEBUG)
 
 
 class ConnectionClient:
-    def __init__(self, host="127.0.0.1", port=65432):
-        logging.info("Creando ConnectionClient")
+    def __init__(self, main_window, host="127.0.0.1", port=65432):
         self._host = host
         self._port = port
-        self._socket = None  # socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self._main_window = main_window
+        self._socket = QTcpSocket()
+        self._socket.readyRead.connect(self.read_data)
+        self._socket.errorOccurred.connect(self.display_error)
 
     def conectar(self):
-        logging.info("Conectando")
-        self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self._socket.settimeout(0.4)
-        self._socket.connect((self._host, self._port))
+        self._socket.connectToHost(self._host, self._port)
         print(f"Conectado con {self._host}:{self._port}")
 
-    def close(self):
-        logging.info("Cerrando Socket")
-        print("Cerrando Socket")
-        if self.is_connected():
-            self._socket.shutdown(socket.SHUT_RDWR)
-            self._socket.close()
-
-    def is_connected(self):
-        logging.info("Consultando si está conectado")
-        try:
-            if self._socket:
-                self._socket.recv(1024, socket.MSG_DONTWAIT | socket.MSG_PEEK)
-            else:
-                return False
-        except ConnectionResetError:
-            return False
-        except OSError:
-            return True
-        except BlockingIOError:
-            return True
-        except Exception:
-            return False
-
-        return True
-
     def send_data(self, data):
-        logging.info("Send Data")
-        try:
-            if self.is_connected():
-                encode_data = Utf8.encode(data)
-                self._socket.sendall(encode_data)
-            else:
-                print("No conectado")
-        except BrokenPipeError as e:
-            print(e)
+        print(f"Enviando {data}")
+        encode_data = Utf8.encode(data)
+        self._socket.write(encode_data)
 
-    def get_data(self):
-        logging.info("Get Data")
+    def read_data(self):
         data_json = ""
-        try:
-            if self.is_connected():
-                encode_data = self._socket.recv(1024, socket.MSG_DONTWAIT)
-                data = Utf8.decode(encode_data)
-                data_json = json.loads(data)
-        except TimeoutError:
-            pass
-        except BrokenPipeError:
-            self._connected = False
-        except BlockingIOError:
-            print("BlockingIOError")
-        except json.decoder.JSONDecodeError:
-            pass
-        return data_json
+        while self._socket.bytesAvailable():
+            encode_data = self._socket.readAll()
+            data = Utf8.decode(encode_data)
+            data_json = json.loads(data)
+            print(f"Recibido {data_json}")
+            task = ClientTaskManager.msg_to_task(data_json)
+            task.run(self._main_window)
+
+    def display_error(self):
+        print(f"Error: {self._socket.errorString()}")

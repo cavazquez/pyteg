@@ -21,6 +21,5 @@ class VentanaAdmin(QWidget):
         self.setLayout(self.layout)
 
     def empezar(self):
-        print("VentanaAdmin.empezar()")
         self.main_window.transmisor.empezar()
         self.close()
