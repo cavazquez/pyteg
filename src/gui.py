@@ -48,6 +48,9 @@ class Gui(QMainWindow):
         input_layout.addWidget(self.chat)
 
         toolbar = QToolBar("My main toolbar")
+        toolbar.setMovable(False)
+        toolbar.setFloatable(False)
+        toolbar.setAllowedAreas(Qt.TopToolBarArea)
         self.addToolBar(toolbar)
         button_conectar = QAction("Conectar", self)
         button_conectar.triggered.connect(self.abrir_ventana_conectar)
