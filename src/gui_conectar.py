@@ -1,18 +1,18 @@
 from PySide6.QtCore import QSize
 from PySide6.QtGui import QIntValidator
 from PySide6.QtWidgets import (
+    QDialog,
     QLabel,
     QLineEdit,
     QMessageBox,
     QPushButton,
     QVBoxLayout,
-    QWidget,
 )
 
 from src.client_connection import ConnectionClient
 
 
-class VentanaConectar(QWidget):
+class VentanaConectar(QDialog):
 
     def __init__(self, main_window):
         super().__init__()
