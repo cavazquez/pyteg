@@ -1,5 +1,4 @@
 from PySide6.QtCore import QSize, Qt
-from PySide6.QtGui import QAction
 from PySide6.QtWidgets import (
     QMainWindow,
     QStatusBar,
@@ -47,11 +46,8 @@ class Gui(QMainWindow):
         self.chat.show()
         input_layout.addWidget(self.chat)
 
-        toolbar = ToolBar("My main toolbar")
+        toolbar = ToolBar("My main toolbar", self)
         self.addToolBar(toolbar)
-        button_conectar = QAction("Conectar", self)
-        button_conectar.triggered.connect(self.abrir_ventana_conectar)
-        toolbar.addAction(button_conectar)
 
         # self.scene = QGraphicsScene()
         self.scene = QCustomGraphicsScene(self)
