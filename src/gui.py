@@ -3,7 +3,6 @@ from PySide6.QtGui import QAction
 from PySide6.QtWidgets import (
     QMainWindow,
     QStatusBar,
-    QToolBar,
     QVBoxLayout,
     QWidget,
 )
@@ -14,6 +13,7 @@ from src.gui_chat import Chat
 from src.gui_conectar import VentanaConectar
 from src.gui_esperar_jugadores import VentanaEsperarJugadores
 from src.gui_scene import QCustomGraphicsScene
+from src.gui_toolbar import ToolBar
 from src.gui_view import QCustomGraphicsView
 
 
@@ -47,10 +47,7 @@ class Gui(QMainWindow):
         self.chat.show()
         input_layout.addWidget(self.chat)
 
-        toolbar = QToolBar("My main toolbar")
-        toolbar.setMovable(False)
-        toolbar.setFloatable(False)
-        toolbar.setAllowedAreas(Qt.TopToolBarArea)
+        toolbar = ToolBar("My main toolbar")
         self.addToolBar(toolbar)
         button_conectar = QAction("Conectar", self)
         button_conectar.triggered.connect(self.abrir_ventana_conectar)
