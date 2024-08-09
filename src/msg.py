@@ -51,3 +51,18 @@ class MsgEsperarJugadores(IMsg):
     def to_json(self):
         data = {"mensaje": self._tipo}
         return json.dumps(data)
+
+
+class MsgColorAsignado(IMsg):
+
+    def __init__(self, rgb_json):
+        self._tipo = "color_asignado"
+        self._rgb_json = rgb_json
+        print(rgb_json)
+
+    def to_json(self):
+        data = {
+            "mensaje": self._tipo,
+        }
+        rgb_dict = json.loads(self._rgb_json)
+        return json.dumps(data | rgb_dict)
