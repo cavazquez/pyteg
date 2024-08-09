@@ -1,4 +1,4 @@
-from src.msg import MsgChat, MsgEsperarJugadores, MsgSosAdmin
+from src.msg import MsgChat, MsgColorAsignado, MsgEsperarJugadores, MsgSosAdmin
 
 
 class ServerTransmisor:
@@ -17,3 +17,7 @@ class ServerTransmisor:
     def esperar_jugadores(self):
         msg_esperar_jugadores = MsgEsperarJugadores()
         self._conn.send(msg_esperar_jugadores.to_json())
+
+    def color_asignado(self, color):
+        msg_color_asignado = MsgColorAsignado(color.to_json())
+        self._conn.send(msg_color_asignado.to_json())

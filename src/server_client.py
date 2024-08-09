@@ -14,9 +14,14 @@ class Client:
         self._player = Player()
         self._user_id = user_id
         self._soy_admin = soy_admin
+        self._color = None
 
         if soy_admin:
             self.transmisor.sos_admin()
+
+    def asignar_color(self, color):
+        self._color = color
+        self.transmisor.color_asignado(color)
 
     def send(self, data):
         self._conn.send(data)

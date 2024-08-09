@@ -1,9 +1,11 @@
+from src.server_color import ServerColor
 from src.server_registrar_jugadores import registrar_jugadores
 
 
 class Server:
     def __init__(self):
         self._clients = {}
+        self._color = ServerColor()
 
     def cant_clients(self):
         return len(self._clients)
@@ -13,6 +15,7 @@ class Server:
         self._clients.pop(user_id)
 
     def registrar_cliente(self, user_id, client):
+        self._color.asignar_color(client)
         self._clients[user_id] = client
 
     def dame_lista_jugadores(self):
