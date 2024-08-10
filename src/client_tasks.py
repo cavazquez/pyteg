@@ -12,10 +12,10 @@ class IClientTask(ABC):
 
 class ClientTaskNull(IClientTask):
 
-    def __init__(self, data ):
+    def __init__(self, data):
         self._msg = data.get("mensaje")
 
-    def run(self, main_window):
+    def run(self, _):
         print(f"mensaje {self._msg} desconocido")
 
 
@@ -46,13 +46,14 @@ class ClientTaskEsperarJugadores(IClientTask):
     def run(self, main_window):
         main_window.ventana_esperar_jugadores()
 
+
 class ClientTaskColorAsignado(IClientTask):
 
     def __init__(self, data):
         self._msg = data
 
     def run(self, main_window):
-        self._msg.pop('mensaje')
+        self._msg.pop("mensaje")
         print(f"Color asignado: {self._msg}")
         main_window.color = Color(**self._msg)
         print(main_window.color)
