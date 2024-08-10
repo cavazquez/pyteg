@@ -6,5 +6,5 @@ class ClientTaskManager:
     @staticmethod
     def msg_to_task(data):
         mensaje = data.get("mensaje")
-        task = dict_task.get(mensaje, ClientTaskNull)
+        task = dict_task.get(mensaje, ClientTaskNull(mensaje))
         return task(data)
