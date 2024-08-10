@@ -29,6 +29,8 @@ class Gui(QMainWindow):
         self.setFixedSize(QSize(1024, 768))
         self.setMouseTracking(True)
 
+        self.color = None
+
         self.setup_graphics_view()
 
         self.status_bar = QStatusBar()
