@@ -10,11 +10,11 @@ class IClientTask(ABC):
 
 class ClientTaskNull(IClientTask):
 
-    def __init__(self, data):
-        pass
+    def __init__(self, msg ):
+        self._msg = msg
 
     def run(self, main_window):
-        pass
+        print(f"mensaje {self._msg} desconocido")
 
 
 class ClientTaskChat(IClientTask):
