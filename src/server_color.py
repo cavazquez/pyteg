@@ -20,7 +20,12 @@ class ServerColor:
         self._usados = []
 
     def asignar_color(self, client):
-        color = secrets.choice(self._colores)
+        colores_disponibles = [
+            color for color in self._colores if color not in self._usados
+        ]
+        color = secrets.choice(colores_disponibles)
         self._usados.append(color)
-        self._colores.remove(color)
         client.asignar_color(copy(color))
+
+    def colores(self):
+        return self._colores

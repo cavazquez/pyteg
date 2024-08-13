@@ -19,6 +19,8 @@ class Client:
         if soy_admin:
             self.transmisor.sos_admin()
 
+        self.transmisor.enviar_colores(self.server.color.colores())
+
     def asignar_color(self, color):
         self._color = color
         self.transmisor.color_asignado(color)
