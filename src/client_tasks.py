@@ -59,9 +59,23 @@ class ClientTaskColorAsignado(IClientTask):
         print(main_window.color)
 
 
+class ClientTaskColor(IClientTask):
+
+    def __init__(self, data):
+        self._msg = data
+
+    def run(self, main_window):
+        self._msg.pop("mensaje")
+        print(f"Color asignado: {self._msg}")
+        main_window.color = Color(**self._msg)
+        main_window.colores.append(Color(**self._msg))
+        print(f"colores: {main_window.colores}")
+
+
 dict_task = {
     "chat": ClientTaskChat,
     "sosadmin": ClientTaskSerAdmin,
     "esperar_jugadores": ClientTaskEsperarJugadores,
     "color_asignado": ClientTaskColorAsignado,
+    "color": ClientTaskColor,
 }

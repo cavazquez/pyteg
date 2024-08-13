@@ -30,6 +30,7 @@ class Gui(QMainWindow):
         self.setMouseTracking(True)
 
         self.color = None
+        self.colores = []
 
         self.setup_graphics_view()
 
