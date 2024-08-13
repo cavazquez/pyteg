@@ -36,12 +36,16 @@ class ConnectionClient(QWidget):
     def read_data(self):
         data_json = ""
         while self._socket.bytesAvailable():
-            encode_data = self._socket.readAll()
-            data = Utf8.decode(encode_data)
-            data_json = json.loads(data)
-            print(f"Recibido {data_json}")
-            task = ClientTaskManager.msg_to_task(data_json)
-            task.run(self._main_window)
+            encode_datas = self._socket.readAll()
+            datas = Utf8.decode(encode_datas)
+            print(f"Recibido data: {datas} \n longitud: {len(datas)}")
+            for data in datas.split("\0"):
+                print(f"data: {data}")
+                if data:
+                    data_json = json.loads(data)
+                    print(f"Recibido {data_json}")
+                    task = ClientTaskManager.msg_to_task(data_json)
+                    task.run(self._main_window)
 
     def on_state_changed(self, state):
         if state == QAbstractSocket.HostLookupState:

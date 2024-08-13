@@ -24,7 +24,7 @@ class ConnectionServer:
 
     def send(self, data):
         print(f"Enviando {data}")
-        encode_data = Utf8.encode(data)
+        encode_data = Utf8.encode(data + "\0")
         try:
             self._conn.sendall(encode_data)
         except BrokenPipeError as ex:
