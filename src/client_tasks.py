@@ -53,10 +53,11 @@ class ClientTaskColorAsignado(IClientTask):
         self._msg = data
 
     def run(self, main_window):
+        id_user = self._msg.pop("id")
         self._msg.pop("mensaje")
         print(f"Color asignado: {self._msg}")
-        main_window.color = Color(**self._msg)
-        print(main_window.color)
+        main_window.colores.asignar(id_user, Color(**self._msg))
+        print(main_window.colores)
 
 
 class ClientTaskColor(IClientTask):
@@ -66,9 +67,8 @@ class ClientTaskColor(IClientTask):
 
     def run(self, main_window):
         self._msg.pop("mensaje")
-        print(f"Color asignado: {self._msg}")
-        main_window.color = Color(**self._msg)
-        main_window.colores.append(Color(**self._msg))
+        print(f"Color recibido: {self._msg}")
+        main_window.colores.agregar_color(Color(**self._msg))
         print(f"colores: {main_window.colores}")
 
 

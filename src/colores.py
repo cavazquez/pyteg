@@ -11,6 +11,9 @@ class IColor(ABC):
     def to_json(self):
         return json.dumps({"r": self._r, "g": self._g, "b": self._b})
 
+    def __str__(self):
+        return f"r: {self._r}, g: {self._g}, b: {self._b}"
+
 
 class Rojo(IColor):
 

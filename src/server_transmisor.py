@@ -24,8 +24,8 @@ class ServerTransmisor:
         msg_esperar_jugadores = MsgEsperarJugadores()
         self._conn.send(msg_esperar_jugadores.to_json())
 
-    def color_asignado(self, color):
-        msg_color_asignado = MsgColorAsignado(color.to_json())
+    def color_asignado(self, id_user, color):
+        msg_color_asignado = MsgColorAsignado(id_user, color.to_json())
         self._conn.send(msg_color_asignado.to_json())
 
     def enviar_colores(self, colores):
