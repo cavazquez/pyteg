@@ -23,7 +23,7 @@ class Client:
 
     def asignar_color(self, color):
         self._color = color
-        self.transmisor.color_asignado(color)
+        self.transmisor.color_asignado(self._user_id, color)
 
     def send(self, data):
         self._conn.send(data)

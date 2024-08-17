@@ -7,6 +7,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.client_transmisor import ClientNullTransmisor
+from src.cliente_colores import Colores
 from src.gui_admin import VentanaAdmin
 from src.gui_chat import Chat
 from src.gui_conectar import VentanaConectar
@@ -29,8 +30,7 @@ class Gui(QMainWindow):
         self.setFixedSize(QSize(1024, 768))
         self.setMouseTracking(True)
 
-        self.color = None
-        self.colores = []
+        self.colores = Colores()
 
         self.setup_graphics_view()
 
