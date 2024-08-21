@@ -1,3 +1,4 @@
+from PySide6.QtCore import QSize
 from PySide6.QtWidgets import (
     QGridLayout,
     QHBoxLayout,
@@ -20,7 +21,7 @@ class VentanaEsperarJugadores(QWidget):
 
     def inicializar_ui(self):
         self.setWindowTitle("Esperando jugadores")
-        self.setFixedSize(300, 200)
+        self.setFixedSize(QSize(300, 200))
 
         layout = QVBoxLayout()
 
