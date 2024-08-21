@@ -30,6 +30,8 @@ class Gui(QMainWindow):
         self.setFixedSize(QSize(1024, 768))
         self.setMouseTracking(True)
 
+        self.user_id = None
+
         self.colores = Colores()
 
         self.setup_graphics_view()

@@ -4,6 +4,7 @@ from src.msg import (
     MsgColorAsignado,
     MsgEsperarJugadores,
     MsgSosAdmin,
+    MsgUserId,
 )
 
 
@@ -27,6 +28,10 @@ class ServerTransmisor:
     def color_asignado(self, id_user, color):
         msg_color_asignado = MsgColorAsignado(id_user, color.to_json())
         self._conn.send(msg_color_asignado.to_json())
+
+    def enviar_id(self, user_id):
+        msg_user_id = MsgUserId(user_id)
+        self._conn.send(msg_user_id.to_json())
 
     def enviar_colores(self, colores):
         for color in colores:

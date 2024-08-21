@@ -75,7 +75,6 @@ class MsgColor(IMsg):
     def __init__(self, color):
         self._tipo = "color"
         self._color = color
-        print(f"tipo: {self._tipo}: colores {self._color}")
 
     def to_json(self):
         color_json = json.loads(self._color.to_json())
@@ -83,3 +82,14 @@ class MsgColor(IMsg):
             "mensaje": self._tipo,
         }
         return json.dumps(data | color_json)
+
+
+class MsgUserId(IMsg):
+
+    def __init__(self, user_id):
+        self._tipo = "user_id"
+        self._user_id = user_id
+
+    def to_json(self):
+        data = {"mensaje": self._tipo, "user_id": self._user_id}
+        return json.dumps(data)

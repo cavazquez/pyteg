@@ -16,6 +16,8 @@ class Client:
         self._soy_admin = soy_admin
         self._color = None
 
+        self.transmisor.enviar_id(self._user_id)
+
         if soy_admin:
             self.transmisor.sos_admin()
 
