@@ -19,8 +19,7 @@ class TomlReader:
     def todos_los_paises(self):
         res = []
         for continente in self.get_continentes():
-            for pais in self.get_paises(continente):
-                res.append(pais)
+            res.extend(self.get_paises(continente))
 
         return res
 
