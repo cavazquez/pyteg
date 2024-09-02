@@ -26,6 +26,5 @@ ignore = [
 	"PLR6301", # no-self-use
 	"ERA001",  # commented-out-code
 	"C901",    # complex-structure
-	"PERF402", # manual-list-copy
 	]
 
