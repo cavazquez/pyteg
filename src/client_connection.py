@@ -5,7 +5,7 @@ from PySide6.QtWidgets import QMessageBox, QWidget
 
 from src.client_tasks_manager import ClientTaskManager
 from src.client_transmisor import ClientTransmisor
-from src.codecs import Utf8
+from src.codecs_utils import Utf8
 
 
 class ConnectionClient(QWidget):
