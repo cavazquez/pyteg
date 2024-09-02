@@ -1,6 +1,6 @@
 import socket
 
-from src.codecs import Utf8
+from src.codecs_utils import Utf8
 
 
 class ConnectionServer:
