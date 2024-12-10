@@ -29,6 +29,6 @@ jobs:
       - name: Test with unittest
         run: |          
           python -m unittest discover
-      - name: Black Formatter
+      - name: Ruff Formatter
         run: |
-          black --check .        
+          ruff format --check .        
