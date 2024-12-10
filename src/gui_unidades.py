@@ -7,7 +7,6 @@ from PySide6.QtWidgets import (
 
 
 class Unidades(QGraphicsTextItem):
-
     def __init__(self, circulo_rect):
         super().__init__("0")
         self.setFont(QFont("Helvetica [Cronyx]", 14))

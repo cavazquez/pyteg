@@ -3,14 +3,12 @@ from abc import ABC, abstractmethod
 
 
 class IMsg(ABC):
-
     @abstractmethod
     def to_json(self):
         pass
 
 
 class MsgSosAdmin(IMsg):
-
     def __init__(self):
         self._tipo = "sosadmin"
 
@@ -20,7 +18,6 @@ class MsgSosAdmin(IMsg):
 
 
 class MsgChat(IMsg):
-
     def __init__(self, msg):
         self._tipo = "chat"
         self._msg = msg
@@ -34,7 +31,6 @@ class MsgChat(IMsg):
 
 
 class MsgEmpezar(IMsg):
-
     def __init__(self):
         self._tipo = "empezar"
 
@@ -44,7 +40,6 @@ class MsgEmpezar(IMsg):
 
 
 class MsgEsperarJugadores(IMsg):
-
     def __init__(self):
         self._tipo = "esperar_jugadores"
 
@@ -54,7 +49,6 @@ class MsgEsperarJugadores(IMsg):
 
 
 class MsgColorAsignado(IMsg):
-
     def __init__(self, id_user, rgb_json):
         self._tipo = "color_asignado"
         self._id_user = id_user
@@ -71,7 +65,6 @@ class MsgColorAsignado(IMsg):
 
 
 class MsgColor(IMsg):
-
     def __init__(self, color):
         self._tipo = "color"
         self._color = color
@@ -85,7 +78,6 @@ class MsgColor(IMsg):
 
 
 class MsgUserId(IMsg):
-
     def __init__(self, user_id):
         self._tipo = "user_id"
         self._user_id = user_id

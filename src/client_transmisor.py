@@ -4,7 +4,6 @@ from src.msg import MsgChat, MsgEmpezar
 
 
 class IClientTransmisor(ABC):
-
     @abstractmethod
     def __init__(self):
         pass
@@ -19,7 +18,6 @@ class IClientTransmisor(ABC):
 
 
 class ClientNullTransmisor(IClientTransmisor):
-
     def __init__(self):
         pass
 
@@ -31,7 +29,6 @@ class ClientNullTransmisor(IClientTransmisor):
 
 
 class ClientTransmisor(IClientTransmisor):
-
     def __init__(self, conn):
         self._conn = conn
 

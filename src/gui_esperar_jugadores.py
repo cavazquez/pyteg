@@ -10,7 +10,6 @@ from PySide6.QtWidgets import (
 
 
 class VentanaEsperarJugadores(QWidget):
-
     def __init__(self, main_window):
         super().__init__()
         self._main_window = main_window

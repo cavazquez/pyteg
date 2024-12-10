@@ -4,7 +4,6 @@ from src.toml_reader import TomlReader
 
 
 def build_mapa():
-
     reader = TomlReader(
         Path("themes/test/paises.toml").read_text(encoding="locale"),
     )

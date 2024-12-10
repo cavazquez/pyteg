@@ -4,7 +4,6 @@ from PySide6.QtWidgets import QToolBar
 
 
 class ToolBar(QToolBar):
-
     def __init__(self, texto, main_window):
         super().__init__(texto)
         self.setMovable(False)

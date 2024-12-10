@@ -12,7 +12,6 @@ from src.gui_unidades import Unidades
 
 
 class Circulo(QGraphicsEllipseItem):
-
     def __init__(self, pos_x_abs, pos_y_abs):
         super().__init__(pos_x_abs, pos_y_abs, 30, 30)
 

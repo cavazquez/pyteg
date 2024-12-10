@@ -51,7 +51,6 @@ class QCustomGraphicsScene(QGraphicsScene):
         for continente in reader.get_continentes():
             cor_x, cor_y = reader.coordenadas_continente(continente)
             for pais in reader.get_paises(continente):
-
                 # Paises
                 pos_x, pos_y, army_x, army_y = reader.coordenadas(pais)
                 x = cor_x + pos_x
