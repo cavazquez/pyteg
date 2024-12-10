@@ -1,5 +1,6 @@
 import json
 
+from src.exception import MensajeNoValidoError
 from src.server_player import Player
 from src.server_tasks_manager import ServerTaskManager
 from src.server_transmisor import ServerTransmisor
@@ -27,6 +28,9 @@ class Client:
         self._color = color
         self.transmisor.color_asignado(self._user_id, color)
 
+    def cambiar_color(self, color):
+        self.server.color.asignar_color(self, color)
+
     def send(self, data):
         self._conn.send(data)
 
@@ -51,7 +55,10 @@ class Client:
 
     def ejecutar_mensaje(self, data):
         task = ServerTaskManager.msg_to_task(data)
-        task.run(self)
+        try:
+            task.run(self)
+        except MensajeNoValidoError as e:
+            print(f"{e}")
 
         mensaje = data["mensaje"]
         print(mensaje)

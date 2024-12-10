@@ -43,7 +43,16 @@ class ServerTaskEmpezar(IServerTask):
             c.transmisor.esperar_jugadores()
 
 
+class ServerTaskSeleccionarColor(IServerTask):
+    def __init__(self, data):
+        self._color = data.get("color")
+
+    def run(self, client):
+        client.cambiar_color(self._color)
+
+
 dict_task = {
     "chat": ServerTaskChat,
     "empezar": ServerTaskEmpezar,
+    "seleccionar_color": ServerTaskSeleccionarColor,
 }

@@ -15,7 +15,7 @@ class Server:
         self._clients.pop(user_id)
 
     def registrar_cliente(self, user_id, client):
-        self.color.asignar_color(client)
+        self.color.asignar_color_aleatorio(client)
         self._clients[user_id] = client
 
     def dame_lista_jugadores(self):

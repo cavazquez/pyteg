@@ -50,6 +50,10 @@ class ClientTaskColorAsignado(IClientTask):
         id_user = self._msg.pop("id")
         self._msg.pop("mensaje")
         main_window.colores.asignar(id_user, Color(**self._msg))
+        print(f"{main_window.colores}")
+        print(main_window.w.__class__.__name__)
+        if main_window.w.__class__.__name__ == "VentanaEsperarJugadores":
+            main_window.w.cargar_colores_asignados()
 
 
 class ClientTaskColor(IClientTask):

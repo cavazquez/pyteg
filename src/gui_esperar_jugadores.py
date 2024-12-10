@@ -3,10 +3,11 @@ from PySide6.QtWidgets import (
     QGridLayout,
     QHBoxLayout,
     QLabel,
-    QRadioButton,
     QVBoxLayout,
     QWidget,
 )
+
+from src.gui_radio_color import GuiRadioButtonColor
 
 
 class VentanaEsperarJugadores(QWidget):
@@ -40,7 +41,7 @@ class VentanaEsperarJugadores(QWidget):
             )
 
             # Crear el botón de radio
-            radio = QRadioButton("           ", self)
+            radio = GuiRadioButtonColor("            ", self, self._main_window, color)
             self.radio_por_colores[color.name()] = radio
 
             # Añadir el color y el botón al layout horizontal
@@ -54,6 +55,9 @@ class VentanaEsperarJugadores(QWidget):
         self.setLayout(layout)
 
     def cargar_colores_asignados(self):
+        for radio in self.radio_por_colores.values():
+            radio.setText("")
+            radio.setEnabled(True)
         colores_asignados = self._main_window.colores.colores_asignados()
         print(colores_asignados)
         for user_id, color in colores_asignados.items():
