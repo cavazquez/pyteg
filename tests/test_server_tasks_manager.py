@@ -9,7 +9,6 @@ from src.server_tasks_manager import ServerTaskManager
 
 
 class TestClientTaskManager(unittest.TestCase):
-
     def test_task_no_existe(self):
         data_json = json.loads('{"mensaje": "cualquiercosa"}')
         res = ServerTaskManager.msg_to_task(data_json)

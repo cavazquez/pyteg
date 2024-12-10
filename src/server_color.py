@@ -5,7 +5,6 @@ from src.colores import Amarillo, Azul, Blanco, Cian, Magenta, Negro, Rojo, Verd
 
 
 class ServerColor:
-
     def __init__(self):
         self._colores = [
             Rojo(),

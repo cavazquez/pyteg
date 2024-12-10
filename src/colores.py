@@ -3,7 +3,6 @@ from abc import ABC, abstractmethod
 
 
 class IColor(ABC):
-
     @abstractmethod
     def __init__(self):
         pass
@@ -16,7 +15,6 @@ class IColor(ABC):
 
 
 class Rojo(IColor):
-
     def __init__(self):
         self._r = 255
         self._g = 0
@@ -24,7 +22,6 @@ class Rojo(IColor):
 
 
 class Verde(IColor):
-
     def __init__(self):
         self._r = 0
         self._g = 255
@@ -32,7 +29,6 @@ class Verde(IColor):
 
 
 class Azul(IColor):
-
     def __init__(self):
         self._r = 0
         self._g = 0
@@ -40,7 +36,6 @@ class Azul(IColor):
 
 
 class Amarillo(IColor):
-
     def __init__(self):
         self._r = 255
         self._g = 255
@@ -48,7 +43,6 @@ class Amarillo(IColor):
 
 
 class Cian(IColor):
-
     def __init__(self):
         self._r = 0
         self._g = 255
@@ -56,7 +50,6 @@ class Cian(IColor):
 
 
 class Magenta(IColor):
-
     def __init__(self):
         self._r = 255
         self._g = 0
@@ -64,7 +57,6 @@ class Magenta(IColor):
 
 
 class Negro(IColor):
-
     def __init__(self):
         self._r = 0
         self._g = 0
@@ -72,7 +64,6 @@ class Negro(IColor):
 
 
 class Blanco(IColor):
-
     def __init__(self):
         self._r = 255
         self._g = 255

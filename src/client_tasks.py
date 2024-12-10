@@ -4,14 +4,12 @@ from src.client_color import Color
 
 
 class IClientTask(ABC):
-
     @abstractmethod
     def run(self, main_window):
         pass
 
 
 class ClientTaskNull(IClientTask):
-
     def __init__(self, data):
         self._msg = data.get("mensaje")
 
@@ -20,7 +18,6 @@ class ClientTaskNull(IClientTask):
 
 
 class ClientTaskChat(IClientTask):
-
     def __init__(self, data):
         self._msg = data.get("msg")
 
@@ -29,7 +26,6 @@ class ClientTaskChat(IClientTask):
 
 
 class ClientTaskSerAdmin(IClientTask):
-
     def __init__(self, data):
         pass
 
@@ -39,7 +35,6 @@ class ClientTaskSerAdmin(IClientTask):
 
 
 class ClientTaskEsperarJugadores(IClientTask):
-
     def __init__(self, data):
         pass
 
@@ -48,7 +43,6 @@ class ClientTaskEsperarJugadores(IClientTask):
 
 
 class ClientTaskColorAsignado(IClientTask):
-
     def __init__(self, data):
         self._msg = data
 
@@ -59,7 +53,6 @@ class ClientTaskColorAsignado(IClientTask):
 
 
 class ClientTaskColor(IClientTask):
-
     def __init__(self, data):
         self._msg = data
 
@@ -69,7 +62,6 @@ class ClientTaskColor(IClientTask):
 
 
 class ClientTaskUserId(IClientTask):
-
     def __init__(self, data):
         self._msg = data
 

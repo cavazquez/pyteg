@@ -1,5 +1,4 @@
 class Colores:
-
     def __init__(self):
         self._colores = []
         self._asignacion = {}

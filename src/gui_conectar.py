@@ -13,7 +13,6 @@ from src.client_connection import ConnectionClient
 
 
 class VentanaConectar(QDialog):
-
     def __init__(self, main_window):
         super().__init__()
         self._main_window = main_window

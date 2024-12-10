@@ -7,7 +7,6 @@ from PySide6.QtWidgets import (
 
 
 class Menu(QMenu):
-
     def __init__(self, pais):
         super().__init__()
         self.action_pais = QAction(pais, self)

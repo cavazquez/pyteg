@@ -9,7 +9,6 @@ from src.msg import (
 
 
 class ServerTransmisor:
-
     def __init__(self, conn):
         self._conn = conn
 

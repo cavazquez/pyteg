@@ -9,7 +9,6 @@ from src.gui_circulo import Circulo
 
 
 class Pais(QGraphicsPixmapItem):
-
     def __init__(self, path, pais, pos):
         super().__init__(QPixmap(path))
         self._nombre, self._continente = pais

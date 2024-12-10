@@ -4,7 +4,6 @@ from src.exception import MensajeNoValidoError
 
 
 class IServerTask(ABC):
-
     @abstractmethod
     def __init__(self, data):
         pass
@@ -15,7 +14,6 @@ class IServerTask(ABC):
 
 
 class ServerTaskNull(IServerTask):
-
     def __init__(self, data):
         self._data = data
 
@@ -25,7 +23,6 @@ class ServerTaskNull(IServerTask):
 
 
 class ServerTaskChat(IServerTask):
-
     def __init__(self, data):
         self._msg = data.get("msg")
 
@@ -37,7 +34,6 @@ class ServerTaskChat(IServerTask):
 
 
 class ServerTaskEmpezar(IServerTask):
-
     def __init__(self, data):
         pass
 

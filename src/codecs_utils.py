@@ -2,7 +2,6 @@ import codecs
 
 
 class Utf8:
-
     @staticmethod
     def encode(data):
         return codecs.encode(data, encoding="utf-8")
