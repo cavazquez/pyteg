@@ -13,6 +13,9 @@ class IColor(ABC):
     def __str__(self):
         return f"r: {self._r}, g: {self._g}, b: {self._b}"
 
+    def to_hex(self):
+        return "".join(["#", ("{:02X}" * 3).format(self._r, self._g, self._b).lower()])
+
 
 class Rojo(IColor):
     def __init__(self):

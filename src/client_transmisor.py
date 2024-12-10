@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from src.msg import MsgChat, MsgEmpezar
+from src.msg import MsgChat, MsgEmpezar, MsgSeleccionarColor
 
 
 class IClientTransmisor(ABC):
@@ -16,6 +16,10 @@ class IClientTransmisor(ABC):
     def empezar(self):
         pass
 
+    @abstractmethod
+    def seleccionar_color(self):
+        pass
+
 
 class ClientNullTransmisor(IClientTransmisor):
     def __init__(self):
@@ -27,16 +31,24 @@ class ClientNullTransmisor(IClientTransmisor):
     def empezar(self):
         print("No estas conectado")
 
+    def seleccionar_color(self):
+        print("No estas conectado")
+
 
 class ClientTransmisor(IClientTransmisor):
     def __init__(self, conn):
         self._conn = conn
 
     def enviar_chat(self, msg):
-        msg_chat = MsgChat(msg)
-        self._conn.send_data(msg_chat.to_json())
+        msg = MsgChat(msg)
+        self._conn.send_data(msg.to_json())
 
     def empezar(self):
         print("Transmisor empezar()")
-        msg_empezar = MsgEmpezar()
-        self._conn.send_data(msg_empezar.to_json())
+        msg = MsgEmpezar()
+        self._conn.send_data(msg.to_json())
+
+    def seleccionar_color(self, color):
+        print("Selecciono color")
+        msg = MsgSeleccionarColor(color)
+        self._conn.send_data(msg.to_json())
