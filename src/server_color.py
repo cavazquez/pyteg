@@ -41,6 +41,4 @@ class ServerColor:
         return self._colores
 
     def colores_disponibles(self):
-        return [
-            color for color in self._colores if color not in self._usados
-        ]
+        return [color for color in self._colores if color not in self._usados]
