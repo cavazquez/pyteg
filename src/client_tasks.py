@@ -70,7 +70,17 @@ class ClientTaskUserId(IClientTask):
         self._msg = data
 
     def run(self, main_window):
-        main_window.user_id = int(self._msg.get("user_id"))
+        userid = int(self._msg.get("user_id"))
+        main_window.client.set_userid(userid)
+
+
+class ClientTaskUsername(IClientTask):
+    def __init__(self, data):
+        self._msg = data
+
+    def run(self, main_window):
+        username = self._msg.get("username")
+        main_window.client.set_username(username)
 
 
 dict_task = {
@@ -80,4 +90,5 @@ dict_task = {
     "color_asignado": ClientTaskColorAsignado,
     "color": ClientTaskColor,
     "user_id": ClientTaskUserId,
+    "username": ClientTaskUsername,
 }

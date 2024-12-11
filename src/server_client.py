@@ -18,6 +18,7 @@ class Client:
         self._color = None
 
         self.transmisor.enviar_id(self._user_id)
+        self.transmisor.enviar_username(self.username)
 
         if soy_admin:
             self.transmisor.sos_admin()
@@ -30,6 +31,9 @@ class Client:
 
     def cambiar_color(self, color):
         self.server.color.asignar_color(self, color)
+
+    def color_actual(self):
+        return self._color
 
     def send(self, data):
         self._conn.send(data)

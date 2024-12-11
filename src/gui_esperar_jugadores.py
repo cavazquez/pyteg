@@ -55,14 +55,17 @@ class VentanaEsperarJugadores(QWidget):
         self.setLayout(layout)
 
     def cargar_colores_asignados(self):
-        for radio in self.radio_por_colores.values():
-            radio.setText("")
-            radio.setEnabled(True)
+        self.limpiar()
         colores_asignados = self._main_window.colores.colores_asignados()
-        print(colores_asignados)
         for user_id, color in colores_asignados.items():
-            print(f"user_id: {user_id} , color: {color}")
+            print(f"{user_id=} {color=}")
             radio = self.radio_por_colores.get(color.name())
+            print(f"{radio}=")
             if radio:
-                radio.setText(f"{user_id}")
-                radio.setEnabled(False)
+                username = self._main_window.client.username()
+                print(f"{username=}")
+                radio.seleccionar(f"{username}")
+
+    def limpiar(self):
+        for radio in self.radio_por_colores.values():
+            radio.limpiar()
