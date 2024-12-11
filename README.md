@@ -1,7 +1,5 @@
 ![example workflow](https://github.com/cavazquez/pyteg/actions/workflows/ruff.yml/badge.svg)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
-[![Checked with pyright](https://microsoft.github.io/pyright/img/pyright_badge.svg)](https://microsoft.github.io/pyright/)
-![Coverage](https://progress-bar.dev/95?title=Coverage)
 
 # pyteg
 Project about implementation game-board Teg.
