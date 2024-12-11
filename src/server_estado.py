@@ -1,7 +1,4 @@
-
-
 class Estado:
-
     def __init__(self):
         self._estado_actual = "Inicial"
 
