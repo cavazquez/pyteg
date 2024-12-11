@@ -1,4 +1,5 @@
 from src.server_color import ServerColor
+from src.server_estado import Estado
 from src.server_registrar_jugadores import registrar_jugadores
 
 
@@ -6,6 +7,7 @@ class Server:
     def __init__(self):
         self._clients = {}
         self.color = ServerColor()
+        self.estado = Estado()
 
     def cant_clients(self):
         return len(self._clients)
