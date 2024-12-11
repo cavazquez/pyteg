@@ -13,3 +13,20 @@ class GuiRadioButtonColor(QRadioButton):
     def seleccionar_boton(self, checked):
         if checked:
             self._main_window.transmisor.seleccionar_color(self._color)
+
+    def activar(self):
+        self.setEnabled(True)
+
+    def desactivar(self):
+        self.setEnabled(False)
+
+    def limpiar(self):
+        self.activar()
+        self.texto("")
+
+    def texto(self, texto):
+        self.setText(texto)
+
+    def seleccionar(self, texto):
+        self.texto(texto)
+        self.desactivar()
