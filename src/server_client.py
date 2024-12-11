@@ -1,7 +1,6 @@
 import json
 
 from src.exception import MensajeNoValidoError
-from src.server_player import Player
 from src.server_tasks_manager import ServerTaskManager
 from src.server_transmisor import ServerTransmisor
 
@@ -12,7 +11,6 @@ class Client:
         self.server = server
         self._conn = conn
         self.transmisor = ServerTransmisor(self._conn)
-        self._player = Player()
         self._user_id = user_id
         self._soy_admin = soy_admin
         self._color = None
