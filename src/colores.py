@@ -16,6 +16,12 @@ class IColor(ABC):
     def to_hex(self):
         return "".join(["#", ("{:02X}" * 3).format(self._r, self._g, self._b).lower()])
 
+    def __eq__(self, otro):
+        return self._r == otro._r and self._g == otro._g and self._b == otro._b
+
+    def __hash__(self):
+        return hash(self.to_hex())
+
 
 class Rojo(IColor):
     def __init__(self):

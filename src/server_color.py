@@ -1,3 +1,4 @@
+import contextlib
 import secrets
 from copy import copy
 
@@ -25,28 +26,15 @@ class ServerColor:
         client.asignar_color(copy(color))
 
     def liberar_color(self, color):
-        try:
-            self._usados.remove(color)
-            print(f"liberar_color {self._usados=}")
-        except ValueError:
-            pass
+        with contextlib.suppress(ValueError):
+            self.colores_usados().remove(color)
 
     def reservar_color(self, color):
-        self._usados.append(color)
-        print(f"reservar_color {self._usados=}")
+        self.colores_usados().append(color)
 
     def asignar_color(self, client, color_hexrgb):
-        # color = [color_d.to_hex() for color_d in self.colores_disponibles()]
-        color = next(
-            (
-                color_d
-                for color_d in self.colores_disponibles()
-                if color_hexrgb == color_d.to_hex()
-            ),
-            None,
-        )
-        print(f"{color_hexrgb=}, {color=}")
-        if color and color not in self._usados:
+        color = self.obtener_color_de_hexrgb(color_hexrgb)
+        if color and color not in self.colores_usados():
             color_actual = client.color_actual()
             self.liberar_color(color_actual)
             self.reservar_color(color)
@@ -55,5 +43,14 @@ class ServerColor:
     def colores(self):
         return self._colores
 
+    def colores_usados(self):
+        return self._usados
+
     def colores_disponibles(self):
-        return [color for color in self._colores if color not in self._usados]
+        return [color for color in self.colores() if color not in self.colores_usados()]
+
+    def obtener_color_de_hexrgb(self, hexrgb):
+        for color in self.colores_disponibles():
+            if hexrgb == color.to_hex():
+                return color
+        return None
