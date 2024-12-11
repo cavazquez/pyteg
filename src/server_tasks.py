@@ -39,6 +39,7 @@ class ServerTaskEmpezar(IServerTask):
 
     def run(self, client):
         clientes = client.server.dame_clientes()
+        client.server.estado.esperar_jugadores()
         for c in clientes:
             c.transmisor.esperar_jugadores()
 
