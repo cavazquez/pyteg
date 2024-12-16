@@ -7,7 +7,7 @@ from src.server_transmisor import ServerTransmisor
 
 class Client:
     def __init__(self, user_id, conn, server, username, soy_admin):
-        self.username = username
+        self._username = username
         self.server = server
         self._conn = conn
         self.transmisor = ServerTransmisor(self._conn)
@@ -15,23 +15,37 @@ class Client:
         self._soy_admin = soy_admin
         self._color = None
 
-        self.transmisor.enviar_id(self._user_id)
-        self.transmisor.enviar_username(self.username)
-
-        if soy_admin:
-            self.transmisor.sos_admin()
-
-        self.transmisor.enviar_colores(self.server.color.colores())
-
     def asignar_color(self, color):
         self._color = color
-        self.transmisor.color_asignado(self._user_id, color)
+
+    def soy_admin(self):
+        return self._soy_admin
+
+    def enviar_username_a_todos(self):
+        clientes = self.server.dame_clientes()
+        for c in clientes:
+            for otro_cliente in clientes:
+                c.transmisor.enviar_username(
+                    otro_cliente.userid(), otro_cliente.username()
+                )
+
+    def enviar_userid_a_todos(self):
+        clientes = self.server.dame_clientes()
+        for c in clientes:
+            for otro_cliente in clientes:
+                c.transmisor.enviar_userid(otro_cliente.userid())
 
     def cambiar_color(self, color):
         self.server.color.asignar_color(self, color)
 
     def color_actual(self):
         return self._color
+
+    def userid(self):
+        return self._user_id
+
+    def username(self):
+        return self._username
 
     def send(self, data):
         self._conn.send(data)
@@ -44,6 +58,15 @@ class Client:
 
     def run(self):
         vivo = True
+
+        self.enviar_userid_a_todos(self._user_id)
+        self.enviar_username_a_todos(self._user_id, self.username)
+
+        if self.soy_admin():
+            self.transmisor.sos_admin()
+
+        self.transmisor.enviar_colores(self.server.color.colores())
+        self.transmisor.enviar_estado(self.server.estado.estado_actual())
 
         while vivo:
             data = self.receiver()

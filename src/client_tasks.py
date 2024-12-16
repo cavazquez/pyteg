@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 
+from src.client import Client
 from src.client_color import Color
 
 
@@ -72,6 +73,8 @@ class ClientTaskUserId(IClientTask):
     def run(self, main_window):
         userid = int(self._msg.get("user_id"))
         main_window.client.set_userid(userid)
+        main_window.client_by_id[userid] = Client()
+        main_window.client_by_id[userid].set_userid(userid)
 
 
 class ClientTaskUsername(IClientTask):
@@ -80,7 +83,10 @@ class ClientTaskUsername(IClientTask):
 
     def run(self, main_window):
         username = self._msg.get("username")
+        userid = self._msg.get("user_id")
         main_window.client.set_username(username)
+        main_window.client_by_id[userid].set_username(username)
+        print(f"ClientTaskUsername, {userid=} , {username=}")
 
 
 dict_task = {

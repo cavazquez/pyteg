@@ -50,6 +50,12 @@ class ServerTaskSeleccionarColor(IServerTask):
 
     def run(self, client):
         client.cambiar_color(self._color)
+        clientes = client.server.dame_clientes()
+        for c in clientes:
+            for otro_client in clientes:
+                c.transmisor.color_asignado(
+                    otro_client.userid(), otro_client.color_actual()
+                )
 
 
 dict_task = {

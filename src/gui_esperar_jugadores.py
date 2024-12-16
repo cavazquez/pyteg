@@ -62,9 +62,10 @@ class VentanaEsperarJugadores(QWidget):
             radio = self.radio_por_colores.get(color.name())
             print(f"{radio}=")
             if radio:
-                username = self._main_window.client.username()
-                print(f"{username=}")
-                radio.seleccionar(f"{username}")
+                client = self._main_window.client_by_id.get(user_id)
+                if client:
+                    print(f"{client.username()=}")
+                    radio.seleccionar(f"{client.username()}")
 
     def limpiar(self):
         for radio in self.radio_por_colores.values():
