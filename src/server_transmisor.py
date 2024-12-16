@@ -29,15 +29,20 @@ class ServerTransmisor:
         msg = MsgColorAsignado(id_user, color.to_json())
         self._conn.send(msg.to_json())
 
-    def enviar_id(self, user_id):
+    def enviar_userid(self, user_id):
         msg = MsgUserId(user_id)
         self._conn.send(msg.to_json())
 
-    def enviar_username(self, username):
-        msg = MsgUsername(username)
+    def enviar_username(self, userid, username):
+        print(f"enviar_username, {userid=} , {username=}")
+        msg = MsgUsername(userid, username)
         self._conn.send(msg.to_json())
 
     def enviar_colores(self, colores):
         for color in colores:
             msg = MsgColor(color)
             self._conn.send(msg.to_json())
+
+    def enviar_estado(self, estado):
+        if estado == "EsperarJugadores":
+            self.esperar_jugadores()

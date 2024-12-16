@@ -79,10 +79,15 @@ class MsgUserId(IMsg):
 
 
 class MsgUsername(IMsg):
-    def __init__(self, username):
+    def __init__(self, userid, username):
         self._tipo = "username"
+        self._userid = userid
         self._username = username
 
     def to_json(self):
-        data = {"mensaje": self._tipo, "username": self._username}
+        data = {
+            "mensaje": self._tipo,
+            "username": self._username,
+            "user_id": self._userid,
+        }
         return json.dumps(data)

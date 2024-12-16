@@ -22,6 +22,7 @@ class Gui(QMainWindow):
         super().__init__()
         self._vivo = True
         self.client = client
+        self.client_by_id = {}
         self.transmisor = ClientNullTransmisor()
         self.conexion = None
         self.w = None
