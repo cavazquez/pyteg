@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from src.msg import MsgChat, MsgEmpezar, MsgSeleccionarColor
+from src.client_msg import MsgChat, MsgEmpezar, MsgSeleccionarColor
 
 
 class IClientTransmisor(ABC):
