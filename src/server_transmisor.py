@@ -1,4 +1,4 @@
-from src.msg import (
+from src.server_msg import (
     MsgChat,
     MsgColor,
     MsgColorAsignado,
