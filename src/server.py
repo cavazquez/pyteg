@@ -4,6 +4,9 @@ from src.server_registrar_jugadores import registrar_jugadores
 
 
 class Server:
+    """Tiene la responsabilidad de todo lo relacionado
+    con los clientes y sus conexiones"""
+
     def __init__(self):
         self._clients = {}
         self.color = ServerColor()
