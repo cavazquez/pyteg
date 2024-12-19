@@ -2,7 +2,7 @@ from src.server_msg import (
     MsgChat,
     MsgColor,
     MsgColorAsignado,
-    MsgEsperarJugadores,
+    MsgEstado,
     MsgSosAdmin,
     MsgUserId,
     MsgUsername,
@@ -27,10 +27,6 @@ class ServerTransmisor:
         msg = MsgSosAdmin()
         self._send_message(msg)
 
-    def esperar_jugadores(self):
-        msg = MsgEsperarJugadores()
-        self._send_message(msg)
-
     def color_asignado(self, id_user, color):
         msg = MsgColorAsignado(id_user, color.to_json())
         self._send_message(msg)
@@ -50,5 +46,5 @@ class ServerTransmisor:
             self._send_message(msg)
 
     def enviar_estado(self, estado):
-        if estado == "EsperarJugadores":
-            self.esperar_jugadores()
+        msg = MsgEstado(estado)
+        self._send_message(msg)
