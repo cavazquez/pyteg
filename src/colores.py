@@ -41,7 +41,7 @@ class IColor(ABC):
         if len(hex_value) != 6:
             msg = "El valor hexadecimal debe tener 6 caracteres"
             raise ValueError(msg)
-        r, g, b = tuple(int(hex_value[i:i + 2], 16) for i in (0, 2, 4))
+        r, g, b = tuple(int(hex_value[i : i + 2], 16) for i in (0, 2, 4))
         return cls(r, g, b)
 
 
