@@ -35,12 +35,13 @@ class ClientTaskSerAdmin(IClientTask):
         main_window.ventana_admin()
 
 
-class ClientTaskEsperarJugadores(IClientTask):
+class ClientTaskEstado(IClientTask):
     def __init__(self, data):
-        pass
+        self._msg = data.get("estado")
 
     def run(self, main_window):
-        main_window.ventana_esperar_jugadores()
+        if self._msg == "EsperarJugadores":
+            main_window.ventana_esperar_jugadores()
 
 
 class ClientTaskColorAsignado(IClientTask):
@@ -92,7 +93,7 @@ class ClientTaskUsername(IClientTask):
 dict_task = {
     "chat": ClientTaskChat,
     "sosadmin": ClientTaskSerAdmin,
-    "esperar_jugadores": ClientTaskEsperarJugadores,
+    "estado": ClientTaskEstado,
     "color_asignado": ClientTaskColorAsignado,
     "color": ClientTaskColor,
     "user_id": ClientTaskUserId,

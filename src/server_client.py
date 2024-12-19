@@ -40,26 +40,6 @@ class Client:
         """
         return self._soy_admin
 
-    def enviar_username_a_todos(self):
-        """
-        Envía el nombre de usuario de todos los clientes a todos los clientes.
-        """
-        clientes = self.server.dame_clientes()
-        for c in clientes:
-            for otro_cliente in clientes:
-                c.transmisor.enviar_username(
-                    otro_cliente.userid(), otro_cliente.username()
-                )
-
-    def enviar_userid_a_todos(self):
-        """
-        Envía el ID de usuario de todos los clientes a todos los clientes.
-        """
-        clientes = self.server.dame_clientes()
-        for c in clientes:
-            for otro_cliente in clientes:
-                c.transmisor.enviar_userid(otro_cliente.userid())
-
     def cambiar_color(self, color):
         """
         Cambia el color del cliente.
@@ -121,8 +101,8 @@ class Client:
         """
         vivo = True
 
-        self.enviar_userid_a_todos()
-        self.enviar_username_a_todos()
+        self.server.enviar_userid()
+        self.server.enviar_username()
 
         if self.es_admin():
             self.transmisor.sos_admin()
