@@ -17,7 +17,7 @@ class Server:
 
     def quitarme(self, user_id):
         print(f"Quitando {user_id}")
-        self._clients.pop(user_id)
+        self._clients.pop(user_id, None)
 
     def registrar_cliente(self, user_id, client):
         self.color.asignar_color_aleatorio(client)
@@ -27,7 +27,34 @@ class Server:
         return list(self._clients.keys())
 
     def dame_clientes(self):
-        return self._clients.values()
+        return list(self._clients.values())
+
+    def enviar_colores(self):
+        for client in self.dame_clientes():
+            for otro_client in self.dame_clientes():
+                client.transmisor.color_asignado(
+                    otro_client.userid(), otro_client.color_actual()
+                )
+
+    def enviar_estado(self):
+        for client in self.dame_clientes():
+            client.transmisor.enviar_estado(self.estado.estado_actual())
+
+    def enviar_chat(self, username, msg):
+        for client in self.dame_clientes():
+            client.transmisor.enviar_chat(f"{username}: {msg}")
+
+    def enviar_userid(self):
+        for client in self.dame_clientes():
+            for otro_client in self.dame_clientes():
+                client.transmisor.enviar_userid(otro_client.userid())
+
+    def enviar_username(self):
+        for client in self.dame_clientes():
+            for otro_client in self.dame_clientes():
+                client.transmisor.enviar_username(
+                    otro_client.userid(), otro_client.username()
+                )
 
 
 def main():

@@ -17,15 +17,6 @@ class MsgSosAdmin(IMsg):
         return json.dumps(data)
 
 
-class MsgEsperarJugadores(IMsg):
-    def __init__(self):
-        self._tipo = "esperar_jugadores"
-
-    def to_json(self):
-        data = {"mensaje": self._tipo}
-        return json.dumps(data)
-
-
 class MsgColorAsignado(IMsg):
     def __init__(self, id_user, rgb_json):
         self._tipo = "color_asignado"
@@ -90,4 +81,14 @@ class MsgUsername(IMsg):
             "username": self._username,
             "user_id": self._userid,
         }
+        return json.dumps(data)
+
+
+class MsgEstado(IMsg):
+    def __init__(self, estado):
+        self._tipo = "estado"
+        self._estado = estado
+
+    def to_json(self):
+        data = {"mensaje": self._tipo, "estado": self._estado}
         return json.dumps(data)

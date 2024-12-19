@@ -6,7 +6,7 @@ from src.exception import MensajeNoValidoError
 class IServerTask(ABC):
     @abstractmethod
     def __init__(self, data):
-        pass
+        self._data = data
 
     @abstractmethod
     def run(self, client):
@@ -15,7 +15,7 @@ class IServerTask(ABC):
 
 class ServerTaskNull(IServerTask):
     def __init__(self, data):
-        self._data = data
+        super().__init__(data)
 
     def run(self, _):
         msg = f"{self._data}"
@@ -24,38 +24,30 @@ class ServerTaskNull(IServerTask):
 
 class ServerTaskChat(IServerTask):
     def __init__(self, data):
+        super().__init__(data)
         self._msg = data.get("msg")
 
     def run(self, client):
-        clientes = client.server.dame_clientes()
-        username = client.username
-        for c in clientes:
-            c.transmisor.enviar_chat(f"{username}: {self._msg}")
+        client.server.enviar_chat(client.username, self._msg)
 
 
 class ServerTaskEmpezar(IServerTask):
     def __init__(self, data):
-        pass
+        super().__init__(data)
 
     def run(self, client):
-        clientes = client.server.dame_clientes()
         client.server.estado.esperar_jugadores()
-        for c in clientes:
-            c.transmisor.esperar_jugadores()
+        client.server.enviar_estado()
 
 
 class ServerTaskSeleccionarColor(IServerTask):
     def __init__(self, data):
+        super().__init__(data)
         self._color = data.get("color")
 
     def run(self, client):
         client.cambiar_color(self._color)
-        clientes = client.server.dame_clientes()
-        for c in clientes:
-            for otro_client in clientes:
-                c.transmisor.color_asignado(
-                    otro_client.userid(), otro_client.color_actual()
-                )
+        client.server.enviar_colores()
 
 
 dict_task = {
