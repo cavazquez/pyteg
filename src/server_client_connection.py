@@ -33,5 +33,8 @@ class ConnectionServer:
             print("Exception:", ex)
 
     def close(self):
-        self._conn.shutdown(socket.SHUT_RDWR)
-        self._conn.close()
+        try:
+            self._conn.shutdown(socket.SHUT_RDWR)
+            self._conn.close()
+        except Exception as ex:
+            print("Exception:", ex)
