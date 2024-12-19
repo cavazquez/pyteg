@@ -31,7 +31,7 @@ class ClientTaskSerAdmin(IClientTask):
         pass
 
     def run(self, main_window):
-        main_window.soy_admin = True
+        main_window.client.ahora_es_admin()
         main_window.ventana_admin()
 
 

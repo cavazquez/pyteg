@@ -3,6 +3,7 @@ from PySide6.QtWidgets import (
     QGridLayout,
     QHBoxLayout,
     QLabel,
+    QPushButton,
     QVBoxLayout,
     QWidget,
 )
@@ -21,7 +22,7 @@ class VentanaEsperarJugadores(QWidget):
 
     def inicializar_ui(self):
         self.setWindowTitle("Esperando jugadores")
-        self.setFixedSize(QSize(300, 200))
+        self.setFixedSize(QSize(500, 400))
 
         layout = QVBoxLayout()
 
@@ -52,11 +53,32 @@ class VentanaEsperarJugadores(QWidget):
             layout.addLayout(fila_layout)
 
         layout.addLayout(grid_layout)
+
+        # Añadir botón de "Empezar" si es admin
+        if self._main_window.client.es_admin():
+            empezar_button = QPushButton("Empezar")
+            empezar_button.setFixedSize(100, 50)
+            empezar_button.clicked.connect(self.empezar_juego)
+
+            # Crear un layout horizontal para centrar el botón
+            button_layout = QHBoxLayout()
+            button_layout.addStretch()
+            button_layout.addWidget(empezar_button)
+            button_layout.addStretch()
+
+            layout.addLayout(button_layout)
+
         self.setLayout(layout)
 
+    def empezar_juego(self):
+        # Implementación de la lógica para empezar el juego
+        pass
+
     def cargar_colores_asignados(self):
+        print("cargar_colores_asignados")
         self.limpiar()
         colores_asignados = self._main_window.colores.colores_asignados()
+        print(colores_asignados)
         for user_id, color in colores_asignados.items():
             print(f"{user_id=} {color=}")
             radio = self.radio_por_colores.get(color.name())
