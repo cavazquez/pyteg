@@ -29,7 +29,7 @@ class Server:
     def dame_clientes(self):
         return list(self._clients.values())
 
-    def enviar_colores(self):
+    def enviar_colores_asignados(self):
         for client in self.dame_clientes():
             for otro_client in self.dame_clientes():
                 client.transmisor.color_asignado(
