@@ -47,7 +47,7 @@ class ServerTaskSeleccionarColor(IServerTask):
 
     def run(self, client):
         client.cambiar_color(self._color)
-        client.server.enviar_colores()
+        client.server.enviar_colores_asignados()
 
 
 dict_task = {

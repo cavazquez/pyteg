@@ -108,7 +108,7 @@ class Client:
             self.transmisor.sos_admin()
 
         self.transmisor.enviar_colores(self.server.color.colores())
-        self.server.enviar_colores()
+        self.server.enviar_colores_asignados()
         self.transmisor.enviar_estado(self.server.estado.estado_actual())
 
         while vivo:
