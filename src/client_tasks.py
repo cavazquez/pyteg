@@ -42,6 +42,8 @@ class ClientTaskEstado(IClientTask):
     def run(self, main_window):
         if self._msg == "EsperarJugadores":
             main_window.ventana_esperar_jugadores()
+        if self._msg == "EmpezarPartida":
+            main_window.w.close()
 
 
 class ClientTaskColorAsignado(IClientTask):

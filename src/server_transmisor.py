@@ -3,6 +3,7 @@ from src.server_msg import (
     MsgColor,
     MsgColorAsignado,
     MsgEstado,
+    MsgPais,
     MsgSosAdmin,
     MsgUserId,
     MsgUsername,
@@ -47,4 +48,8 @@ class ServerTransmisor:
 
     def enviar_estado(self, estado):
         msg = MsgEstado(estado)
+        self._send_message(msg)
+
+    def enviar_mapa(self, pais, userid, unidades):
+        msg = MsgPais(pais, userid, unidades)
         self._send_message(msg)

@@ -4,11 +4,11 @@ from src.turnos import PrimerTurno, SegundoTurno, SiguientesTurnos
 
 
 class Game:
-    def __init__(self, mapa, mazo):
+    def __init__(self, mapa, mazo, jugadores):
         self._mapa = mapa
         self._start = False
         self._turnos = [PrimerTurno("NUllJugador")]
-        self._jugadores = {}
+        self._jugadores = jugadores
         self._num_turno = 0
         self._mazo = mazo
         self._cant_canjes = {}
@@ -17,7 +17,6 @@ class Game:
         self._turnos = [PrimerTurno(j) for j in self.lista_jugadores()]
         self._mapa.asignar_paises(self.lista_jugadores())
         self._cant_canjes = dict.fromkeys(self.lista_jugadores(), 0)
-
         self._start = True
 
     def empezo(self):
@@ -98,7 +97,3 @@ class Game:
 
     def lista_jugadores(self):
         return list(self.jugadores().values())
-
-    def agregar_jugador(self, id_j, nombre):
-        if id_j not in self._jugadores:
-            self._jugadores[id_j] = nombre

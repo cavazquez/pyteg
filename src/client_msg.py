@@ -40,3 +40,14 @@ class MsgChat(IMsg):
             "msg": self._msg,
         }
         return json.dumps(data)
+
+
+class MsgEmpezarPartida(IMsg):
+    def __init__(self):
+        self._tipo = "empezar_partida"
+
+    def to_json(self):
+        data = {
+            "mensaje": self._tipo,
+        }
+        return json.dumps(data)
