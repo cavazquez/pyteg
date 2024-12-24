@@ -1,4 +1,4 @@
-name: Ruff, Unittest, Black
+name: Ruff, Unittest
 
 on: [push]
 
