@@ -1,3 +1,6 @@
+from src.build_mapa import build_mapa
+from src.game import Game
+from src.mapa import Mapa
 from src.server_color import ServerColor
 from src.server_estado import Estado
 from src.server_registrar_jugadores import registrar_jugadores
@@ -11,6 +14,9 @@ class Server:
         self._clients = {}
         self.color = ServerColor()
         self.estado = Estado()
+        self.game = None
+        self.mapa = Mapa(build_mapa)
+        self.mazo = None
 
     def cant_clients(self):
         return len(self._clients)
@@ -55,6 +61,19 @@ class Server:
                 client.transmisor.enviar_username(
                     otro_client.userid(), otro_client.username()
                 )
+
+    def empezar_partida(self):
+        jugadores = self.dame_clientes()
+        self.game = Game(self.mapa, self.mazo, jugadores)
+        self.game.empezar()
+        self.enviar_mapa()
+
+    def enviar_mapa(self):
+        for client in self.dame_clientes():
+            for pais in self.mapa.paises():
+                unidades = self.mapa.unidades(pais)
+                userid = self.mapa.ocupado_por(pais)
+                client.transmisor.enviar_pais(pais, userid, unidades)
 
 
 def main():

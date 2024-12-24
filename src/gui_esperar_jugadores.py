@@ -71,8 +71,7 @@ class VentanaEsperarJugadores(QWidget):
         self.setLayout(layout)
 
     def empezar_juego(self):
-        # Implementación de la lógica para empezar el juego
-        pass
+        self._main_window.transmisor.empezar_partida()
 
     def cargar_colores_asignados(self):
         print("cargar_colores_asignados")

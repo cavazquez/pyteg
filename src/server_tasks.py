@@ -50,8 +50,18 @@ class ServerTaskSeleccionarColor(IServerTask):
         client.server.enviar_colores_asignados()
 
 
+class ServerTaskEmpezarPartida(IServerTask):
+    def __init__(self, data):
+        super().__init__(data)
+
+    def run(self, client):
+        client.server.estado.empezar_partida()
+        client.server.enviar_estado()
+
+
 dict_task = {
     "chat": ServerTaskChat,
     "empezar": ServerTaskEmpezar,
     "seleccionar_color": ServerTaskSeleccionarColor,
+    "empezar_partida": ServerTaskEmpezarPartida,
 }

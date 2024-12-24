@@ -92,3 +92,21 @@ class MsgEstado(IMsg):
     def to_json(self):
         data = {"mensaje": self._tipo, "estado": self._estado}
         return json.dumps(data)
+
+
+class MsgPais(IMsg):
+    def __init__(self, pais, userid, unidades):
+        self._tipo = "pais"
+        self._pais = pais
+        self._userid = userid
+        self._unidades = unidades
+
+    def to_json(self):
+        data = {
+            "mensaje": self._tipo,
+            "pais": self._pais,
+            "userid": self._userid,
+            "unidades": self._unidades,
+        }
+        print(data)
+        return json.dumps(data)
