@@ -17,6 +17,7 @@ class QCustomGraphicsScene(QGraphicsScene):
     def __init__(self, main_window, parent=None):
         super().__init__(parent)
         self.main_window = main_window
+        self.paises = {}
         self.load_map_data()
 
     def mouseMoveEvent(self, event: QMouseEvent):  # noqa: N802
@@ -61,4 +62,5 @@ class QCustomGraphicsScene(QGraphicsScene):
                     (pais, continente),
                     (x, y, army_x, army_y),
                 )
+                self.paises[pais] = pixmap_item
                 self.addItem(pixmap_item)

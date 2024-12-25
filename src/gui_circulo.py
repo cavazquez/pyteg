@@ -23,3 +23,9 @@ class Circulo(QGraphicsEllipseItem):
 
         self._center_text = Unidades(circulo_rect)
         self._center_text.setParentItem(self)
+
+    def set_color(self, color):
+        self.setBrush(QBrush(color))
+
+    def set_unidades(self, cant):
+        self._center_text.set_unidades(str(cant))

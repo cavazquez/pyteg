@@ -28,3 +28,9 @@ class Pais(QGraphicsPixmapItem):
 
     def nombre(self):
         return self._nombre
+
+    def set_color(self, color):
+        self._circle.set_color(color)
+
+    def set_unidades(self, cant):
+        self._circle.set_unidades(cant)

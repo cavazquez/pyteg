@@ -42,7 +42,7 @@ class ClientTaskEstado(IClientTask):
     def run(self, main_window):
         if self._msg == "EsperarJugadores":
             main_window.ventana_esperar_jugadores()
-        if self._msg == "EmpezarPartida":
+        if self._msg == "EmpezarPartida" and main_window.w:
             main_window.w.close()
 
 
@@ -89,7 +89,20 @@ class ClientTaskUsername(IClientTask):
         userid = self._msg.get("user_id")
         main_window.client.set_username(username)
         main_window.client_by_id[userid].set_username(username)
-        print(f"ClientTaskUsername, {userid=} , {username=}")
+
+
+class ClientTaskAsignarPais(IClientTask):
+    def __init__(self, data):
+        self._msg = data
+
+    def run(self, main_window):
+        pais = self._msg.get("pais")
+        userid = self._msg.get("userid")
+        unidades = self._msg.get("unidades")
+        pais = main_window.scene.paises.get(pais)
+        pais.set_unidades(unidades)
+        color = main_window.colores.color_asignado(userid)
+        pais.set_color(color)
 
 
 dict_task = {
@@ -100,4 +113,5 @@ dict_task = {
     "color": ClientTaskColor,
     "user_id": ClientTaskUserId,
     "username": ClientTaskUsername,
+    "pais": ClientTaskAsignarPais,
 }
