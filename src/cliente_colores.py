@@ -15,6 +15,9 @@ class Colores:
     def colores_asignados(self):
         return self._asignacion
 
+    def color_asignado(self, cliente):
+        return self._asignacion[cliente]
+
     def __str__(self):
         colores = ", ".join(str(color) for color in self._colores)
         asignacion = "\n".join(

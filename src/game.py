@@ -96,4 +96,4 @@ class Game:
         return self._jugadores
 
     def lista_jugadores(self):
-        return list(self.jugadores().values())
+        return self.jugadores()

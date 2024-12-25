@@ -50,6 +50,6 @@ class ServerTransmisor:
         msg = MsgEstado(estado)
         self._send_message(msg)
 
-    def enviar_mapa(self, pais, userid, unidades):
+    def enviar_pais(self, pais, userid, unidades):
         msg = MsgPais(pais, userid, unidades)
         self._send_message(msg)

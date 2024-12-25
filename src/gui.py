@@ -53,7 +53,6 @@ class Gui(QMainWindow):
         toolbar = ToolBar("My main toolbar", self)
         self.addToolBar(toolbar)
 
-        # self.scene = QGraphicsScene()
         self.scene = QCustomGraphicsScene(self)
         self.view = QCustomGraphicsView(self.scene, self)
 

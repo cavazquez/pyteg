@@ -57,6 +57,7 @@ class ServerTaskEmpezarPartida(IServerTask):
     def run(self, client):
         client.server.estado.empezar_partida()
         client.server.enviar_estado()
+        client.server.empezar_partida()
 
 
 dict_task = {

@@ -17,3 +17,6 @@ class Unidades(QGraphicsTextItem):
             circulo_rect.center().x() - texto_rect.width() / 2,
             circulo_rect.center().y() - texto_rect.height() / 2,
         )
+
+    def set_unidades(self, text):
+        self.setPlainText(text)

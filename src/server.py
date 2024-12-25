@@ -71,8 +71,9 @@ class Server:
     def enviar_mapa(self):
         for client in self.dame_clientes():
             for pais in self.mapa.paises():
-                unidades = self.mapa.unidades(pais)
-                userid = self.mapa.ocupado_por(pais)
+                unidades = self.mapa.cantidad_unidades(pais)
+                userid = self.mapa.ocupado_por(pais).userid()
+                print(f"{pais} {userid} {unidades}")
                 client.transmisor.enviar_pais(pais, userid, unidades)
 
 
