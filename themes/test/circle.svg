@@ -2,23 +2,45 @@
 <!-- Created with Inkscape (http://www.inkscape.org/) -->
 
 <svg
-   width="104.6602mm"
-   height="104.66019mm"
-   viewBox="0 0 104.6602 104.66019"
+   width="58.78299mm"
+   height="36.329887mm"
+   viewBox="0 0 58.78299 36.329887"
    version="1.1"
    id="svg5"
+   inkscape:export-filename="bitmap.svg"
+   inkscape:export-xdpi="96"
+   inkscape:export-ydpi="96"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns="http://www.w3.org/2000/svg"
    xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview7"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="mm"
+     showgrid="false" />
   <defs
-     id="defs2" />
-  <g
-     id="layer1"
-     transform="translate(-49.537233,-131.32377)">
-    <circle
-       style="fill:#ff0000;fill-rule:evenodd;stroke-width:0.264583"
-       id="path111"
-       cx="101.86733"
-       cy="183.65387"
-       r="52.330097" />
-  </g>
+     id="defs2">
+    <linearGradient
+       id="linearGradient3341"
+       inkscape:swatch="solid">
+      <stop
+         style="stop-color:#20cd44;stop-opacity:1;"
+         offset="0"
+         id="stop3339" />
+    </linearGradient>
+  </defs>
+  <ellipse
+     style="font-variation-settings:normal;opacity:1;vector-effect:none;fill:#000000;fill-opacity:0.328468;fill-rule:evenodd;stroke-width:0.264583;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;-inkscape-stroke:none;stop-color:#000000;stop-opacity:1"
+     id="path7114"
+     cx="29.391495"
+     cy="18.164944"
+     rx="29.391495"
+     ry="18.164944" />
 </svg>

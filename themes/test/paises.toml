@@ -5,14 +5,23 @@ cannon = "tar_canon.png"
 ship = "tar_galeon.png"
 
 [Sudamerica]
-pos_x = 190 
-pos_y = 210
+pos_x = 0
+pos_y = 0
 
 [Sudamerica.Circulo]
 continente = "Sudamerica"
 file = "test/circle.svg"
-pos_x = 31
-pos_y = 68
-army_x = 120
-army_y = 170
+pos_x = 0
+pos_y = 0
+army_x = 90
+army_y = 60
+
+
+[Sudamerica.Rectangulo]
+continente = "Sudamerica"
+file = "test/rect.svg"
+pos_x = -300
+pos_y = 0
+army_x = 60
+army_y = 60
 
