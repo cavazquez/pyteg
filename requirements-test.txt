@@ -1,2 +1,2 @@
 ruff==0.8.4
-coverage==7.6.8
+coverage==7.6.10
