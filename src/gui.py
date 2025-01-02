@@ -2,7 +2,10 @@ from PySide6.QtCore import QSize, Qt
 from PySide6.QtWidgets import (
     QGridLayout,
     QMainWindow,
+    QSplitter,
     QStatusBar,
+    QTextEdit,
+    QVBoxLayout,
     QWidget,
 )
 
@@ -56,11 +59,37 @@ class Gui(QMainWindow):
         self.scene = QCustomGraphicsScene(self)
         self.view = QCustomGraphicsView(self.scene, self)
 
+        # Create a splitter to hold the QGraphicsView and Chat
+        vertical_splitter = QSplitter()
+        vertical_splitter.setOrientation(Qt.Vertical)
+        vertical_splitter.addWidget(self.view)
+        vertical_splitter.addWidget(self.chat)
+        vertical_splitter.setStretchFactor(0, 7)  # 70% for QGraphicsView
+        vertical_splitter.setStretchFactor(1, 3)  # 30% for Chat
+
+        # Create a horizontal splitter to
+        # hold the vertical splitter and the right column
+        horizontal_splitter = QSplitter()
+        horizontal_splitter.setOrientation(Qt.Horizontal)
+        horizontal_splitter.addWidget(vertical_splitter)
+
+        # Create a placeholder widget for the
+        # right column
+        right_column = QWidget()
+        right_column_layout = QVBoxLayout()
+        right_column.setLayout(right_column_layout)
+        horizontal_splitter.addWidget(right_column)
+        horizontal_splitter.setStretchFactor(0, 7)  # 70% for the left side
+        horizontal_splitter.setStretchFactor(1, 3)  # 30% for the right column
+
+        # Add a QTextEdit to the right column
+        text_box = QTextEdit()
+        right_column_layout.addWidget(text_box)
+
         # Create a widget to hold the QGraphicsView and input area
         self.main_widget = QWidget(self)
         main_layout = QGridLayout()
-        main_layout.addWidget(self.view, 0, 0)
-        main_layout.addWidget(self.chat, 1, 0)
+        main_layout.addWidget(horizontal_splitter, 0, 0)
         self.main_widget.setLayout(main_layout)
         self.setCentralWidget(self.main_widget)
         self.view.show()
