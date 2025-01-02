@@ -1,4 +1,3 @@
-from PySide6.QtCore import QSize
 from PySide6.QtWidgets import (
     QLineEdit,
     QPushButton,
@@ -13,7 +12,6 @@ class Chat(QWidget):
         super().__init__()
         self.main_window = main_window
 
-        self.setFixedSize(QSize(1024, 200))
         layout = QVBoxLayout()
         layout.setSpacing(1)
 

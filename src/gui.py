@@ -1,8 +1,8 @@
 from PySide6.QtCore import QSize, Qt
 from PySide6.QtWidgets import (
+    QGridLayout,
     QMainWindow,
     QStatusBar,
-    QVBoxLayout,
     QWidget,
 )
 
@@ -28,7 +28,7 @@ class Gui(QMainWindow):
         self.w = None
         self.ventana_conectar = None
         self.setWindowTitle("PyTeg")
-        self.setFixedSize(QSize(1024, 768))
+        self.setFixedSize(QSize(800, 600))
         self.setMouseTracking(True)
 
         self.colores = Colores()
@@ -44,23 +44,23 @@ class Gui(QMainWindow):
         return self._vivo
 
     def setup_graphics_view(self):
-        input_layout = QVBoxLayout()
-
+        # Agrego el Chat
         self.chat = Chat(self)
         self.chat.show()
-        input_layout.addWidget(self.chat)
 
+        # Agrego la barra de herramientas
         toolbar = ToolBar("My main toolbar", self)
         self.addToolBar(toolbar)
 
+        # Agrego la escena y la vista
         self.scene = QCustomGraphicsScene(self)
         self.view = QCustomGraphicsView(self.scene, self)
 
         # Create a widget to hold the QGraphicsView and input area
         self.main_widget = QWidget(self)
-        main_layout = QVBoxLayout()
-        main_layout.addWidget(self.view)
-        main_layout.addLayout(input_layout)
+        main_layout = QGridLayout()
+        main_layout.addWidget(self.view, 0, 0)
+        main_layout.addWidget(self.chat, 1, 0)
         self.main_widget.setLayout(main_layout)
         self.setCentralWidget(self.main_widget)
         self.view.show()
