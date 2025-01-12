@@ -64,8 +64,8 @@ class Gui(QMainWindow):
         vertical_splitter.setOrientation(Qt.Vertical)
         vertical_splitter.addWidget(self.view)
         vertical_splitter.addWidget(self.chat)
-        vertical_splitter.setStretchFactor(0, 7)  # 70% for QGraphicsView
-        vertical_splitter.setStretchFactor(1, 3)  # 30% for Chat
+        vertical_splitter.setStretchFactor(0, 9)  # 90% for QGraphicsView
+        vertical_splitter.setStretchFactor(1, 1)  # 10% for Chat
 
         # Create a horizontal splitter to
         # hold the vertical splitter and the right column
@@ -77,14 +77,16 @@ class Gui(QMainWindow):
         # right column
         right_column = QWidget()
         right_column_layout = QVBoxLayout()
-        right_column.setLayout(right_column_layout)
-        horizontal_splitter.addWidget(right_column)
-        horizontal_splitter.setStretchFactor(0, 7)  # 70% for the left side
-        horizontal_splitter.setStretchFactor(1, 3)  # 30% for the right column
 
-        # Add a QTextEdit to the right column
+        # Add three QTextEdit widgets to the right column
         text_box = QTextEdit()
+        text_box.setReadOnly(True)
+        text_box.setPlainText("Placeholder for the right column")
         right_column_layout.addWidget(text_box)
+
+        horizontal_splitter.addWidget(right_column)
+        horizontal_splitter.setStretchFactor(0, 8)  # 80% for the left side
+        horizontal_splitter.setStretchFactor(1, 2)  # 20% for the right column
 
         # Create a widget to hold the QGraphicsView and input area
         self.main_widget = QWidget(self)
