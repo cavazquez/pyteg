@@ -8,7 +8,7 @@ from src.gui import Gui
 
 def main():
     client = Client()
-    app = QApplication()
+    app = QApplication(sys.argv)
     gui = Gui(client)
 
     gui.show()
