@@ -9,7 +9,7 @@ dependencies = [
 [project.optional-dependencies]
 test = [
     "coverage==7.6.10",
-    "ruff==0.8.4",
+    "ruff==0.9.4",
 ]
 
 [tool.ruff.format]
