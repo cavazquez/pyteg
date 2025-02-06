@@ -1,5 +1,5 @@
 from collections import Counter
-from itertools import cycle, starmap
+from itertools import cycle
 from random import sample
 
 from src.tarjeta_de_pais import TarjetaDePais
@@ -13,7 +13,7 @@ class Mazo:
             self.mazo[tarjeta.pais] = tarjeta
 
     def build_tarjetas_de_paises(self, paises, simbolos):
-        return list(starmap(TarjetaDePais, zip(paises, cycle(simbolos))))
+        return list(map(TarjetaDePais, paises, cycle(simbolos)))
 
     def cantidad_tarjetas(self):
         return len(self.tarjetas())
