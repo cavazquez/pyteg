@@ -1,4 +1,4 @@
-![example workflow](https://github.com/cavazquez/pyteg/actions/workflows/ruff.yml/badge.svg)
+![example workflow](https://github.com/cavazquez/pyteg/actions/workflows/ruff-uv.yml/badge.svg)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
 # pyteg
