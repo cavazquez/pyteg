@@ -5,17 +5,47 @@
 
 version: 2
 updates:
-  - package-ecosystem: "pip" # See documentation for possible values
-    directory: "/" # Location of package manifests
+  - package-ecosystem: "pip"
+    directory: "/"
     schedule:
-      interval: "monthly"
+      interval: "yearly"
+      time: "06:00"
+      month: "12"
+      day: "1"
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "yearly"
+      time: "06:00"
+      month: "7"
+      day: "1"
+
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      # Check for updates to GitHub Actions every week
-      interval: "monthly"
+      interval: "yearly"
+      time: "06:00"
+      month: "12"
+      day: "1"
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "yearly"
+      time: "06:00"
+      month: "7"
+      day: "1"
+
   - package-ecosystem: "docker"
     directory: "/"
     schedule:
-      # Check for updates to GitHub Actions every week
-      interval: "monthly"
+      interval: "yearly"
+      time: "06:00"
+      month: "12"
+      day: "1"
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "yearly"
+      time: "06:00"
+      month: "7"
+      day: "1"
