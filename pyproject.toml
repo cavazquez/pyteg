@@ -8,7 +8,7 @@ dependencies = [
 
 [project.optional-dependencies]
 test = [
-    "coverage==7.6.12",
+    "coverage==7.8.0",
     "ruff==0.11.2",
 ]
 
