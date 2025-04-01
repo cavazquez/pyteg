@@ -18,6 +18,9 @@ Project about implementation game-board Teg.
 ### Correr solo el linter
 `uvx ruff --output-format=github .`
 
+### Correr solo el formater
+`uvx ruff format --check .`
+
 ### Correr solo los test con coverage
 `uvx coverage run --branch -m unittest`
 ### Mostrar el coverage
