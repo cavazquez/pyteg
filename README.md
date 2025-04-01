@@ -5,6 +5,9 @@
 # pyteg
 Project about implementation game-board Teg.
 
+## Configuración
+`uv sync`
+
 ## Correr los test y el linter
 ### Levantar el entorno con Docker
 `./ejecutar_docker.sh`
@@ -13,10 +16,10 @@ Project about implementation game-board Teg.
 `./run_test.sh`
 
 ### Correr solo el linter
-`ruff --output-format=github .`
+`uvx ruff --output-format=github .`
 
 ### Correr solo los test con coverage
-`coverage run --branch -m unittest`
+`uvx coverage run --branch -m unittest`
 ### Mostrar el coverage
-`coverage report -m`
+`uvx coverage report -m`
 
