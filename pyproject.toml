@@ -6,12 +6,6 @@ dependencies = [
     "pyside6==6.8.3",
 ]
 
-[project.optional-dependencies]
-test = [
-    "coverage==7.8.0",
-    "ruff==0.11.2",
-]
-
 [tool.ruff.format]
 preview = true
 

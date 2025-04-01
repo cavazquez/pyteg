@@ -1,3 +1,3 @@
-ruff check .
-coverage run --branch -m unittest
-ruff format --check .
+uvx ruff check .
+uvx coverage run --branch -m unittest
+uvx ruff format --check .
