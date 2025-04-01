@@ -12,7 +12,7 @@ Turn-based strategy game in Python.
 ### Levantar el entorno con Docker
 `./ejecutar_docker.sh`
 
-### Correr el linter y los test 
+### Correr el linter, formatter y los test 
 `./run_test.sh`
 
 ### Correr solo el linter
