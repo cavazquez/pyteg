@@ -3,7 +3,7 @@ name = "pyteg"
 version = "0.0.1"
 requires-python = ">=3.11"
 dependencies = [
-    "pyside6==6.8.2.1",
+    "pyside6==6.8.3",
 ]
 
 [project.optional-dependencies]
