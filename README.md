@@ -16,7 +16,7 @@ Turn-based strategy game in Python.
 `./run_test.sh`
 
 ### Correr solo el linter
-`uvx ruff --output-format=github .`
+`uvx ruff check .`
 
 ### Correr solo el formater
 `uvx ruff format --check .`
