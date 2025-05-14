@@ -1,10 +1,10 @@
 from PySide6.QtCore import QSize, Qt
 from PySide6.QtWidgets import (
     QGridLayout,
+    QLabel,
     QMainWindow,
     QSplitter,
     QStatusBar,
-    QTextEdit,
     QVBoxLayout,
     QWidget,
 )
@@ -67,23 +67,44 @@ class Gui(QMainWindow):
         vertical_splitter.setStretchFactor(0, 9)  # 90% for QGraphicsView
         vertical_splitter.setStretchFactor(1, 1)  # 10% for Chat
 
-        # Create a horizontal splitter to
-        # hold the vertical splitter and the right column
+        # Create a horizontal splitter to hold the vertical splitter
+        # and the right column
         horizontal_splitter = QSplitter()
         horizontal_splitter.setOrientation(Qt.Horizontal)
         horizontal_splitter.addWidget(vertical_splitter)
 
-        # Create a placeholder widget for the
-        # right column
+        # Create a placeholder widget for the right column
         right_column = QWidget()
         right_column_layout = QVBoxLayout()
 
-        # Add three QTextEdit widgets to the right column
-        text_box = QTextEdit()
-        text_box.setReadOnly(True)
-        text_box.setPlainText("Placeholder for the right column")
-        right_column_layout.addWidget(text_box)
+        # Add a list of players to the right column
+        self.player_labels = []
+        for i in range(8):  # Max 8 players
+            label = QLabel(f"Jugador {i + 1}: [Sin asignar]")
+            label.setStyleSheet("color: gray;")  # Default color
+            right_column_layout.addWidget(label)
+            self.player_labels.append(label)
 
+        # Add a spacer to separate the player list from the values
+        right_column_layout.addStretch()
+
+        # Add the 6 values below the player list
+        self.value_labels = {}
+        values = [
+            "Generales",
+            "América del Sur",
+            "América del Norte",
+            "Europa",
+            "Asia",
+            "África",
+        ]
+        for value in values:
+            label = QLabel(f"{value}: 0")  # Default value is 0
+            label.setStyleSheet("font-weight: bold;")  # Make the text bold
+            right_column_layout.addWidget(label)
+            self.value_labels[value] = label
+
+        right_column.setLayout(right_column_layout)
         horizontal_splitter.addWidget(right_column)
         horizontal_splitter.setStretchFactor(0, 8)  # 80% for the left side
         horizontal_splitter.setStretchFactor(1, 2)  # 20% for the right column
@@ -95,6 +116,20 @@ class Gui(QMainWindow):
         self.main_widget.setLayout(main_layout)
         self.setCentralWidget(self.main_widget)
         self.view.show()
+
+    def update_player_list(self, players):
+        """
+        Updates the player list on the right column.
+        :param players: List of tuples (name, color) where color is a QColor.
+        """
+        for i, (name, color) in enumerate(players):
+            if i < len(self.player_labels):
+                self.player_labels[i].setText(f"Jugador {i + 1}: {name}")
+                self.player_labels[i].setStyleSheet(f"color: {color.name()};")
+        # Clear remaining labels if fewer than 8 players
+        for j in range(len(players), len(self.player_labels)):
+            self.player_labels[j].setText(f"Jugador {j + 1}: [Sin asignar]")
+            self.player_labels[j].setStyleSheet("color: gray;")
 
     def abrir_ventana_conectar(self):
         self.ventana_conectar = None
