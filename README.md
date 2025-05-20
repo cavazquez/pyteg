@@ -2,27 +2,77 @@
 [![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
-# pyteg
-Project about implementation game-board Teg.
+# Pyteg
 
-## Configuración
-`uv sync`
+Implementación del juego Teg en Python
 
-## Correr los test y el linter
-### Levantar el entorno con Docker
-`./ejecutar_docker.sh`
+## ¿Qué es Teg?
+Teg es un juego de mesa tradicional argentino para dos jugadores. Se juega en un tablero de 8x8 casillas y cada jugador tiene 12 fichas. El objetivo es capturar las fichas del oponente o bloquear sus movimientos.
 
-### Correr el linter, formatter y los test 
-`./run_test.sh`
+## Requisitos
+- Python 3.8 o superior
+- Docker (opcional para el entorno de desarrollo)
 
-### Correr solo el linter
-`uvx ruff check .`
+## Instalación
+1. Clona el repositorio:
+```bash
+git clone https://github.com/cavazquez/pyteg.git
+cd pyteg
+```
 
-### Correr solo el formater
-`uvx ruff format --check .`
+2. Instala las dependencias:
+```bash
+uv sync
+```
 
-### Correr solo los test con coverage
-`uvx coverage run --branch -m unittest`
-### Mostrar el coverage
-`uvx coverage report -m`
+## Estructura del Proyecto
+El proyecto está organizado de la siguiente manera:
+- `src/`: Contiene el código fuente principal
+- `tests/`: Contiene los tests unitarios
+- [ejecutar_docker.sh](cci:7://file:///home/cristian/repos/propios/pyteg/ejecutar_docker.sh:0:0-0:0): Script para ejecutar el entorno Docker
+- [run_test.sh](cci:7://file:///home/cristian/repos/propios/pyteg/run_test.sh:0:0-0:0): Script para ejecutar pruebas y linting
+
+## Desarrollo
+
+### Configuración del Entorno
+Para configurar el entorno de desarrollo:
+```bash
+uv sync
+```
+
+### Entorno Docker (Opcional)
+Para levantar el entorno en Docker:
+```bash
+./ejecutar_docker.sh
+```
+
+### Pruebas y Linting
+Para ejecutar todas las pruebas y el linting:
+```bash
+./run_test.sh
+```
+
+#### Ejecutar pruebas individuales
+- Solo el linter:
+```bash
+uvx ruff check .
+```
+
+- Solo el formateador:
+```bash
+uvx ruff format --check .
+```
+
+- Solo los tests con coverage:
+```bash
+uvx coverage run --branch -m unittest
+```
+
+- Ver el reporte de coverage:
+```bash
+uvx coverage report -m
+```
+
+## Contribuir
+¡Contribuciones son bienvenidas! Por favor, crea un issue o pull request para sugerir mejoras o reportar problemas.
 
