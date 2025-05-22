@@ -15,9 +15,9 @@ class ToolBar(QToolBar):
         self.addAction(button_conectar)
 
         button_atacar = QAction(QIcon("icons/atacar.png"), "Atacar", self)
-        #button_atacar.triggered.connect(main_window.abrir_ventana_atacar)
+        # button_atacar.triggered.connect(main_window.abrir_ventana_atacar)
         self.addAction(button_atacar)
 
         button_mover = QAction(QIcon("icons/mover.png"), "Mover", self)
-        #button_mover.triggered.connect(main_window.abrir_ventana_mover)
+        # button_mover.triggered.connect(main_window.abrir_ventana_mover)
         self.addAction(button_mover)
