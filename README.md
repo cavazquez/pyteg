@@ -17,6 +17,12 @@ Pyteg es un juego de estrategia por turnos.
 - Python 3.8 o superior
 - Docker (opcional para el entorno de desarrollo)
 
+## Instalación de UV
+
+Este proyecto utiliza [UV](https://github.com/astral-sh/uv) para la gestión de dependencias y herramientas.  
+Puedes consultar las instrucciones de instalación configuradas en:  
+https://github.com/astral-sh/uv#installation
+
 ## Instalación
 1. Clona el repositorio:
 ```bash
@@ -28,6 +34,8 @@ cd pyteg
 ```bash
 uv sync
 ```
+
+
 
 ## Estructura del Proyecto
 El proyecto está organizado de la siguiente manera:
