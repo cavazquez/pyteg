@@ -1,3 +1,6 @@
+import argparse
+import sys
+
 from src.build_mapa import build_mapa
 from src.game import Game
 from src.mapa import Mapa
@@ -63,10 +66,34 @@ class Server:
                 )
 
     def empezar_partida(self):
+        """
+        Inicia la partida,
+        asigna colores a los jugadores y notifica a todos los clientes.
+        """
+        print("Iniciando partida...")
+
+        # Obtener la lista de jugadores
         jugadores = self.dame_clientes()
+        print(f"Jugadores conectados: {[j.userid() for j in jugadores]}")
+
+        # Crear e iniciar el juego
         self.game = Game(self.mapa, self.mazo, jugadores)
         self.game.empezar()
+
+        # Enviar información de los jugadores y sus colores a todos los clientes
+        print("Enviando colores asignados a los jugadores...")
+        self.enviar_colores_asignados()
+
+        # Enviar el mapa con los países y sus propietarios
+        print("Enviando mapa a los jugadores...")
         self.enviar_mapa()
+
+        # Notificar a los clientes que la partida ha comenzado
+        print("Notificando a los clientes que la partida ha comenzado...")
+        self.estado.cambiar_estado("JUGANDO")
+        self.enviar_estado()
+
+        print("Partida iniciada correctamente")
 
     def enviar_mapa(self):
         for client in self.dame_clientes():
@@ -77,9 +104,57 @@ class Server:
                 client.transmisor.enviar_pais(pais, userid, unidades)
 
 
+def parse_arguments() -> argparse.Namespace:
+    """
+    Parsea los argumentos de línea de comandos.
+
+    Returns:
+        argparse.Namespace: Objeto con los argumentos parseados
+    """
+    parser = argparse.ArgumentParser(description="Servidor del juego de estrategia.")
+
+    # Argumentos de conexión
+    parser.add_argument(
+        "--host",
+        type=str,
+        default="127.0.0.1",
+        help="Dirección IP donde escuchar las conexiones (predeterminado: 127.0.0.1)",
+    )
+    parser.add_argument(
+        "-p",
+        "--port",
+        type=int,
+        default=65432,
+        help="Puerto donde escuchar las conexiones (predeterminado: 65432)",
+    )
+
+    # Argumento para modo verboso
+    parser.add_argument(
+        "-v", "--verbose", action="store_true", help="Habilita mensajes de depuración"
+    )
+
+    return parser.parse_args()
+
+
 def main():
-    server = Server()
-    registrar_jugadores(server)
+    """
+    Función principal del servidor.
+    """
+    args = parse_arguments()
+
+    print(f"Iniciando servidor en {args.host}:{args.port}")
+    if args.verbose:
+        print("Modo verboso activado")
+
+    try:
+        server = Server()
+        registrar_jugadores(server, host=args.host, port=args.port)
+    except KeyboardInterrupt:
+        print("\nServidor detenido por el usuario")
+        sys.exit(0)
+    except Exception as e:
+        print(f"Error al iniciar el servidor: {e}", file=sys.stderr)
+        sys.exit(1)
 
 
 if __name__ == "__main__":
