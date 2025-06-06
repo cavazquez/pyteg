@@ -5,27 +5,52 @@ from src.server_build_client import ServerBuildClient
 from src.server_client_connection import ConnectionServer
 
 
-def registrar_jugadores(server):
-    print("Esperando jugadores...")
-    host, port = "127.0.0.1", 65432
-    print(f"Host: {host}, Port: {port}")
-    vivo = True
+def registrar_jugadores(server, host: str = "127.0.0.1", port: int = 65432):
+    """
+    Inicia el servidor para aceptar conexiones de jugadores.
+
+    Args:
+        server: Instancia del servidor que manejará las conexiones
+        host: Dirección IP donde escuchar (predeterminado: 127.0.0.1)
+        port: Puerto donde escuchar (predeterminado: 65432)
+    """
+    print(f"Esperando jugadores en {host}:{port}...")
+
     server_build_client = ServerBuildClient()
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        s.bind((host, port))
-        while vivo:
+    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+
+    try:
+        server_socket.bind((host, port))
+        server_socket.listen()
+
+        while True:
             try:
-                s.listen()
-                conn, addr = s.accept()
-                print("Connected by", addr)
+                print(f"Esperando conexiones en {host}:{port}...")
+                conn, addr = server_socket.accept()
+                print(f"Conexión aceptada desde {addr}")
+
                 connection = ConnectionServer(conn, addr)
                 user_id, client = server_build_client.build(connection, server)
                 server.registrar_cliente(user_id, client)
-                threading.Thread(target=client.run, args=[]).start()
 
-            except Exception as e:
-                print(e)
+                # Iniciar el cliente en un nuevo hilo
+                client_thread = threading.Thread(
+                    target=client.run,
+                    daemon=True,  # El hilo terminará cuando
+                    # el programa principal termine
+                )
+                client_thread.start()
+                print(f"Cliente {user_id} conectado y en ejecución")
+
             except KeyboardInterrupt:
-                print("KeyboardInterrupt")
-                vivo = False
+                print("\nDeteniendo el servidor...")
+                break
+            except Exception as e:
+                print(f"Error al manejar la conexión: {e}")
+
+    except Exception as e:
+        print(f"Error en el servidor: {e}")
+    finally:
+        print("Cerrando el servidor...")
+        server_socket.close()
