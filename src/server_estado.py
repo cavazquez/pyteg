@@ -6,7 +6,7 @@ class Estado:
         self._estado_actual = "EsperarJugadores"
 
     def empezar_partida(self):
-        self._estado_actual = "EmpezarPartida"
+        self._estado_actual = "JUGANDO"
 
     def estado_actual(self):
         return self._estado_actual
