@@ -119,7 +119,7 @@ class ClientTaskColorAsignado(IClientTask):
             tiene_w = hasattr(main_window, "w") and main_window.w
             tiene_cargar_colores_asignados = hasattr(
                 main_window.w, "cargar_colores_asignados"
-                )
+            )
             if tiene_w and tiene_cargar_colores_asignados:
                 main_window.w.cargar_colores_asignados()
 
@@ -234,7 +234,7 @@ class ClientTaskAsignarPais(IClientTask):
             print(
                 f"País {nombre_pais} asignado al jugador {userid}"
                 f"con {unidades} unidades y color {color.getRgb()}"
-                )
+            )
 
         except Exception as e:
             print(f"Error al asignar país: {e}")
