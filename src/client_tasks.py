@@ -40,14 +40,35 @@ class ClientTaskEstado(IClientTask):
         self._msg = data.get("estado")
 
     def run(self, main_window):
+        print(f"Recibido cambio de estado: {self._msg}")
         if self._msg == "EsperarJugadores":
+            print("Mostrando ventana de espera de jugadores")
             main_window.ventana_esperar_jugadores()
         elif self._msg == "JUGANDO":
+            print("Cambiando a estado JUGANDO")
             # Cerrar la ventana de espera si está abierta
-            if hasattr(main_window, "w") and main_window.w:
-                main_window.w.close()
+            if hasattr(main_window, "w") and main_window.w is not None:
+                print("Cerrando ventana de espera...")
+                try:
+                    # Forzar el cierre de la ventana
+                    main_window.w.close()
+                    main_window.w.deleteLater()
+                    main_window.w = None
+                    print("Ventana de espera cerrada correctamente")
+                except Exception as e:
+                    print(f"Error al cerrar la ventana de espera: {e}")
+            else:
+                print("No hay ventana de espera abierta para cerrar")
+
             # Actualizar la lista de jugadores en la interfaz principal
-            self.actualizar_lista_jugadores(main_window)
+            try:
+                self.actualizar_lista_jugadores(main_window)
+            except Exception as e:
+                print(f"Error al actualizar lista de jugadores: {e}")
+
+            # Forzar actualización de la interfaz
+            if hasattr(main_window, "update"):
+                main_window.update()
 
     def actualizar_lista_jugadores(self, main_window):
         """
@@ -70,35 +91,60 @@ class ClientTaskColorAsignado(IClientTask):
         self._msg = data
 
     def run(self, main_window):
-        # Extraer el ID de usuario y el color del mensaje
-        id_user = self._msg.pop("id")
-        self._msg.pop("mensaje")
+        try:
+            # Extraer el ID de usuario y el color del mensaje
+            id_user = self._msg.get("id")
+            if not id_user:
+                print(
+                    "Error: No se proporcionó ID de usuario"
+                    "en el mensaje de color asignado"
+                )
+                return
 
-        # Asignar el color al usuario
-        color = Color(**self._msg)
-        main_window.colores.asignar(id_user, color)
+            # Extraer los componentes de color
+            r = self._msg.get("r", 0)
+            g = self._msg.get("g", 0)
+            b = self._msg.get("b", 0)
 
-        # Actualizar la lista de jugadores en la interfaz
-        self.actualizar_lista_jugadores(main_window)
+            print(f"Asignando color al jugador {id_user}: R={r}, G={g}, B={b}")
 
-        # Actualizar la ventana de espera de jugadores si está abierta
-        if main_window.w.__class__.__name__ == "VentanaEsperarJugadores":
-            main_window.w.cargar_colores_asignados()
+            # Crear el color y asignarlo al jugador
+            color_data = {"r": r, "g": g, "b": b}
+            main_window.colores.asignar(id_user, color_data)
+
+            # Actualizar la lista de jugadores en la interfaz
+            self.actualizar_lista_jugadores(main_window)
+
+            # Actualizar la ventana de espera de jugadores si está abierta
+            tiene_w = hasattr(main_window, "w") and main_window.w
+            tiene_cargar_colores_asignados = hasattr(
+                main_window.w, "cargar_colores_asignados"
+                )
+            if tiene_w and tiene_cargar_colores_asignados:
+                main_window.w.cargar_colores_asignados()
+
+        except Exception as e:
+            print(f"Error en ClientTaskColorAsignado: {e}")
 
     def actualizar_lista_jugadores(self, main_window):
         """
         Actualiza la lista de jugadores en la interfaz de usuario.
         """
-        # Obtener la lista de jugadores con sus colores
-        jugadores = []
-        for user_id, color in main_window.colores.colores_asignados().items():
-            # Obtener el nombre de usuario del cliente
-            client = main_window.client_by_id.get(user_id)
-            if client:
-                jugadores.append((client.username(), color))
+        try:
+            # Obtener la lista de jugadores con sus colores
+            jugadores = []
+            for user_id, color in main_window.colores.colores_asignados().items():
+                # Obtener el nombre de usuario del cliente
+                client = main_window.client_by_id.get(user_id)
+                if client and hasattr(client, "username"):
+                    jugadores.append((client.username(), color))
+                    print(f"Jugador {client.username()} tiene color {color.getRgb()}")
 
-        # Actualizar la lista de jugadores en la interfaz
-        main_window.update_player_list(jugadores)
+            # Actualizar la lista de jugadores en la interfaz si el método existe
+            if hasattr(main_window, "update_player_list"):
+                main_window.update_player_list(jugadores)
+        except Exception as e:
+            print(f"Error al actualizar lista de jugadores: {e}")
 
 
 class ClientTaskColor(IClientTask):
@@ -162,13 +208,36 @@ class ClientTaskAsignarPais(IClientTask):
         self._msg = data
 
     def run(self, main_window):
-        pais = self._msg.get("pais")
-        userid = self._msg.get("userid")
-        unidades = self._msg.get("unidades")
-        pais = main_window.scene.paises.get(pais)
-        pais.set_unidades(unidades)
-        color = main_window.colores.color_asignado(userid)
-        pais.set_color(color)
+        try:
+            nombre_pais = self._msg.get("pais")
+            userid = self._msg.get("userid")
+            unidades = self._msg.get("unidades", 1)  # Valor por defecto de 1 unidad
+
+            # Obtener el objeto país de la escena
+            pais = main_window.scene.paises.get(nombre_pais)
+            if not pais:
+                print(f"País no encontrado: {nombre_pais}")
+                return
+
+            # Establecer las unidades del país
+            pais.set_unidades(unidades)
+
+            # Obtener el color asignado al jugador
+            color = main_window.colores.color_asignado(userid)
+            if not color:
+                print(f"No se encontró color para el jugador {userid}")
+                return
+
+            # Establecer el color del país
+            pais.set_color(color)
+
+            print(
+                f"País {nombre_pais} asignado al jugador {userid}"
+                f"con {unidades} unidades y color {color.getRgb()}"
+                )
+
+        except Exception as e:
+            print(f"Error al asignar país: {e}")
 
 
 dict_task = {

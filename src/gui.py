@@ -1,3 +1,5 @@
+import contextlib
+
 from PySide6.QtCore import QSize, Qt
 from PySide6.QtWidgets import (
     QGridLayout,
@@ -144,9 +146,25 @@ class Gui(QMainWindow):
         self.w.show()
 
     def ventana_esperar_jugadores(self):
-        self.w = None
+        print("=== Iniciando ventana_esperar_jugadores ===")
+        print("Creando nueva ventana de espera...")
         self.w = VentanaEsperarJugadores(self)
+
+        # Conectar la señal de cierre para limpiar la referencia
+        def limpiar_ventana():
+            print("Limpiando referencia a la ventana de espera")
+            if hasattr(self, "w"):
+                with contextlib.suppress(Exception):
+                    # Desconectar todas las señales para evitar llamadas duplicadas
+                    self.w.destroyed.disconnect()
+
+                self.w = None
+
+        self.w.destroyed.connect(limpiar_ventana)
+
+        # Mostrar la ventana
         self.w.show()
+        print("Ventana de espera mostrada")
 
     def update_status_bar(self, text):
         self.status_bar.showMessage(text)

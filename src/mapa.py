@@ -1,5 +1,5 @@
 import json
-from random import sample, shuffle
+from random import shuffle
 
 
 class Mapa:
@@ -35,17 +35,34 @@ class Mapa:
 
     def asignar_paises(self, jugadores):
         paises = self.paises()
-        cant = len(paises) // len(jugadores)
-        for jug in jugadores:
-            paises_elegidos = sample(paises, k=cant)
-            for pais in paises_elegidos:
-                self.asignar_pais(jug, pais)
-            paises = [pais for pais in paises if pais not in paises_elegidos]
+        num_jugadores = len(jugadores)
+        num_paises = len(paises)
+        paises_por_jugador = num_paises // num_jugadores
+        paises_restantes = num_paises % num_jugadores
 
-        # Asignar los países restantes a los jugadores restantes
-        shuffle(jugadores)
-        for jug, pais in zip(jugadores, paises, strict=False):
-            self.asignar_pais(jug, pais)
+        # Mezclar los jugadores para una asignación aleatoria
+        jugadores_mezclados = jugadores.copy()
+        shuffle(jugadores_mezclados)
+
+        # Mezclar la lista de países
+        shuffle(paises)
+
+        # Asignar la cantidad base de países a cada jugador
+        indice = 0
+        for jugador in jugadores_mezclados:
+            # Asignar países base
+            paises_a_asignar = paises_por_jugador
+            if paises_restantes > 0:
+                paises_a_asignar += 1
+                paises_restantes -= 1
+
+            for _ in range(paises_a_asignar):
+                if indice < len(paises):
+                    pais = paises[indice]
+                    self.asignar_pais(jugador, pais)
+                    # Asignar 1 unidad por defecto a cada país
+                    self.set_unidades(pais, 1)
+                    indice += 1
 
     def aplicar_resultado_batalla(self, resultado):
         for res in resultado["restar"]:

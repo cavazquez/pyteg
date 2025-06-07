@@ -25,7 +25,19 @@ class Circulo(QGraphicsEllipseItem):
         self._center_text.setParentItem(self)
 
     def set_color(self, color):
-        self.setBrush(QBrush(color))
+        if color:
+            if isinstance(color, QColor):
+                self.setBrush(QBrush(color))
+            else:
+                # Si el color no es un QColor, intentar convertirlo
+                try:
+                    qcolor = QColor(color)
+                    if qcolor.isValid():
+                        self.setBrush(QBrush(qcolor))
+                    else:
+                        print(f"Color no válido: {color}")
+                except Exception as e:
+                    print(f"Error al establecer el color: {e}")
 
     def set_unidades(self, cant):
         self._center_text.set_unidades(str(cant))

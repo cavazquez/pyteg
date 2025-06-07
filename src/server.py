@@ -90,7 +90,8 @@ class Server:
 
         # Notificar a los clientes que la partida ha comenzado
         print("Notificando a los clientes que la partida ha comenzado...")
-        self.estado.cambiar_estado("JUGANDO")
+        # Cambiar el estado a EmpezarPartida
+        self.estado.empezar_partida()
         self.enviar_estado()
 
         print("Partida iniciada correctamente")
