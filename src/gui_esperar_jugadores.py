@@ -112,10 +112,9 @@ class VentanaEsperarJugadores(QWidget):
         # Obtener colores únicos
         colores = list(
             {
-                color.name(): color
-                for color in self._main_window.colores.colores()
+                color.name(): color for color in self._main_window.colores.colores()
             }.values()
-            )
+        )
         print(f"  - Creando {len(colores)} botones de colores")
 
         # Crear nuevos botones de radio para cada color

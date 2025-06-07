@@ -4,13 +4,13 @@ from PySide6.QtGui import QColor
 class Colores:
     def __init__(self):
         self._colores = [
-            QColor(255, 0, 0),    # Rojo
-            QColor(0, 255, 0),    # Verde
-            QColor(0, 0, 255),    # Azul
+            QColor(255, 0, 0),  # Rojo
+            QColor(0, 255, 0),  # Verde
+            QColor(0, 0, 255),  # Azul
             QColor(255, 255, 0),  # Amarillo
             QColor(0, 255, 255),  # Cian
             QColor(255, 0, 255),  # Magenta
-            QColor(0, 0, 0),      # Negro
+            QColor(0, 0, 0),  # Negro
             QColor(255, 255, 255),  # Blanco
         ]
         self._asignacion = {}
