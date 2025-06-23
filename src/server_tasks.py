@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 
 from src.exception import MensajeNoValidoError
+import json
 
 
 class IServerTask(ABC):
@@ -60,9 +61,24 @@ class ServerTaskEmpezarPartida(IServerTask):
         client.server.empezar_partida()
 
 
+class ServerTaskSetUsername(IServerTask):
+    def __init__(self, data):
+        super().__init__(data)
+        self._username = data.get("username")
+
+    def run(self, client):
+        if self._username and isinstance(self._username, str):
+            # Actualizar el nombre de usuario del cliente
+            client.set_username(self._username)
+            # Notificar a todos los clientes sobre el cambio de nombre
+            client.server.enviar_username()
+            print(f"Usuario {client.userid()} ha cambiado su nombre a: {self._username}")
+
+
 dict_task = {
     "chat": ServerTaskChat,
     "empezar": ServerTaskEmpezar,
     "seleccionar_color": ServerTaskSeleccionarColor,
     "empezar_partida": ServerTaskEmpezarPartida,
+    "set_username": ServerTaskSetUsername,
 }

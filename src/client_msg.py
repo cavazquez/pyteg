@@ -42,6 +42,19 @@ class MsgChat(IMsg):
         return json.dumps(data)
 
 
+class MsgSetUsername(IMsg):
+    def __init__(self, username):
+        self._tipo = "set_username"
+        self._username = username
+
+    def to_json(self):
+        data = {
+            "mensaje": self._tipo,
+            "username": self._username
+        }
+        return json.dumps(data)
+
+
 class MsgEmpezarPartida(IMsg):
     def __init__(self):
         self._tipo = "empezar_partida"
