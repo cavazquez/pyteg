@@ -47,11 +47,11 @@ class Client:
         :param color: Nuevo color a asignar
         """
         self.server.color.asignar_color(self, color)
-        
+
     def set_username(self, username):
         """
         Establece el nombre de usuario del cliente.
-        
+
         :param username: Nuevo nombre de usuario
         """
         self._username = username

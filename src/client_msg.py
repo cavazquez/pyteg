@@ -48,10 +48,7 @@ class MsgSetUsername(IMsg):
         self._username = username
 
     def to_json(self):
-        data = {
-            "mensaje": self._tipo,
-            "username": self._username
-        }
+        data = {"mensaje": self._tipo, "username": self._username}
         return json.dumps(data)
 
 

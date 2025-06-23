@@ -25,13 +25,13 @@ class ConnectionClient(QWidget):
     def conectar(self):
         self._socket.connectToHost(self._host, self._port)
         print(f"Conectando a {self._host}:{self._port}...")
-        
+
     def on_connected(self):
         print(f"Conectado a {self._host}:{self._port}")
         # Configurar el transmisor
-        from src.client_transmisor import ClientTransmisor
+
         self._transmisor = ClientTransmisor(self)
-        
+
         # Enviar el nombre de usuario al servidor después de conectarse
         if self._username:
             self._transmisor.set_username(self._username)
