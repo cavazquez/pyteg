@@ -41,7 +41,7 @@ class VentanaConectar(QDialog):
         layout.addWidget(self.label_username)
         layout.addWidget(self.username)
         layout.addWidget(button_conectar)
-        
+
         # Ajustar el tamaño de la ventana para el nuevo campo
         self.setFixedSize(QSize(300, 200))
 
@@ -52,11 +52,13 @@ class VentanaConectar(QDialog):
             addr = self.addr.text()
             port = int(self.port.text())
             username = self.username.text().strip()
-            
+
             if not username:
-                QMessageBox.warning(self, "Error", "Por favor ingresa un nombre de usuario")
+                QMessageBox.warning(
+                    self, "Error", "Por favor ingresa un nombre de usuario"
+                )
                 return
-                
+
             self._conexion = ConnectionClient(self._main_window, addr, port, username)
             self._conexion.conectar()
             self.accept()  # Cerrar el diálogo si la conexión es exitosa

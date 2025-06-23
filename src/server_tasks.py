@@ -1,7 +1,6 @@
 from abc import ABC, abstractmethod
 
 from src.exception import MensajeNoValidoError
-import json
 
 
 class IServerTask(ABC):
@@ -72,7 +71,9 @@ class ServerTaskSetUsername(IServerTask):
             client.set_username(self._username)
             # Notificar a todos los clientes sobre el cambio de nombre
             client.server.enviar_username()
-            print(f"Usuario {client.userid()} ha cambiado su nombre a: {self._username}")
+            print(
+                f"Usuario {client.userid()} ha cambiado su nombre a: {self._username}"
+            )
 
 
 dict_task = {
