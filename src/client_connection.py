@@ -20,7 +20,6 @@ class ConnectionClient(QWidget):
         self._socket.errorOccurred.connect(self.display_error)
         self._socket.stateChanged.connect(self.on_state_changed)
         self._socket.connected.connect(self.on_connected)
-        self._transmisor = None
 
     def conectar(self):
         self._socket.connectToHost(self._host, self._port)
@@ -28,13 +27,8 @@ class ConnectionClient(QWidget):
 
     def on_connected(self):
         print(f"Conectado a {self._host}:{self._port}")
-        # Configurar el transmisor
-
-        self._transmisor = ClientTransmisor(self)
-
-        # Enviar el nombre de usuario al servidor después de conectarse
-        if self._username:
-            self._transmisor.set_username(self._username)
+        # Usar el transmisor de main_window
+        self._main_window.transmisor.set_username(self._username)
 
     def esta_conectado(self):
         print("Estoy conectado?")
