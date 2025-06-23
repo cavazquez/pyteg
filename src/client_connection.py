@@ -9,19 +9,32 @@ from src.codecs_utils import Utf8
 
 
 class ConnectionClient(QWidget):
-    def __init__(self, main_window, host="127.0.0.1", port=65432):
+    def __init__(self, main_window, host="127.0.0.1", port=65432, username="Usuario"):
         super().__init__()
         self._host = host
         self._port = port
+        self._username = username
         self._main_window = main_window
         self._socket = QTcpSocket()
         self._socket.readyRead.connect(self.read_data)
         self._socket.errorOccurred.connect(self.display_error)
         self._socket.stateChanged.connect(self.on_state_changed)
+        self._socket.connected.connect(self.on_connected)
+        self._transmisor = None
 
     def conectar(self):
         self._socket.connectToHost(self._host, self._port)
-        print(f"Conectado con {self._host}:{self._port}")
+        print(f"Conectando a {self._host}:{self._port}...")
+        
+    def on_connected(self):
+        print(f"Conectado a {self._host}:{self._port}")
+        # Configurar el transmisor
+        from src.client_transmisor import ClientTransmisor
+        self._transmisor = ClientTransmisor(self)
+        
+        # Enviar el nombre de usuario al servidor después de conectarse
+        if self._username:
+            self._transmisor.set_username(self._username)
 
     def esta_conectado(self):
         print("Estoy conectado?")

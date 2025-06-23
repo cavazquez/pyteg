@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from src.client_msg import MsgChat, MsgEmpezar, MsgEmpezarPartida, MsgSeleccionarColor
+from src.client_msg import MsgChat, MsgEmpezar, MsgEmpezarPartida, MsgSeleccionarColor, MsgSetUsername
 
 
 class IClientTransmisor(ABC):
@@ -23,6 +23,10 @@ class IClientTransmisor(ABC):
     @abstractmethod
     def empezar_partida(self):
         pass
+        
+    @abstractmethod
+    def set_username(self, username):
+        pass
 
 
 class ClientNullTransmisor(IClientTransmisor):
@@ -39,6 +43,9 @@ class ClientNullTransmisor(IClientTransmisor):
         print("No estas conectado")
 
     def empezar_partida(self):
+        print("No estas conectado")
+        
+    def set_username(self, username):
         print("No estas conectado")
 
 
@@ -63,4 +70,8 @@ class ClientTransmisor(IClientTransmisor):
     def empezar_partida(self):
         print("empezar_partida")
         msg = MsgEmpezarPartida()
+        self._conn.send_data(msg.to_json())
+        
+    def set_username(self, username):
+        msg = MsgSetUsername(username)
         self._conn.send_data(msg.to_json())
