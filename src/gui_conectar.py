@@ -10,6 +10,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.client_connection import ConnectionClient
+from src.client_transmisor import ClientTransmisor
 
 
 class VentanaConectar(QDialog):
@@ -61,6 +62,8 @@ class VentanaConectar(QDialog):
 
             self._conexion = ConnectionClient(self._main_window, addr, port, username)
             self._conexion.conectar()
+            # Configurar el transmisor en main_window
+            self._main_window.transmisor = ClientTransmisor(self._conexion)
             self.accept()  # Cerrar el diálogo si la conexión es exitosa
 
         except Exception as e:
