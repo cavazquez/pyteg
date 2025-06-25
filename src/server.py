@@ -7,6 +7,7 @@ from src.mapa import Mapa
 from src.server_color import ServerColor
 from src.server_estado import Estado
 from src.server_registrar_jugadores import registrar_jugadores
+from src.turno_timer import TurnoTimer
 
 
 class Server:
@@ -19,6 +20,8 @@ class Server:
         self.estado = Estado()
         self.game = None
         self.mapa = Mapa(build_mapa)
+        # Timer de turnos (se inicializa en None y se arranca al empezar la partida)
+        self._turno_timer = None
         self.mazo = None
 
     def cant_clients(self):
@@ -95,6 +98,13 @@ class Server:
         self.enviar_estado()
 
         print("Partida iniciada correctamente")
+
+        # ------------------------------------------------------------------
+        # Arrancar temporizador de turnos
+        # ------------------------------------------------------------------
+        if self._turno_timer is None:
+            self._turno_timer = TurnoTimer(self)
+            self._turno_timer.start()
 
     def enviar_mapa(self):
         for client in self.dame_clientes():

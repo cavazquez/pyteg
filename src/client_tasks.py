@@ -167,6 +167,19 @@ class ClientTaskUserId(IClientTask):
         main_window.client_by_id[userid].set_userid(userid)
 
 
+class ClientTaskTiempo(IClientTask):
+    def __init__(self, data):
+        self._msg = data
+
+    def run(self, main_window):
+        tiempo = int(self._msg.get("tiempo", 0))
+        userid_turno = self._msg.get("user_id")
+        # Mostrar en la barra de estado
+        main_window.update_status_bar(
+            f"Turno jugador {userid_turno} - Tiempo restante: {tiempo}s"
+        )
+
+
 class ClientTaskUsername(IClientTask):
     def __init__(self, data):
         self._msg = data
@@ -248,5 +261,6 @@ dict_task = {
     "color": ClientTaskColor,
     "user_id": ClientTaskUserId,
     "username": ClientTaskUsername,
+    "tiempo": ClientTaskTiempo,
     "pais": ClientTaskAsignarPais,
 }
