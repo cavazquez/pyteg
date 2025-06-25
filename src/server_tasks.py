@@ -28,7 +28,7 @@ class ServerTaskChat(IServerTask):
         self._msg = data.get("msg")
 
     def run(self, client):
-        client.server.enviar_chat(client.username, self._msg)
+        client.server.enviar_chat(client.username(), self._msg)
 
 
 class ServerTaskEmpezar(IServerTask):
