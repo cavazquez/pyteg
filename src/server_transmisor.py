@@ -5,6 +5,7 @@ from src.server_msg import (
     MsgEstado,
     MsgPais,
     MsgSosAdmin,
+    MsgTiempo,
     MsgUserId,
     MsgUsername,
 )
@@ -48,6 +49,10 @@ class ServerTransmisor:
 
     def enviar_estado(self, estado):
         msg = MsgEstado(estado)
+        self._send_message(msg)
+
+    def enviar_tiempo(self, userid_turno, tiempo_restante):
+        msg = MsgTiempo(userid_turno, tiempo_restante)
         self._send_message(msg)
 
     def enviar_pais(self, pais, userid, unidades):
