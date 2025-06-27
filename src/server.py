@@ -19,7 +19,10 @@ class Server:
         self.color = ServerColor()
         self.estado = Estado()
         self.game = None
+
+        # Inicializar el mapa
         self.mapa = Mapa(build_mapa)
+
         # Timer de turnos (se inicializa en None y se arranca al empezar la partida)
         self._turno_timer = None
         self.mazo = None

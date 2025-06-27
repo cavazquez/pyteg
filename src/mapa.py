@@ -4,7 +4,9 @@ from random import shuffle
 
 class Mapa:
     def __init__(self, build_mapa):
-        self._mapa = build_mapa()
+        self._mapa = (
+            build_mapa()
+        )  # Ahora build_mapa ya devuelve el diccionario completo
 
     def agregar_una_unidad(self, pais):
         self._mapa[pais][0] += 1
@@ -142,3 +144,18 @@ class Mapa:
 
     def __str__(self):
         return json.dumps(self._mapa)
+
+    def obtener_paises_adyacentes(self, pais):
+        """
+        Devuelve la lista de países adyacentes al país especificado.
+
+        Args:
+            pais (str): Nombre del país del que se quieren obtener los adyacentes
+
+        Returns:
+            list: Lista de nombres de países adyacentes,
+            o lista vacía si no hay adyacentes definidos
+        """
+        if pais in self._mapa:
+            return self._mapa[pais][3]
+        return []
