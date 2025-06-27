@@ -40,7 +40,8 @@ class QCustomGraphicsScene(QGraphicsScene):
         for item in items:
             if isinstance(item, QGraphicsPixmapItem):
                 pais = item.nombre()
-                Menu(pais).exec_(event.screenPos())
+                menu = Menu(pais, self.main_window)
+                menu.exec_(event.screenPos())
 
     def load_map_data(self):
         folder = "themes/"
