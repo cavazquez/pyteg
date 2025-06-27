@@ -61,3 +61,28 @@ class MsgEmpezarPartida(IMsg):
             "mensaje": self._tipo,
         }
         return json.dumps(data)
+
+
+class MsgAgregarUnidad(IMsg):
+    def __init__(self, pais, tipo_unidad, cantidad=1):
+        """
+        Crea un mensaje para agregar unidades en un país específico.
+
+        Args:
+            pais (str): Nombre del país donde se agregará la unidad
+            tipo_unidad (str): Tipo de unidad a agregar (ej: 'infanteria', 'misil')
+            cantidad (int, optional): Cantidad de unidades a agregar. Defaults to 1.
+        """
+        self._tipo = "agregar_unidad"
+        self._pais = pais
+        self._tipo_unidad = tipo_unidad
+        self._cantidad = cantidad
+
+    def to_json(self):
+        data = {
+            "mensaje": self._tipo,
+            "pais": self._pais,
+            "tipo_unidad": self._tipo_unidad,
+            "cantidad": self._cantidad,
+        }
+        return json.dumps(data)

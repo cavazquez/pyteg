@@ -125,3 +125,20 @@ class MsgPais(IMsg):
         }
         print(data)
         return json.dumps(data)
+
+
+class MsgAgregarUnidad(IMsg):
+    def __init__(self, pais, tipo_unidad, cantidad):
+        self._tipo = "agregar_unidad"
+        self._pais = pais
+        self._tipo_unidad = tipo_unidad
+        self._cantidad = cantidad
+
+    def to_json(self):
+        data = {
+            "mensaje": self._tipo,
+            "pais": self._pais,
+            "tipo_unidad": self._tipo_unidad,
+            "cantidad": self._cantidad,
+        }
+        return json.dumps(data)

@@ -76,10 +76,41 @@ class ServerTaskSetUsername(IServerTask):
             )
 
 
+class ServerTaskAgregarUnidad(IServerTask):
+    def __init__(self, data):
+        super().__init__(data)
+        self._pais = data.get("pais")
+        self._tipo_unidad = data.get("tipo_unidad")
+        self._cantidad = data.get("cantidad", 1)  # Por defecto 1 si no se especifica
+
+    def run(self, client):
+        # Verificar que el cliente sea el dueño del país
+        if client.server.mapa.ocupado_por(self._pais) != client:
+            print(f"El jugador {client.userid()} no es dueño de {self._pais}")
+            return
+
+        # Verificar que el tipo de unidad sea válido
+        if self._tipo_unidad not in {"infanteria", "misil"}:
+            print(f"Tipo de unidad no válido: {self._tipo_unidad}")
+            return
+
+        # Agregar la unidad al país
+        for _ in range(self._cantidad):
+            client.server.mapa.agregar_una_unidad(self._pais)
+
+        msg = f"Se agregaron {self._cantidad} unidad(es) de tipo {self._tipo_unidad}"
+        msg += f" en {self._pais}"
+        print(msg)
+
+        # Notificar a todos los clientes sobre el cambio en el mapa
+        client.server.enviar_mapa()
+
+
 dict_task = {
     "chat": ServerTaskChat,
     "empezar": ServerTaskEmpezar,
     "seleccionar_color": ServerTaskSeleccionarColor,
     "empezar_partida": ServerTaskEmpezarPartida,
     "set_username": ServerTaskSetUsername,
+    "agregar_unidad": ServerTaskAgregarUnidad,
 }
