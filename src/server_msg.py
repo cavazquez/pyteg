@@ -142,3 +142,20 @@ class MsgAgregarUnidad(IMsg):
             "cantidad": self._cantidad,
         }
         return json.dumps(data)
+
+
+class MsgMoverUnidad(IMsg):
+    def __init__(self, origen, destino, cantidad):
+        self._tipo = "mover_unidad"
+        self._origen = origen
+        self._destino = destino
+        self._cantidad = cantidad
+
+    def to_json(self):
+        data = {
+            "mensaje": self._tipo,
+            "origen": self._origen,
+            "destino": self._destino,
+            "cantidad": self._cantidad,
+        }
+        return json.dumps(data)

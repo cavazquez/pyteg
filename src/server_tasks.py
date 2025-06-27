@@ -106,6 +106,46 @@ class ServerTaskAgregarUnidad(IServerTask):
         client.server.enviar_mapa()
 
 
+class ServerTaskMoverUnidad(IServerTask):
+    def __init__(self, data):
+        super().__init__(data)
+        self._origen = data.get("origen")
+        self._destino = data.get("destino")
+        self._cantidad = data.get("cantidad", 1)  # Por defecto 1 si no se especifica
+
+    def run(self, client):
+        # Verificar que el cliente sea el dueño del país de origen
+        if client.server.mapa.ocupado_por(self._origen) != client:
+            print(f"El jugador {client.userid()} no es dueño de {self._origen}")
+            return
+
+        # Verificar que los países sean adyacentes
+        print(
+            f"adyacencia: {client.server.mapa.obtener_paises_adyacentes(self._origen)}"
+        )
+        if self._destino not in client.server.mapa.obtener_paises_adyacentes(
+            self._origen
+        ):
+            print(f"{self._destino} no es adyacente a {self._origen}")
+            return
+
+        # Verificar que hay suficientes unidades para mover
+        if client.server.mapa.cantidad_unidades(self._origen) <= self._cantidad:
+            print(f"No hay suficientes unidades en {self._origen} para mover")
+            return
+
+        # Mover las unidades
+        client.server.mapa.mover(self._origen, self._destino, self._cantidad)
+
+        print(
+            f"Se movieron {self._cantidad} unidad(es) de {self._origen} "
+            f"a {self._destino}"
+        )
+
+        # Notificar a todos los clientes sobre el cambio en el mapa
+        client.server.enviar_mapa()
+
+
 dict_task = {
     "chat": ServerTaskChat,
     "empezar": ServerTaskEmpezar,
@@ -113,4 +153,5 @@ dict_task = {
     "empezar_partida": ServerTaskEmpezarPartida,
     "set_username": ServerTaskSetUsername,
     "agregar_unidad": ServerTaskAgregarUnidad,
+    "mover_unidad": ServerTaskMoverUnidad,
 }

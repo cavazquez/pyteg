@@ -5,6 +5,7 @@ from src.client_msg import (
     MsgChat,
     MsgEmpezar,
     MsgEmpezarPartida,
+    MsgMoverUnidad,
     MsgSeleccionarColor,
     MsgSetUsername,
 )
@@ -46,6 +47,17 @@ class IClientTransmisor(ABC):
             cantidad (int, optional): Cantidad de unidades a agregar. Defaults to 1.
         """
 
+    @abstractmethod
+    def mover_unidad(self, origen, destino, cantidad=1):
+        """
+        Envía un mensaje al servidor para mover unidades entre países.
+
+        Args:
+            origen (str): Nombre del país de origen
+            destino (str): Nombre del país de destino
+            cantidad (int, optional): Cantidad de unidades a mover. Defaults to 1.
+        """
+
 
 class ClientNullTransmisor(IClientTransmisor):
     def __init__(self):
@@ -68,6 +80,9 @@ class ClientNullTransmisor(IClientTransmisor):
 
     def agregar_unidad(self, _):
         print("No estas conectado")
+
+    def mover_unidad(self, _):
+        print("No puedes mover unidades. No estas conectado.")
 
 
 class ClientTransmisor(IClientTransmisor):
@@ -108,4 +123,18 @@ class ClientTransmisor(IClientTransmisor):
         """
         print(f"Agregando {cantidad} unidad(es) de tipo {tipo_unidad} en {pais}")
         msg = MsgAgregarUnidad(pais, tipo_unidad, cantidad)
+        self._conn.send_data(msg.to_json())
+
+    def mover_unidad(self, origen, destino, cantidad=1):
+        """
+        Envía un mensaje al servidor para mover unidades entre países.
+
+        Args:
+            origen (str): Nombre del país de origen
+            destino (str): Nombre del país de destino
+            cantidad (int, optional): Cantidad de unidades a mover. Defaults to 1.
+        """
+        print(f"Moviendo {cantidad} unidad(es) de {origen} a {destino}")
+
+        msg = MsgMoverUnidad(origen, destino, cantidad)
         self._conn.send_data(msg.to_json())

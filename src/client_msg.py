@@ -86,3 +86,28 @@ class MsgAgregarUnidad(IMsg):
             "cantidad": self._cantidad,
         }
         return json.dumps(data)
+
+
+class MsgMoverUnidad(IMsg):
+    def __init__(self, origen, destino, cantidad=1):
+        """
+        Crea un mensaje para mover unidades entre países.
+
+        Args:
+            origen (str): Nombre del país de origen
+            destino (str): Nombre del país de destino
+            cantidad (int, optional): Cantidad de unidades a mover. Defaults to 1.
+        """
+        self._tipo = "mover_unidad"
+        self._origen = origen
+        self._destino = destino
+        self._cantidad = cantidad
+
+    def to_json(self):
+        data = {
+            "mensaje": self._tipo,
+            "origen": self._origen,
+            "destino": self._destino,
+            "cantidad": self._cantidad,
+        }
+        return json.dumps(data)

@@ -9,12 +9,23 @@ class TomlReader:
         self.cartas = self.parsed_toml["Cartas"]
         del self.parsed_toml["Cartas"]
 
+        # Inicializar adyacencias
+        self.adyacencias = {}
+        if "Adyacencias" in self.parsed_toml:
+            self.adyacencias = self.parsed_toml["Adyacencias"]
+            del self.parsed_toml["Adyacencias"]
+            print(f"adyacencias: {self.adyacencias}")
+
         for continente in self.parsed_toml:
+            if not isinstance(self.parsed_toml[continente], dict):
+                continue
+
             datos = self.parsed_toml[continente]
-            self.continentes[continente] = (datos.get("pos_x"), datos.get("pos_y"))
-            del datos["pos_x"]
-            del datos["pos_y"]
-            self.paises[continente] = datos
+            if "pos_x" in datos and "pos_y" in datos:
+                self.continentes[continente] = (datos.get("pos_x"), datos.get("pos_y"))
+                del datos["pos_x"]
+                del datos["pos_y"]
+                self.paises[continente] = datos
 
     def todos_los_paises(self):
         res = []
@@ -48,4 +59,18 @@ class TomlReader:
         for continente in self.get_continentes():
             if pais in self.get_paises(continente):
                 return continente
+        return None
+
+    def obtener_paises_adyacentes(self, pais):
+        """
+        Devuelve la lista de países adyacentes al país especificado.
+
+        Args:
+            pais (str): Nombre del país del que se quieren obtener los adyacentes
+
+        Returns:
+            list: Lista de nombres de países adyacentes,
+            o lista vacía si no hay adyacentes definidos
+        """
+        return self.adyacencias.get(pais, [])
         return None
