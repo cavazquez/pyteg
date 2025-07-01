@@ -253,6 +253,16 @@ class ClientTaskAsignarPais(IClientTask):
             print(f"Error al asignar país: {e}")
 
 
+class ClientTaskUnidadesDisponibles(IClientTask):
+    def __init__(self, data):
+        self._unidades = data.get("unidades", {})
+
+    def run(self, main_window):
+        print(f"Recibidas unidades disponibles: {self._unidades}")
+        if hasattr(main_window, "update_unidades_disponibles"):
+            main_window.update_unidades_disponibles(self._unidades)
+
+
 dict_task = {
     "chat": ClientTaskChat,
     "sosadmin": ClientTaskSerAdmin,
@@ -263,4 +273,5 @@ dict_task = {
     "username": ClientTaskUsername,
     "tiempo": ClientTaskTiempo,
     "pais": ClientTaskAsignarPais,
+    "unidades_disponibles": ClientTaskUnidadesDisponibles,
 }

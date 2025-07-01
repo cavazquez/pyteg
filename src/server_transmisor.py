@@ -6,6 +6,7 @@ from src.server_msg import (
     MsgPais,
     MsgSosAdmin,
     MsgTiempo,
+    MsgUnidadesDisponibles,
     MsgUserId,
     MsgUsername,
 )
@@ -53,6 +54,16 @@ class ServerTransmisor:
 
     def enviar_tiempo(self, userid_turno, tiempo_restante):
         msg = MsgTiempo(userid_turno, tiempo_restante)
+        self._send_message(msg)
+
+    def enviar_unidades_disponibles(self, unidades):
+        """Envía la cantidad de unidades disponibles para colocar al jugador.
+
+        Args:
+            unidades (dict): Diccionario con el tipo de unidad y la cantidad disponible.
+                Ejemplo: {"infanteria": 5, "artilleria": 2, "caballeria": 1}
+        """
+        msg = MsgUnidadesDisponibles(unidades)
         self._send_message(msg)
 
     def enviar_pais(self, pais, userid, unidades):
