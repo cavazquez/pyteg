@@ -94,9 +94,26 @@ class ServerTaskAgregarUnidad(IServerTask):
             print(f"Tipo de unidad no válido: {self._tipo_unidad}")
             return
 
+        # Verificar que el jugador tenga suficientes unidades disponibles
+        turno_actual = client.server.game.turno_actual()
+        if (
+            not hasattr(turno_actual, "cant_unidades")
+            or turno_actual.cant_unidades() < self._cantidad
+        ):
+            msg = (
+                f"No hay suficientes unidades disponibles para agregar "
+                f"{self._cantidad} {self._tipo_unidad}"
+            )
+            print(msg)
+            return
+
         # Agregar la unidad al país
         for _ in range(self._cantidad):
             client.server.mapa.agregar_una_unidad(self._pais)
+
+            # Restar la unidad de las unidades generales disponibles
+            if hasattr(turno_actual, "usar_unidad"):
+                turno_actual.usar_unidad()
 
         msg = f"Se agregaron {self._cantidad} unidad(es) de tipo {self._tipo_unidad}"
         msg += f" en {self._pais}"
