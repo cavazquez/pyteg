@@ -172,6 +172,37 @@ class Gui(QMainWindow):
     def clear_status_bar(self):
         self.status_bar.clearMessage()
 
+    def update_unidades_disponibles(self, unidades):
+        """Actualiza el panel derecho con las unidades disponibles.
+
+        Args:
+            unidades (dict): Diccionario con el tipo de unidad y la cantidad disponible.
+                Ejemplo: {"infanteria": 5, "misiles": 2}
+        """
+        # Actualizar la etiqueta de Generales con las unidades de infantería
+        if "infanteria" in unidades:
+            self.value_labels["Generales"].setText(
+                f"Generales: {unidades['infanteria']}"
+            )
+
+        # Actualizar la etiqueta de Misiles si está disponible
+        if "misiles" in unidades and unidades["misiles"] > 0:
+            # Buscar si ya existe una etiqueta para misiles
+            if not hasattr(self, "misiles_label"):
+                # Insertar después de Generales
+                layout = self.value_labels["Generales"].parent().layout()
+                index = layout.indexOf(self.value_labels["Generales"]) + 1
+
+                self.misiles_label = QLabel(f"Misiles: {unidades['misiles']}")
+                self.misiles_label.setStyleSheet("font-weight: bold;")
+                layout.insertWidget(index, self.misiles_label)
+            else:
+                self.misiles_label.setText(f"Misiles: {unidades['misiles']}")
+        elif hasattr(self, "misiles_label"):
+            # Si no hay misiles disponibles, eliminar la etiqueta
+            self.misiles_label.deleteLater()
+            del self.misiles_label
+
     def keyPressEvent(self, event):  # noqa: N802
         if event.key() == Qt.Key_Enter or event.key() == Qt.Key_Return:
             self.chat.send_message()
