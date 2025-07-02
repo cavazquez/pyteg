@@ -3,49 +3,49 @@ import unittest
 from src.game import Game
 from src.mapa import Mapa
 from src.mazo import Mazo
+from src.server import Server
 from src.turnos import PrimerTurno, SegundoTurno, SiguientesTurnos
 
 
 class TestGame(unittest.TestCase):
+    def setUp(self):
+        """Set up test fixtures."""
+        self.server = Server()
+        self.mapa = Mapa(lambda: None)
+        self.default_jugadores = ["Fulano", "Mengano"]
+
     def test_create_instance(self):
-        mapa = Mapa(lambda: None)
-        game = Game(mapa, None, None)
+        game = Game(self.mapa, None, None, self.server)
         self.assertTrue(game)
         self.assertFalse(game.empezo())
         self.assertIsInstance(game.turnos()[0], PrimerTurno)
 
     def test_cant_jugadores(self):
-        mapa = Mapa(lambda: None)
-        game = Game(mapa, None, ["Fulano"])
+        game = Game(self.mapa, None, ["Fulano"], self.server)
         self.assertEqual(game.cant_jugadores(), 1)
 
     def test_agregar_jugador(self):
-        mapa = Mapa(lambda: None)
-        game = Game(mapa, None, ["Fulano"])
+        game = Game(self.mapa, None, ["Fulano"], self.server)
         self.assertEqual(game.jugadores(), ["Fulano"])
 
     def test_lista_jugadores(self):
-        mapa = Mapa(lambda: None)
-        game = Game(mapa, None, ["Fulano"])
+        game = Game(self.mapa, None, ["Fulano"], self.server)
         self.assertListEqual(game.lista_jugadores(), ["Fulano"])
 
     def test_empezar(self):
-        mapa = Mapa(lambda: None)
-        game = Game(mapa, None, ["Fulano", "Mengano"])
+        game = Game(self.mapa, None, self.default_jugadores, self.server)
         game.empezar()
         self.assertIsInstance(game.turnos()[0], PrimerTurno)
         self.assertIsInstance(game.turnos()[1], PrimerTurno)
 
     def test_finalizar_turno(self):
-        mapa = Mapa(lambda: None)
-        game = Game(mapa, None, ["Fulano", "Mengano"])
+        game = Game(self.mapa, None, self.default_jugadores, self.server)
         game.empezar()
         game.finalizar_turno()
         self.assertEqual(game.id_turno_actual(), 1)
 
     def test_finalizar_turno_y_primer_ronda(self):
-        mapa = Mapa(lambda: None)
-        game = Game(mapa, None, ["Fulano", "Mengano"])
+        game = Game(self.mapa, None, self.default_jugadores, self.server)
         game.empezar()
         game.finalizar_turno()
         game.finalizar_turno()
@@ -54,8 +54,7 @@ class TestGame(unittest.TestCase):
         self.assertIsInstance(game.turnos()[1], SegundoTurno)
 
     def test_finalizar_turno_y_segunda_ronda(self):
-        mapa = Mapa(lambda: None)
-        game = Game(mapa, None, ["Fulano", "Mengano"])
+        game = Game(self.mapa, None, self.default_jugadores, self.server)
         game.empezar()
         game.finalizar_turno()
         game.finalizar_turno()
@@ -66,8 +65,7 @@ class TestGame(unittest.TestCase):
         self.assertIsInstance(game.turnos()[1], SiguientesTurnos)
 
     def test_finalizar_turno_y_tercer_ronda(self):
-        mapa = Mapa(lambda: None)
-        game = Game(mapa, None, ["Fulano", "Mengano"])
+        game = Game(self.mapa, None, self.default_jugadores, self.server)
         game.empezar()
         game.finalizar_turno()
         game.finalizar_turno()
@@ -91,7 +89,7 @@ class TestGame(unittest.TestCase):
 
         mapa = Mapa(build_mapa)
         mazo = Mazo(mapa.paises(), ["Globo"])
-        game = Game(mapa, mazo, ["Mengano"])
+        game = Game(mapa, mazo, ["Mengano"], self.server)
         game.empezar()
 
         tarjeta1 = mazo.asignar_tarjeta("Mengano")
@@ -115,7 +113,7 @@ class TestGame(unittest.TestCase):
 
         mapa = Mapa(build_mapa)
         mazo = Mazo(mapa.paises(), ["Globo"])
-        game = Game(mapa, mazo, ["Mengano"])
+        game = Game(mapa, mazo, ["Mengano"], self.server)
         game.empezar()
 
         tarjeta1 = mazo.asignar_tarjeta("Mengano")
@@ -144,7 +142,7 @@ class TestGame(unittest.TestCase):
 
         mapa = Mapa(build_mapa)
         mazo = Mazo(mapa.paises(), ["Globo"])
-        game = Game(mapa, mazo, ["Mengano"])
+        game = Game(mapa, mazo, ["Mengano"], self.server)
         game.empezar()
 
         tarjeta1 = mazo.asignar_tarjeta("Mengano")
@@ -177,7 +175,7 @@ class TestGame(unittest.TestCase):
 
         mapa = Mapa(build_mapa)
         mazo = Mazo(mapa.paises(), ["Globo"])
-        game = Game(mapa, mazo, ["Mengano"])
+        game = Game(mapa, mazo, ["Mengano"], self.server)
         game.empezar()
 
         game.dame_una_tarjeta("Mengano")
@@ -196,7 +194,7 @@ class TestGame(unittest.TestCase):
 
         mapa = Mapa(build_mapa)
         mazo = Mazo(mapa.paises(), ["Globo"])
-        game = Game(mapa, mazo, ["Mengano"])
+        game = Game(mapa, mazo, ["Mengano"], self.server)
         game.empezar()
 
         turno_actual = game.turno_actual()
@@ -223,7 +221,7 @@ class TestGame(unittest.TestCase):
 
         mapa = Mapa(build_mapa)
         mazo = Mazo(mapa.paises(), ["Globo", "Galeon", "Cañon"])
-        game = Game(mapa, mazo, ["Mengano"])
+        game = Game(mapa, mazo, ["Mengano"], self.server)
         game.empezar()
 
         turno_actual = game.turno_actual()
