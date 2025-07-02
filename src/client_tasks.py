@@ -1,5 +1,7 @@
 from abc import ABC, abstractmethod
 
+from PySide6.QtGui import QColor
+
 from src.client import Client
 from src.client_color import Color
 
@@ -274,6 +276,55 @@ class ClientTaskUnidadesDisponibles(IClientTask):
             main_window.update_unidades_disponibles(self._unidades)
 
 
+class ClientTaskActualizarListaJugadores(IClientTask):
+    def __init__(self, data):
+        self._jugadores = data.get("jugadores", [])
+
+    def run(self, main_window):
+        """
+        Actualiza la lista de jugadores en la interfaz de usuario con el
+        orden actualizado.
+
+        Args:
+            main_window: La ventana principal de la aplicación
+        """
+        try:
+            # Crear una lista de tuplas (nombre, color) para actualizar la interfaz
+            jugadores_actualizados = []
+
+            for jugador in self._jugadores:
+                userid = jugador.get("userid")
+                color_data = jugador.get("color", {})
+
+                # Obtener el nombre de usuario del cliente
+                # Valor por defecto si no se encuentra el cliente
+                nombre = f"Jugador {userid}"
+                if (
+                    hasattr(main_window, "client_by_id")
+                    and userid in main_window.client_by_id
+                ):
+                    cliente = main_window.client_by_id[userid]
+                    if hasattr(cliente, "username") and cliente.username():
+                        nombre = cliente.username()
+
+                # Crear un objeto QColor a partir de los componentes RGB
+
+                color = QColor(
+                    color_data.get("r", 200),
+                    color_data.get("g", 200),
+                    color_data.get("b", 200),
+                )
+
+                jugadores_actualizados.append((nombre, color))
+
+            # Actualizar la lista de jugadores en la interfaz
+            if hasattr(main_window, "update_player_list"):
+                main_window.update_player_list(jugadores_actualizados)
+
+        except Exception as e:
+            print(f"Error al actualizar la lista de jugadores: {e}")
+
+
 dict_task = {
     "chat": ClientTaskChat,
     "sosadmin": ClientTaskSerAdmin,
@@ -282,8 +333,9 @@ dict_task = {
     "color": ClientTaskColor,
     "user_id": ClientTaskUserId,
     "username": ClientTaskUsername,
+    "turno": ClientTaskTurno,
+    "tiempo": ClientTaskTiempo,
     "pais": ClientTaskAsignarPais,
     "unidades_disponibles": ClientTaskUnidadesDisponibles,
-    "tiempo": ClientTaskTiempo,
-    "turno": ClientTaskTurno,
+    "actualizar_lista_jugadores": ClientTaskActualizarListaJugadores,
 }

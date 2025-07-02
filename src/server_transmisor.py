@@ -1,4 +1,5 @@
 from src.server_msg import (
+    MsgActualizarListaJugadores,
     MsgChat,
     MsgColor,
     MsgColorAsignado,
@@ -79,4 +80,14 @@ class ServerTransmisor:
             num_ronda (int): El número de ronda actual
         """
         msg = MsgTurno(num_turno, num_ronda)
+        self._send_message(msg)
+
+    def actualizar_lista_jugadores(self, jugadores):
+        """Envía la lista actualizada de jugadores al cliente.
+
+        Args:
+            jugadores (list): Lista de tuplas (userid, color) donde color es un
+                diccionario con las claves 'r', 'g', 'b'
+        """
+        msg = MsgActualizarListaJugadores(jugadores)
         self._send_message(msg)

@@ -45,11 +45,53 @@ class Server:
         return list(self._clients.values())
 
     def enviar_colores_asignados(self):
+        # Obtener la lista de clientes en el orden de los turnos
+        # si el juego ha comenzado
+        if hasattr(self, "game") and self.game is not None:
+            # Usar el orden de los turnos del juego
+            clientes_ordenados = self.game.lista_jugadores_orden_turno()
+            # Asegurarse de que todos los clientes estén incluidos,
+            # incluso si no están en los turnos
+            clientes_restantes = [
+                c for c in self.dame_clientes() if c not in clientes_ordenados
+            ]
+            clientes_ordenados.extend(clientes_restantes)
+        else:
+            # Si no hay juego, usar el orden original
+            clientes_ordenados = self.dame_clientes()
+
+        # Enviar los colores asignados a todos los clientes
         for client in self.dame_clientes():
-            for otro_client in self.dame_clientes():
+            for otro_client in clientes_ordenados:
                 client.transmisor.color_asignado(
                     otro_client.userid(), otro_client.color_actual()
                 )
+
+        # Actualizar la lista de jugadores en la interfaz de usuario
+        if hasattr(self, "game") and self.game is not None:
+            self.actualizar_lista_jugadores_ui()
+
+    def actualizar_lista_jugadores_ui(self):
+        """
+        Actualiza la lista de jugadores en la interfaz de usuario de todos los clientes.
+        """
+        if not hasattr(self, "game") or self.game is None:
+            return
+
+        # Obtener la lista de jugadores en el orden de los turnos
+        jugadores_ordenados = self.game.lista_jugadores_orden_turno()
+
+        # Enviar la lista actualizada a todos los clientes
+        for client in self.dame_clientes():
+            # Crear una lista de tuplas (userid, color) en el orden correcto
+            jugadores_con_colores = [
+                (jugador.userid(), jugador.color_actual())
+                for jugador in jugadores_ordenados
+                if hasattr(jugador, "userid") and hasattr(jugador, "color_actual")
+            ]
+
+            # Enviar la lista de jugadores al cliente
+            client.transmisor.actualizar_lista_jugadores(jugadores_con_colores)
 
     def enviar_estado(self):
         for client in self.dame_clientes():
@@ -93,8 +135,8 @@ class Server:
         jugadores = self.dame_clientes()
         print(f"Jugadores conectados: {[j.userid() for j in jugadores]}")
 
-        # Crear e iniciar el juego
-        self.game = Game(self.mapa, self.mazo, jugadores)
+        # Crear e iniciar el juego, pasando la referencia al servidor
+        self.game = Game(self.mapa, self.mazo, jugadores, self)
         self.game.empezar()
 
         # Enviar información de los jugadores y sus colores a todos los clientes
