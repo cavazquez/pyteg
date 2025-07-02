@@ -4,7 +4,7 @@ from src.turnos import PrimerTurno, SegundoTurno, SiguientesTurnos
 
 
 class Game:
-    def __init__(self, mapa, mazo, jugadores):
+    def __init__(self, mapa, mazo, jugadores, server):
         self._mapa = mapa
         self._start = False
         self._turnos = [PrimerTurno("NUllJugador")]
@@ -13,6 +13,7 @@ class Game:
         self._num_ronda = 1
         self._mazo = mazo
         self._cant_canjes = {}
+        self._server = server  # Referencia al servidor para notificar cambios
 
     def empezar(self):
         self._turnos = [PrimerTurno(j) for j in self.lista_jugadores()]
@@ -90,17 +91,41 @@ class Game:
         num = self._num_turno
         cant_jugadores = self.cant_jugadores()
         if num == cant_jugadores:
+            # Rotar la lista de jugadores para la nueva ronda
+            jugadores = self.lista_jugadores()
+            if len(jugadores) > 1:
+                jugadores = jugadores[1:] + jugadores[:1]  # Rotar a la izquierda
+
             if isinstance(self.turno_actual(), PrimerTurno):
-                self._turnos = [SegundoTurno(j) for j in self.lista_jugadores()]
+                self._turnos = [SegundoTurno(j) for j in jugadores]
             else:
-                self._turnos = [
-                    SiguientesTurnos(j, self.mapa()) for j in self.lista_jugadores()
-                ]
+                self._turnos = [SiguientesTurnos(j, self.mapa()) for j in jugadores]
             self._num_turno = 0
             self._num_ronda += 1
+
+            # Notificar al servidor que se completó una ronda
+            # para que actualice los colores de los jugadores
+            self._server.enviar_colores_asignados()
 
     def jugadores(self):
         return self._jugadores
 
     def lista_jugadores(self):
         return self.jugadores()
+
+    def lista_jugadores_orden_turno(self):
+        """Devuelve la lista de jugadores en el orden actual de los turnos."""
+
+        # Obtener los jugadores en el orden de los turnos actuales
+        jugadores_orden = []
+        for turno in self._turnos:
+            jugador = turno.jugador_actual()
+            if jugador not in jugadores_orden:
+                jugadores_orden.append(jugador)
+
+        # Si por alguna razón no hay jugadores
+        # en los turnos, devolver la lista normal
+        if not jugadores_orden:
+            return self.lista_jugadores()
+
+        return jugadores_orden

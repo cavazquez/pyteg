@@ -58,6 +58,17 @@ class IClientTransmisor(ABC):
             cantidad (int, optional): Cantidad de unidades a mover. Defaults to 1.
         """
 
+    @abstractmethod
+    def actualizar_lista_jugadores(self, jugadores):
+        """
+        Actualiza la lista de jugadores en la interfaz de usuario.
+
+        Args:
+            jugadores (list): Lista de diccionarios con la información de los jugadores
+                Cada diccionario debe tener las claves 'userid' y 'color' (con
+                'r', 'g', 'b')
+        """
+
 
 class ClientNullTransmisor(IClientTransmisor):
     def __init__(self):
@@ -83,6 +94,9 @@ class ClientNullTransmisor(IClientTransmisor):
 
     def mover_unidad(self, _):
         print("No puedes mover unidades. No estas conectado.")
+
+    def actualizar_lista_jugadores(self, _):
+        pass
 
 
 class ClientTransmisor(IClientTransmisor):
@@ -138,3 +152,15 @@ class ClientTransmisor(IClientTransmisor):
 
         msg = MsgMoverUnidad(origen, destino, cantidad)
         self._conn.send_data(msg.to_json())
+
+    def actualizar_lista_jugadores(self, jugadores):
+        """
+        Actualiza la lista de jugadores en la interfaz de usuario.
+
+        Args:
+            jugadores (list): Lista de diccionarios con la información de los jugadores
+                Cada diccionario debe tener las claves 'userid' y 'color' (con
+                'r', 'g', 'b')
+        """
+        # Este método no necesita hacer nada aquí, ya que el cliente
+        # procesará el mensaje a través de la cola de tareas

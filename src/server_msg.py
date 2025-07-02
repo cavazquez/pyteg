@@ -188,3 +188,32 @@ class MsgMoverUnidad(IMsg):
             "cantidad": self._cantidad,
         }
         return json.dumps(data)
+
+
+class MsgActualizarListaJugadores(IMsg):
+    def __init__(self, jugadores):
+        """
+        Inicializa un mensaje para actualizar la lista de jugadores en el cliente.
+
+        Args:
+            jugadores (list): Lista de tuplas (userid, color) donde color es un
+                diccionario con las claves 'r', 'g', 'b'
+        """
+        self._tipo = "actualizar_lista_jugadores"
+        self._jugadores = jugadores
+
+    def to_json(self):
+        # Convertir la lista de jugadores a un formato serializable
+        jugadores_serializados = []
+        for userid, color in self._jugadores:
+            if hasattr(color, "to_json"):
+                color_dict = json.loads(color.to_json())
+            elif isinstance(color, dict):
+                color_dict = color
+            else:
+                color_dict = {"r": 200, "g": 200, "b": 200}  # Color gris por defecto
+
+            jugadores_serializados.append({"userid": userid, "color": color_dict})
+
+        data = {"mensaje": self._tipo, "jugadores": jugadores_serializados}
+        return json.dumps(data)
