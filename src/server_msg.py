@@ -109,6 +109,21 @@ class MsgTiempo(IMsg):
         return json.dumps(data)
 
 
+class MsgTurno(IMsg):
+    def __init__(self, num_turno, num_ronda):
+        self._tipo = "turno"
+        self._num_turno = num_turno
+        self._num_ronda = num_ronda
+
+    def to_json(self):
+        data = {
+            "mensaje": self._tipo,
+            "num_turno": self._num_turno,
+            "num_ronda": self._num_ronda,
+        }
+        return json.dumps(data)
+
+
 class MsgPais(IMsg):
     def __init__(self, pais, userid, unidades):
         self._tipo = "pais"
@@ -123,7 +138,6 @@ class MsgPais(IMsg):
             "userid": self._userid,
             "unidades": self._unidades,
         }
-        print(data)
         return json.dumps(data)
 
 

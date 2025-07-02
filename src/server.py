@@ -55,6 +55,17 @@ class Server:
         for client in self.dame_clientes():
             client.transmisor.enviar_estado(self.estado.estado_actual())
 
+    def enviar_turno_actual(self):
+        """Envía el número de turno y ronda actuales a todos los clientes."""
+        if not self.game:
+            return
+
+        turno_actual = self.game.id_turno_actual()
+        # Calcular el número de ronda: (turno_actual // cant_jugadores) + 1
+
+        for client in self.dame_clientes():
+            client.transmisor.enviar_turno(turno_actual, self.game.num_ronda())
+
     def enviar_chat(self, username, msg):
         for client in self.dame_clientes():
             client.transmisor.enviar_chat(f"{username}: {msg}")
@@ -100,14 +111,14 @@ class Server:
         self.estado.empezar_partida()
         self.enviar_estado()
 
-        print("Partida iniciada correctamente")
+        # Enviar el número de turno inicial a todos los clientes
+        print("Enviando número de turno inicial a los clientes...")
+        self.enviar_turno_actual()
 
-        # ------------------------------------------------------------------
-        # Arrancar temporizador de turnos
-        # ------------------------------------------------------------------
-        if self._turno_timer is None:
-            self._turno_timer = TurnoTimer(self)
-            self._turno_timer.start()
+        # Iniciar el temporizador de turnos
+        print("Iniciando temporizador de turnos...")
+        self._turno_timer = TurnoTimer(self, segundos_por_turno=10)
+        self._turno_timer.start()
 
     def enviar_mapa(self):
         # Primero, enviar la información del mapa a todos los clientes

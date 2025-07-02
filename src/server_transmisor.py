@@ -6,6 +6,7 @@ from src.server_msg import (
     MsgPais,
     MsgSosAdmin,
     MsgTiempo,
+    MsgTurno,
     MsgUnidadesDisponibles,
     MsgUserId,
     MsgUsername,
@@ -68,4 +69,14 @@ class ServerTransmisor:
 
     def enviar_pais(self, pais, userid, unidades):
         msg = MsgPais(pais, userid, unidades)
+        self._send_message(msg)
+
+    def enviar_turno(self, num_turno, num_ronda):
+        """Envía el número de turno y ronda actuales a los clientes.
+
+        Args:
+            num_turno (int): El número de turno actual
+            num_ronda (int): El número de ronda actual
+        """
+        msg = MsgTurno(num_turno, num_ronda)
         self._send_message(msg)
