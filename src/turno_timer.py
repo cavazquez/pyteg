@@ -50,13 +50,7 @@ class TurnoTimer(threading.Thread):
                 continue
 
             turno_actual = self._server.game.turno_actual()
-            try:
-                jugador = turno_actual.jugador_actual()
-            except AttributeError:
-                # Turno no implementa jugador_actual
-                time.sleep(1)
-                continue
-
+            jugador = turno_actual.jugador_actual()
             userid_turno = jugador.userid()
 
             # Cuenta regresiva
@@ -70,18 +64,24 @@ class TurnoTimer(threading.Thread):
                 # Esperar un segundo
                 time.sleep(1)
 
-                # Si terminaron prematuramente el turno, salir del countdown
-                nuevo_turno = self._server.game.turno_actual()
-                if nuevo_turno is not turno_actual:
+                # Si el jugador actual cambió,
+                # notificar a los clientes y salir del bucle interno
+                if turno_actual != self._server.game.turno_actual():
+                    self._server.enviar_turno_actual()
                     break
             else:
-                # El contador llegó a 0 -> finalizar turno automáticamente
-                try:
+                # Si el tiempo se agotó, pasar al siguiente turno
+                if remaining <= 0:
+                    msg = f"[TurnoTimer] Tiempo agotado para el turno {turno_actual}"
+                    print(msg)
                     self._server.game.finalizar_turno()
-                except Exception as exc:
-                    print(
-                        f"[TurnoTimer] Error al finalizar turno automáticamente: {exc}"
-                    )
+                    # Enviar el nuevo número de turno a los clientes
+                    self._server.enviar_turno_actual()
+                else:
+                    # El contador llegó a 0 -> finalizar turno automáticamente
+                    self._server.game.finalizar_turno()
+                    # Enviar el nuevo número de turno a los clientes
+                    self._server.enviar_turno_actual()
 
             # Pequeño respiro antes de continuar (evita bucle tight)
             time.sleep(0.1)

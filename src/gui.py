@@ -38,11 +38,23 @@ class Gui(QMainWindow):
         self.setMinimumSize(QSize(800, 600))
         self.setMouseTracking(True)
 
+        # Initialize turn number
+        self._turno_actual = 0
+
         self.colores = Colores()
 
         self.setup_graphics_view()
 
+        # Create a status bar with permanent widgets for turn number and status message
         self.status_bar = QStatusBar()
+
+        # Add a label for the turn number that stays on the left
+        self.turno_label = QLabel("Turno: 0")
+        self.status_bar.addPermanentWidget(self.turno_label)
+
+        # Add a stretch to push the status message to the right
+        self.status_bar.addPermanentWidget(QLabel(""))
+
         self.setStatusBar(self.status_bar)
 
         self.show()  # IMPORTANT!!!!! Windows are hidden by default.
@@ -166,10 +178,27 @@ class Gui(QMainWindow):
         self.w.show()
         print("Ventana de espera mostrada")
 
+    def update_turno(self, num_turno, num_ronda):
+        """Update the turn and round number display.
+
+        Args:
+            num_turno (int): The current turn number
+            num_ronda (int): The current round number
+        """
+        self._turno_actual = num_turno
+        self.turno_label.setText(f"Ronda: {num_ronda} - Turno: {num_turno + 1}")
+
     def update_status_bar(self, text):
+        """Update the status bar with the given text.
+
+        Args:
+            text (str): The message to display in the status bar
+        """
+        # Update the status message (temporary message on the right)
         self.status_bar.showMessage(text)
 
     def clear_status_bar(self):
+        """Clear the status bar message, but keep the turn number."""
         self.status_bar.clearMessage()
 
     def update_unidades_disponibles(self, unidades):

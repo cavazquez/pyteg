@@ -10,6 +10,7 @@ class Game:
         self._turnos = [PrimerTurno("NUllJugador")]
         self._jugadores = jugadores
         self._num_turno = 0
+        self._num_ronda = 1
         self._mazo = mazo
         self._cant_canjes = {}
 
@@ -50,10 +51,15 @@ class Game:
         return self._turnos
 
     def turno_actual(self):
+        if self._num_turno >= len(self._turnos):
+            return self.turnos()[-1]
         return self.turnos()[self.id_turno_actual()]
 
     def id_turno_actual(self):
         return self._num_turno
+
+    def num_ronda(self):
+        return self._num_ronda
 
     def cant_canjes(self, jugador):
         return self._cant_canjes[jugador]
@@ -84,13 +90,14 @@ class Game:
         num = self._num_turno
         cant_jugadores = self.cant_jugadores()
         if num == cant_jugadores:
-            self._turnos = [SegundoTurno(j) for j in self.lista_jugadores()]
-            return
-
-        if num % (cant_jugadores) == 0:
-            self._turnos = [
-                SiguientesTurnos(j, self.mapa()) for j in self.lista_jugadores()
-            ]
+            if isinstance(self.turno_actual(), PrimerTurno):
+                self._turnos = [SegundoTurno(j) for j in self.lista_jugadores()]
+            else:
+                self._turnos = [
+                    SiguientesTurnos(j, self.mapa()) for j in self.lista_jugadores()
+                ]
+            self._num_turno = 0
+            self._num_ronda += 1
 
     def jugadores(self):
         return self._jugadores
