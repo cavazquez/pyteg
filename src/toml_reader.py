@@ -14,7 +14,6 @@ class TomlReader:
         if "Adyacencias" in self.parsed_toml:
             self.adyacencias = self.parsed_toml["Adyacencias"]
             del self.parsed_toml["Adyacencias"]
-            print(f"adyacencias: {self.adyacencias}")
 
         for continente in self.parsed_toml:
             if not isinstance(self.parsed_toml[continente], dict):
