@@ -108,6 +108,9 @@ class Server:
         for client in self.dame_clientes():
             client.transmisor.enviar_turno(turno_actual, self.game.num_ronda())
 
+        # Enviar el mapa actualizado para actualizar las unidades disponibles
+        self.enviar_mapa()
+
     def enviar_chat(self, username, msg):
         for client in self.dame_clientes():
             client.transmisor.enviar_chat(f"{username}: {msg}")
