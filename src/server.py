@@ -166,44 +166,9 @@ class Server:
         self._turno_timer.start()
 
     def enviar_mapa(self):
-        # Primero, enviar la información del mapa a todos los clientes
+        """Envía el estado actual del mapa a todos los clientes conectados."""
         for client in self.dame_clientes():
-            for pais in self.mapa.paises():
-                unidades = self.mapa.cantidad_unidades(pais)
-                userid = self.mapa.ocupado_por(pais).userid()
-                print(f"{pais} {userid} {unidades}")
-                client.transmisor.enviar_pais(pais, userid, unidades)
-
-        # Luego, enviar las unidades disponibles a cada jugador
-        if (
-            hasattr(self, "game")
-            and self.game is not None
-            and hasattr(self.game, "turno_actual")
-        ):
-            for client in self.dame_clientes():
-                # Buscar el turno del jugador actual
-                turno_jugador = None
-                for turno in self.game.turnos():
-                    if (
-                        hasattr(turno, "jugador_actual")
-                        and turno.jugador_actual() == client
-                    ):
-                        turno_jugador = turno
-                        break
-
-                if turno_jugador is not None:
-                    # Calcular unidades disponibles para este jugador
-                    unidades_disponibles = {
-                        "infanteria": turno_jugador.cant_unidades(),
-                        "misiles": 0,  # Por defecto 0 misiles
-                    }
-
-                    # Verificar si el jugador tiene misiles disponibles (si corresponde)
-                    if hasattr(turno_jugador, "cant_misiles"):
-                        unidades_disponibles["misiles"] = turno_jugador.cant_misiles()
-
-                    # Enviar las unidades disponibles al cliente
-                    client.transmisor.enviar_unidades_disponibles(unidades_disponibles)
+            client.transmisor.enviar_mapa(self.mapa, self.game)
 
 
 def parse_arguments() -> argparse.Namespace:

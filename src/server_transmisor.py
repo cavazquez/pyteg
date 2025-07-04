@@ -91,3 +91,38 @@ class ServerTransmisor:
         """
         msg = MsgActualizarListaJugadores(jugadores)
         self._send_message(msg)
+
+    def enviar_mapa(self, mapa, game):
+        """Envía el estado actual del mapa al cliente.
+
+        Args:
+            mapa: Instancia del mapa del juego
+            game: Instancia del juego actual
+        """
+        # Enviar información de cada país
+        for pais in mapa.paises():
+            unidades = mapa.cantidad_unidades(pais)
+            userid = mapa.ocupado_por(pais).userid()
+            print(f"{pais} {userid} {unidades}")
+            self.enviar_pais(pais, userid, unidades)
+
+        # Enviar unidades disponibles si el juego ha comenzado
+        if game is not None and hasattr(game, "turno_actual"):
+            # Buscar el turno del jugador actual
+            turno_jugador = None
+            for turno in game.turnos():
+                if (
+                    hasattr(turno, "jugador_actual")
+                    and turno.jugador_actual() == self._conn
+                ):
+                    turno_jugador = turno
+                    break
+
+            if turno_jugador is not None:
+                unidades_disponibles = {
+                    "infanteria": turno_jugador.cant_unidades(),
+                    "misiles": turno_jugador.cant_misiles()
+                    if hasattr(turno_jugador, "cant_misiles")
+                    else 0,
+                }
+                self.enviar_unidades_disponibles(unidades_disponibles)
