@@ -1,0 +1,31 @@
+@startuml Finalizar Turno - Diagrama de Secuencia
+
+actor Usuario
+participant "GUI" as gui
+participant "ClientTransmisor" as client
+participant "Server" as server
+participant "ServerTaskFinalizarTurno" as task
+participant "Game" as game
+participant "ServerTransmisor" as server_trans
+
+== Cliente ==
+
+Usuario -> gui: Click en "Finalizar Turno"
+gui -> client: finalizar_turno()
+client -> client: Crea MsgFinalizarTurno()
+client -> server: Envía mensaje {"mensaje": "finalizar_turno"}
+
+== Servidor ==
+
+server -> task: Crea ServerTaskFinalizarTurno
+server -> task: run()
+task -> game: finalizar_turno()
+game -> game: Incrementa contador de turno
+game -> game: Actualiza estado del juego
+
+task -> server_trans: enviar_turno_actual()
+server_trans --> client: Envía mensaje de turno actual
+client -> gui: update_turno(num_turno, num_ronda)
+gui -> gui: Actualiza interfaz de usuario
+
+@enduml

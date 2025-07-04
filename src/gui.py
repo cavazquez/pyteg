@@ -238,3 +238,12 @@ class Gui(QMainWindow):
 
     def closeEvent(self, _):  # noqa: N802
         self._vivo = False
+
+    def finalizar_turno(self):
+        """Método llamado cuando se hace clic en el botón Finalizar Turno."""
+        # Aquí puedes agregar la lógica para finalizar el turno actual
+        # Por ejemplo, notificar al servidor que el turno ha terminado
+        if hasattr(self, "transmisor") and hasattr(self.transmisor, "finalizar_turno"):
+            self.transmisor.finalizar_turno()
+        else:
+            print("No se pudo finalizar el turno: transmisor no disponible")

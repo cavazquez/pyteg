@@ -27,6 +27,13 @@ class ToolBar(QToolBar):
         # button_mover.triggered.connect(main_window.abrir_ventana_mover)
         self.addAction(button_mover)
 
+        # Botón para finalizar el turno
+        button_finalizar_turno = QAction(
+            QIcon("icons/finish.png"), "Finalizar Turno", self
+        )
+        button_finalizar_turno.triggered.connect(main_window.finalizar_turno)
+        self.addAction(button_finalizar_turno)
+
         # Expansor derecho
         right_spacer = QWidget(self)
         right_spacer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)

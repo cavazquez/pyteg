@@ -5,6 +5,7 @@ from src.client_msg import (
     MsgChat,
     MsgEmpezar,
     MsgEmpezarPartida,
+    MsgFinalizarTurno,
     MsgMoverUnidad,
     MsgSeleccionarColor,
     MsgSetUsername,
@@ -69,6 +70,12 @@ class IClientTransmisor(ABC):
                 'r', 'g', 'b')
         """
 
+    @abstractmethod
+    def finalizar_turno(self):
+        """
+        Envía un mensaje al servidor para finalizar el turno actual.
+        """
+
 
 class ClientNullTransmisor(IClientTransmisor):
     def __init__(self):
@@ -97,6 +104,9 @@ class ClientNullTransmisor(IClientTransmisor):
 
     def actualizar_lista_jugadores(self, _):
         pass
+
+    def finalizar_turno(self):
+        print("No puedes finalizar el turno. No estás conectado.")
 
 
 class ClientTransmisor(IClientTransmisor):
@@ -164,3 +174,10 @@ class ClientTransmisor(IClientTransmisor):
         """
         # Este método no necesita hacer nada aquí, ya que el cliente
         # procesará el mensaje a través de la cola de tareas
+
+    def finalizar_turno(self):
+        """
+        Envía un mensaje al servidor para finalizar el turno actual.
+        """
+        msg = MsgFinalizarTurno()
+        self._conn.send_data(msg.to_json())
