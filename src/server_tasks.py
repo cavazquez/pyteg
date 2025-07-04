@@ -137,29 +137,50 @@ class ServerTaskMoverUnidad(IServerTask):
             return
 
         # Verificar que los países sean adyacentes
-        print(
-            f"adyacencia: {client.server.mapa.obtener_paises_adyacentes(self._origen)}"
-        )
-        if self._destino not in client.server.mapa.obtener_paises_adyacentes(
-            self._origen
-        ):
+        paises_adyacentes = client.server.mapa.obtener_paises_adyacentes(self._origen)
+        if self._destino not in paises_adyacentes:
             print(f"{self._destino} no es adyacente a {self._origen}")
             return
 
-        # Verificar que hay suficientes unidades para mover
-        if client.server.mapa.cantidad_unidades(self._origen) <= self._cantidad:
-            print(f"No hay suficientes unidades en {self._origen} para mover")
+        # Verificar que haya suficientes unidades para mover
+        unidades_origen = client.server.mapa.cantidad_unidades(self._origen)
+        if unidades_origen <= self._cantidad:
+            print(
+                "No hay suficientes unidades en "
+                f"{self._origen} para mover {self._cantidad}"
+            )
             return
 
         # Mover las unidades
         client.server.mapa.mover(self._origen, self._destino, self._cantidad)
-
         print(
-            f"Se movieron {self._cantidad} unidad(es) de {self._origen} "
-            f"a {self._destino}"
+            f"Se movieron {self._cantidad} unidades de {self._origen} a {self._destino}"
         )
 
         # Notificar a todos los clientes sobre el cambio en el mapa
+        client.server.enviar_mapa()
+
+
+class ServerTaskFinalizarTurno(IServerTask):
+    def __init__(self, data):
+        super().__init__(data)
+
+    def run(self, client):
+        # Verificar que sea el turno del cliente actual
+        if not hasattr(client.server, "game") or client.server.game is None:
+            print("El juego no ha comenzado")
+            return
+
+        turno_actual = client.server.game.turno_actual()
+        if turno_actual.jugador_actual() != client:
+            print(f"No es el turno de {client.userid()}")
+            return
+
+        # Finalizar el turno actual
+        client.server.game.finalizar_turno()
+
+        # Notificar a todos los clientes sobre el cambio de turno
+        client.server.enviar_turno_actual()
         client.server.enviar_mapa()
 
 
@@ -171,4 +192,5 @@ dict_task = {
     "set_username": ServerTaskSetUsername,
     "agregar_unidad": ServerTaskAgregarUnidad,
     "mover_unidad": ServerTaskMoverUnidad,
+    "finalizar_turno": ServerTaskFinalizarTurno,
 }

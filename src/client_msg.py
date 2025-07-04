@@ -111,3 +111,13 @@ class MsgMoverUnidad(IMsg):
             "cantidad": self._cantidad,
         }
         return json.dumps(data)
+
+
+class MsgFinalizarTurno(IMsg):
+    def __init__(self):
+        """Crea un mensaje para finalizar el turno actual."""
+        self._tipo = "finalizar_turno"
+
+    def to_json(self):
+        data = {"mensaje": self._tipo}
+        return json.dumps(data)
