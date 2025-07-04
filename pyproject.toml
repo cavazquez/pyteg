@@ -6,6 +6,10 @@ dependencies = [
     "pyside6==6.9.1",
 ]
 
+[project.scripts]
+pyteg-client = "src.run_client:main"
+pyteg-server = "src.server:main"
+
 [tool.ruff.format]
 preview = true
 
