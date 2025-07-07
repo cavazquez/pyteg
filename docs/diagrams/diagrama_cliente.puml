@@ -1,0 +1,80 @@
+@startuml
+
+title Diagrama de Secuencia - Cliente TEG
+
+actor Usuario
+participant "run_client.py" as main
+participant "Client" as client
+participant "QApplication" as qt_app
+participant "Gui" as gui
+participant "ConnectionClient" as connection
+participant "QTcpSocket" as socket
+participant "ClientTransmisor" as transmisor
+participant "ClientTaskManager" as task_manager
+
+Usuario -> main: Ejecuta la aplicación
+activate main
+
+main -> qt_app: Crea QApplication
+activate qt_app
+
+main -> client: Crea instancia de Client()
+activate client
+client --> main: Instancia creada
+deactivate client
+
+main -> gui: Crea instancia de Gui(client)
+activate gui
+gui -> gui: Configura la interfaz de usuario
+gui --> main: Instancia creada
+deactivate gui
+
+main -> gui: show()
+activate gui
+gui -> qt_app: exec()
+activate qt_app
+
+' Conexión al servidor
+Usuario -> gui: Ingresa datos de conexión
+Usuario -> gui: Click en "Conectar"
+gui -> connection: Crea ConnectionClient(host, port, username)
+activate connection
+
+gui -> connection: conectar()
+connection -> socket: connectToHost(host, port)
+activate socket
+
+socket --> connection: connected()
+connection -> connection: on_connected()
+connection -> transmisor: set_username(username)
+activate transmisor
+transmisor --> connection
+deactivate transmisor
+
+connection -> task_manager: Crea instancia de ClientTaskManager
+activate task_manager
+task_manager --> connection
+deactivate task_manager
+
+alt Conexión exitosa
+    connection -> gui: Muestra "Conexión exitosa"
+else Error de conexión
+    connection -> gui: Muestra mensaje de error
+end
+
+deactivate connection
+
+' Flujo principal de la aplicación
+loop Mientras la aplicación esté abierta
+    Usuario <-> gui: Interactúa con la interfaz
+    gui <-> transmisor: Envía/Recibe mensajes
+    transmisor <-> socket: Envía/Recibe datos
+    socket <-> task_manager: Procesa tareas
+    task_manager <-> gui: Actualiza la interfaz
+end
+
+main -> qt_app: exit()
+deactivate qt_app
+deactivate gui
+
+@enduml
