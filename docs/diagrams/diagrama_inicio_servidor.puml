@@ -1,0 +1,67 @@
+@startuml Inicio del Servidor
+
+title Diagrama de Secuencia - Inicio del Servidor
+
+actor Usuario
+participant "main()" as main
+participant "Server" as server
+participant "registrar_jugadores()" as registrar
+participant "ServerSocket" as socket
+participant "ServerBuildClient" as builder
+participant "Client" as client
+participant "Thread" as thread
+
+Usuario -> main: Ejecuta el script del servidor
+activate main
+
+main -> server: Crea instancia de Server()
+activate server
+server --> main: Instancia de Server creada
+deactivate server
+
+main -> registrar: registrar_jugadores(server, host, port)
+activate registrar
+
+registrar -> builder: Crea instancia de ServerBuildClient()
+activate builder
+builder --> registrar: Instancia creada
+deactivate builder
+
+registrar -> socket: socket.socket(AF_INET, SOCK_STREAM)
+activate socket
+
+registrar -> socket: bind((host, port))
+registrar -> socket: listen()
+
+loop Esperando conexiones
+    registrar -> socket: accept()
+    note right: Bloquea hasta nueva conexión
+    
+    socket --> registrar: (conn, addr)
+    
+    registrar -> registrar: Crea ConnectionServer(conn, addr)
+    
+    registrar -> builder: build(connection, server)
+    activate builder
+    builder -> builder: Crea nuevo Client()
+    builder --> registrar: (user_id, client)
+    deactivate builder
+    
+    registrar -> server: registrar_cliente(user_id, client)
+    activate server
+    server -> server: Asigna color al cliente
+    server -> server: Almacena cliente en _clients
+    server --> registrar
+    deactivate server
+    
+    registrar -> thread: Thread(target=client.run, daemon=True)
+    activate thread
+    thread -> client: run()
+    activate client
+    registrar -> thread: start()
+    end
+    
+    note over registrar: El servidor sigue aceptando\nnuevas conexiones
+end
+
+@enduml
