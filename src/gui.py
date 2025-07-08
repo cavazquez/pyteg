@@ -140,12 +140,44 @@ class Gui(QMainWindow):
         """
         for i, (name, color) in enumerate(players):
             if i < len(self.player_labels):
+                # Calcular el contraste para el texto basado
+                # en la luminosidad del color de fondo
+                # Fórmula de luminosidad relativa:
+                # 0.299*R + 0.587*G + 0.114*B
+                r, g, b = color.red(), color.green(), color.blue()
+                brightness = (0.299 * r + 0.587 * g + 0.114 * b) / 255.0
+                text_color = "white" if brightness < 0.6 else "black"
+
+                # Establecer estilo con fondo ligeramente
+                # oscuro y borde para mejor contraste
                 self.player_labels[i].setText(f"Jugador {i + 1}: {name}")
-                self.player_labels[i].setStyleSheet(f"color: {color.name()};")
+                self.player_labels[i].setStyleSheet(
+                    f"""
+                    QLabel {{
+                        color: {text_color};
+                        background-color: {color.name()};
+                        padding: 4px;
+                        border-radius: 4px;
+                        border: 1px solid #333;
+                        margin: 1px;
+                    }}
+                    """
+                )
         # Clear remaining labels if fewer than 8 players
         for j in range(len(players), len(self.player_labels)):
             self.player_labels[j].setText(f"Jugador {j + 1}: [Sin asignar]")
-            self.player_labels[j].setStyleSheet("color: gray;")
+            self.player_labels[j].setStyleSheet(
+                """
+                QLabel {
+                    color: #CCCCCC;
+                    background-color: #333333;
+                    padding: 4px;
+                    border-radius: 4px;
+                    border: 1px solid #555555;
+                    margin: 1px;
+                }
+                """
+            )
 
     def abrir_ventana_conectar(self):
         self.ventana_conectar = None
