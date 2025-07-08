@@ -2,7 +2,9 @@ import contextlib
 
 from PySide6.QtCore import QSize, Qt
 from PySide6.QtWidgets import (
+    QFrame,
     QGridLayout,
+    QHBoxLayout,
     QLabel,
     QMainWindow,
     QSplitter,
@@ -63,6 +65,22 @@ class Gui(QMainWindow):
         return self._vivo
 
     def setup_graphics_view(self):
+        # Inicializar componentes principales
+        self._setup_chat_and_toolbar()
+        self._setup_scene_and_view()
+
+        # Crear splitters y layout principal
+        vertical_splitter = self._create_vertical_splitter()
+        horizontal_splitter = self._create_horizontal_splitter(vertical_splitter)
+
+        # Configurar columna derecha
+        right_column = self._setup_right_column()
+        horizontal_splitter.addWidget(right_column)
+
+        # Configurar el layout principal
+        self._setup_main_layout(horizontal_splitter)
+
+    def _setup_chat_and_toolbar(self):
         # Agrego el Chat
         self.chat = Chat(self)
         self.chat.show()
@@ -71,10 +89,12 @@ class Gui(QMainWindow):
         toolbar = ToolBar("My main toolbar", self)
         self.addToolBar(toolbar)
 
+    def _setup_scene_and_view(self):
         # Agrego la escena y la vista
         self.scene = QCustomGraphicsScene(self)
         self.view = QCustomGraphicsView(self.scene, self)
 
+    def _create_vertical_splitter(self):
         # Create a splitter to hold the QGraphicsView and Chat
         vertical_splitter = QSplitter()
         vertical_splitter.setOrientation(Qt.Vertical)
@@ -82,28 +102,37 @@ class Gui(QMainWindow):
         vertical_splitter.addWidget(self.chat)
         vertical_splitter.setStretchFactor(0, 9)  # 90% for QGraphicsView
         vertical_splitter.setStretchFactor(1, 1)  # 10% for Chat
+        return vertical_splitter
 
+    def _create_horizontal_splitter(self, vertical_splitter):
         # Create a horizontal splitter to hold the vertical splitter
-        # and the right column
         horizontal_splitter = QSplitter()
         horizontal_splitter.setOrientation(Qt.Horizontal)
         horizontal_splitter.addWidget(vertical_splitter)
+        return horizontal_splitter
 
+    def _setup_right_column(self):
         # Create a placeholder widget for the right column
         right_column = QWidget()
         right_column_layout = QVBoxLayout()
+        right_column_layout.setContentsMargins(10, 15, 10, 10)
+        right_column_layout.setSpacing(8)
 
-        # Add a list of players to the right column
-        self.player_labels = []
-        for i in range(8):  # Max 8 players
-            label = QLabel(f"Jugador {i + 1}: [Sin asignar]")
-            label.setStyleSheet("color: gray;")  # Default color
-            right_column_layout.addWidget(label)
-            self.player_labels.append(label)
+        # Añadir título y lista de jugadores
+        self._add_players_title(right_column_layout)
+        self._setup_players_list(right_column_layout)
 
         # Add a spacer to separate the player list from the values
         right_column_layout.addStretch()
 
+        # Add the 6 values below the player list
+        self._setup_continent_values(right_column_layout)
+
+        # Configurar el layout de la columna derecha
+        right_column.setLayout(right_column_layout)
+        return right_column
+
+    def _setup_continent_values(self, layout):
         # Add the 6 values below the player list
         self.value_labels = {}
         values = [
@@ -117,20 +146,89 @@ class Gui(QMainWindow):
         for value in values:
             label = QLabel(f"{value}: 0")  # Default value is 0
             label.setStyleSheet("font-weight: bold;")  # Make the text bold
-            right_column_layout.addWidget(label)
+            layout.addWidget(label)
             self.value_labels[value] = label
 
-        right_column.setLayout(right_column_layout)
-        horizontal_splitter.addWidget(right_column)
-        horizontal_splitter.setStretchFactor(0, 8)  # 80% for the left side
-        horizontal_splitter.setStretchFactor(1, 2)  # 20% for the right column
+    def _add_players_title(self, layout):
+        # Título para la sección de jugadores
+        players_title = QLabel("JUGADORES")
+        players_title.setAlignment(Qt.AlignCenter)
+        players_title.setStyleSheet("""
+            QLabel {
+                color: #333333;
+                font-size: 14px;
+                font-weight: bold;
+                padding: 5px;
+                border-bottom: 2px solid #4361ee;
+                margin-bottom: 10px;
+            }
+        """)
+        layout.addWidget(players_title)
 
+    def _setup_players_list(self, layout):
+        # Crear un contenedor para la lista de jugadores sin scroll
+        players_container = QWidget()
+        players_layout = QVBoxLayout(players_container)
+        players_layout.setContentsMargins(0, 0, 0, 0)
+        players_layout.setSpacing(6)
+
+        # Add a list of players to the right column
+        self.player_labels = []
+        self._create_player_widgets(players_layout)
+
+        # Añadir un espaciador al final de la lista de jugadores
+        players_layout.addStretch()
+
+        # Añadir el contenedor al layout principal
+        layout.addWidget(players_container)
+
+    def _create_player_widgets(self, layout):
+        for i in range(8):  # Max 8 players
+            # Crear un widget para cada jugador
+            player_widget = QFrame()
+            player_widget.setFrameShape(QFrame.StyledPanel)
+            player_widget.setFrameShadow(QFrame.Raised)
+
+            player_layout = QHBoxLayout(player_widget)
+            player_layout.setContentsMargins(8, 8, 8, 8)
+            player_layout.setSpacing(8)
+
+            # Indicador de turno (círculo)
+            turn_indicator = QLabel()
+            turn_indicator.setFixedSize(12, 12)
+            turn_indicator.setStyleSheet("""
+                background-color: transparent;
+                border-radius: 6px;
+            """)
+            player_layout.addWidget(turn_indicator)
+
+            # Etiqueta con el nombre del jugador
+            label = QLabel(f"Jugador {i + 1}: [Sin asignar]")
+            label.setStyleSheet("""
+                color: #777777;
+                font-size: 13px;
+            """)
+            player_layout.addWidget(label)
+
+            # Guardar referencia a la etiqueta y al indicador
+            self.player_labels.append((label, turn_indicator, player_widget))
+
+            # Añadir el widget del jugador al layout
+            layout.addWidget(player_widget)
+
+    def _setup_main_layout(self, horizontal_splitter):
         # Create a widget to hold the QGraphicsView and input area
         self.main_widget = QWidget(self)
         main_layout = QGridLayout()
         main_layout.addWidget(horizontal_splitter, 0, 0)
         self.main_widget.setLayout(main_layout)
         self.setCentralWidget(self.main_widget)
+
+        # Configurar factores de estiramiento para el splitter horizontal
+        horizontal_splitter.setStretchFactor(0, 8)  # 80% for the left side
+        horizontal_splitter.setStretchFactor(1, 2)  # 20% for the right column
+
+        # Asegurar que la vista se muestre
         self.view.show()
 
     def update_player_list(self, players):
@@ -138,46 +236,74 @@ class Gui(QMainWindow):
         Updates the player list on the right column.
         :param players: List of tuples (name, color) where color is a QColor.
         """
+        # Actualizar el turno activo (por ahora, asumimos que el primero es el activo)
+        active_player = 0 if players else -1
+
         for i, (name, color) in enumerate(players):
             if i < len(self.player_labels):
-                # Calcular el contraste para el texto basado
-                # en la luminosidad del color de fondo
-                # Fórmula de luminosidad relativa:
-                # 0.299*R + 0.587*G + 0.114*B
+                # Obtener las referencias a los widgets
+                label, turn_indicator, player_widget = self.player_labels[i]
+
+                # Calcular el contraste para el texto basado en la luminosidad
+                # del color de fondo
                 r, g, b = color.red(), color.green(), color.blue()
                 brightness = (0.299 * r + 0.587 * g + 0.114 * b) / 255.0
                 text_color = "white" if brightness < 0.6 else "black"
 
-                # Establecer estilo con fondo ligeramente
-                # oscuro y borde para mejor contraste
-                self.player_labels[i].setText(f"Jugador {i + 1}: {name}")
-                self.player_labels[i].setStyleSheet(
-                    f"""
-                    QLabel {{
-                        color: {text_color};
-                        background-color: {color.name()};
-                        padding: 4px;
-                        border-radius: 4px;
-                        border: 1px solid #333;
-                        margin: 1px;
-                    }}
-                    """
+                # Actualizar el texto de la etiqueta
+                label.setText(f"Jugador {i + 1}: {name}")
+                label.setStyleSheet(
+                    f"color: {text_color}; font-weight: bold; font-size: 13px;"
                 )
-        # Clear remaining labels if fewer than 8 players
+
+                # Actualizar el indicador de turno
+                if i == active_player:
+                    turn_indicator.setStyleSheet(f"""
+                        background-color: {color.name()};
+                        border: 2px solid {text_color};
+                        border-radius: 6px;
+                    """)
+                else:
+                    turn_indicator.setStyleSheet(f"""
+                        background-color: {color.name()};
+                        border-radius: 6px;
+                    """)
+
+                # Establecer estilo para el widget del jugador
+                player_widget.setStyleSheet(f"""
+                    QFrame {{
+                        background-color: {color.name()};
+                        border-radius: 6px;
+                        border: 1px solid
+                            {"#555555" if brightness < 0.6 else "#CCCCCC"};
+                    }}
+                """)
+
+        # Limpiar las etiquetas restantes si hay menos de 8 jugadores
         for j in range(len(players), len(self.player_labels)):
-            self.player_labels[j].setText(f"Jugador {j + 1}: [Sin asignar]")
-            self.player_labels[j].setStyleSheet(
-                """
-                QLabel {
-                    color: #CCCCCC;
-                    background-color: #333333;
-                    padding: 4px;
-                    border-radius: 4px;
-                    border: 1px solid #555555;
-                    margin: 1px;
+            label, turn_indicator, player_widget = self.player_labels[j]
+
+            # Restablecer el texto y estilo
+            label.setText(f"Jugador {j + 1}: [Sin asignar]")
+            label.setStyleSheet("""
+                color: #777777;
+                font-size: 13px;
+            """)
+
+            # Restablecer el indicador de turno
+            turn_indicator.setStyleSheet("""
+                background-color: transparent;
+                border-radius: 6px;
+            """)
+
+            # Restablecer el estilo del widget
+            player_widget.setStyleSheet("""
+                QFrame {
+                    background-color: #F5F5F5;
+                    border-radius: 6px;
+                    border: 1px solid #DDDDDD;
                 }
-                """
-            )
+            """)
 
     def abrir_ventana_conectar(self):
         self.ventana_conectar = None
