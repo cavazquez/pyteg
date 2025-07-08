@@ -45,10 +45,10 @@ class VentanaConectar(QDialog):
         self.setFixedSize(QSize(400, 300))
         # Quitar botones de maximizar, minimizar y ayuda, dejando solo el de cerrar
         self.setWindowFlags(
-            Qt.Dialog |
-            Qt.CustomizeWindowHint |
-            Qt.WindowTitleHint |
-            Qt.WindowCloseButtonHint
+            Qt.Dialog
+            | Qt.CustomizeWindowHint
+            | Qt.WindowTitleHint
+            | Qt.WindowCloseButtonHint
         )
 
     def _setup_header(self, parent_layout):
