@@ -1,3 +1,4 @@
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QHBoxLayout,
     QLineEdit,
@@ -18,34 +19,41 @@ class Chat(QWidget):
     def setup_ui(self):
         # Layout principal
         main_layout = QVBoxLayout(self)
-        main_layout.setContentsMargins(2, 2, 2, 2)
-        main_layout.setSpacing(2)
+        main_layout.setContentsMargins(5, 5, 5, 5)
+        main_layout.setSpacing(5)
 
-        # Área de mensajes
+        # Área de mensajes con scroll
         self.text_field = QTextEdit()
         self.text_field.setReadOnly(True)
         self.text_field.setMinimumHeight(150)
+        self.text_field.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+        self.text_field.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.text_field.setLineWrapMode(QTextEdit.WidgetWidth)
+        self.text_field.setAcceptRichText(True)
 
         # Contenedor para el input y el botón
         input_container = QWidget()
+        input_container.setFixedHeight(40)
         input_layout = QHBoxLayout(input_container)
-        input_layout.setContentsMargins(0, 0, 0, 0)
-        input_layout.setSpacing(5)
+        input_layout.setContentsMargins(0, 2, 0, 2)
+        input_layout.setSpacing(8)
 
         # Campo de entrada de texto
         self.input_field = QLineEdit()
         self.input_field.setPlaceholderText("Escribe un mensaje...")
         self.input_field.returnPressed.connect(self.send_message)
+        self.input_field.setMinimumHeight(30)
 
         # Botón de enviar
-        self.send_button = QPushButton("Enviar")
-        self.send_button.setFixedSize(60, 30)
+        self.send_button = QPushButton()
+        self.send_button.setFixedSize(35, 30)
         self.send_button.setToolTip("Enviar mensaje")
+        self.send_button.setText("➤")
         self.send_button.clicked.connect(self.send_message)
 
         # Agregar widgets al layout de entrada
-        input_layout.addWidget(self.input_field)
-        input_layout.addWidget(self.send_button)
+        input_layout.addWidget(self.input_field, 85)
+        input_layout.addWidget(self.send_button, 15)
 
         # Agregar widgets al layout principal
         main_layout.addWidget(self.text_field)
@@ -58,67 +66,136 @@ class Chat(QWidget):
         # Estilos generales para la ventana
         self.setStyleSheet("""
             QWidget {
-                background-color: #f5f5f5;
+                background-color: #f8f9fa;
                 font-family: 'Segoe UI', Arial, sans-serif;
+                color: #212529;
+            }
+
+            /* Estilo del título */
+            QLabel {
+                color: #343a40;
+                padding: 5px;
             }
 
             /* Estilo del área de mensajes */
             QTextEdit {
                 background-color: white;
-                border: 1px solid #ddd;
-                border-radius: 4px;
-                padding: 5px;
+                border: 1px solid #e9ecef;
+                border-radius: 8px;
+                padding: 10px;
                 font-size: 13px;
-                color: #333;
-                selection-background-color: #4CAF50;
+                color: #212529;
+                selection-background-color: #6c757d;
                 selection-color: white;
+            }
+
+            QTextEdit QScrollBar:vertical {
+                border: none;
+                background: #f8f9fa;
+                width: 8px;
+                border-radius: 4px;
+            }
+
+            QTextEdit QScrollBar::handle:vertical {
+                background: #adb5bd;
+                min-height: 30px;
+                border-radius: 4px;
+            }
+
+            QTextEdit QScrollBar::handle:vertical:hover {
+                background: #6c757d;
+            }
+
+            QTextEdit QScrollBar::add-line:vertical,
+            QTextEdit QScrollBar::sub-line:vertical {
+                height: 0px;
             }
 
             /* Estilo del campo de entrada */
             QLineEdit {
-                border: 1px solid #ddd;
-                border-radius: 12px;
-                padding: 4px 10px;
+                border: 1px solid #ced4da;
+                border-radius: 18px;
+                padding: 8px 15px;
                 font-size: 13px;
                 background-color: white;
-                color: #333;
-                min-height: 30px;
+                color: #212529;
+                min-height: 35px;
             }
 
             QLineEdit:focus {
-                border-color: #4CAF50;
+                border-color: #4361ee;
+                outline: 0;
+            }
+
+            QLineEdit::placeholder {
+                color: #adb5bd;
+                font-style: italic;
             }
 
             /* Estilo del botón de enviar */
             QPushButton {
-                background-color: #4CAF50;
+                background-color: #4361ee;
                 border: none;
-                border-radius: 12px;
+                border-radius: 18px;
                 color: white;
-                font-weight: normal;
-                min-width: 60px;
-                padding: 2px 8px;
-                font-size: 12px;
+                font-weight: bold;
+                font-size: 16px;
+                min-width: 35px;
+                min-height: 35px;
+                padding: 0;
+                text-align: center;
             }
 
             QPushButton:hover {
-                background-color: #45a049;
+                background-color: #3a56d4;
             }
 
             QPushButton:pressed {
-                background-color: #3e8e41;
+                background-color: #2f46c2;
             }
 
             QPushButton:disabled {
-                background-color: #cccccc;
+                background-color: #ced4da;
+                color: #f8f9fa;
             }
         """)
 
     def send_message(self):
-        text = self.input_field.text()
+        text = self.input_field.text().strip()
         if text:
+            # Enviar el mensaje
             self.main_window.transmisor.enviar_chat(text)
+
+            # Limpiar el campo de entrada
             self.input_field.clear()
 
+            # Dar foco nuevamente al campo de entrada para seguir escribiendo
+            self.input_field.setFocus()
+
     def append(self, text):
-        self.text_field.append(text)
+        # Determinar si el mensaje es del usuario actual o de otro jugador
+        if text.startswith("Tú:"):
+            # Formato para mensajes propios (alineados a la derecha con color diferente)
+            formatted_text = (
+                f"<div align='right' style='margin: 5px 0;'>"
+                f"<span style='background-color: #4361ee; color: white; "
+                f"padding: 6px 12px; border-radius: 15px;'>"
+                f"{text}</span></div>"
+            )
+        else:
+            # Formato para mensajes de otros (alineados a la izquierda)
+            formatted_text = (
+                f"<div align='left' style='margin: 5px 0;'>"
+                f"<span style='background-color: #e9ecef; "
+                f"color: #212529;"
+                f"padding: 6px 12px; border-radius: 15px;'>"
+                f"{text}</span></div>"
+            )
+
+        # Añadir el mensaje formateado
+        self.text_field.append(formatted_text)
+
+        # Desplazar automáticamente hacia abajo para mostrar el mensaje más reciente
+        self.text_field.verticalScrollBar().setValue(
+            self.text_field.verticalScrollBar().maximum()
+        )
