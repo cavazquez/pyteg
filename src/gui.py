@@ -34,7 +34,7 @@ class Gui(QMainWindow):
         self.ventana_conectar = None
         self.setWindowTitle("PyTeg")
         # self.setFixedSize(QSize(800, 600))
-        self.resize(QSize(800, 600))
+        self.resize(QSize(1280, 800))
         self.setMinimumSize(QSize(800, 600))
         self.setMouseTracking(True)
 
