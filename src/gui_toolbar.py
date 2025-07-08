@@ -145,7 +145,7 @@ class ToolBar(QToolBar):
         default_action = QAction("Tamaño por defecto", self)
         with contextlib.suppress(Exception):
             default_action.setIcon(QIcon("icons/default_size.png"))
-        default_action.triggered.connect(lambda: self.resize_window(1024, 768))
+        default_action.triggered.connect(lambda: self.resize_window(1280, 800))
         menu.addAction(default_action)
 
         return menu
