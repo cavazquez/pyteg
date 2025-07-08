@@ -42,8 +42,14 @@ class VentanaConectar(QDialog):
     def _setup_window(self):
         """Configura las propiedades básicas de la ventana"""
         self.setWindowTitle("Conectar al servidor")
-        self.setFixedSize(QSize(450, 350))
-        self.setWindowFlags(self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
+        self.setFixedSize(QSize(400, 300))
+        # Quitar botones de maximizar, minimizar y ayuda, dejando solo el de cerrar
+        self.setWindowFlags(
+            Qt.Dialog |
+            Qt.CustomizeWindowHint |
+            Qt.WindowTitleHint |
+            Qt.WindowCloseButtonHint
+        )
 
     def _setup_header(self, parent_layout):
         """Configura el título y la descripción"""
