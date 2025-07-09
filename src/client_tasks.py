@@ -180,6 +180,13 @@ class ClientTaskTurno(IClientTask):
         )  # Por defecto 1 si no se especifica
         main_window.update_turno(num_turno, num_ronda)
 
+        # Mostrar mensaje de inicio de turno en el chat
+        main_window.chat.append(f"Turno {num_turno + 1} iniciado")
+
+        # Solicitar actualización de unidades disponibles al servidor
+        # Esto debería ser manejado por el servidor enviando un mensaje
+        # de unidades_disponibles
+
 
 class ClientTaskTiempo(IClientTask):
     def __init__(self, data):

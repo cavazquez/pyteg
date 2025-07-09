@@ -122,6 +122,9 @@ class ServerTaskAgregarUnidad(IServerTask):
         # Notificar a todos los clientes sobre el cambio en el mapa
         client.server.enviar_mapa()
 
+        # Actualizar las unidades disponibles en la interfaz del jugador
+        client.server.enviar_unidades_disponibles()
+
 
 class ServerTaskMoverUnidad(IServerTask):
     def __init__(self, data):
