@@ -364,13 +364,67 @@ class Gui(QMainWindow):
 
         Args:
             unidades (dict): Diccionario con el tipo de unidad y la cantidad disponible.
-                Ejemplo: {"infanteria": 5, "misiles": 2}
+                Ejemplo: {"infanteria": 5, "misiles": 2, "Africa": 3}
         """
-        # Actualizar la etiqueta de Generales con las unidades de infantería
+        # Mapeo de nombres de continentes del servidor a los de la GUI
+        continent_mapping = {
+            "Africa": "África",
+            "Europa": "Europa",
+            "Asia": "Asia",
+            "América del Sur": "América del Sur",
+            "América del Norte": "América del Norte",
+            "Oceanía": "Oceanía",
+        }
+
+        # Actualizar unidades generales (infantería)
         if "infanteria" in unidades:
-            self.value_labels["Generales"].setText(
-                f"Generales: {unidades['infanteria']}"
-            )
+            cantidad = unidades["infanteria"]
+            # Estilo con color verde si hay unidades disponibles
+            if cantidad > 0:
+                style = (
+                    "font-weight: bold; "
+                    "color: #2E7D32; "
+                    "background-color: #E8F5E8; "
+                    "padding: 4px 8px; "
+                    "border-radius: 4px; "
+                    "border-left: 3px solid #4CAF50;"
+                )
+                text = f"🪖 Generales: {cantidad}"
+            else:
+                style = "font-weight: bold; color: #666666;"
+                text = f"🪖 Generales: {cantidad}"
+
+            self.value_labels["Generales"].setText(text)
+            self.value_labels["Generales"].setStyleSheet(style)
+
+        # Actualizar unidades de continentes
+        for server_name, gui_name in continent_mapping.items():
+            if server_name in unidades and gui_name in self.value_labels:
+                cantidad = unidades[server_name]
+                if cantidad > 0:
+                    # Estilo destacado para continentes con unidades disponibles
+                    style = (
+                        "font-weight: bold; "
+                        "color: #1565C0; "
+                        "background-color: #E3F2FD; "
+                        "padding: 4px 8px; "
+                        "border-radius: 4px; "
+                        "border-left: 3px solid #2196F3;"
+                    )
+                    text = f"🌍 {gui_name}: {cantidad}"
+                else:
+                    # Estilo normal para continentes sin unidades
+                    style = "font-weight: bold; color: #666666;"
+                    text = f"{gui_name}: 0"
+
+                self.value_labels[gui_name].setText(text)
+                self.value_labels[gui_name].setStyleSheet(style)
+            elif gui_name in self.value_labels:
+                # Resetear continentes que no tienen unidades disponibles
+                self.value_labels[gui_name].setText(f"{gui_name}: 0")
+                self.value_labels[gui_name].setStyleSheet(
+                    "font-weight: bold; color: #666666;"
+                )
 
         # Actualizar la etiqueta de Misiles si está disponible
         if "misiles" in unidades and unidades["misiles"] > 0:
@@ -380,11 +434,19 @@ class Gui(QMainWindow):
                 layout = self.value_labels["Generales"].parent().layout()
                 index = layout.indexOf(self.value_labels["Generales"]) + 1
 
-                self.misiles_label = QLabel(f"Misiles: {unidades['misiles']}")
-                self.misiles_label.setStyleSheet("font-weight: bold;")
+                self.misiles_label = QLabel(f"🚀 Misiles: {unidades['misiles']}")
+                style = (
+                    "font-weight: bold; "
+                    "color: #D32F2F; "
+                    "background-color: #FFEBEE; "
+                    "padding: 4px 8px; "
+                    "border-radius: 4px; "
+                    "border-left: 3px solid #F44336;"
+                )
+                self.misiles_label.setStyleSheet(style)
                 layout.insertWidget(index, self.misiles_label)
             else:
-                self.misiles_label.setText(f"Misiles: {unidades['misiles']}")
+                self.misiles_label.setText(f"🚀 Misiles: {unidades['misiles']}")
         elif hasattr(self, "misiles_label"):
             # Si no hay misiles disponibles, eliminar la etiqueta
             self.misiles_label.deleteLater()
