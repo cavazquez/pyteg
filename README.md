@@ -85,6 +85,26 @@ uvx coverage run --branch -m unittest
 uvx coverage report -m
 ```
 
+## Mejoras Recientes
+
+### Interfaz de Usuario Mejorada
+- **Visualización de Unidades Disponibles**: Las unidades disponibles ahora se muestran automáticamente al inicio de cada turno y se actualizan en tiempo real
+- **Estilo Visual Mejorado**: 
+  - 🪖 **Unidades Generales**: Verde con fondo destacado cuando hay unidades disponibles
+  - 🌍 **Unidades de Continentes**: Azul con fondo destacado para continentes con bonificación
+  - 🚀 **Misiles**: Rojo con estilo distintivo (cuando estén disponibles)
+  - Bordes coloreados y fondos sutiles para mejor visibilidad
+
+### Funcionalidades
+- **Actualización Automática**: Las unidades disponibles se actualizan automáticamente después de agregar unidades al mapa
+- **Feedback Visual**: Colores y iconos distintivos para diferentes tipos de unidades
+- **Soporte para Continentes**: Muestra unidades bonus por control de continentes
+
+### Documentación
+- Diagramas de secuencia actualizados en `docs/diagrams/`
+- Documentación del flujo de agregar unidades
+- Especificaciones de estilo visual
+
 ## Contribuir
 ¡Contribuciones son bienvenidas! Por favor, crea un issue o pull request para sugerir mejoras o reportar problemas.
 

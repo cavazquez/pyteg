@@ -26,10 +26,14 @@ sequenceDiagram
     Game-->>-Task: 
     
     Task->>+STrans: enviar_turno_actual()
+    STrans->>STrans: enviar_unidades_disponibles()
     STrans-->>-Client: Envía mensaje de turno actual
+    STrans-->>Client: Envía unidades disponibles
     Client->>+GUI: update_turno(num_turno, num_ronda)
+    Client->>+GUI: update_unidades_disponibles(unidades)
     GUI->>GUI: Actualiza interfaz de usuario
-    GUI-->>-Usuario: Muestra turno actualizado
+    GUI->>GUI: Actualiza panel de unidades con estilo mejorado
+    GUI-->>-Usuario: Muestra turno y unidades actualizadas
 ```
 
 ## Cómo visualizar este diagrama
