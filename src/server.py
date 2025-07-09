@@ -108,6 +108,9 @@ class Server:
         for client in self.dame_clientes():
             client.transmisor.enviar_turno(turno_actual, self.game.num_ronda())
 
+        # Enviar las unidades disponibles al jugador del turno actual
+        self.enviar_unidades_disponibles()
+
         # Enviar el mapa actualizado para actualizar las unidades disponibles
         self.enviar_mapa()
 
@@ -164,6 +167,58 @@ class Server:
         print("Iniciando temporizador de turnos...")
         self._turno_timer = TurnoTimer(self, segundos_por_turno=10)
         self._turno_timer.start()
+
+    def enviar_unidades_disponibles(self):
+        """Envía las unidades disponibles al jugador del turno actual."""
+        if not self.game:
+            return
+
+        turno_actual = self.game.turno_actual()
+        if not turno_actual:
+            return
+
+        jugador_actual = turno_actual.jugador_actual()
+
+        # Crear diccionario con las unidades disponibles
+        unidades = {"infanteria": turno_actual.cant_unidades()}
+
+        # Agregar unidades de continentes si existen
+        if (
+            hasattr(turno_actual, "cant_unidades_africa")
+            and turno_actual.cant_unidades_africa() > 0
+        ):
+            unidades["Africa"] = turno_actual.cant_unidades_africa()
+        if (
+            hasattr(turno_actual, "cant_unidades_europa")
+            and turno_actual.cant_unidades_europa() > 0
+        ):
+            unidades["Europa"] = turno_actual.cant_unidades_europa()
+        if (
+            hasattr(turno_actual, "cant_unidades_asia")
+            and turno_actual.cant_unidades_asia() > 0
+        ):
+            unidades["Asia"] = turno_actual.cant_unidades_asia()
+        if (
+            hasattr(turno_actual, "cant_unidades_sudamerica")
+            and turno_actual.cant_unidades_sudamerica() > 0
+        ):
+            unidades["América del Sur"] = turno_actual.cant_unidades_sudamerica()
+        if (
+            hasattr(turno_actual, "cant_unidades_norteamerica")
+            and turno_actual.cant_unidades_norteamerica() > 0
+        ):
+            unidades["América del Norte"] = turno_actual.cant_unidades_norteamerica()
+        if (
+            hasattr(turno_actual, "cant_unidades_oceania")
+            and turno_actual.cant_unidades_oceania() > 0
+        ):
+            unidades["Oceanía"] = turno_actual.cant_unidades_oceania()
+
+        # Enviar solo al jugador del turno actual
+        for client in self.dame_clientes():
+            if client.userid() == jugador_actual.userid():
+                client.transmisor.enviar_unidades_disponibles(unidades)
+                break
 
     def enviar_mapa(self):
         """Envía el estado actual del mapa a todos los clientes conectados."""
