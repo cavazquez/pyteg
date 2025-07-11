@@ -1,23 +1,36 @@
 from abc import ABC, abstractmethod
 
 from src.exception import MensajeNoValidoError
+from src.server_state_validator import ServerStateValidator
 
 
 class IServerTask(ABC):
-    @abstractmethod
+    """Clase base para todas las tareas del servidor."""
+
     def __init__(self, data):
         self._data = data
+        self._action_name = None  # Nombre de la acción para validación de estado
+        self._validator = ServerStateValidator()
 
     @abstractmethod
+    def _execute(self, client):
+        """Método que implementa la lógica específica de cada tarea."""
+
     def run(self, client):
-        pass
+        """Ejecuta la tarea validando primero el estado del servidor."""
+        # Validar estado usando TaskValidator
+        self._validator.validar_accion(self._action_name, client.server)
+
+        # Ejecutar la tarea si la validación pasa
+        return self._execute(client)
 
 
 class ServerTaskNull(IServerTask):
     def __init__(self, data):
         super().__init__(data)
+        # No necesita validación de estado
 
-    def run(self, _):
+    def _execute(self, _):
         msg = f"{self._data}"
         raise MensajeNoValidoError(msg)
 
@@ -26,26 +39,34 @@ class ServerTaskChat(IServerTask):
     def __init__(self, data):
         super().__init__(data)
         self._msg = data.get("msg")
+        self._action_name = "chat"
 
-    def run(self, client):
+    def _execute(self, client):
         client.server.enviar_chat(client.username(), self._msg)
 
 
 class ServerTaskEmpezar(IServerTask):
     def __init__(self, data):
         super().__init__(data)
+        self._action_name = "empezar"
 
-    def run(self, client):
-        client.server.estado.esperar_jugadores()
-        client.server.enviar_estado()
+    def _execute(self, client):
+        if client.server.estado.esperar_jugadores():
+            client.server.enviar_estado()
+        else:
+            print(
+                f"No se pudo cambiar a estado EsperarJugadores desde "
+                f"{client.server.estado.estado_actual()}"
+            )
 
 
 class ServerTaskSeleccionarColor(IServerTask):
     def __init__(self, data):
         super().__init__(data)
         self._color = data.get("color")
+        self._action_name = "seleccionar_color"
 
-    def run(self, client):
+    def _execute(self, client):
         client.cambiar_color(self._color)
         client.server.enviar_colores_asignados()
 
@@ -53,19 +74,26 @@ class ServerTaskSeleccionarColor(IServerTask):
 class ServerTaskEmpezarPartida(IServerTask):
     def __init__(self, data):
         super().__init__(data)
+        self._action_name = "empezar_partida"
 
-    def run(self, client):
-        client.server.estado.empezar_partida()
-        client.server.enviar_estado()
-        client.server.empezar_partida()
+    def _execute(self, client):
+        if client.server.estado.empezar_partida():
+            client.server.enviar_estado()
+            client.server.empezar_partida()
+        else:
+            print(
+                f"No se pudo empezar la partida desde el estado "
+                f"{client.server.estado.estado_actual()}"
+            )
 
 
 class ServerTaskSetUsername(IServerTask):
     def __init__(self, data):
         super().__init__(data)
         self._username = data.get("username")
+        self._action_name = "set_username"
 
-    def run(self, client):
+    def _execute(self, client):
         if self._username and isinstance(self._username, str):
             # Actualizar el nombre de usuario del cliente
             client.set_username(self._username)
@@ -82,8 +110,9 @@ class ServerTaskAgregarUnidad(IServerTask):
         self._pais = data.get("pais")
         self._tipo_unidad = data.get("tipo_unidad")
         self._cantidad = data.get("cantidad", 1)  # Por defecto 1 si no se especifica
+        self._action_name = "agregar_unidad"
 
-    def run(self, client):
+    def _execute(self, client):
         # Verificar que el cliente sea el dueño del país
         if client.server.mapa.ocupado_por(self._pais) != client:
             print(f"El jugador {client.userid()} no es dueño de {self._pais}")
@@ -132,8 +161,9 @@ class ServerTaskMoverUnidad(IServerTask):
         self._origen = data.get("origen")
         self._destino = data.get("destino")
         self._cantidad = data.get("cantidad", 1)  # Por defecto 1 si no se especifica
+        self._action_name = "mover_unidad"
 
-    def run(self, client):
+    def _execute(self, client):
         # Verificar que el cliente sea el dueño del país de origen
         if client.server.mapa.ocupado_por(self._origen) != client:
             print(f"El jugador {client.userid()} no es dueño de {self._origen}")
@@ -167,8 +197,9 @@ class ServerTaskMoverUnidad(IServerTask):
 class ServerTaskFinalizarTurno(IServerTask):
     def __init__(self, data):
         super().__init__(data)
+        self._action_name = "finalizar_turno"
 
-    def run(self, client):
+    def _execute(self, client):
         # Verificar que sea el turno del cliente actual
         if not hasattr(client.server, "game") or client.server.game is None:
             print("El juego no ha comenzado")
