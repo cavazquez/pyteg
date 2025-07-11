@@ -208,38 +208,8 @@ class Gui(QMainWindow):
         layout.addWidget(players_container)
 
     def _create_player_widgets(self, layout):
-        for _i in range(8):  # Max 8 players
-            # Crear un widget para cada jugador
-            player_widget = QFrame()
-            player_widget.setFrameShape(QFrame.StyledPanel)
-            player_widget.setFrameShadow(QFrame.Raised)
-
-            player_layout = QHBoxLayout(player_widget)
-            player_layout.setContentsMargins(8, 8, 8, 8)
-            player_layout.setSpacing(8)
-
-            # Indicador de turno (círculo)
-            turn_indicator = QLabel()
-            turn_indicator.setFixedSize(12, 12)
-            turn_indicator.setStyleSheet("""
-                background-color: transparent;
-                border-radius: 6px;
-            """)
-            player_layout.addWidget(turn_indicator)
-
-            # Etiqueta con el nombre del jugador
-            label = QLabel("[Sin asignar]")
-            label.setStyleSheet("""
-                color: #777777;
-                font-size: 13px;
-            """)
-            player_layout.addWidget(label)
-
-            # Guardar referencia a la etiqueta y al indicador
-            self.player_labels.append((label, turn_indicator, player_widget))
-
-            # Añadir el widget del jugador al layout
-            layout.addWidget(player_widget)
+        # Inicializar lista vacía - se crearán dinámicamente
+        self.players_layout = layout
 
     def _setup_main_layout(self, horizontal_splitter):
         # Create a widget to hold the QGraphicsView and input area
@@ -259,76 +229,73 @@ class Gui(QMainWindow):
     def update_player_list(self, players):
         """
         Updates the player list on the right column.
+        Only shows players that are actually playing.
         :param players: List of tuples (name, color) where color is a QColor.
         """
-        # Actualizar el turno activo (por ahora, asumimos que el primero es el activo)
-        active_player = 0 if players else -1
+        # Limpiar widgets existentes
+        self._clear_player_widgets()
 
-        for i, (name, color) in enumerate(players):
-            if i < len(self.player_labels):
-                # Obtener las referencias a los widgets
-                label, turn_indicator, player_widget = self.player_labels[i]
+        # Crear widgets solo para jugadores activos
+        for name, color in players:
+            self._create_single_player_widget(name, color)
 
-                # Calcular el contraste para el texto basado en la luminosidad
-                # del color de fondo
-                r, g, b = color.red(), color.green(), color.blue()
-                brightness = (0.299 * r + 0.587 * g + 0.114 * b) / 255.0
-                text_color = "white" if brightness < 0.6 else "black"
+    def _clear_player_widgets(self):
+        """Elimina todos los widgets de jugadores existentes"""
+        if hasattr(self, "player_labels"):
+            for _label, _turn_indicator, player_widget in self.player_labels:
+                player_widget.setParent(None)
+                player_widget.deleteLater()
+        self.player_labels = []
 
-                # Actualizar el texto de la etiqueta
-                label.setText(name)
-                label.setStyleSheet(
-                    f"color: {text_color}; font-weight: bold; font-size: 13px;"
-                )
+    def _create_single_player_widget(self, name, color):
+        """Crea un widget individual para un jugador"""
+        # Crear un widget para el jugador
+        player_widget = QFrame()
+        player_widget.setFrameShape(QFrame.StyledPanel)
+        player_widget.setFrameShadow(QFrame.Raised)
 
-                # Actualizar el indicador de turno
-                if i == active_player:
-                    turn_indicator.setStyleSheet(f"""
-                        background-color: {color.name()};
-                        border: 2px solid {text_color};
-                        border-radius: 6px;
-                    """)
-                else:
-                    turn_indicator.setStyleSheet(f"""
-                        background-color: {color.name()};
-                        border-radius: 6px;
-                    """)
+        player_layout = QHBoxLayout(player_widget)
+        player_layout.setContentsMargins(8, 8, 8, 8)
+        player_layout.setSpacing(8)
 
-                # Establecer estilo para el widget del jugador
-                player_widget.setStyleSheet(f"""
-                    QFrame {{
-                        background-color: {color.name()};
-                        border-radius: 6px;
-                        border: 1px solid
-                            {"#555555" if brightness < 0.6 else "#CCCCCC"};
-                    }}
-                """)
+        # Indicador de turno (círculo)
+        turn_indicator = QLabel()
+        turn_indicator.setFixedSize(12, 12)
+        player_layout.addWidget(turn_indicator)
 
-        # Limpiar las etiquetas restantes si hay menos de 8 jugadores
-        for j in range(len(players), len(self.player_labels)):
-            label, turn_indicator, player_widget = self.player_labels[j]
+        # Etiqueta con el nombre del jugador
+        label = QLabel(name)
+        player_layout.addWidget(label)
 
-            # Restablecer el texto y estilo
-            label.setText("[Sin asignar]")
-            label.setStyleSheet("""
-                color: #777777;
-                font-size: 13px;
-            """)
+        # Calcular el contraste para el texto basado en la luminosidad
+        # del color de fondo
+        r, g, b = color.red(), color.green(), color.blue()
+        brightness = (0.299 * r + 0.587 * g + 0.114 * b) / 255.0
+        text_color = "white" if brightness < 0.6 else "black"
 
-            # Restablecer el indicador de turno
-            turn_indicator.setStyleSheet("""
-                background-color: transparent;
+        # Aplicar estilos
+        label.setStyleSheet(f"color: {text_color}; font-weight: bold; font-size: 13px;")
+
+        # Estilo del indicador de turno (por ahora todos iguales)
+        turn_indicator.setStyleSheet(f"""
+            background-color: {color.name()};
+            border-radius: 6px;
+        """)
+
+        # Estilo del widget del jugador
+        player_widget.setStyleSheet(f"""
+            QFrame {{
+                background-color: {color.name()};
                 border-radius: 6px;
-            """)
+                border: 1px solid {"#555555" if brightness < 0.6 else "#CCCCCC"};
+            }}
+        """)
 
-            # Restablecer el estilo del widget
-            player_widget.setStyleSheet("""
-                QFrame {
-                    background-color: #F5F5F5;
-                    border-radius: 6px;
-                    border: 1px solid #DDDDDD;
-                }
-            """)
+        # Guardar referencia
+        self.player_labels.append((label, turn_indicator, player_widget))
+
+        # Añadir al layout
+        self.players_layout.addWidget(player_widget)
 
     def abrir_ventana_conectar(self):
         self.ventana_conectar = None
