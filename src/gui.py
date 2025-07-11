@@ -372,18 +372,36 @@ class Gui(QMainWindow):
                 border-radius: 2px;
             """)
 
-    def update_status_bar(self, text):
+    def update_status_bar(self, text, color=None):
         """Update the status bar with the given text.
 
         Args:
             text (str): The message to display in the status bar
+            color (str, optional): Color for the text (e.g., 'green', 'red', '#ff0000')
         """
-        # Update the status message (temporary message on the right)
-        self.status_bar.showMessage(text)
+        # Apply color styling if provided
+        if color:
+            # Create a temporary label to apply color styling
+            if not hasattr(self, "_status_temp_label"):
+                self._status_temp_label = QLabel()
+                self.status_bar.addWidget(self._status_temp_label)
+
+            self._status_temp_label.setText(text)
+            self._status_temp_label.setStyleSheet(f"color: {color}; font-weight: bold;")
+            # Clear the default message to avoid duplication
+            self.status_bar.clearMessage()
+        else:
+            # Use default status bar message
+            if hasattr(self, "_status_temp_label"):
+                self._status_temp_label.setText("")
+            self.status_bar.showMessage(text)
 
     def clear_status_bar(self):
         """Clear the status bar message, but keep the turn number."""
         self.status_bar.clearMessage()
+        # Also clear the temporary colored label if it exists
+        if hasattr(self, "_status_temp_label"):
+            self._status_temp_label.setText("")
 
     def update_game_state(self, estado):
         """Update the game state display in the status bar.
