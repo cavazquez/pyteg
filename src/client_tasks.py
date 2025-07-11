@@ -43,6 +43,10 @@ class ClientTaskEstado(IClientTask):
 
     def run(self, main_window):
         print(f"Recibido cambio de estado: {self._msg}")
+
+        # Actualizar el estado en la interfaz gráfica
+        main_window.update_game_state(self._msg)
+
         if self._msg == "EsperarJugadores":
             print("Mostrando ventana de espera de jugadores")
             main_window.ventana_esperar_jugadores()

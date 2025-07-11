@@ -27,6 +27,8 @@ class ConnectionClient(QWidget):
 
     def on_connected(self):
         print(f"Conectado a {self._host}:{self._port}")
+        # Actualizar estado en la interfaz
+        self._main_window.update_game_state("Conectado")
         # Usar el transmisor de main_window
         self._main_window.transmisor.set_username(self._username)
 
@@ -65,6 +67,7 @@ class ConnectionClient(QWidget):
             self._main_window.ventana_conectar.close()
         elif state == QAbstractSocket.UnconnectedState:
             print("Desconectado.")
+            self._main_window.update_game_state("Desconectado")
         else:
             print(f"Estado desconocido: {state}")
 
