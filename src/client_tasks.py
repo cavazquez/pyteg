@@ -182,7 +182,19 @@ class ClientTaskTurno(IClientTask):
         num_ronda = int(
             self._msg.get("num_ronda", 1)
         )  # Por defecto 1 si no se especifica
-        main_window.update_turno(num_turno, num_ronda)
+
+        # Obtener información del jugador actual
+        jugador_actual_id = self._msg.get("jugador_actual_id")
+        jugador_actual_nombre = self._msg.get("jugador_actual_nombre")
+        jugador_actual_color = self._msg.get("jugador_actual_color")
+
+        main_window.update_turno(
+            num_turno,
+            num_ronda,
+            jugador_actual_id,
+            jugador_actual_nombre,
+            jugador_actual_color,
+        )
 
         # Mostrar mensaje de inicio de turno en el chat
         main_window.chat.append(f"Turno {num_turno + 1} iniciado")
