@@ -210,10 +210,12 @@ class ClientTaskTiempo(IClientTask):
 
     def run(self, main_window):
         tiempo = int(self._msg.get("tiempo", 0))
-        userid_turno = self._msg.get("user_id")
-        main_window.update_status_bar(
-            f"Turno jugador {userid_turno} - Tiempo restante: {tiempo}s"
-        )
+        # Solo mostrar el tiempo restante, la información del jugador
+        # ya se muestra en la barra de estado con el cuadrado de color
+        if tiempo > 0:
+            main_window.update_status_bar(f"Tiempo restante: {tiempo}s")
+        else:
+            main_window.clear_status_bar()
 
 
 class ClientTaskUsername(IClientTask):
