@@ -1,6 +1,6 @@
 import json
 
-from src.exception import MensajeNoValidoError
+from src.exception import EstadoInvalidoError, MensajeNoValidoError
 from src.server_tasks_manager import ServerTaskManager
 from src.server_transmisor import ServerTransmisor
 
@@ -140,6 +140,11 @@ class Client:
             task.run(self)
         except MensajeNoValidoError as e:
             print(f"Error: {e}")
+        except EstadoInvalidoError as e:
+            print(f"Error de estado: {e}")
+            # Opcionalmente, enviar el error al cliente
+            if hasattr(self.server, "enviar_error"):
+                self.server.enviar_error(str(e))
 
         mensaje = data.get("mensaje")
         if mensaje:
