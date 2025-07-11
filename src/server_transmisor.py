@@ -72,14 +72,30 @@ class ServerTransmisor:
         msg = MsgPais(pais, userid, unidades)
         self._send_message(msg)
 
-    def enviar_turno(self, num_turno, num_ronda):
+    def enviar_turno(
+        self,
+        num_turno,
+        num_ronda,
+        jugador_actual_id=None,
+        jugador_actual_nombre=None,
+        jugador_actual_color=None,
+    ):
         """Envía el número de turno y ronda actuales a los clientes.
 
         Args:
             num_turno (int): El número de turno actual
             num_ronda (int): El número de ronda actual
+            jugador_actual_id (int, optional): ID del jugador actual
+            jugador_actual_nombre (str, optional): Nombre del jugador actual
+            jugador_actual_color (str, optional): Color del jugador actual
         """
-        msg = MsgTurno(num_turno, num_ronda)
+        msg = MsgTurno(
+            num_turno,
+            num_ronda,
+            jugador_actual_id,
+            jugador_actual_nombre,
+            jugador_actual_color,
+        )
         self._send_message(msg)
 
     def actualizar_lista_jugadores(self, jugadores):

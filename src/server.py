@@ -105,8 +105,33 @@ class Server:
         turno_actual = self.game.id_turno_actual()
         # Calcular el número de ronda: (turno_actual // cant_jugadores) + 1
 
+        # Obtener información del jugador actual
+        jugador_actual_id = None
+        jugador_actual_nombre = None
+        jugador_actual_color = None
+
+        try:
+            turno_obj = self.game.turno_actual()
+            if turno_obj and hasattr(turno_obj, "jugador_actual"):
+                jugador = turno_obj.jugador_actual()
+
+                if jugador:
+                    jugador_actual_id = jugador.userid()
+                    jugador_actual_nombre = jugador.username()
+                    color_obj = jugador.color_actual()
+                    jugador_actual_color = color_obj.to_hex() if color_obj else None
+
+        except Exception as e:
+            print(f"Error obteniendo información del jugador actual: {e}")
+
         for client in self.dame_clientes():
-            client.transmisor.enviar_turno(turno_actual, self.game.num_ronda())
+            client.transmisor.enviar_turno(
+                turno_actual,
+                self.game.num_ronda(),
+                jugador_actual_id,
+                jugador_actual_nombre,
+                jugador_actual_color,
+            )
 
         # Enviar las unidades disponibles al jugador del turno actual
         self.enviar_unidades_disponibles()

@@ -110,10 +110,20 @@ class MsgTiempo(IMsg):
 
 
 class MsgTurno(IMsg):
-    def __init__(self, num_turno, num_ronda):
+    def __init__(
+        self,
+        num_turno,
+        num_ronda,
+        jugador_actual_id=None,
+        jugador_actual_nombre=None,
+        jugador_actual_color=None,
+    ):
         self._tipo = "turno"
         self._num_turno = num_turno
         self._num_ronda = num_ronda
+        self._jugador_actual_id = jugador_actual_id
+        self._jugador_actual_nombre = jugador_actual_nombre
+        self._jugador_actual_color = jugador_actual_color
 
     def to_json(self):
         data = {
@@ -121,6 +131,15 @@ class MsgTurno(IMsg):
             "num_turno": self._num_turno,
             "num_ronda": self._num_ronda,
         }
+
+        # Agregar información del jugador actual si está disponible
+        if self._jugador_actual_id is not None:
+            data["jugador_actual_id"] = self._jugador_actual_id
+        if self._jugador_actual_nombre is not None:
+            data["jugador_actual_nombre"] = self._jugador_actual_nombre
+        if self._jugador_actual_color is not None:
+            data["jugador_actual_color"] = self._jugador_actual_color
+
         return json.dumps(data)
 
 

@@ -40,8 +40,11 @@ class Gui(QMainWindow):
         self.setMinimumSize(QSize(800, 600))
         self.setMouseTracking(True)
 
-        # Initialize turn number
+        # Initialize turn number and current player info
         self._turno_actual = 0
+        self._jugador_actual_id = None
+        self._jugador_actual_nombre = None
+        self._jugador_actual_color = None
 
         self.colores = Colores()
 
@@ -50,9 +53,27 @@ class Gui(QMainWindow):
         # Create a status bar with permanent widgets for turn number and status message
         self.status_bar = QStatusBar()
 
-        # Add a label for the turn number that stays on the left
+        # Add a widget for the current player with color indicator and nickname
+        self.jugador_actual_widget = QWidget()
+        self.jugador_actual_layout = QHBoxLayout(self.jugador_actual_widget)
+        self.jugador_actual_layout.setContentsMargins(0, 0, 0, 0)
+        self.jugador_actual_layout.setSpacing(5)
+
+        # Color indicator (square)
+        self.color_indicator = QLabel()
+        self.color_indicator.setFixedSize(16, 16)
+        self.color_indicator.setStyleSheet("""
+            background-color: #cccccc;
+            border: 1px solid #999999;
+            border-radius: 2px;
+        """)
+        self.jugador_actual_layout.addWidget(self.color_indicator)
+
+        # Turn and player info
         self.turno_label = QLabel("Turno: 0")
-        self.status_bar.addPermanentWidget(self.turno_label)
+        self.jugador_actual_layout.addWidget(self.turno_label)
+
+        self.status_bar.addPermanentWidget(self.jugador_actual_widget)
 
         # Add a label for the game state
         self.estado_label = QLabel("Estado: Desconectado")
@@ -187,7 +208,7 @@ class Gui(QMainWindow):
         layout.addWidget(players_container)
 
     def _create_player_widgets(self, layout):
-        for i in range(8):  # Max 8 players
+        for _i in range(8):  # Max 8 players
             # Crear un widget para cada jugador
             player_widget = QFrame()
             player_widget.setFrameShape(QFrame.StyledPanel)
@@ -207,7 +228,7 @@ class Gui(QMainWindow):
             player_layout.addWidget(turn_indicator)
 
             # Etiqueta con el nombre del jugador
-            label = QLabel(f"Jugador {i + 1}: [Sin asignar]")
+            label = QLabel("[Sin asignar]")
             label.setStyleSheet("""
                 color: #777777;
                 font-size: 13px;
@@ -255,7 +276,7 @@ class Gui(QMainWindow):
                 text_color = "white" if brightness < 0.6 else "black"
 
                 # Actualizar el texto de la etiqueta
-                label.setText(f"Jugador {i + 1}: {name}")
+                label.setText(name)
                 label.setStyleSheet(
                     f"color: {text_color}; font-weight: bold; font-size: 13px;"
                 )
@@ -288,7 +309,7 @@ class Gui(QMainWindow):
             label, turn_indicator, player_widget = self.player_labels[j]
 
             # Restablecer el texto y estilo
-            label.setText(f"Jugador {j + 1}: [Sin asignar]")
+            label.setText("[Sin asignar]")
             label.setStyleSheet("""
                 color: #777777;
                 font-size: 13px;
@@ -340,15 +361,49 @@ class Gui(QMainWindow):
         self.w.show()
         print("Ventana de espera mostrada")
 
-    def update_turno(self, num_turno, num_ronda):
+    def update_turno(
+        self,
+        num_turno,
+        num_ronda,
+        jugador_actual_id=None,
+        jugador_actual_nombre=None,
+        jugador_actual_color=None,
+    ):
         """Update the turn and round number display.
 
         Args:
             num_turno (int): The current turn number
             num_ronda (int): The current round number
+            jugador_actual_id (int, optional): ID del jugador actual
+            jugador_actual_nombre (str, optional): Nombre del jugador actual
+            jugador_actual_color (str, optional): Color del jugador actual
         """
         self._turno_actual = num_turno
-        self.turno_label.setText(f"Ronda: {num_ronda} - Turno: {num_turno + 1}")
+        self._jugador_actual_id = jugador_actual_id
+        self._jugador_actual_nombre = jugador_actual_nombre
+        self._jugador_actual_color = jugador_actual_color
+
+        # Actualizar el texto del turno
+        if jugador_actual_nombre:
+            self.turno_label.setText(
+                f"Ronda: {num_ronda} - Turno: {jugador_actual_nombre}"
+            )
+        else:
+            self.turno_label.setText(f"Ronda: {num_ronda} - Turno: {num_turno + 1}")
+
+        # Actualizar el indicador de color
+        if jugador_actual_color:
+            self.color_indicator.setStyleSheet(f"""
+                background-color: {jugador_actual_color};
+                border: 1px solid #999999;
+                border-radius: 2px;
+            """)
+        else:
+            self.color_indicator.setStyleSheet("""
+                background-color: #cccccc;
+                border: 1px solid #999999;
+                border-radius: 2px;
+            """)
 
     def update_status_bar(self, text):
         """Update the status bar with the given text.
