@@ -54,6 +54,10 @@ class Gui(QMainWindow):
         self.turno_label = QLabel("Turno: 0")
         self.status_bar.addPermanentWidget(self.turno_label)
 
+        # Add a label for the game state
+        self.estado_label = QLabel("Estado: Desconectado")
+        self.status_bar.addPermanentWidget(self.estado_label)
+
         # Add a stretch to push the status message to the right
         self.status_bar.addPermanentWidget(QLabel(""))
 
@@ -358,6 +362,25 @@ class Gui(QMainWindow):
     def clear_status_bar(self):
         """Clear the status bar message, but keep the turn number."""
         self.status_bar.clearMessage()
+
+    def update_game_state(self, estado):
+        """Update the game state display in the status bar.
+
+        Args:
+            estado (str): The current game state
+        """
+        # Traducir estados técnicos a nombres más amigables
+        estados_amigables = {
+            "INICIAL": "Inicial",
+            "EsperarJugadores": "Esperando Jugadores",
+            "JUGANDO": "En Juego",
+            "FINALIZADO": "Finalizado",
+            "Conectado": "Conectado",
+            "Desconectado": "Desconectado",
+        }
+
+        estado_mostrar = estados_amigables.get(estado, estado)
+        self.estado_label.setText(f"Estado: {estado_mostrar}")
 
     def update_unidades_disponibles(self, unidades):
         """Actualiza el panel derecho con las unidades disponibles.
