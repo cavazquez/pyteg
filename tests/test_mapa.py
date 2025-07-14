@@ -1,6 +1,6 @@
 import unittest
 
-from src.mapa import Mapa
+from src.server_mapa import Mapa
 
 
 class TestMap(unittest.TestCase):
