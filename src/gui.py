@@ -79,6 +79,10 @@ class Gui(QMainWindow):
         self.estado_label = QLabel("Estado: Desconectado")
         self.status_bar.addPermanentWidget(self.estado_label)
 
+        # Add a label for country selection
+        self.seleccion_label = QLabel("Selección: Ninguna")
+        self.status_bar.addPermanentWidget(self.seleccion_label)
+
         # Add a stretch to push the status message to the right
         self.status_bar.addPermanentWidget(QLabel(""))
 
@@ -518,6 +522,9 @@ class Gui(QMainWindow):
     def keyPressEvent(self, event):  # noqa: N802
         if event.key() == Qt.Key_Enter or event.key() == Qt.Key_Return:
             self.chat.send_message()
+        elif event.key() == Qt.Key_Escape and hasattr(self.scene, "selection_manager"):
+            # Cancelar selección con tecla Escape usando selection_manager
+            self.scene.selection_manager.cancelar_seleccion()
 
     def closeEvent(self, _):  # noqa: N802
         self._vivo = False

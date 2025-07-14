@@ -22,17 +22,20 @@ class Menu(QMenu):
         self.action_agregar_infanteria = QAction("Agregar Infantería", self)
         self.action_agregar_misil = QAction("Agregar Misil", self)
 
-        # Acciones para mover unidades
-        self.action_mover_unidades = QAction("Mover unidades desde aquí", self)
+        # Acciones para mover unidades (sistema antiguo)
         self.action_mover_1_unidad = QAction("Mover 1 unidad", self)
         self.action_mover_3_unidades = QAction("Mover 3 unidades", self)
         self.action_mover_5_unidades = QAction("Mover 5 unidades", self)
         self.action_cancelar_movimiento = QAction("Cancelar movimiento", self)
 
+        # Acciones para el nuevo sistema de selección
+        self.action_atacar = QAction("Atacar", self)
+        self.action_mover_seleccion = QAction("Mover", self)
+        self.action_cancelar_seleccion = QAction("Cancelar Selección", self)
+
         # Conectar acciones a sus respectivos manejadores
         self.action_agregar_infanteria.triggered.connect(self.agregar_infanteria)
         self.action_agregar_misil.triggered.connect(self.agregar_misil)
-        self.action_mover_unidades.triggered.connect(self.iniciar_movimiento)
         self.action_mover_1_unidad.triggered.connect(
             lambda: self.completar_movimiento(1)
         )
@@ -43,6 +46,11 @@ class Menu(QMenu):
             lambda: self.completar_movimiento(5)
         )
         self.action_cancelar_movimiento.triggered.connect(self.cancelar_movimiento)
+
+        # Conectar acciones del nuevo sistema de selección
+        self.action_atacar.triggered.connect(self.atacar)
+        self.action_mover_seleccion.triggered.connect(self.mover)
+        self.action_cancelar_seleccion.triggered.connect(self.cancelar_seleccion_menu)
 
         # Configurar el menú
         self.actualizar_menu()
@@ -60,11 +68,10 @@ class Menu(QMenu):
         self.addAction(self.action_agregar_misil)
         self.addSeparator()
 
-        # Mostrar opciones de mover
+        # Mostrar opciones de mover (sistema antiguo)
         if Menu.pais_origen is None:
-            # Si no hay país de origen seleccionado, mostrar
-            # opción para iniciar movimiento
-            self.addAction(self.action_mover_unidades)
+            # Sin país de origen seleccionado
+            pass
         elif Menu.pais_origen == self.pais:
             # Si este es el país de origen, mostrar opción para cancelar
             self.addAction(self.action_cancelar_movimiento)
@@ -76,6 +83,34 @@ class Menu(QMenu):
             self.addAction(self.action_mover_5_unidades)
             self.addSeparator()
             self.addAction(self.action_cancelar_movimiento)
+
+        # Agregar separador y opciones del nuevo sistema de selección
+        self.addSeparator()
+
+        # Opciones de selección basadas en el estado actual
+        selection_manager = getattr(self.main_window.scene, "selection_manager", None)
+        if selection_manager:
+            pais_origen = selection_manager.get_pais_origen()
+            pais_destino = selection_manager.get_pais_destino()
+        else:
+            pais_origen = None
+            pais_destino = None
+
+        if pais_origen is None:
+            # No hay selección: no mostrar opciones de selección manual
+            pass
+        elif pais_origen == self.pais:
+            # Este país es el origen: permitir cancelar
+            self.addAction(self.action_cancelar_seleccion)
+        elif pais_destino is None:
+            # Hay origen pero no destino: solo mostrar cancelar
+            self.addAction(self.action_cancelar_seleccion)
+        else:
+            # Hay origen y destino: permitir atacar, mover o cancelar
+            if pais_destino == self.pais:
+                self.addAction(self.action_atacar)
+                self.addAction(self.action_mover_seleccion)
+            self.addAction(self.action_cancelar_seleccion)
 
     def agregar_infanteria(self):
         if self.transmisor:
@@ -112,3 +147,50 @@ class Menu(QMenu):
         Menu.pais_origen = None
         if hasattr(self.main_window, "actualizar_menus_contextuales"):
             self.main_window.actualizar_menus_contextuales()
+
+    def atacar(self):
+        """Ataca del país origen al país destino"""
+        selection_manager = getattr(self.main_window.scene, "selection_manager", None)
+        if selection_manager:
+            origen = selection_manager.get_pais_origen()
+            destino = selection_manager.get_pais_destino()
+
+            if origen and destino and self.transmisor:
+                # Realizar ataque (por ahora usamos la misma función que mover)
+                # En el futuro, podrías tener una función específica para atacar
+                self.transmisor.mover_unidad(origen=origen, destino=destino, cantidad=1)
+                print(f"Atacando de {origen} a {destino}")
+                # Mostrar mensaje en la barra de estado
+                self.main_window.status_bar.showMessage(
+                    f"Atacando de {origen} a {destino}",
+                    3000,  # 3 segundos
+                )
+
+            # Limpiar selección después de la acción
+            selection_manager.cancelar_seleccion()
+
+    def mover(self):
+        """Mueve unidades del país origen al país destino"""
+        selection_manager = getattr(self.main_window.scene, "selection_manager", None)
+        if selection_manager:
+            origen = selection_manager.get_pais_origen()
+            destino = selection_manager.get_pais_destino()
+
+            if origen and destino and self.transmisor:
+                # Realizar movimiento de 1 unidad
+                self.transmisor.mover_unidad(origen=origen, destino=destino, cantidad=1)
+                print(f"Moviendo 1 unidad de {origen} a {destino}")
+                # Mostrar mensaje en la barra de estado
+                self.main_window.status_bar.showMessage(
+                    f"Moviendo 1 unidad de {origen} a {destino}",
+                    3000,  # 3 segundos
+                )
+
+            # Limpiar selección después de la acción
+            selection_manager.cancelar_seleccion()
+
+    def cancelar_seleccion_menu(self):
+        """Cancela la selección actual desde el menú contextual"""
+        selection_manager = getattr(self.main_window.scene, "selection_manager", None)
+        if selection_manager:
+            selection_manager.cancelar_seleccion()
