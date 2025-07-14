@@ -1,9 +1,9 @@
 import unittest
 
-from src.game import Game
-from src.mapa import Mapa
 from src.mazo import Mazo
 from src.server import Server
+from src.server_game import Game
+from src.server_mapa import Mapa
 from src.turnos import PrimerTurno, SegundoTurno, SiguientesTurnos
 
 
