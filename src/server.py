@@ -2,10 +2,10 @@ import argparse
 import sys
 
 from src.build_mapa import build_mapa
-from src.game import Game
-from src.mapa import Mapa
 from src.server_color import ServerColor
 from src.server_estado import Estado
+from src.server_game import Game
+from src.server_mapa import Mapa
 from src.server_registrar_jugadores import registrar_jugadores
 from src.turno_timer import TurnoTimer
 
