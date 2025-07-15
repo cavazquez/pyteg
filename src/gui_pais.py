@@ -1,3 +1,5 @@
+import pathlib
+
 from PySide6.QtCore import Qt
 from PySide6.QtGui import (
     QPixmap,
@@ -7,12 +9,27 @@ from PySide6.QtWidgets import (
     QGraphicsPixmapItem,
 )
 
+from src.exception import ImagenNoEncontradaError
 from src.gui_circulo import Circulo
 
 
 class Pais(QGraphicsPixmapItem):
     def __init__(self, path, pais, pos):
-        super().__init__(QPixmap(path))
+        # Validar que el archivo de imagen existe
+        if not pathlib.Path(path).exists():
+            raise ImagenNoEncontradaError(
+                path, f"imagen del país {pais[0]} en continente {pais[1]}"
+            )
+
+        # Intentar cargar la imagen
+        pixmap = QPixmap(path)
+        if pixmap.isNull():
+            raise ImagenNoEncontradaError(
+                path,
+                f"la imagen del país {pais[0]} no se pudo cargar (formato inválido)",
+            )
+
+        super().__init__(pixmap)
         self._nombre, self._continente = pais
         self._x, self._y, self._army_x, self._army_y = pos
         self.setPos(self._x, self._y)

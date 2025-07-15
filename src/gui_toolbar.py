@@ -1,4 +1,4 @@
-import contextlib
+import pathlib
 from functools import partial
 
 from PySide6.QtCore import QSize, Qt
@@ -11,6 +11,8 @@ from PySide6.QtWidgets import (
     QToolButton,
     QWidget,
 )
+
+from src.exception import ImagenNoEncontradaError
 
 
 class ToolBar(QToolBar):
@@ -26,6 +28,19 @@ class ToolBar(QToolBar):
         self._setup_action_buttons()
         self._setup_size_menu()
 
+    def _validar_icono(self, ruta_icono, contexto=""):
+        """Valida que un archivo de icono existe y se puede cargar.
+
+        Raises:
+            ImagenNoEncontradaError: Si el archivo de icono no existe.
+        """
+        if not pathlib.Path(ruta_icono).exists():
+            contexto_msg = f" ({contexto})" if contexto else ""
+            raise ImagenNoEncontradaError(
+                ruta_icono, f"icono de la barra de herramientas{contexto_msg}"
+            )
+        return QIcon(ruta_icono)
+
     def _setup_spacers(self):
         """Configura los espaciadores en la barra de herramientas"""
         # Expansor izquierdo
@@ -38,24 +53,26 @@ class ToolBar(QToolBar):
     def _setup_action_buttons(self):
         """Configura los botones de acción en la barra de herramientas"""
         # Botón conectar
-        button_conectar = QAction(QIcon("icons/conectar.png"), "Conectar", self)
+        icono_conectar = self._validar_icono("icons/conectar.png", "conectar")
+        button_conectar = QAction(icono_conectar, "Conectar", self)
         button_conectar.triggered.connect(self.main_window.abrir_ventana_conectar)
         self.addAction(button_conectar)
 
         # Botón atacar
-        button_atacar = QAction(QIcon("icons/atacar.png"), "Atacar", self)
+        icono_atacar = self._validar_icono("icons/atacar.png", "atacar")
+        button_atacar = QAction(icono_atacar, "Atacar", self)
         # button_atacar.triggered.connect(self.main_window.abrir_ventana_atacar)
         self.addAction(button_atacar)
 
         # Botón mover
-        button_mover = QAction(QIcon("icons/mover.png"), "Mover", self)
+        icono_mover = self._validar_icono("icons/mover.png", "mover")
+        button_mover = QAction(icono_mover, "Mover", self)
         # button_mover.triggered.connect(self.main_window.abrir_ventana_mover)
         self.addAction(button_mover)
 
         # Botón para finalizar el turno
-        button_finalizar_turno = QAction(
-            QIcon("icons/finish.png"), "Finalizar Turno", self
-        )
+        icono_finalizar = self._validar_icono("icons/finish.png", "finalizar turno")
+        button_finalizar_turno = QAction(icono_finalizar, "Finalizar Turno", self)
         button_finalizar_turno.triggered.connect(self.main_window.finalizar_turno)
         self.addAction(button_finalizar_turno)
 
@@ -116,8 +133,8 @@ class ToolBar(QToolBar):
 
         for text, width, height, icon_path in size_actions:
             action = QAction(text, self)
-            with contextlib.suppress(Exception):
-                action.setIcon(QIcon(icon_path))
+            icono = self._validar_icono(icon_path, f"tamaño {text}")
+            action.setIcon(icono)
             action.triggered.connect(partial(self.resize_window, width, height))
             menu.addAction(action)
 
@@ -126,15 +143,17 @@ class ToolBar(QToolBar):
 
         # Opciones de pantalla completa
         fullscreen_action = QAction("Pantalla Completa", self)
-        with contextlib.suppress(Exception):
-            fullscreen_action.setIcon(QIcon("icons/fullscreen.png"))
+        icono_fullscreen = self._validar_icono(
+            "icons/fullscreen.png", "pantalla completa"
+        )
+        fullscreen_action.setIcon(icono_fullscreen)
         fullscreen_action.triggered.connect(lambda: self.resize_window(0, 0))
         menu.addAction(fullscreen_action)
 
         # Opción para ajustar al tamaño de la pantalla
         fit_screen_action = QAction("Ajustar a la pantalla", self)
-        with contextlib.suppress(Exception):
-            fit_screen_action.setIcon(QIcon("icons/fit_screen.png"))
+        icono_fit = self._validar_icono("icons/fit_screen.png", "ajustar pantalla")
+        fit_screen_action.setIcon(icono_fit)
         fit_screen_action.triggered.connect(self.fit_to_screen)
         menu.addAction(fit_screen_action)
 
@@ -143,8 +162,10 @@ class ToolBar(QToolBar):
 
         # Opción para restaurar tamaño por defecto
         default_action = QAction("Tamaño por defecto", self)
-        with contextlib.suppress(Exception):
-            default_action.setIcon(QIcon("icons/default_size.png"))
+        icono_default = self._validar_icono(
+            "icons/default_size.png", "tamaño por defecto"
+        )
+        default_action.setIcon(icono_default)
         default_action.triggered.connect(lambda: self.resize_window(1280, 800))
         menu.addAction(default_action)
 
@@ -153,7 +174,8 @@ class ToolBar(QToolBar):
     def _create_size_button(self):
         """Crea el botón de tamaño con su estilo"""
         size_button = QToolButton(self)
-        size_button.setIcon(QIcon("icons/resize.png"))
+        icono_resize = self._validar_icono("icons/resize.png", "botón de redimensionar")
+        size_button.setIcon(icono_resize)
         size_button.setToolTip("Cambiar tamaño de la ventana")
         size_button.setPopupMode(QToolButton.InstantPopup)
         size_button.setMenu(self.size_menu)
