@@ -11,6 +11,7 @@ from PySide6.QtWidgets import (
 
 from src.gui_menu import Menu
 from src.gui_pais import Pais
+from src.gui_toolbar import ToolBar
 from src.toml_reader import TomlReader
 
 
@@ -99,6 +100,9 @@ class CountrySelectionManager:
                     f"Clic derecho: Atacar/Mover"
                 )
 
+        # Notificar a la toolbar sobre el cambio de selección
+        self._actualizar_botones_toolbar()
+
     def get_pais_origen(self):
         """Retorna el país origen seleccionado"""
         return self._pais_origen
@@ -106,6 +110,19 @@ class CountrySelectionManager:
     def get_pais_destino(self):
         """Retorna el país destino seleccionado"""
         return self._pais_destino
+
+    def _actualizar_botones_toolbar(self):
+        """Actualiza el estado de los botones de atacar y mover en la toolbar"""
+        hay_dos_paises = (
+            self._pais_origen is not None and self._pais_destino is not None
+        )
+
+        # Buscar la toolbar en la ventana principal
+        if hasattr(self.main_window, "findChildren"):
+            toolbars = self.main_window.findChildren(ToolBar)
+            for toolbar in toolbars:
+                if hasattr(toolbar, "actualizar_botones_seleccion"):
+                    toolbar.actualizar_botones_seleccion(hay_dos_paises)
 
 
 class QCustomGraphicsScene(QGraphicsScene):

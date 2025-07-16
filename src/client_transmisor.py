@@ -96,10 +96,10 @@ class ClientNullTransmisor(IClientTransmisor):
     def set_username(self, _):
         print("No estas conectado")
 
-    def agregar_unidad(self, _):
+    def agregar_unidad(self, **_kwargs):
         print("No estas conectado")
 
-    def mover_unidad(self, _):
+    def mover_unidad(self, **_kwargs):
         print("No puedes mover unidades. No estas conectado.")
 
     def actualizar_lista_jugadores(self, _):
