@@ -24,13 +24,18 @@ class ToolBar(QToolBar):
         self.main_window = main_window
 
         # Referencias a los botones que se activan/desactivan
+        self.button_conectar = None
         self.button_atacar = None
         self.button_mover = None
+        self.button_finalizar_turno = None
 
         # Configurar la barra de herramientas
         self._setup_spacers()
         self._setup_action_buttons()
         self._setup_size_menu()
+
+        # Establecer estado inicial (desconectado)
+        self._habilitar_solo_conectar()
 
     def _validar_icono(self, ruta_icono, contexto=""):
         """Valida que un archivo de icono existe y se puede cargar.
@@ -58,9 +63,9 @@ class ToolBar(QToolBar):
         """Configura los botones de acción en la barra de herramientas"""
         # Botón conectar
         icono_conectar = self._validar_icono("icons/conectar.png", "conectar")
-        button_conectar = QAction(icono_conectar, "Conectar", self)
-        button_conectar.triggered.connect(self.main_window.abrir_ventana_conectar)
-        self.addAction(button_conectar)
+        self.button_conectar = QAction(icono_conectar, "Conectar", self)
+        self.button_conectar.triggered.connect(self.main_window.abrir_ventana_conectar)
+        self.addAction(self.button_conectar)
 
         # Botón atacar
         icono_atacar = self._validar_icono("icons/atacar.png", "atacar")
@@ -78,9 +83,10 @@ class ToolBar(QToolBar):
 
         # Botón para finalizar el turno
         icono_finalizar = self._validar_icono("icons/finish.png", "finalizar turno")
-        button_finalizar_turno = QAction(icono_finalizar, "Finalizar Turno", self)
-        button_finalizar_turno.triggered.connect(self.main_window.finalizar_turno)
-        self.addAction(button_finalizar_turno)
+        self.button_finalizar_turno = QAction(icono_finalizar, "Finalizar Turno", self)
+        self.button_finalizar_turno.setEnabled(True)  # Siempre habilitado
+        self.button_finalizar_turno.triggered.connect(self.main_window.finalizar_turno)
+        self.addAction(self.button_finalizar_turno)
 
     def _setup_size_menu(self):
         """Configura el menú de tamaño y su botón"""
@@ -239,10 +245,56 @@ class ToolBar(QToolBar):
 
     def actualizar_botones_seleccion(self, hay_dos_paises_seleccionados):
         """Actualiza el estado de los botones de atacar y mover según la selección"""
+        # Solo actualizar si está conectado
+        if self._esta_conectado():
+            if self.button_atacar:
+                self.button_atacar.setEnabled(hay_dos_paises_seleccionados)
+            if self.button_mover:
+                self.button_mover.setEnabled(hay_dos_paises_seleccionados)
+
+    def actualizar_estado_conexion(self, conectado):
+        """Actualiza el estado de todos los botones según el estado de conexión"""
+        if conectado:
+            self._habilitar_botones_conectado()
+        else:
+            self._habilitar_solo_conectar()
+
+    def _esta_conectado(self):
+        """Verifica si el cliente está conectado al servidor"""
+        if not hasattr(self.main_window, "transmisor"):
+            return False
+        if self.main_window.transmisor is None:
+            return False
+        # Verificar si tiene conexión usando método público si existe
+        if hasattr(self.main_window.transmisor, "esta_conectado"):
+            return self.main_window.transmisor.esta_conectado()
+        # Fallback: verificar si no es ClientNullTransmisor
+        return not type(self.main_window.transmisor).__name__.endswith("NullTransmisor")
+
+    def _habilitar_solo_conectar(self):
+        """Deshabilita todos los botones excepto el de conectar"""
+        if self.button_conectar:
+            self.button_conectar.setEnabled(True)
         if self.button_atacar:
-            self.button_atacar.setEnabled(hay_dos_paises_seleccionados)
+            self.button_atacar.setEnabled(False)
         if self.button_mover:
-            self.button_mover.setEnabled(hay_dos_paises_seleccionados)
+            self.button_mover.setEnabled(False)
+        # El botón finalizar turno permanece siempre habilitado
+
+    def _habilitar_botones_conectado(self):
+        """Habilita los botones apropiados cuando está conectado"""
+        # Deshabilitar botón conectar
+        if self.button_conectar:
+            self.button_conectar.setEnabled(False)
+
+        # Los botones atacar y mover permanecen deshabilitados
+        # hasta que se seleccionen países
+        if self.button_atacar:
+            self.button_atacar.setEnabled(False)
+        if self.button_mover:
+            self.button_mover.setEnabled(False)
+
+        # El botón finalizar turno permanece siempre habilitado
 
     def _atacar_paises_seleccionados(self):
         """Ejecuta ataque entre los países seleccionados"""
