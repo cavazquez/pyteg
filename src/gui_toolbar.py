@@ -23,6 +23,10 @@ class ToolBar(QToolBar):
         self.setAllowedAreas(Qt.TopToolBarArea)
         self.main_window = main_window
 
+        # Referencias a los botones que se activan/desactivan
+        self.button_atacar = None
+        self.button_mover = None
+
         # Configurar la barra de herramientas
         self._setup_spacers()
         self._setup_action_buttons()
@@ -60,15 +64,17 @@ class ToolBar(QToolBar):
 
         # Botón atacar
         icono_atacar = self._validar_icono("icons/atacar.png", "atacar")
-        button_atacar = QAction(icono_atacar, "Atacar", self)
-        # button_atacar.triggered.connect(self.main_window.abrir_ventana_atacar)
-        self.addAction(button_atacar)
+        self.button_atacar = QAction(icono_atacar, "Atacar", self)
+        self.button_atacar.setEnabled(False)  # Inicialmente deshabilitado
+        self.button_atacar.triggered.connect(self._atacar_paises_seleccionados)
+        self.addAction(self.button_atacar)
 
         # Botón mover
         icono_mover = self._validar_icono("icons/mover.png", "mover")
-        button_mover = QAction(icono_mover, "Mover", self)
-        # button_mover.triggered.connect(self.main_window.abrir_ventana_mover)
-        self.addAction(button_mover)
+        self.button_mover = QAction(icono_mover, "Mover", self)
+        self.button_mover.setEnabled(False)  # Inicialmente deshabilitado
+        self.button_mover.triggered.connect(self._mover_paises_seleccionados)
+        self.addAction(self.button_mover)
 
         # Botón para finalizar el turno
         icono_finalizar = self._validar_icono("icons/finish.png", "finalizar turno")
@@ -230,3 +236,43 @@ class ToolBar(QToolBar):
         screen_center = QApplication.primaryScreen().availableGeometry().center()
         frame_geometry.moveCenter(screen_center)
         self.main_window.move(frame_geometry.topLeft())
+
+    def actualizar_botones_seleccion(self, hay_dos_paises_seleccionados):
+        """Actualiza el estado de los botones de atacar y mover según la selección"""
+        if self.button_atacar:
+            self.button_atacar.setEnabled(hay_dos_paises_seleccionados)
+        if self.button_mover:
+            self.button_mover.setEnabled(hay_dos_paises_seleccionados)
+
+    def _atacar_paises_seleccionados(self):
+        """Ejecuta ataque entre los países seleccionados"""
+        if hasattr(self.main_window, "scene") and self.main_window.scene:
+            selection_manager = self.main_window.scene.selection_manager
+            origen = selection_manager.get_pais_origen()
+            destino = selection_manager.get_pais_destino()
+
+            if origen and destino and hasattr(self.main_window, "transmisor"):
+                # Por ahora usamos la misma función que mover (como está en gui_menu.py)
+                self.main_window.transmisor.mover_unidad(
+                    origen=origen, destino=destino, cantidad=1
+                )
+                self.main_window.status_bar.showMessage(
+                    f"Atacando desde {origen} hacia {destino}", 3000
+                )
+                selection_manager.cancelar_seleccion()
+
+    def _mover_paises_seleccionados(self):
+        """Ejecuta movimiento entre los países seleccionados"""
+        if hasattr(self.main_window, "scene") and self.main_window.scene:
+            selection_manager = self.main_window.scene.selection_manager
+            origen = selection_manager.get_pais_origen()
+            destino = selection_manager.get_pais_destino()
+
+            if origen and destino and hasattr(self.main_window, "transmisor"):
+                self.main_window.transmisor.mover_unidad(
+                    origen=origen, destino=destino, cantidad=1
+                )
+                self.main_window.status_bar.showMessage(
+                    f"Moviendo 1 unidad de {origen} a {destino}", 3000
+                )
+                selection_manager.cancelar_seleccion()
