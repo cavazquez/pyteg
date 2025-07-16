@@ -65,9 +65,15 @@ class ConnectionClient(QWidget):
             print("Conectado.")
             self._main_window.transmisor = ClientTransmisor(self)
             self._main_window.ventana_conectar.close()
+            # Actualizar estado de botones en la toolbar
+            if hasattr(self._main_window, "toolbar"):
+                self._main_window.toolbar.actualizar_estado_conexion(conectado=True)
         elif state == QAbstractSocket.UnconnectedState:
             print("Desconectado.")
             self._main_window.update_game_state("Desconectado")
+            # Actualizar estado de botones en la toolbar
+            if hasattr(self._main_window, "toolbar"):
+                self._main_window.toolbar.actualizar_estado_conexion(conectado=False)
         else:
             print(f"Estado desconocido: {state}")
 
