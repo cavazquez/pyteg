@@ -1,5 +1,6 @@
+import secrets
+
 from src.batalla import Batalla
-from src.dados import Dados
 from src.turnos import PrimerTurno, SegundoTurno, SiguientesTurnos
 
 
@@ -23,20 +24,6 @@ class Game:
 
     def empezo(self):
         return self._start
-
-    def atacar(self, atacante, defensor):
-        dados_atacante = Dados.tirar_dados_ordenados(
-            Batalla.calcular_cant_dados_atacante(
-                self.mapa().cantidad_unidades(atacante),
-            ),
-        )
-        dados_defensor = Dados.tirar_dados_ordenados(
-            Batalla.calcular_cant_dados_defensor(
-                self.mapa().cantidad_unidades(defensor),
-            ),
-        )
-        resultado = Batalla.ataquen(atacante, defensor, dados_atacante, dados_defensor)
-        self._mapa.aplicar_resultado_batalla(resultado)
 
     def mazo(self):
         return self._mazo
@@ -129,3 +116,64 @@ class Game:
             return self.lista_jugadores()
 
         return jugadores_orden
+
+    def atacar(self, pais_atacante, pais_defensor):
+        """
+        Realiza un ataque entre dos países.
+
+        Args:
+            pais_atacante (str): País que inicia el ataque
+            pais_defensor (str): País que recibe el ataque
+        """
+        # Obtener las unidades de cada país
+        unidades_atacante = self.mapa().cantidad_unidades(pais_atacante)
+        unidades_defensor = self.mapa().cantidad_unidades(pais_defensor)
+
+        # Calcular cuántos dados usar
+        dados_atacante_count = Batalla.calcular_cant_dados_atacante(unidades_atacante)
+        dados_defensor_count = Batalla.calcular_cant_dados_defensor(unidades_defensor)
+
+        # Generar dados aleatorios
+        dados_atacante = sorted(
+            [secrets.randbelow(6) + 1 for _ in range(dados_atacante_count)],
+            reverse=True,
+        )
+        dados_defensor = sorted(
+            [secrets.randbelow(6) + 1 for _ in range(dados_defensor_count)],
+            reverse=True,
+        )
+
+        # Obtener nombres de los jugadores
+        atacante_nombre = self.mapa().ocupado_por(pais_atacante).username()
+        defensor_nombre = self.mapa().ocupado_por(pais_defensor).username()
+
+        # Realizar la batalla
+        resultado = Batalla.ataquen(
+            atacante_nombre, defensor_nombre, dados_atacante, dados_defensor
+        )
+
+        # Aplicar las pérdidas
+        for perdedor in resultado["restar"]:
+            if perdedor == atacante_nombre:
+                self.mapa().restar_una_unidad(pais_atacante)
+            else:
+                self.mapa().restar_una_unidad(pais_defensor)
+
+        # Verificar si el país defensor fue conquistado
+        if self.mapa().cantidad_unidades(pais_defensor) == 0:
+            # El atacante conquista el país
+            atacante = self.mapa().ocupado_por(pais_atacante)
+            self.mapa().asignar_pais(atacante, pais_defensor)
+            # Mover una unidad del atacante al país conquistado
+            self.mapa().restar_una_unidad(pais_atacante)
+            self.mapa().agregar_una_unidad(pais_defensor)
+
+            print(f"{atacante_nombre} ha conquistado {pais_defensor}")
+        else:
+            print(f"El ataque de {atacante_nombre} a {pais_defensor} fue repelido")
+
+        print(f"Ataque: {atacante_nombre} vs {defensor_nombre}")
+        print(f"Dados atacante: {dados_atacante}, Dados defensor: {dados_defensor}")
+        print(f"Resultado: {resultado}")
+
+        return resultado

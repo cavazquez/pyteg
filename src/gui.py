@@ -537,3 +537,32 @@ class Gui(QMainWindow):
             self.transmisor.finalizar_turno()
         else:
             print("No se pudo finalizar el turno: transmisor no disponible")
+
+    def atacar(self):
+        """Método llamado cuando se hace clic en el botón Atacar de la toolbar."""
+        # Verificar que tenemos un selection_manager
+        if not hasattr(self.scene, "selection_manager"):
+            self.update_status_bar(
+                "Error: No hay sistema de selección disponible", "red"
+            )
+            return
+
+        selection_manager = self.scene.selection_manager
+        origen = selection_manager.get_pais_origen()
+        destino = selection_manager.get_pais_destino()
+
+        if not origen:
+            self.update_status_bar("Selecciona un país de origen primero", "orange")
+            return
+
+        if not destino:
+            self.update_status_bar(
+                "Selecciona un país de destino después del origen", "orange"
+            )
+            return
+
+        if hasattr(self, "transmisor") and hasattr(self.transmisor, "atacar"):
+            self.transmisor.atacar(origen, destino)
+            self.update_status_bar(f"Atacando de {origen} a {destino}...", "blue")
+        else:
+            self.update_status_bar("Error: No hay conexión disponible", "red")

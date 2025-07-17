@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 
 from src.client_msg import (
     MsgAgregarUnidad,
+    MsgAtacar,
     MsgChat,
     MsgEmpezar,
     MsgEmpezarPartida,
@@ -60,6 +61,16 @@ class IClientTransmisor(ABC):
         """
 
     @abstractmethod
+    def atacar(self, origen, destino):
+        """
+        Envía un mensaje al servidor para atacar de un país a otro.
+
+        Args:
+            origen (str): Nombre del país atacante
+            destino (str): Nombre del país defensor
+        """
+
+    @abstractmethod
     def actualizar_lista_jugadores(self, jugadores):
         """
         Actualiza la lista de jugadores en la interfaz de usuario.
@@ -101,6 +112,9 @@ class ClientNullTransmisor(IClientTransmisor):
 
     def mover_unidad(self, **_kwargs):
         print("No puedes mover unidades. No estas conectado.")
+
+    def atacar(self, _, __):
+        print("No puedes atacar. No estas conectado.")
 
     def actualizar_lista_jugadores(self, _):
         pass
@@ -161,6 +175,17 @@ class ClientTransmisor(IClientTransmisor):
         print(f"Moviendo {cantidad} unidad(es) de {origen} a {destino}")
 
         msg = MsgMoverUnidad(origen, destino, cantidad)
+        self._conn.send_data(msg.to_json())
+
+    def atacar(self, origen, destino):
+        """
+        Envía un mensaje de ataque al servidor.
+
+        Args:
+            origen (str): País de origen del ataque
+            destino (str): País de destino del ataque
+        """
+        msg = MsgAtacar(origen, destino)
         self._conn.send_data(msg.to_json())
 
     def actualizar_lista_jugadores(self, jugadores):

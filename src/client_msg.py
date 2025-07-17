@@ -113,6 +113,28 @@ class MsgMoverUnidad(IMsg):
         return json.dumps(data)
 
 
+class MsgAtacar(IMsg):
+    def __init__(self, origen, destino):
+        """
+        Crea un mensaje para atacar de un país a otro.
+
+        Args:
+            origen (str): Nombre del país atacante
+            destino (str): Nombre del país defensor
+        """
+        self._tipo = "atacar"
+        self._origen = origen
+        self._destino = destino
+
+    def to_json(self):
+        data = {
+            "mensaje": self._tipo,
+            "origen": self._origen,
+            "destino": self._destino,
+        }
+        return json.dumps(data)
+
+
 class MsgFinalizarTurno(IMsg):
     def __init__(self):
         """Crea un mensaje para finalizar el turno actual."""

@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 
 from src.exception import MensajeNoValidoError
 from src.server_state_validator import ServerStateValidator
+from src.turnos import PrimerTurno, SegundoTurno
 
 
 class IServerTask(ABC):
@@ -194,6 +195,59 @@ class ServerTaskMoverUnidad(IServerTask):
         client.server.enviar_mapa()
 
 
+class ServerTaskAtacar(IServerTask):
+    def __init__(self, data):
+        super().__init__(data)
+        self._origen = data.get("origen")
+        self._destino = data.get("destino")
+        self._action_name = "atacar"
+
+    def _execute(self, client):
+        # Verificar que no sea primer o segundo turno
+        turno_actual = client.server.game.turno_actual()
+        if isinstance(turno_actual, (PrimerTurno, SegundoTurno)):
+            turno_nombre = type(turno_actual).__name__
+            mensaje = (
+                f"No se puede atacar en los primeros 2 turnos. "
+                f"Turno actual: {turno_nombre}"
+            )
+            print(mensaje)
+            return
+
+        # Verificar que el cliente sea el dueño del país de origen
+        if client.server.mapa.ocupado_por(self._origen) != client:
+            print(f"El jugador {client.userid()} no es dueño de {self._origen}")
+            return
+
+        # Verificar que el país de destino sea de otro jugador
+        if client.server.mapa.ocupado_por(self._destino) == client:
+            print(f"No puedes atacar tu propio país: {self._destino}")
+            return
+
+        # Verificar que los países sean adyacentes
+        paises_adyacentes = client.server.mapa.obtener_paises_adyacentes(self._origen)
+        if self._destino not in paises_adyacentes:
+            print(f"{self._destino} no es adyacente a {self._origen}")
+            return
+
+        # Verificar que haya al menos 2 unidades en el país de origen
+        # (necesita 1 para atacar)
+        unidades_origen = client.server.mapa.cantidad_unidades(self._origen)
+        if unidades_origen < 2:
+            print(f"Necesitas al menos 2 unidades en {self._origen} para atacar")
+            return
+
+        # Realizar el ataque
+        client.server.game.atacar(self._origen, self._destino)
+        print(f"Ataque realizado de {self._origen} a {self._destino}")
+
+        # Notificar a todos los clientes sobre el cambio en el mapa
+        client.server.enviar_mapa()
+
+        # Dar una tarjeta al jugador si conquistó un país
+        # (esto se podría implementar más adelante)
+
+
 class ServerTaskFinalizarTurno(IServerTask):
     def __init__(self, data):
         super().__init__(data)
@@ -226,5 +280,6 @@ dict_task = {
     "set_username": ServerTaskSetUsername,
     "agregar_unidad": ServerTaskAgregarUnidad,
     "mover_unidad": ServerTaskMoverUnidad,
+    "atacar": ServerTaskAtacar,
     "finalizar_turno": ServerTaskFinalizarTurno,
 }

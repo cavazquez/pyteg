@@ -156,9 +156,8 @@ class Menu(QMenu):
             destino = selection_manager.get_pais_destino()
 
             if origen and destino and self.transmisor:
-                # Realizar ataque (por ahora usamos la misma función que mover)
-                # En el futuro, podrías tener una función específica para atacar
-                self.transmisor.mover_unidad(origen=origen, destino=destino, cantidad=1)
+                # Realizar ataque usando el método específico
+                self.transmisor.atacar(origen=origen, destino=destino)
                 print(f"Atacando de {origen} a {destino}")
                 # Mostrar mensaje en la barra de estado
                 self.main_window.status_bar.showMessage(
