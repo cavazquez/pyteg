@@ -3,6 +3,7 @@ from src.server_msg import (
     MsgChat,
     MsgColor,
     MsgColorAsignado,
+    MsgError,
     MsgEstado,
     MsgPais,
     MsgSosAdmin,
@@ -142,3 +143,14 @@ class ServerTransmisor:
                     else 0,
                 }
                 self.enviar_unidades_disponibles(unidades_disponibles)
+
+    def enviar_error(self, error_type, message):
+        """
+        Envía un mensaje de error al cliente.
+
+        Args:
+            error_type (str): Tipo de error (ej: "duplicate_username")
+            message (str): Mensaje descriptivo del error
+        """
+        msg = MsgError(error_type, message)
+        self._send_message(msg)

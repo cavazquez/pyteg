@@ -33,6 +33,8 @@ class Server:
     def quitarme(self, user_id):
         print(f"Quitando {user_id}")
         self._clients.pop(user_id, None)
+        # Notificar a todos los clientes restantes sobre la desconexión
+        self.enviar_username()
 
     def registrar_cliente(self, user_id, client):
         self.color.asignar_color_aleatorio(client)

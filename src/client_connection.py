@@ -77,6 +77,12 @@ class ConnectionClient(QWidget):
         else:
             print(f"Estado desconocido: {state}")
 
+    def desconectar(self):
+        """Desconecta el cliente del servidor."""
+        if self._socket.state() == QAbstractSocket.ConnectedState:
+            self._socket.disconnectFromHost()
+            print("Desconectando del servidor...")
+
     def display_error(self):
         if self._socket.errorString() == "Connection refused":
             QMessageBox.warning(self, "Advertencia", "conexión rehusada.")

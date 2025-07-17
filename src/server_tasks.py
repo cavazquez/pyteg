@@ -96,7 +96,25 @@ class ServerTaskSetUsername(IServerTask):
 
     def _execute(self, client):
         if self._username and isinstance(self._username, str):
-            # Actualizar el nombre de usuario del cliente
+            # Verificar si el username ya está en uso por otro cliente
+            for other_client in client.server.dame_clientes():
+                if (
+                    other_client.userid() != client.userid()
+                    and other_client.username() == self._username
+                ):
+                    # Username duplicado, enviar error al cliente
+                    error_msg = (
+                        f"El nombre de usuario '{self._username}' ya está en uso. "
+                        "Por favor, elige otro nombre."
+                    )
+                    client.transmisor.enviar_error("duplicate_username", error_msg)
+                    print(
+                        f"Usuario {client.userid()} intentó usar username "
+                        f"duplicado: {self._username}"
+                    )
+                    return
+
+            # Username válido, actualizar el nombre de usuario del cliente
             client.set_username(self._username)
             # Notificar a todos los clientes sobre el cambio de nombre
             client.server.enviar_username()
