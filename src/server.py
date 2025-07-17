@@ -190,7 +190,7 @@ class Server:
 
         # Iniciar el temporizador de turnos
         print("Iniciando temporizador de turnos...")
-        self._turno_timer = TurnoTimer(self, segundos_por_turno=10)
+        self._turno_timer = TurnoTimer(self, segundos_por_turno=20)
         self._turno_timer.start()
 
     def enviar_unidades_disponibles(self):

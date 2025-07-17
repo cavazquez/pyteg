@@ -70,8 +70,7 @@ class ToolBar(QToolBar):
         # Botón atacar
         icono_atacar = self._validar_icono("icons/atacar.png", "atacar")
         self.button_atacar = QAction(icono_atacar, "Atacar", self)
-        self.button_atacar.setEnabled(False)  # Inicialmente deshabilitado
-        self.button_atacar.triggered.connect(self._atacar_paises_seleccionados)
+        self.button_atacar.triggered.connect(self.main_window.atacar)
         self.addAction(self.button_atacar)
 
         # Botón mover

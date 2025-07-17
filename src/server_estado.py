@@ -69,6 +69,7 @@ class Estado:
             "chat": [self.INICIAL, self.ESPERAR_JUGADORES, self.JUGANDO],
             "agregar_unidad": [self.JUGANDO],
             "mover_unidad": [self.JUGANDO],
+            "atacar": [self.JUGANDO],
             "finalizar_turno": [self.JUGANDO],
         }
 

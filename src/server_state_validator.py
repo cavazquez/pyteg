@@ -33,6 +33,7 @@ class ServerStateValidator:
             "chat": [estado.INICIAL, estado.ESPERAR_JUGADORES, estado.JUGANDO],
             "agregar_unidad": [estado.JUGANDO],
             "mover_unidad": [estado.JUGANDO],
+            "atacar": [estado.JUGANDO],
             "finalizar_turno": [estado.JUGANDO],
         }
 
