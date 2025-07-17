@@ -236,3 +236,25 @@ class MsgActualizarListaJugadores(IMsg):
 
         data = {"mensaje": self._tipo, "jugadores": jugadores_serializados}
         return json.dumps(data)
+
+
+class MsgError(IMsg):
+    def __init__(self, error_type, message):
+        """
+        Inicializa un mensaje de error del servidor.
+
+        Args:
+            error_type (str): Tipo de error (ej: "duplicate_username")
+            message (str): Mensaje descriptivo del error
+        """
+        self._tipo = "error"
+        self._error_type = error_type
+        self._message = message
+
+    def to_json(self):
+        data = {
+            "mensaje": self._tipo,
+            "error_type": self._error_type,
+            "message": self._message,
+        }
+        return json.dumps(data)

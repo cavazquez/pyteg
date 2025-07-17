@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 
 from PySide6.QtGui import QColor
+from PySide6.QtWidgets import QMessageBox
 
 from src.client import Client
 from src.client_color import Color
@@ -358,6 +359,49 @@ class ClientTaskActualizarListaJugadores(IClientTask):
             print(f"Error al actualizar la lista de jugadores: {e}")
 
 
+class ClientTaskError(IClientTask):
+    def __init__(self, data):
+        self._error_type = data.get("error_type")
+        self._message = data.get("message")
+
+    def run(self, main_window):
+        """
+        Maneja errores enviados por el servidor mostrando un diálogo
+        de error al usuario.
+        """
+        if self._error_type == "duplicate_username":
+            # Mostrar diálogo específico para nombres de usuario duplicados
+            msg_box = QMessageBox(main_window)
+            msg_box.setIcon(QMessageBox.Warning)
+            msg_box.setWindowTitle("Nombre de usuario duplicado")
+            msg_box.setText("El nombre de usuario que elegiste ya está en uso.")
+            msg_box.setInformativeText(
+                "Por favor, elige un nombre de usuario diferente."
+            )
+            msg_box.setStandardButtons(QMessageBox.Ok)
+            msg_box.exec()
+
+            # Cerrar ventana de esperar jugadores si está abierta
+            if hasattr(main_window, "w") and main_window.w:
+                main_window.w.close()
+
+            # Desconectar del servidor y abrir ventana de conexión
+            if hasattr(main_window, "conexion") and main_window.conexion:
+                main_window.conexion.desconectar()
+
+            # Abrir la ventana de conexión para que el usuario pueda
+            # intentar con un nombre diferente
+            main_window.abrir_ventana_conectar()
+        else:
+            # Mostrar diálogo genérico para otros tipos de error
+            msg_box = QMessageBox(main_window)
+            msg_box.setIcon(QMessageBox.Critical)
+            msg_box.setWindowTitle("Error")
+            msg_box.setText(self._message or "Ha ocurrido un error.")
+            msg_box.setStandardButtons(QMessageBox.Ok)
+            msg_box.exec()
+
+
 dict_task = {
     "chat": ClientTaskChat,
     "sosadmin": ClientTaskSerAdmin,
@@ -371,4 +415,5 @@ dict_task = {
     "pais": ClientTaskAsignarPais,
     "unidades_disponibles": ClientTaskUnidadesDisponibles,
     "actualizar_lista_jugadores": ClientTaskActualizarListaJugadores,
+    "error": ClientTaskError,
 }

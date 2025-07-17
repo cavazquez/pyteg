@@ -129,6 +129,10 @@ class Client:
             data_json = json.loads(data)
             self.ejecutar_mensaje(data_json)
 
+        # Cuando el cliente se desconecta, quitarlo del servidor
+        print(f"Cliente {self._user_id} se ha desconectado")
+        self.server.quitarme(self._user_id)
+
     def ejecutar_mensaje(self, data):
         """
         Ejecuta una tarea basada en el mensaje recibido.
