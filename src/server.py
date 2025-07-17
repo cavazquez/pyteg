@@ -147,8 +147,13 @@ class Server:
 
     def enviar_userid(self):
         for client in self.dame_clientes():
+            # Primero enviar el ID del cliente actual (su propio ID)
+            client.transmisor.enviar_userid(client.userid())
+
+            # Luego enviar los IDs de los otros clientes
             for otro_client in self.dame_clientes():
-                client.transmisor.enviar_userid(otro_client.userid())
+                if otro_client.userid() != client.userid():
+                    client.transmisor.enviar_userid(otro_client.userid())
 
     def enviar_username(self):
         for client in self.dame_clientes():

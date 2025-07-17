@@ -15,6 +15,7 @@ from PySide6.QtWidgets import (
 
 from src.client_transmisor import ClientNullTransmisor
 from src.cliente_colores import Colores
+from src.debug_logger import debug_logger
 from src.gui_admin import VentanaAdmin
 from src.gui_chat import Chat
 from src.gui_conectar import VentanaConectar
@@ -74,6 +75,32 @@ class Gui(QMainWindow):
         self.jugador_actual_layout.addWidget(self.turno_label)
 
         self.status_bar.addPermanentWidget(self.jugador_actual_widget)
+
+        # Add a widget for "My Player" info
+        self.mi_jugador_widget = QWidget()
+        self.mi_jugador_layout = QHBoxLayout(self.mi_jugador_widget)
+        self.mi_jugador_layout.setContentsMargins(0, 0, 0, 0)
+        self.mi_jugador_layout.setSpacing(5)
+
+        # "Mi jugador:" label
+        self.mi_jugador_text = QLabel("Mi jugador:")
+        self.mi_jugador_layout.addWidget(self.mi_jugador_text)
+
+        # My color indicator (square)
+        self.mi_color_indicator = QLabel()
+        self.mi_color_indicator.setFixedSize(16, 16)
+        self.mi_color_indicator.setStyleSheet("""
+            background-color: #cccccc;
+            border: 1px solid #999999;
+            border-radius: 2px;
+        """)
+        self.mi_jugador_layout.addWidget(self.mi_color_indicator)
+
+        # My username
+        self.mi_username_label = QLabel("[No conectado]")
+        self.mi_jugador_layout.addWidget(self.mi_username_label)
+
+        self.status_bar.addPermanentWidget(self.mi_jugador_widget)
 
         # Add a label for the game state
         self.estado_label = QLabel("Estado: Desconectado")
@@ -425,6 +452,68 @@ class Gui(QMainWindow):
 
         estado_mostrar = estados_amigables.get(estado, estado)
         self.estado_label.setText(f"Estado: {estado_mostrar}")
+
+    def update_mi_jugador_info(self):
+        """Actualiza la información del usuario actual (mi jugador).
+
+        Actualiza la información en la barra de estado.
+        """
+        try:
+            debug_logger.log("GUI: update_mi_jugador_info llamado")
+            # Verificar que tenemos un cliente conectado
+            if (
+                not hasattr(self, "client")
+                or not self.client
+                or not self.client.userid()
+            ):
+                debug_logger.log("GUI: No hay cliente conectado")
+                self.mi_username_label.setText("[No conectado]")
+                self.mi_color_indicator.setStyleSheet("""
+                    background-color: #cccccc;
+                    border: 1px solid #999999;
+                    border-radius: 2px;
+                """)
+                return
+
+            # Obtener mi usuario ID
+            mi_user_id = self.client.userid()
+            debug_logger.log(f"GUI: Mi user_id: {mi_user_id}")
+
+            # Obtener mi nombre de usuario
+            mi_username = "[Sin nombre]"
+            if hasattr(self.client, "username") and self.client.username():
+                mi_username = self.client.username()
+            debug_logger.log(f"GUI: Mi username: {mi_username}")
+
+            # Obtener mi color asignado
+            mi_color = None
+            if hasattr(self, "colores") and self.colores:
+                mi_color = self.colores.color_asignado(mi_user_id)
+                debug_logger.log(f"GUI: Mi color: {mi_color}")
+
+            # Actualizar el nombre de usuario
+            self.mi_username_label.setText(mi_username)
+
+            # Actualizar el color
+            if mi_color and hasattr(mi_color, "name"):
+                color_hex = mi_color.name()  # Obtener color en formato hexadecimal
+                debug_logger.log(f"GUI: Color hex: {color_hex}")
+                self.mi_color_indicator.setStyleSheet(f"""
+                    background-color: {color_hex};
+                    border: 1px solid #999999;
+                    border-radius: 2px;
+                """)
+            else:
+                debug_logger.log("GUI: No hay color asignado, usando color por defecto")
+                # Color por defecto si no hay color asignado
+                self.mi_color_indicator.setStyleSheet("""
+                    background-color: #cccccc;
+                    border: 1px solid #999999;
+                    border-radius: 2px;
+                """)
+        except Exception as e:
+            print(f"Error al actualizar información de mi jugador: {e}")
+            self.mi_username_label.setText("[Error]")
 
     def update_unidades_disponibles(self, unidades):
         """Actualiza el panel derecho con las unidades disponibles.
