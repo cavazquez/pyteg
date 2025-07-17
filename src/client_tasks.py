@@ -5,6 +5,7 @@ from PySide6.QtWidgets import QMessageBox
 
 from src.client import Client
 from src.client_color import Color
+from src.debug_logger import debug_logger
 
 
 class IClientTask(ABC):
@@ -130,6 +131,24 @@ class ClientTaskColorAsignado(IClientTask):
             if tiene_w and tiene_cargar_colores_asignados:
                 main_window.w.cargar_colores_asignados()
 
+            # Actualizar información del usuario actual si es su color
+            if hasattr(main_window, "client") and main_window.client:
+                mi_user_id = main_window.client.userid()
+                debug_logger.log(
+                    f"ClientTaskColorAsignado: Mi user_id: {mi_user_id}, "
+                    f"Color asignado a: {id_user}"
+                )
+                if mi_user_id == id_user:
+                    debug_logger.log(
+                        "ClientTaskColorAsignado: ES MI COLOR, actualizando mi info"
+                    )
+                    if hasattr(main_window, "update_mi_jugador_info"):
+                        main_window.update_mi_jugador_info()
+                else:
+                    debug_logger.log(
+                        "ClientTaskColorAsignado: NO es mi color, no actualizo"
+                    )
+
         except Exception as e:
             print(f"Error en ClientTaskColorAsignado: {e}")
 
@@ -169,7 +188,24 @@ class ClientTaskUserId(IClientTask):
 
     def run(self, main_window):
         userid = int(self._msg.get("user_id"))
-        main_window.client.set_userid(userid)
+        debug_logger.log(f"ClientTaskUserId: Recibido user_id {userid}")
+
+        # Solo establecer el ID del cliente actual si aún no tiene uno
+        if not main_window.client.userid():
+            debug_logger.log(
+                f"ClientTaskUserId: Estableciendo {userid} como MI user_id"
+            )
+            main_window.client.set_userid(userid)
+            # Actualizar información del usuario actual
+            if hasattr(main_window, "update_mi_jugador_info"):
+                main_window.update_mi_jugador_info()
+        else:
+            debug_logger.log(
+                f"ClientTaskUserId: Ya tengo user_id {main_window.client.userid()}, "
+                f"agregando {userid} a la lista"
+            )
+
+        # Siempre mantener información de todos los jugadores
         main_window.client_by_id[userid] = Client()
         main_window.client_by_id[userid].set_userid(userid)
 
@@ -246,6 +282,12 @@ class ClientTaskUsername(IClientTask):
 
         # Actualizar la lista de jugadores en la interfaz
         self.actualizar_lista_jugadores(main_window)
+
+        # Actualizar información del usuario actual si es mi usuario
+        if main_window.client.userid() == userid and hasattr(
+            main_window, "update_mi_jugador_info"
+        ):
+            main_window.update_mi_jugador_info()
 
     def actualizar_lista_jugadores(self, main_window):
         """
