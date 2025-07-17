@@ -329,6 +329,9 @@ class Gui(QMainWindow):
         self.players_layout.addWidget(player_widget)
 
     def abrir_ventana_conectar(self):
+        # Cancelar selección al abrir ventana de conexión
+        if hasattr(self.scene, "selection_manager"):
+            self.scene.selection_manager.cancelar_seleccion()
         self.ventana_conectar = None
         self.ventana_conectar = VentanaConectar(self)
         self.ventana_conectar.show()
@@ -624,6 +627,9 @@ class Gui(QMainWindow):
         # Por ejemplo, notificar al servidor que el turno ha terminado
         if hasattr(self, "transmisor") and hasattr(self.transmisor, "finalizar_turno"):
             self.transmisor.finalizar_turno()
+            # Cancelar selección después de finalizar turno
+            if hasattr(self.scene, "selection_manager"):
+                self.scene.selection_manager.cancelar_seleccion()
         else:
             print("No se pudo finalizar el turno: transmisor no disponible")
 
@@ -653,5 +659,7 @@ class Gui(QMainWindow):
         if hasattr(self, "transmisor") and hasattr(self.transmisor, "atacar"):
             self.transmisor.atacar(origen, destino)
             self.update_status_bar(f"Atacando de {origen} a {destino}...", "blue")
+            # Cancelar selección después de atacar
+            selection_manager.cancelar_seleccion()
         else:
             self.update_status_bar("Error: No hay conexión disponible", "red")
