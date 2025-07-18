@@ -289,6 +289,10 @@ class ClientTaskUsername(IClientTask):
         ):
             main_window.update_mi_jugador_info()
 
+        # Actualizar la ventana de espera de jugadores si está abierta
+        if hasattr(main_window, "w") and main_window.w is not None:
+            main_window.w.cargar_colores_asignados()
+
     def actualizar_lista_jugadores(self, main_window):
         """
         Actualiza la lista de jugadores en la interfaz de usuario.
