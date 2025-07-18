@@ -56,6 +56,10 @@ class Pais(QGraphicsPixmapItem):
     def set_unidades(self, cant):
         self._circle.set_unidades(cant)
 
+    def get_unidades(self):
+        """Retorna la cantidad de unidades como entero."""
+        return self._circle.get_unidades()
+
     def set_main_window(self, main_window):
         """Establece la referencia a la ventana principal"""
         self._main_window = main_window

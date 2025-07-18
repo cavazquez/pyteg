@@ -218,6 +218,7 @@ class ServerTaskAtacar(IServerTask):
         super().__init__(data)
         self._origen = data.get("origen")
         self._destino = data.get("destino")
+        self._cantidad_unidades = data.get("cantidad_unidades")
         self._action_name = "atacar"
 
     def _execute(self, client):
@@ -256,8 +257,13 @@ class ServerTaskAtacar(IServerTask):
             return
 
         # Realizar el ataque
-        client.server.game.atacar(self._origen, self._destino)
-        print(f"Ataque realizado de {self._origen} a {self._destino}")
+        client.server.game.atacar(self._origen, self._destino, self._cantidad_unidades)
+        cantidad_texto = (
+            f" con {self._cantidad_unidades} unidades"
+            if self._cantidad_unidades is not None
+            else ""
+        )
+        print(f"Ataque realizado de {self._origen} a {self._destino}{cantidad_texto}")
 
         # Notificar a todos los clientes sobre el cambio en el mapa
         client.server.enviar_mapa()

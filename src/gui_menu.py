@@ -3,6 +3,8 @@ from PySide6.QtGui import (
 )
 from PySide6.QtWidgets import QMenu
 
+from src.gui_attack_dialog import AttackDialog
+
 
 class Menu(QMenu):
     # Variable de clase para rastrear el país de origen para mover unidades
@@ -156,14 +158,32 @@ class Menu(QMenu):
             destino = selection_manager.get_pais_destino()
 
             if origen and destino and self.transmisor:
-                # Realizar ataque usando el método específico
-                self.transmisor.atacar(origen=origen, destino=destino)
-                print(f"Atacando de {origen} a {destino}")
-                # Mostrar mensaje en la barra de estado
-                self.main_window.status_bar.showMessage(
-                    f"Atacando de {origen} a {destino}",
-                    3000,  # 3 segundos
-                )
+                # Obtener información del país atacante para determinar
+                # unidades disponibles
+                max_unidades = self.main_window.get_max_attack_units(origen)
+
+                if max_unidades < 1:
+                    self.main_window.update_status_bar(
+                        f"No hay suficientes unidades en {origen} para atacar", "orange"
+                    )
+                    return
+
+                # Mostrar diálogo para seleccionar cantidad de unidades
+                dialog = AttackDialog(origen, destino, max_unidades, self.main_window)
+                if dialog.exec() == dialog.Accepted:
+                    cantidad_unidades = dialog.get_cantidad_unidades()
+                    # Realizar ataque usando el método específico
+                    self.transmisor.atacar(origen, destino, cantidad_unidades)
+                    print(
+                        f"Atacando de {origen} a {destino} con "
+                        f"{cantidad_unidades} unidades"
+                    )
+                    # Mostrar mensaje en la barra de estado
+                    self.main_window.update_status_bar(
+                        f"Atacando de {origen} a {destino} con {cantidad_unidades} "
+                        f"unidad{'es' if cantidad_unidades > 1 else ''}...",
+                        "blue",
+                    )
 
             # Limpiar selección después de la acción
             selection_manager.cancelar_seleccion()
