@@ -51,10 +51,27 @@ class ConnectionClient(QWidget):
             for data in datas.split("\0"):
                 print(f"data: {data}")
                 if data:
-                    data_json = json.loads(data)
-                    print(f"Recibido {data_json}")
-                    task = ClientTaskManager.msg_to_task(data_json)
-                    task.run(self._main_window)
+                    # Verificar si es un mensaje de rechazo (texto plano)
+                    if "El juego ya está en progreso" in data:
+                        print(f"Servidor rechazó la conexión: {data}")
+                        QMessageBox.warning(
+                            self._main_window, "Conexión rechazada", data
+                        )
+                        self._socket.disconnectFromHost()
+                        return
+
+                    try:
+                        data_json = json.loads(data)
+                        print(f"Recibido {data_json}")
+                        task = ClientTaskManager.msg_to_task(data_json)
+                        task.run(self._main_window)
+                    except json.JSONDecodeError:
+                        print(f"Mensaje no JSON recibido: {data}")
+                        # Podría ser un mensaje de rechazo u otro tipo de mensaje
+                        if data.strip():  # Si no está vacío
+                            QMessageBox.warning(
+                                self._main_window, "Mensaje del servidor", data
+                            )
 
     def on_state_changed(self, state):
         if state == QAbstractSocket.HostLookupState:

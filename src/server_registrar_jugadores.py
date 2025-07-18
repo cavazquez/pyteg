@@ -30,6 +30,26 @@ def registrar_jugadores(server, host: str = "127.0.0.1", port: int = 65432):
                 conn, addr = server_socket.accept()
                 print(f"Conexión aceptada desde {addr}")
 
+                # Verificar si el juego ya está en progreso
+                if server.estado.es_jugando() or server.estado.es_finalizado():
+                    estado_actual = server.estado.estado_actual()
+                    print(
+                        f"Rechazando conexión de {addr}: "
+                        f"El juego ya está en progreso (estado: {estado_actual})"
+                    )
+                    # Enviar mensaje de rechazo y cerrar conexión
+                    try:
+                        mensaje_rechazo = (
+                            "El juego ya está en progreso. "
+                            "No se pueden conectar nuevos jugadores."
+                        )
+                        conn.send(mensaje_rechazo.encode("utf-8"))
+                    except Exception as e:
+                        print(f"Error al enviar mensaje de rechazo: {e}")
+                    finally:
+                        conn.close()
+                    continue
+
                 connection = ConnectionServer(conn, addr)
                 user_id, client = server_build_client.build(connection, server)
                 server.registrar_cliente(user_id, client)
