@@ -1,6 +1,7 @@
 import json
 
 from src.exception import EstadoInvalidoError, MensajeNoValidoError
+from src.logger import get_logger
 from src.server_tasks_manager import ServerTaskManager
 from src.server_transmisor import ServerTransmisor
 
@@ -23,6 +24,7 @@ class Client:
         self._soy_admin = soy_admin
         self._color = None
         self.transmisor = ServerTransmisor(self._conn)
+        self._logger = get_logger(f"server.client.{user_id}")
 
     def asignar_color(self, color):
         """
@@ -130,7 +132,9 @@ class Client:
             self.ejecutar_mensaje(data_json)
 
         # Cuando el cliente se desconecta, quitarlo del servidor
-        print(f"Cliente {self._user_id} se ha desconectado")
+        self._logger.info(
+            "Cliente %s (%s) se ha desconectado", self._user_id, self._username
+        )
         self.server.quitarme(self._user_id)
 
     def ejecutar_mensaje(self, data):
@@ -142,14 +146,16 @@ class Client:
         task = ServerTaskManager.msg_to_task(data)
         try:
             task.run(self)
-        except MensajeNoValidoError as e:
-            print(f"Error: {e}")
+        except MensajeNoValidoError:
+            self._logger.exception("Mensaje no válido del cliente %s", self._user_id)
         except EstadoInvalidoError as e:
-            print(f"Error de estado: {e}")
+            self._logger.warning("Error de estado del cliente %s: %s", self._user_id, e)
             # Opcionalmente, enviar el error al cliente
             if hasattr(self.server, "enviar_error"):
                 self.server.enviar_error(str(e))
 
         mensaje = data.get("mensaje")
         if mensaje:
-            print(mensaje)
+            self._logger.debug(
+                "Mensaje recibido del cliente %s: %s", self._user_id, mensaje
+            )
