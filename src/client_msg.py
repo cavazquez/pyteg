@@ -114,17 +114,21 @@ class MsgMoverUnidad(IMsg):
 
 
 class MsgAtacar(IMsg):
-    def __init__(self, origen, destino):
+    def __init__(self, origen, destino, cantidad_unidades=None):
         """
         Crea un mensaje para atacar de un país a otro.
 
         Args:
             origen (str): Nombre del país atacante
             destino (str): Nombre del país defensor
+            cantidad_unidades (int, optional): Cantidad de unidades con las que
+                                              atacar (1-3). Si es None, se usa el
+                                              máximo posible.
         """
         self._tipo = "atacar"
         self._origen = origen
         self._destino = destino
+        self._cantidad_unidades = cantidad_unidades
 
     def to_json(self):
         data = {
@@ -132,6 +136,8 @@ class MsgAtacar(IMsg):
             "origen": self._origen,
             "destino": self._destino,
         }
+        if self._cantidad_unidades is not None:
+            data["cantidad_unidades"] = self._cantidad_unidades
         return json.dumps(data)
 
 

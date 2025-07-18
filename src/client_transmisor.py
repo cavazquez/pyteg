@@ -61,13 +61,16 @@ class IClientTransmisor(ABC):
         """
 
     @abstractmethod
-    def atacar(self, origen, destino):
+    def atacar(self, origen, destino, cantidad_unidades=None):
         """
         Envía un mensaje al servidor para atacar de un país a otro.
 
         Args:
             origen (str): Nombre del país atacante
             destino (str): Nombre del país defensor
+            cantidad_unidades (int, optional): Cantidad de unidades con las que
+                                              atacar (1-3). Si es None, se usa el
+                                              máximo posible.
         """
 
     @abstractmethod
@@ -113,7 +116,7 @@ class ClientNullTransmisor(IClientTransmisor):
     def mover_unidad(self, **_kwargs):
         print("No puedes mover unidades. No estas conectado.")
 
-    def atacar(self, _, __):
+    def atacar(self, _, __, cantidad_unidades=None):  # noqa: ARG002
         print("No puedes atacar. No estas conectado.")
 
     def actualizar_lista_jugadores(self, _):
@@ -177,15 +180,18 @@ class ClientTransmisor(IClientTransmisor):
         msg = MsgMoverUnidad(origen, destino, cantidad)
         self._conn.send_data(msg.to_json())
 
-    def atacar(self, origen, destino):
+    def atacar(self, origen, destino, cantidad_unidades=None):
         """
         Envía un mensaje de ataque al servidor.
 
         Args:
             origen (str): País de origen del ataque
             destino (str): País de destino del ataque
+            cantidad_unidades (int, optional): Cantidad de unidades con las que
+                                              atacar (1-3). Si es None, se usa el
+                                              máximo posible.
         """
-        msg = MsgAtacar(origen, destino)
+        msg = MsgAtacar(origen, destino, cantidad_unidades)
         self._conn.send_data(msg.to_json())
 
     def actualizar_lista_jugadores(self, jugadores):

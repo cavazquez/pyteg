@@ -41,3 +41,7 @@ class Circulo(QGraphicsEllipseItem):
 
     def set_unidades(self, cant):
         self._center_text.set_unidades(str(cant))
+
+    def get_unidades(self):
+        """Retorna la cantidad de unidades como entero."""
+        return self._center_text.get_unidades()

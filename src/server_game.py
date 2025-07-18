@@ -117,20 +117,34 @@ class Game:
 
         return jugadores_orden
 
-    def atacar(self, pais_atacante, pais_defensor):
+    def atacar(self, pais_atacante, pais_defensor, cantidad_unidades=None):
         """
         Realiza un ataque entre dos países.
 
         Args:
             pais_atacante (str): País que inicia el ataque
             pais_defensor (str): País que recibe el ataque
+            cantidad_unidades (int, optional): Cantidad de unidades con las que
+                                              atacar (1-3). Si es None, se usa el
+                                              máximo posible.
         """
         # Obtener las unidades de cada país
         unidades_atacante = self.mapa().cantidad_unidades(pais_atacante)
         unidades_defensor = self.mapa().cantidad_unidades(pais_defensor)
 
         # Calcular cuántos dados usar
-        dados_atacante_count = Batalla.calcular_cant_dados_atacante(unidades_atacante)
+        if cantidad_unidades is not None:
+            # Validar que la cantidad esté en el rango válido (1-3)
+            cantidad_unidades = max(1, min(3, cantidad_unidades))
+            # Validar que no exceda las unidades disponibles (menos 1 que debe quedar)
+            max_unidades_disponibles = unidades_atacante - 1
+            cantidad_unidades = min(cantidad_unidades, max_unidades_disponibles)
+            dados_atacante_count = cantidad_unidades
+        else:
+            dados_atacante_count = Batalla.calcular_cant_dados_atacante(
+                unidades_atacante
+            )
+
         dados_defensor_count = Batalla.calcular_cant_dados_defensor(unidades_defensor)
 
         # Generar dados aleatorios

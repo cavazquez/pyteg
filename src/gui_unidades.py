@@ -33,3 +33,10 @@ class Unidades(QGraphicsTextItem):
 
     def set_unidades(self, text):
         self.setPlainText(text)
+
+    def get_unidades(self):
+        """Retorna la cantidad de unidades como entero."""
+        try:
+            return int(self.toPlainText())
+        except ValueError:
+            return 0

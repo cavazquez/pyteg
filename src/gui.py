@@ -17,6 +17,7 @@ from src.client_transmisor import ClientNullTransmisor
 from src.cliente_colores import Colores
 from src.debug_logger import debug_logger
 from src.gui_admin import VentanaAdmin
+from src.gui_attack_dialog import AttackDialog
 from src.gui_chat import Chat
 from src.gui_conectar import VentanaConectar
 from src.gui_esperar_jugadores import VentanaEsperarJugadores
@@ -657,9 +658,48 @@ class Gui(QMainWindow):
             return
 
         if hasattr(self, "transmisor") and hasattr(self.transmisor, "atacar"):
-            self.transmisor.atacar(origen, destino)
-            self.update_status_bar(f"Atacando de {origen} a {destino}...", "blue")
-            # Cancelar selección después de atacar
-            selection_manager.cancelar_seleccion()
+            # Obtener información del país atacante para determinar unidades disponibles
+            max_unidades = self.get_max_attack_units(origen)
+
+            if max_unidades < 1:
+                self.update_status_bar(
+                    f"No hay suficientes unidades en {origen} para atacar", "orange"
+                )
+                return
+
+            # Mostrar diálogo para seleccionar cantidad de unidades
+            dialog = AttackDialog(origen, destino, max_unidades, self)
+            if dialog.exec() == dialog.Accepted:
+                cantidad_unidades = dialog.get_cantidad_unidades()
+                self.transmisor.atacar(origen, destino, cantidad_unidades)
+                self.update_status_bar(
+                    f"Atacando de {origen} a {destino} con {cantidad_unidades} "
+                    f"unidad{'es' if cantidad_unidades > 1 else ''}...",
+                    "blue",
+                )
+                # Cancelar selección después de atacar
+                selection_manager.cancelar_seleccion()
         else:
             self.update_status_bar("Error: No hay conexión disponible", "red")
+
+    def get_max_attack_units(self, pais):
+        """
+        Obtiene el máximo número de unidades disponibles para atacar desde un país.
+
+        Args:
+            pais (str): Nombre del país atacante
+
+        Returns:
+            int: Máximo número de unidades disponibles (1-3)
+        """
+        # Buscar el país en la escena para obtener sus unidades
+        if hasattr(self.scene, "paises") and pais in self.scene.paises:
+            pais_widget = self.scene.paises[pais]
+            unidades_totales = pais_widget.get_unidades()
+            # Se necesita dejar al menos 1 unidad en el país
+            unidades_disponibles = max(0, unidades_totales - 1)
+            # Máximo 3 unidades para atacar
+            return min(unidades_disponibles, 3)
+
+        # Si no se encuentra el país, asumir 0 unidades disponibles
+        return 0
