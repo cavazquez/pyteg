@@ -516,7 +516,7 @@ class Gui(QMainWindow):
                     border: 1px solid #999999;
                     border-radius: 2px;
                 """)
-        except Exception as e:
+        except (AttributeError, KeyError, ValueError) as e:
             print(f"Error al actualizar información de mi jugador: {e}")
             self.mi_username_label.setText("[Error]")
 

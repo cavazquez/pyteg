@@ -256,7 +256,7 @@ class VentanaConectar(QDialog):
             self._main_window.transmisor = ClientTransmisor(self._conexion)
             self.accept()  # Cerrar el diálogo si la conexión es exitosa
 
-        except Exception as e:
+        except (ConnectionError, OSError, ValueError) as e:
             self._show_error(f"Error al conectar: {e!s}")
 
     def _show_error(self, message):

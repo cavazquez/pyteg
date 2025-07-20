@@ -63,7 +63,7 @@ class ClientTaskEstado(IClientTask):
                     main_window.w.deleteLater()
                     main_window.w = None
                     print("Ventana de espera cerrada correctamente")
-                except Exception as e:
+                except (AttributeError, RuntimeError) as e:
                     print(f"Error al cerrar la ventana de espera: {e}")
             else:
                 print("No hay ventana de espera abierta para cerrar")
@@ -71,7 +71,7 @@ class ClientTaskEstado(IClientTask):
             # Actualizar la lista de jugadores en la interfaz principal
             try:
                 self.actualizar_lista_jugadores(main_window)
-            except Exception as e:
+            except (AttributeError, KeyError, TypeError) as e:
                 print(f"Error al actualizar lista de jugadores: {e}")
 
             # Forzar actualización de la interfaz
@@ -149,7 +149,7 @@ class ClientTaskColorAsignado(IClientTask):
                         "ClientTaskColorAsignado: NO es mi color, no actualizo"
                     )
 
-        except Exception as e:
+        except (AttributeError, KeyError, ValueError) as e:
             print(f"Error en ClientTaskColorAsignado: {e}")
 
     def actualizar_lista_jugadores(self, main_window):
@@ -169,7 +169,7 @@ class ClientTaskColorAsignado(IClientTask):
             # Actualizar la lista de jugadores en la interfaz si el método existe
             if hasattr(main_window, "update_player_list"):
                 main_window.update_player_list(jugadores)
-        except Exception as e:
+        except (AttributeError, KeyError, TypeError) as e:
             print(f"Error al actualizar lista de jugadores: {e}")
 
 
@@ -342,7 +342,7 @@ class ClientTaskAsignarPais(IClientTask):
                 f"con {unidades} unidades y color {color.getRgb()}"
             )
 
-        except Exception as e:
+        except (AttributeError, KeyError, ValueError) as e:
             print(f"Error al asignar país: {e}")
 
 
@@ -401,7 +401,7 @@ class ClientTaskActualizarListaJugadores(IClientTask):
             if hasattr(main_window, "update_player_list"):
                 main_window.update_player_list(jugadores_actualizados)
 
-        except Exception as e:
+        except (AttributeError, KeyError, TypeError) as e:
             print(f"Error al actualizar la lista de jugadores: {e}")
 
 
@@ -495,7 +495,7 @@ class ClientTaskResultadoBatalla(IClientTask):
             print(f"Conquistado: {self._conquistado}")
             print(f"Resultado: {self._resultado}")
 
-        except Exception as e:
+        except (AttributeError, KeyError, ValueError) as e:
             print(f"Error al mostrar resultado de batalla: {e}")
 
 
