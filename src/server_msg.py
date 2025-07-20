@@ -238,6 +238,47 @@ class MsgActualizarListaJugadores(IMsg):
         return json.dumps(data)
 
 
+class MsgResultadoBatalla(IMsg):
+    def __init__(self, batalla_data):
+        """
+        Inicializa un mensaje con el resultado de una batalla.
+
+        Args:
+            batalla_data (dict): Diccionario con todos los datos de la batalla:
+                - origen (str): País atacante
+                - destino (str): País defensor
+                - atacante (str): Nombre del jugador atacante
+                - defensor (str): Nombre del jugador defensor
+                - dados_atacante (list): Lista de dados del atacante
+                - dados_defensor (list): Lista de dados del defensor
+                - resultado (dict): Resultado de la batalla con pérdidas
+                - conquistado (bool): Si el país fue conquistado
+        """
+        self._tipo = "resultado_batalla"
+        self._origen = batalla_data["origen"]
+        self._destino = batalla_data["destino"]
+        self._atacante = batalla_data["atacante"]
+        self._defensor = batalla_data["defensor"]
+        self._dados_atacante = batalla_data["dados_atacante"]
+        self._dados_defensor = batalla_data["dados_defensor"]
+        self._resultado = batalla_data["resultado"]
+        self._conquistado = batalla_data.get("conquistado", False)
+
+    def to_json(self):
+        data = {
+            "mensaje": self._tipo,
+            "origen": self._origen,
+            "destino": self._destino,
+            "atacante": self._atacante,
+            "defensor": self._defensor,
+            "dados_atacante": self._dados_atacante,
+            "dados_defensor": self._dados_defensor,
+            "resultado": self._resultado,
+            "conquistado": self._conquistado,
+        }
+        return json.dumps(data)
+
+
 class MsgError(IMsg):
     def __init__(self, error_type, message):
         """

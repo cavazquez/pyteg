@@ -233,7 +233,7 @@ class ServerTaskAtacar(IServerTask):
     def _execute(self, client):
         # Verificar que no sea primer o segundo turno
         turno_actual = client.server.game.turno_actual()
-        if isinstance(turno_actual, (PrimerTurno, SegundoTurno)):
+        if isinstance(turno_actual, PrimerTurno | SegundoTurno):
             turno_nombre = type(turno_actual).__name__
             mensaje = (
                 f"No se puede atacar en los primeros 2 turnos. "
@@ -265,14 +265,51 @@ class ServerTaskAtacar(IServerTask):
             print(f"Necesitas al menos 2 unidades en {self._origen} para atacar")
             return
 
+        # Logging del estado antes del ataque
+        unidades_destino = client.server.mapa.cantidad_unidades(self._destino)
+        print("=== INICIO ATAQUE ===")
+        print(f"Origen: {self._origen} ({unidades_origen} unidades)")
+        print(f"Destino: {self._destino} ({unidades_destino} unidades)")
+        print(f"Cantidad unidades atacando: {self._cantidad_unidades}")
+
         # Realizar el ataque
-        client.server.game.atacar(self._origen, self._destino, self._cantidad_unidades)
+        info_batalla = client.server.game.atacar(
+            self._origen, self._destino, self._cantidad_unidades
+        )
+
+        # Logging del estado después del ataque
+        unidades_origen_post = client.server.mapa.cantidad_unidades(self._origen)
+        unidades_destino_post = client.server.mapa.cantidad_unidades(self._destino)
+        print("=== RESULTADO ATAQUE ===")
+        print(
+            f"Origen: {self._origen} "
+            f"({unidades_origen} -> {unidades_origen_post} unidades)"
+        )
+        print(
+            f"Destino: {self._destino} "
+            f"({unidades_destino} -> {unidades_destino_post} unidades)"
+        )
+        print(f"Conquistado: {info_batalla['conquistado']}")
         cantidad_texto = (
             f" con {self._cantidad_unidades} unidades"
             if self._cantidad_unidades is not None
             else ""
         )
         print(f"Ataque realizado de {self._origen} a {self._destino}{cantidad_texto}")
+
+        # Enviar resultado de la batalla a todos los clientes
+        batalla_data = {
+            "origen": self._origen,
+            "destino": self._destino,
+            "atacante": info_batalla["atacante"],
+            "defensor": info_batalla["defensor"],
+            "dados_atacante": info_batalla["dados_atacante"],
+            "dados_defensor": info_batalla["dados_defensor"],
+            "resultado": info_batalla["resultado"],
+            "conquistado": info_batalla["conquistado"],
+        }
+        for cliente in client.server.dame_clientes():
+            cliente.transmisor.enviar_resultado_batalla(batalla_data)
 
         # Notificar a todos los clientes sobre el cambio en el mapa
         client.server.enviar_mapa()

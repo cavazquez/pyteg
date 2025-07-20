@@ -1,7 +1,7 @@
 from PySide6.QtGui import (
     QAction,
 )
-from PySide6.QtWidgets import QMenu
+from PySide6.QtWidgets import QDialog, QMenu
 
 from src.gui_attack_dialog import AttackDialog
 
@@ -170,7 +170,7 @@ class Menu(QMenu):
 
                 # Mostrar diálogo para seleccionar cantidad de unidades
                 dialog = AttackDialog(origen, destino, max_unidades, self.main_window)
-                if dialog.exec() == dialog.Accepted:
+                if dialog.exec() == QDialog.Accepted:
                     cantidad_unidades = dialog.get_cantidad_unidades()
                     # Realizar ataque usando el método específico
                     self.transmisor.atacar(origen, destino, cantidad_unidades)

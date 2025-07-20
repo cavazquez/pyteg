@@ -6,6 +6,7 @@ from src.server_msg import (
     MsgError,
     MsgEstado,
     MsgPais,
+    MsgResultadoBatalla,
     MsgSosAdmin,
     MsgTiempo,
     MsgTurno,
@@ -143,6 +144,24 @@ class ServerTransmisor:
                     else 0,
                 }
                 self.enviar_unidades_disponibles(unidades_disponibles)
+
+    def enviar_resultado_batalla(self, batalla_data):
+        """
+        Envía el resultado de una batalla al cliente.
+
+        Args:
+            batalla_data (dict): Diccionario con todos los datos de la batalla:
+                - origen (str): País atacante
+                - destino (str): País defensor
+                - atacante (str): Nombre del jugador atacante
+                - defensor (str): Nombre del jugador defensor
+                - dados_atacante (list): Lista de dados del atacante
+                - dados_defensor (list): Lista de dados del defensor
+                - resultado (dict): Resultado de la batalla con pérdidas
+                - conquistado (bool): Si el país fue conquistado
+        """
+        msg = MsgResultadoBatalla(batalla_data)
+        self._send_message(msg)
 
     def enviar_error(self, error_type, message):
         """
