@@ -162,25 +162,44 @@ class Game:
         defensor_nombre = self.mapa().ocupado_por(pais_defensor).username()
 
         # Realizar la batalla
+        print(f"Dados atacante ({atacante_nombre}): {dados_atacante}")
+        print(f"Dados defensor ({defensor_nombre}): {dados_defensor}")
+
         resultado = Batalla.ataquen(
             atacante_nombre, defensor_nombre, dados_atacante, dados_defensor
         )
 
+        print(f"Resultado batalla: {resultado}")
+        print(f"Pérdidas: {resultado['restar']}")
+
         # Aplicar las pérdidas
         for perdedor in resultado["restar"]:
             if perdedor == atacante_nombre:
+                print(f"Restando 1 unidad a {atacante_nombre} en {pais_atacante}")
                 self.mapa().restar_una_unidad(pais_atacante)
             else:
+                print(f"Restando 1 unidad a {defensor_nombre} en {pais_defensor}")
                 self.mapa().restar_una_unidad(pais_defensor)
 
         # Verificar si el país defensor fue conquistado
-        if self.mapa().cantidad_unidades(pais_defensor) == 0:
+        conquistado = False
+        unidades_defensor_post_batalla = self.mapa().cantidad_unidades(pais_defensor)
+        print(
+            f"Unidades en {pais_defensor} después de batalla: "
+            f"{unidades_defensor_post_batalla}"
+        )
+
+        if unidades_defensor_post_batalla == 0:
             # El atacante conquista el país
+            print("=== CONQUISTA ===")
             atacante = self.mapa().ocupado_por(pais_atacante)
+            print(f"Asignando {pais_defensor} a {atacante_nombre}")
             self.mapa().asignar_pais(atacante, pais_defensor)
             # Mover una unidad del atacante al país conquistado
+            print(f"Moviendo 1 unidad de {pais_atacante} a {pais_defensor}")
             self.mapa().restar_una_unidad(pais_atacante)
             self.mapa().agregar_una_unidad(pais_defensor)
+            conquistado = True
 
             print(f"{atacante_nombre} ha conquistado {pais_defensor}")
         else:
@@ -190,4 +209,12 @@ class Game:
         print(f"Dados atacante: {dados_atacante}, Dados defensor: {dados_defensor}")
         print(f"Resultado: {resultado}")
 
-        return resultado
+        # Retornar información completa de la batalla
+        return {
+            "resultado": resultado,
+            "dados_atacante": dados_atacante,
+            "dados_defensor": dados_defensor,
+            "atacante": atacante_nombre,
+            "defensor": defensor_nombre,
+            "conquistado": conquistado,
+        }

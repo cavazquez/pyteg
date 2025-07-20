@@ -448,6 +448,57 @@ class ClientTaskError(IClientTask):
             msg_box.exec()
 
 
+class ClientTaskResultadoBatalla(IClientTask):
+    def __init__(self, data):
+        self._origen = data.get("origen")
+        self._destino = data.get("destino")
+        self._atacante = data.get("atacante")
+        self._defensor = data.get("defensor")
+        self._dados_atacante = data.get("dados_atacante", [])
+        self._dados_defensor = data.get("dados_defensor", [])
+        self._resultado = data.get("resultado", {})
+        self._conquistado = data.get("conquistado", False)
+
+    def run(self, main_window):
+        """
+        Muestra el resultado de una batalla en la interfaz.
+        """
+        try:
+            # Crear mensaje descriptivo de la batalla
+            dados_atac_str = ", ".join(map(str, self._dados_atacante))
+            dados_def_str = ", ".join(map(str, self._dados_defensor))
+
+            if self._conquistado:
+                mensaje = f"¡{self._atacante} ha conquistado {self._destino}!"
+                color = "green"
+            else:
+                mensaje = (
+                    f"El ataque de {self._atacante} a {self._destino} fue repelido"
+                )
+                color = "orange"
+
+            # Agregar detalles de los dados
+            detalles = (
+                f"\nDados {self._atacante}: [{dados_atac_str}]"
+                f"\nDados {self._defensor}: [{dados_def_str}]"
+            )
+
+            # Mostrar en la barra de estado
+            if hasattr(main_window, "update_status_bar"):
+                main_window.update_status_bar(mensaje + detalles, color)
+
+            # También imprimir en consola para debug
+            print(f"Batalla: {self._origen} -> {self._destino}")
+            print(f"Atacante: {self._atacante}, Defensor: {self._defensor}")
+            print(f"Dados atacante: {self._dados_atacante}")
+            print(f"Dados defensor: {self._dados_defensor}")
+            print(f"Conquistado: {self._conquistado}")
+            print(f"Resultado: {self._resultado}")
+
+        except Exception as e:
+            print(f"Error al mostrar resultado de batalla: {e}")
+
+
 dict_task = {
     "chat": ClientTaskChat,
     "sosadmin": ClientTaskSerAdmin,
@@ -462,4 +513,5 @@ dict_task = {
     "unidades_disponibles": ClientTaskUnidadesDisponibles,
     "actualizar_lista_jugadores": ClientTaskActualizarListaJugadores,
     "error": ClientTaskError,
+    "resultado_batalla": ClientTaskResultadoBatalla,
 }

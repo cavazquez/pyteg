@@ -2,6 +2,7 @@ import contextlib
 
 from PySide6.QtCore import QSize, Qt
 from PySide6.QtWidgets import (
+    QDialog,
     QFrame,
     QGridLayout,
     QHBoxLayout,
@@ -669,7 +670,7 @@ class Gui(QMainWindow):
 
             # Mostrar diálogo para seleccionar cantidad de unidades
             dialog = AttackDialog(origen, destino, max_unidades, self)
-            if dialog.exec() == dialog.Accepted:
+            if dialog.exec() == QDialog.Accepted:
                 cantidad_unidades = dialog.get_cantidad_unidades()
                 self.transmisor.atacar(origen, destino, cantidad_unidades)
                 self.update_status_bar(
