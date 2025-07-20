@@ -132,6 +132,16 @@ class ServerTaskAgregarUnidad(IServerTask):
         self._action_name = "agregar_unidad"
 
     def _execute(self, client):
+        # Verificar que sea el turno del cliente actual
+        if not hasattr(client.server, "game") or client.server.game is None:
+            print("El juego no ha comenzado")
+            return
+
+        turno_actual = client.server.game.turno_actual()
+        if turno_actual.jugador_actual() != client:
+            print(f"No es el turno de {client.userid()}")
+            return
+
         # Verificar que el cliente sea el dueño del país
         if client.server.mapa.ocupado_por(self._pais) != client:
             print(f"El jugador {client.userid()} no es dueño de {self._pais}")
@@ -143,7 +153,6 @@ class ServerTaskAgregarUnidad(IServerTask):
             return
 
         # Verificar que el jugador tenga suficientes unidades disponibles
-        turno_actual = client.server.game.turno_actual()
         if (
             not hasattr(turno_actual, "cant_unidades")
             or turno_actual.cant_unidades() < self._cantidad
