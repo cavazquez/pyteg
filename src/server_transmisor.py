@@ -23,7 +23,7 @@ class ServerTransmisor:
     def _send_message(self, msg):
         try:
             self._conn.send(msg.to_json())
-        except Exception as e:
+        except (ConnectionError, OSError, BrokenPipeError) as e:
             print(f"Error sending message: {e}")
 
     def enviar_chat(self, msg):

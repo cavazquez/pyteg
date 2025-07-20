@@ -123,7 +123,7 @@ class Server:
                     color_obj = jugador.color_actual()
                     jugador_actual_color = color_obj.to_hex() if color_obj else None
 
-        except Exception as e:
+        except (AttributeError, KeyError) as e:
             print(f"Error obteniendo información del jugador actual: {e}")
 
         for client in self.dame_clientes():
@@ -306,7 +306,7 @@ def main():
     except KeyboardInterrupt:
         print("\nServidor detenido por el usuario")
         sys.exit(0)
-    except Exception as e:
+    except (OSError, ValueError, RuntimeError) as e:
         print(f"Error al iniciar el servidor: {e}", file=sys.stderr)
         sys.exit(1)
 

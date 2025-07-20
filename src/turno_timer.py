@@ -32,7 +32,7 @@ class TurnoTimer(threading.Thread):
         for cliente in self._server.dame_clientes():
             try:
                 cliente.transmisor.enviar_tiempo(userid_turno, tiempo_restante)
-            except Exception as exc:
+            except (ConnectionError, OSError, AttributeError) as exc:
                 # No queremos que un fallo en un cliente interrumpa el temporizador
                 print(
                     "[TurnoTimer] Error enviando tiempo a cliente "

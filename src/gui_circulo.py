@@ -36,7 +36,7 @@ class Circulo(QGraphicsEllipseItem):
                         self.setBrush(QBrush(qcolor))
                     else:
                         print(f"Color no válido: {color}")
-                except Exception as e:
+                except (ValueError, TypeError) as e:
                     print(f"Error al establecer el color: {e}")
 
     def set_unidades(self, cant):

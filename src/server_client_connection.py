@@ -18,7 +18,7 @@ class ConnectionServer:
             return None
         except BrokenPipeError as ex:
             print("BrokenPipeError:", ex)
-        except Exception as ex:
+        except (ConnectionError, OSError) as ex:
             print("Exception:", ex)
         return data
 
@@ -29,12 +29,12 @@ class ConnectionServer:
             self._conn.sendall(encode_data)
         except BrokenPipeError as ex:
             print("BrokenPipeError:", ex)
-        except Exception as ex:
+        except (ConnectionError, OSError) as ex:
             print("Exception:", ex)
 
     def close(self):
         try:
             self._conn.shutdown(socket.SHUT_RDWR)
             self._conn.close()
-        except Exception as ex:
+        except (ConnectionError, OSError) as ex:
             print("Exception:", ex)

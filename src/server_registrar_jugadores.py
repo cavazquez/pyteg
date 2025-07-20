@@ -73,7 +73,7 @@ def registrar_jugadores(server, host: str = "127.0.0.1", port: int = 65432):
             except Exception:
                 logger.exception("Error al manejar la conexión")
 
-    except Exception as e:
+    except (OSError, RuntimeError) as e:
         logger.critical("Error crítico en el servidor: %s", e, exc_info=True)
     finally:
         logger.info("Cerrando el servidor...")
