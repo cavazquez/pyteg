@@ -6,6 +6,7 @@ from PySide6.QtWidgets import QMessageBox
 from src.client import Client
 from src.client_color import Color
 from src.debug_logger import debug_logger
+from src.gui_dice_animation import BattleResultDialog
 
 
 class IClientTask(ABC):
@@ -461,31 +462,40 @@ class ClientTaskResultadoBatalla(IClientTask):
 
     def run(self, main_window):
         """
-        Muestra el resultado de una batalla en la interfaz.
+        Muestra el resultado de una batalla con animación de dados.
         """
         try:
-            # Crear mensaje descriptivo de la batalla
-            dados_atac_str = ", ".join(map(str, self._dados_atacante))
-            dados_def_str = ", ".join(map(str, self._dados_defensor))
+            # Preparar datos de la batalla para el diálogo
+            batalla_data = {
+                "origen": self._origen,
+                "destino": self._destino,
+                "atacante": self._atacante,
+                "defensor": self._defensor,
+                "dados_atacante": self._dados_atacante,
+                "dados_defensor": self._dados_defensor,
+                "resultado": self._resultado,
+                "conquistado": self._conquistado,
+            }
 
-            if self._conquistado:
-                mensaje = f"¡{self._atacante} ha conquistado {self._destino}!"
-                color = "green"
-            else:
-                mensaje = (
-                    f"El ataque de {self._atacante} a {self._destino} fue repelido"
-                )
-                color = "orange"
+            # Mostrar diálogo de animación de dados
+            dialog = BattleResultDialog(batalla_data, main_window)
 
-            # Agregar detalles de los dados
-            detalles = (
-                f"\nDados {self._atacante}: [{dados_atac_str}]"
-                f"\nDados {self._defensor}: [{dados_def_str}]"
-            )
+            # Conectar señal para actualizar barra de estado cuando termine
+            def on_animation_finished():
+                if self._conquistado:
+                    mensaje = f"¡{self._atacante} ha conquistado {self._destino}!"
+                    color = "green"
+                else:
+                    mensaje = (
+                        f"El ataque de {self._atacante} a {self._destino} fue repelido"
+                    )
+                    color = "orange"
 
-            # Mostrar en la barra de estado
-            if hasattr(main_window, "update_status_bar"):
-                main_window.update_status_bar(mensaje + detalles, color)
+                if hasattr(main_window, "update_status_bar"):
+                    main_window.update_status_bar(mensaje, color)
+
+            dialog.animation_finished.connect(on_animation_finished)
+            dialog.exec()  # Mostrar diálogo modal
 
             # También imprimir en consola para debug
             print(f"Batalla: {self._origen} -> {self._destino}")
@@ -497,6 +507,12 @@ class ClientTaskResultadoBatalla(IClientTask):
 
         except (AttributeError, KeyError, ValueError) as e:
             print(f"Error al mostrar resultado de batalla: {e}")
+            # Fallback: mostrar mensaje simple en barra de estado
+            if hasattr(main_window, "update_status_bar"):
+                main_window.update_status_bar(
+                    f"Error mostrando batalla: {self._atacante} vs {self._defensor}",
+                    "red",
+                )
 
 
 dict_task = {

@@ -211,10 +211,12 @@ class Game:
 
         # Retornar información completa de la batalla
         return {
-            "resultado": resultado,
-            "dados_atacante": dados_atacante,
-            "dados_defensor": dados_defensor,
+            "origen": pais_atacante,
+            "destino": pais_defensor,
             "atacante": atacante_nombre,
             "defensor": defensor_nombre,
+            "dados_atacante": dados_atacante,
+            "dados_defensor": dados_defensor,
+            "resultado": resultado,
             "conquistado": conquistado,
         }
