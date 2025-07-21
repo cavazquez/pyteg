@@ -32,8 +32,8 @@ ignore = [
 	# Revisar los siguientes
 	#"BLE001", # blind-except
 	"PLR0904", # too-many-public-methods 	
-	"PLR0911", # too-many-return-statements
-	"PLR0914", # too-many-locals
+	#"PLR0911", # too-many-return-statements
+	#"PLR0914", # too-many-locals
 	"PLR2004", # magic-value-comparison
 	"PLR6301", # no-self-use
 	"ERA001",  # commented-out-code
