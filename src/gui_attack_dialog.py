@@ -31,7 +31,7 @@ class AttackDialog(QDialog):
         self.cantidad_seleccionada = None
 
         self.setWindowTitle("Seleccionar Unidades de Ataque")
-        self.setFixedSize(350, 200)
+        self.setFixedSize(400, 280)
         self.setModal(True)
 
         # Eliminar botones de maximizar y minimizar
