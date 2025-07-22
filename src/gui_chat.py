@@ -172,9 +172,25 @@ class Chat(QWidget):
             # Dar foco nuevamente al campo de entrada para seguir escribiendo
             self.input_field.setFocus()
 
-    def append(self, text):
-        # Determinar si el mensaje es del usuario actual o de otro jugador
-        if text.startswith("Tú:"):
+    def append(self, text, msg_type="normal"):
+        # Determinar el color y estilo según el tipo de mensaje
+        if msg_type == "error":
+            # Mensajes de error en rojo
+            formatted_text = (
+                f"<div align='left' style='margin: 5px 0;'>"
+                f"<span style='background-color: #dc3545; color: white; "
+                f"padding: 6px 12px; border-radius: 15px; font-weight: bold;'>"
+                f"⚠️ {text}</span></div>"
+            )
+        elif msg_type == "system":
+            # Mensajes del sistema en azul claro
+            formatted_text = (
+                f"<div align='left' style='margin: 5px 0;'>"
+                f"<span style='background-color: #17a2b8; color: white; "
+                f"padding: 6px 12px; border-radius: 15px; font-style: italic;'>"
+                f"[INFO] {text}</span></div>"
+            )
+        elif text.startswith("Tú:"):
             # Formato para mensajes propios (alineados a la derecha con color diferente)
             formatted_text = (
                 f"<div align='right' style='margin: 5px 0;'>"
@@ -183,14 +199,8 @@ class Chat(QWidget):
                 f"{text}</span></div>"
             )
         else:
-            # Formato para mensajes de otros (alineados a la izquierda)
-            formatted_text = (
-                f"<div align='left' style='margin: 5px 0;'>"
-                f"<span style='background-color: #e9ecef; "
-                f"color: #212529;"
-                f"padding: 6px 12px; border-radius: 15px;'>"
-                f"{text}</span></div>"
-            )
+            # Formato para mensajes de otros jugadores
+            formatted_text = self._format_user_message(text)
 
         # Añadir el mensaje formateado
         self.text_field.append(formatted_text)
@@ -199,3 +209,75 @@ class Chat(QWidget):
         self.text_field.verticalScrollBar().setValue(
             self.text_field.verticalScrollBar().maximum()
         )
+
+    def _format_user_message(self, text):
+        """Formatea un mensaje de usuario aplicando el color del jugador al nombre."""
+        # Extraer el nombre de usuario del mensaje (formato: "username: mensaje")
+        if ":" in text:
+            username, message = text.split(":", 1)
+            username = username.strip()
+            message = message.strip()
+
+            # Obtener el color del usuario
+            user_color = self._get_user_color(username)
+
+            if user_color:
+                # Formatear con el color del usuario para el nombre
+                formatted_text = (
+                    f"<div align='left' style='margin: 5px 0;'>"
+                    f"<span style='background-color: #e9ecef; color: #212529; "
+                    f"padding: 6px 12px; border-radius: 15px;'>"
+                    f"<span style='color: {user_color}; font-weight: bold;'>"
+                    f"{username}</span>: {message}"
+                    f"</span></div>"
+                )
+            else:
+                # Formato por defecto si no se encuentra el color
+                formatted_text = (
+                    f"<div align='left' style='margin: 5px 0;'>"
+                    f"<span style='background-color: #e9ecef; color: #212529; "
+                    f"padding: 6px 12px; border-radius: 15px;'>"
+                    f"{text}</span></div>"
+                )
+        else:
+            # Formato por defecto si no hay ":" en el mensaje
+            formatted_text = (
+                f"<div align='left' style='margin: 5px 0;'>"
+                f"<span style='background-color: #e9ecef; color: #212529; "
+                f"padding: 6px 12px; border-radius: 15px;'>"
+                f"{text}</span></div>"
+            )
+
+        return formatted_text
+
+    def _get_user_color(self, username):
+        """Obtiene el color hexadecimal del usuario."""
+        try:
+            # Acceder a los colores asignados desde la ventana principal
+            colores_asignados = self.main_window.colores.colores_asignados()
+
+            if not colores_asignados:
+                return None
+
+            # Crear un mapeo simple basado en el hash del nombre de usuario
+            # para asignar consistentemente el mismo color al mismo usuario
+            user_colors = list(colores_asignados.values())
+            if user_colors:
+                # Usar hash del nombre para seleccionar un color consistente
+                color_index = hash(username) % len(user_colors)
+                selected_color = user_colors[color_index]
+
+                # Convertir QColor a hexadecimal
+                if hasattr(selected_color, "name"):
+                    return selected_color.name()  # Método de QColor para obtener hex
+                if hasattr(selected_color, "red"):
+                    # Fallback: convertir RGB a hex manualmente
+                    r = int(selected_color.red() * 255)
+                    g = int(selected_color.green() * 255)
+                    b = int(selected_color.blue() * 255)
+                    return f"#{r:02x}{g:02x}{b:02x}"
+
+        except (AttributeError, KeyError, TypeError):
+            # Error específico al acceder a colores o convertir QColor
+            pass
+        return None  # Sin color, usar formato por defecto

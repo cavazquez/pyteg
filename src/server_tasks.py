@@ -134,22 +134,24 @@ class ServerTaskAgregarUnidad(IServerTask):
     def _execute(self, client):
         # Verificar que sea el turno del cliente actual
         if not hasattr(client.server, "game") or client.server.game is None:
-            print("El juego no ha comenzado")
+            client.transmisor.enviar_error_chat("El juego no ha comenzado")
             return
 
         turno_actual = client.server.game.turno_actual()
         if turno_actual.jugador_actual() != client:
-            print(f"No es el turno de {client.userid()}")
+            client.transmisor.enviar_error_chat("No es tu turno")
             return
 
         # Verificar que el cliente sea el dueño del país
         if client.server.mapa.ocupado_por(self._pais) != client:
-            print(f"El jugador {client.userid()} no es dueño de {self._pais}")
+            client.transmisor.enviar_error_chat(f"No eres dueño de {self._pais}")
             return
 
         # Verificar que el tipo de unidad sea válido
         if self._tipo_unidad not in {"infanteria", "misil"}:
-            print(f"Tipo de unidad no válido: {self._tipo_unidad}")
+            client.transmisor.enviar_error_chat(
+                "Tipo de unidad no válido. Debe ser 'infanteria' o 'misil'."
+            )
             return
 
         # Verificar que el jugador tenga suficientes unidades disponibles
@@ -157,11 +159,10 @@ class ServerTaskAgregarUnidad(IServerTask):
             not hasattr(turno_actual, "cant_unidades")
             or turno_actual.cant_unidades() < self._cantidad
         ):
-            msg = (
+            client.transmisor.enviar_error_chat(
                 f"No hay suficientes unidades disponibles para agregar "
-                f"{self._cantidad} {self._tipo_unidad}"
+                f"{self._cantidad} unidades"
             )
-            print(msg)
             return
 
         # Agregar la unidad al país
@@ -194,21 +195,28 @@ class ServerTaskMoverUnidad(IServerTask):
     def _execute(self, client):
         # Verificar que el cliente sea el dueño del país de origen
         if client.server.mapa.ocupado_por(self._origen) != client:
-            print(f"El jugador {client.userid()} no es dueño de {self._origen}")
+            client.transmisor.enviar_error_chat(f"No eres dueño de {self._origen}")
+            return
+
+        # Verificar que el país de destino sea del mismo jugador
+        if client.server.mapa.ocupado_por(self._destino) != client:
+            client.transmisor.enviar_error_chat(f"No eres dueño de {self._destino}")
             return
 
         # Verificar que los países sean adyacentes
         paises_adyacentes = client.server.mapa.obtener_paises_adyacentes(self._origen)
         if self._destino not in paises_adyacentes:
-            print(f"{self._destino} no es adyacente a {self._origen}")
+            client.transmisor.enviar_error_chat(
+                f"{self._destino} no es adyacente a {self._origen}"
+            )
             return
 
         # Verificar que haya suficientes unidades para mover
         unidades_origen = client.server.mapa.cantidad_unidades(self._origen)
         if unidades_origen <= self._cantidad:
-            print(
-                "No hay suficientes unidades en "
-                f"{self._origen} para mover {self._cantidad}"
+            client.transmisor.enviar_error_chat(
+                f"No hay suficientes unidades en {self._origen} "
+                f"para mover {self._cantidad}"
             )
             return
 
@@ -234,35 +242,39 @@ class ServerTaskAtacar(IServerTask):
         # Verificar que no sea primer o segundo turno
         turno_actual = client.server.game.turno_actual()
         if isinstance(turno_actual, PrimerTurno | SegundoTurno):
-            turno_nombre = type(turno_actual).__name__
-            mensaje = (
-                f"No se puede atacar en los primeros 2 turnos. "
-                f"Turno actual: {turno_nombre}"
+            client.transmisor.enviar_error_chat(
+                "No se puede atacar en los primeros 2 turnos. "
+                "Debe esperar al tercer turno."
             )
-            print(mensaje)
             return
 
         # Verificar que el cliente sea el dueño del país de origen
         if client.server.mapa.ocupado_por(self._origen) != client:
-            print(f"El jugador {client.userid()} no es dueño de {self._origen}")
+            client.transmisor.enviar_error_chat(f"No eres dueño de {self._origen}")
             return
 
         # Verificar que el país de destino sea de otro jugador
         if client.server.mapa.ocupado_por(self._destino) == client:
-            print(f"No puedes atacar tu propio país: {self._destino}")
+            client.transmisor.enviar_error_chat(
+                f"No puedes atacar tu propio país: {self._destino}"
+            )
             return
 
         # Verificar que los países sean adyacentes
         paises_adyacentes = client.server.mapa.obtener_paises_adyacentes(self._origen)
         if self._destino not in paises_adyacentes:
-            print(f"{self._destino} no es adyacente a {self._origen}")
+            client.transmisor.enviar_error_chat(
+                f"{self._destino} no es adyacente a {self._origen}"
+            )
             return
 
         # Verificar que haya al menos 2 unidades en el país de origen
         # (necesita 1 para atacar)
         unidades_origen = client.server.mapa.cantidad_unidades(self._origen)
         if unidades_origen < 2:
-            print(f"Necesitas al menos 2 unidades en {self._origen} para atacar")
+            client.transmisor.enviar_error_chat(
+                f"Necesitas al menos 2 unidades en {self._origen} para atacar"
+            )
             return
 
         # Logging del estado antes del ataque
@@ -326,12 +338,12 @@ class ServerTaskFinalizarTurno(IServerTask):
     def _execute(self, client):
         # Verificar que sea el turno del cliente actual
         if not hasattr(client.server, "game") or client.server.game is None:
-            print("El juego no ha comenzado")
+            client.transmisor.enviar_error_chat("El juego no ha comenzado")
             return
 
         turno_actual = client.server.game.turno_actual()
         if turno_actual.jugador_actual() != client:
-            print(f"No es el turno de {client.userid()}")
+            client.transmisor.enviar_error_chat("No es tu turno")
             return
 
         # Finalizar el turno actual

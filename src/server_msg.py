@@ -47,14 +47,16 @@ class MsgColor(IMsg):
 
 
 class MsgChat(IMsg):
-    def __init__(self, msg):
+    def __init__(self, msg, msg_type="normal"):
         self._tipo = "chat"
         self._msg = msg
+        self._msg_type = msg_type  # "normal", "error", "system"
 
     def to_json(self):
         data = {
             "mensaje": self._tipo,
             "msg": self._msg,
+            "msg_type": self._msg_type,
         }
         return json.dumps(data)
 

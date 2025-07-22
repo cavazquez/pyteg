@@ -26,9 +26,10 @@ class ClientTaskNull(IClientTask):
 class ClientTaskChat(IClientTask):
     def __init__(self, data):
         self._msg = data.get("msg")
+        self._msg_type = data.get("msg_type", "normal")
 
     def run(self, main_window):
-        main_window.chat.append(self._msg)
+        main_window.chat.append(self._msg, self._msg_type)
 
 
 class ClientTaskSerAdmin(IClientTask):
@@ -235,7 +236,7 @@ class ClientTaskTurno(IClientTask):
         )
 
         # Mostrar mensaje de inicio de turno en el chat
-        main_window.chat.append(f"Turno {num_turno + 1} iniciado")
+        main_window.chat.append(f"Turno {num_turno + 1} iniciado", "system")
 
         # Solicitar actualización de unidades disponibles al servidor
         # Esto debería ser manejado por el servidor enviando un mensaje
