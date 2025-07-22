@@ -14,8 +14,3 @@ updates:
     directory: "/"
     schedule:
       interval: "semiannually"
-
-  - package-ecosystem: "docker"
-    directory: "/"
-    schedule:
-      interval: "semiannually"
