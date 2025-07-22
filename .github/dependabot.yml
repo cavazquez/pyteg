@@ -8,44 +8,14 @@ updates:
   - package-ecosystem: "pip"
     directory: "/"
     schedule:
-      interval: "yearly"
-      time: "06:00"
-      month: "12"
-      day: "1"
-  - package-ecosystem: "pip"
-    directory: "/"
-    schedule:
-      interval: "yearly"
-      time: "06:00"
-      month: "7"
-      day: "1"
+      interval: "semiannually"
 
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "yearly"
-      time: "06:00"
-      month: "12"
-      day: "1"
-  - package-ecosystem: "github-actions"
-    directory: "/"
-    schedule:
-      interval: "yearly"
-      time: "06:00"
-      month: "7"
-      day: "1"
+      interval: "semiannually"
 
   - package-ecosystem: "docker"
     directory: "/"
     schedule:
-      interval: "yearly"
-      time: "06:00"
-      month: "12"
-      day: "1"
-  - package-ecosystem: "docker"
-    directory: "/"
-    schedule:
-      interval: "yearly"
-      time: "06:00"
-      month: "7"
-      day: "1"
+      interval: "semiannually"
