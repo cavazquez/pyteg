@@ -30,6 +30,16 @@ class ServerTransmisor:
         msg = MsgChat(msg)
         self._send_message(msg)
 
+    def enviar_error_chat(self, msg):
+        """Envía un mensaje de error al chat del cliente."""
+        msg = MsgChat(msg, msg_type="error")
+        self._send_message(msg)
+
+    def enviar_sistema(self, msg):
+        """Envía un mensaje del sistema al chat del cliente."""
+        msg = MsgChat(msg, msg_type="system")
+        self._send_message(msg)
+
     def sos_admin(self):
         msg = MsgSosAdmin()
         self._send_message(msg)
