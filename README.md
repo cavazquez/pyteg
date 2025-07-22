@@ -10,7 +10,7 @@ Juego de estrategia por turnos en Python.
 Pyteg es un juego de estrategia por turnos.
 
 ## Requisitos
-- Python 3.8 o superior
+- Python 3.11 o superior
 - Docker (opcional para el entorno de desarrollo)
 
 ## Instalación de UV
