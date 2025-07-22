@@ -10,7 +10,7 @@ Implementación del juego Teg en Python
 Teg es un juego de mesa tradicional argentino para dos jugadores. Se juega en un tablero de 8x8 casillas y cada jugador tiene 12 fichas. El objetivo es capturar las fichas del oponente o bloquear sus movimientos.
 
 ## Requisitos
-- Python 3.8 o superior
+- Python 3.11 o superior
 - Docker (opcional para el entorno de desarrollo)
 
 ## Instalación de UV
