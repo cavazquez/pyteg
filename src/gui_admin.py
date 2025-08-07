@@ -18,17 +18,18 @@ class VentanaAdmin(QWidget):
         self.layout = QVBoxLayout()
 
         # Fila para ingresar los segundos
-        self.seconds_row = QHBoxLayout()
-        self.seconds_label = QLabel("Segundos:")
+        self.seconds_layout = QHBoxLayout()
+        self.seconds_label = QLabel("Duración del turno (segundos):")
         self.seconds_input = QLineEdit()
-        self.seconds_input.setPlaceholderText("Ingresar segundos")
+        self.seconds_input.setPlaceholderText("p. ej., 30, 60, 120")
+        self.seconds_input.setToolTip("Duración del turno en segundos")
         self.seconds_input.setValidator(QIntValidator(0, 3600, self))
         self.seconds_input.setText("0")  # valor por defecto
 
-        self.seconds_row.addWidget(self.seconds_label)
-        self.seconds_row.addWidget(self.seconds_input)
+        self.seconds_layout.addWidget(self.seconds_label)
+        self.seconds_layout.addWidget(self.seconds_input)
 
-        self.layout.addLayout(self.seconds_row)
+        self.layout.addLayout(self.seconds_layout)
 
         self.button = QPushButton("Empezar")
         self.button.clicked.connect(self.empezar)
@@ -51,3 +52,11 @@ class VentanaAdmin(QWidget):
 
         self.main_window.transmisor.empezar(segundos)
         self.close()
+
+    def cargar_colores_asignados(self):
+        """Método no-op para el admin.
+
+        El cliente admin no visualiza la lista de colores como la ventana
+        principal, pero algunos tasks del cliente invocan este método.
+        Definirlo evita errores cuando el admin está abierto.
+        """
