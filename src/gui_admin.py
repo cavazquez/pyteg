@@ -1,4 +1,8 @@
+from PySide6.QtGui import QIntValidator
 from PySide6.QtWidgets import (
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
     QPushButton,
     QVBoxLayout,
     QWidget,
@@ -13,6 +17,19 @@ class VentanaAdmin(QWidget):
 
         self.layout = QVBoxLayout()
 
+        # Fila para ingresar los segundos
+        self.seconds_row = QHBoxLayout()
+        self.seconds_label = QLabel("Segundos:")
+        self.seconds_input = QLineEdit()
+        self.seconds_input.setPlaceholderText("Ingresar segundos")
+        self.seconds_input.setValidator(QIntValidator(0, 3600, self))
+        self.seconds_input.setText("0")  # valor por defecto
+
+        self.seconds_row.addWidget(self.seconds_label)
+        self.seconds_row.addWidget(self.seconds_input)
+
+        self.layout.addLayout(self.seconds_row)
+
         self.button = QPushButton("Empezar")
         self.button.clicked.connect(self.empezar)
 
@@ -20,5 +37,13 @@ class VentanaAdmin(QWidget):
         self.setLayout(self.layout)
 
     def empezar(self):
-        self.main_window.transmisor.empezar()
+        # Leer y validar los segundos ingresados
+        segundos = None
+        if self.seconds_input.text().strip():
+            try:
+                segundos = int(self.seconds_input.text())
+            except ValueError:
+                segundos = None
+
+        self.main_window.transmisor.empezar(segundos)
         self.close()
