@@ -26,6 +26,17 @@ class Server:
         # Timer de turnos (se inicializa en None y se arranca al empezar la partida)
         self._turno_timer = None
         self.mazo = None
+        # Configuración: segundos por turno (puede ser seteado por el admin)
+        self._segundos_por_turno = 20
+
+    def set_segundos_por_turno(self, segundos: int) -> None:
+        """Configura la cantidad de segundos por turno.
+
+        Args:
+            segundos (int): segundos por turno (> 0)
+        """
+        if isinstance(segundos, int) and segundos > 0:
+            self._segundos_por_turno = segundos
 
     def cant_clients(self):
         return len(self._clients)
@@ -197,7 +208,9 @@ class Server:
 
         # Iniciar el temporizador de turnos
         print("Iniciando temporizador de turnos...")
-        self._turno_timer = TurnoTimer(self, segundos_por_turno=20)
+        self._turno_timer = TurnoTimer(
+            self, segundos_por_turno=self._segundos_por_turno
+        )
         self._turno_timer.start()
 
     def enviar_unidades_disponibles(self):

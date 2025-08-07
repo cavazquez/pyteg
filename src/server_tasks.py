@@ -49,9 +49,19 @@ class ServerTaskChat(IServerTask):
 class ServerTaskEmpezar(IServerTask):
     def __init__(self, data):
         super().__init__(data)
+        self._segundos = data.get("segundos")
         self._action_name = "empezar"
 
     def _execute(self, client):
+        # Configurar segundos por turno si se envió desde el cliente
+        if self._segundos is not None:
+            try:
+                segundos_int = int(self._segundos)
+                if segundos_int > 0:
+                    client.server.set_segundos_por_turno(segundos_int)
+            except (TypeError, ValueError):
+                pass
+
         if client.server.estado.esperar_jugadores():
             client.server.enviar_estado()
         else:

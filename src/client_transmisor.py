@@ -23,7 +23,7 @@ class IClientTransmisor(ABC):
         pass
 
     @abstractmethod
-    def empezar(self):
+    def empezar(self, segundos: int | None = None):
         pass
 
     @abstractmethod
@@ -98,7 +98,7 @@ class ClientNullTransmisor(IClientTransmisor):
     def enviar_chat(self, _):
         print("No estas conectado")
 
-    def empezar(self):
+    def empezar(self, segundos: int | None = None):  # noqa: ARG002
         print("No estas conectado")
 
     def seleccionar_color(self):
@@ -134,9 +134,9 @@ class ClientTransmisor(IClientTransmisor):
         msg = MsgChat(msg)
         self._conn.send_data(msg.to_json())
 
-    def empezar(self):
+    def empezar(self, segundos: int | None = None):
         print("Transmisor empezar()")
-        msg = MsgEmpezar()
+        msg = MsgEmpezar(segundos)
         self._conn.send_data(msg.to_json())
 
     def seleccionar_color(self, color):

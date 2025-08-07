@@ -21,11 +21,14 @@ class MsgSeleccionarColor(IMsg):
 
 
 class MsgEmpezar(IMsg):
-    def __init__(self):
+    def __init__(self, segundos: int | None = None):
         self._tipo = "empezar"
+        self._segundos = segundos
 
     def to_json(self):
         data = {"mensaje": self._tipo}
+        if self._segundos is not None:
+            data["segundos"] = self._segundos
         return json.dumps(data)
 
 
