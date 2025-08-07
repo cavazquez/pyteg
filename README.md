@@ -7,99 +7,95 @@
 Implementación del juego Teg en Python
 
 ## ¿Qué es Teg?
-Teg es un juego de mesa tradicional argentino para dos jugadores. Se juega en un tablero de 8x8 casillas y cada jugador tiene 12 fichas. El objetivo es capturar las fichas del oponente o bloquear sus movimientos.
+T.E.G. es un juego de estrategia por turnos (similar a Risk) en el que
+los jugadores conquistan países, atacan con dados y cumplen objetivos.
+Este proyecto implementa una versión cliente-servidor con interfaz
+gráfica en Python.
+
+## Características clave
+- Cliente gráfico con PySide6 y animación de dados en las batallas
+- Modo multijugador con servidor TCP y validación de estados
+- Restricción de ataques en los dos primeros turnos
+- Elección de cantidad de unidades para atacar (1 a 3)
+- Validación de nombres de usuario duplicados (con desconexión)
+- Estado del juego visible en la barra de estado (ronda, turno, color)
+- Bloqueo de nuevas conexiones cuando la partida está en curso
+- 120+ tests automatizados y linting con Ruff
 
 ## Requisitos
 - Python 3.11 o superior
-- Docker (opcional para el entorno de desarrollo)
+- [UV](https://github.com/astral-sh/uv) para dependencias
+- Docker (opcional)
 
-## Instalación de UV
-
-Este proyecto utiliza [UV](https://github.com/astral-sh/uv) para la gestión de dependencias y herramientas.  
-Puedes consultar las instrucciones de instalación oficiales en:  
-https://github.com/astral-sh/uv#installation
-
-## Instalación
-1. Clona el repositorio:
+## Instalación rápida
 ```bash
 git clone https://github.com/cavazquez/pyteg.git
 cd pyteg
-```
-
-2. Instala las dependencias:
-```bash
 uv sync
 ```
 
+## Ejecutar (servidor y clientes)
+- Terminal 1 (servidor):
+```bash
+uv run python src/server.py
+```
 
+- Terminal 2..8 (clientes):
+```bash
+uv run python src/run_client.py
+```
 
-## Estructura del Proyecto
-El proyecto está organizado de la siguiente manera:
-- `src/`: Contiene el código fuente principal
-- `tests/`: Contiene los tests unitarios
-- [ejecutar_docker.sh](cci:7://file:///home/cristian/repos/propios/pyteg/ejecutar_docker.sh:0:0-0:0): Script para ejecutar el entorno Docker
-- [run_test.sh](cci:7://file:///home/cristian/repos/propios/pyteg/run_test.sh:0:0-0:0): Script para ejecutar pruebas y linting
+Consejos:
+- Primero inicia el servidor. Luego abre uno o más clientes.
+- Si el juego ya está en curso, el servidor rechazará nuevas conexiones.
+
+## Estructura del proyecto
+- `src/`: código fuente
+  - `server.py`: servidor y loop principal
+  - `server_game.py`: lógica del juego y batallas
+  - `server_mapa.py`: estado del mapa y países
+  - `server_tasks.py`: acciones validadas del servidor
+  - `client_connection.py`: conexión del cliente
+  - `client_tasks.py`: tareas que procesan mensajes
+  - `gui.py` y `gui_*`: interfaz gráfica y diálogos
+  - `run_client.py`: punto de entrada del cliente
+- `tests/`: suite de tests
+- `run_test.sh`: pruebas y linting de una pasada
+- `ejecutar_docker.sh`: entorno en Docker (opcional)
 
 ## Desarrollo
+Formateo y estilo:
+- Límite de línea: 88 caracteres (en todo el proyecto)
+- Ruff para lint y formato
 
-### Configuración del Entorno
-Para configurar el entorno de desarrollo:
+Comandos útiles:
 ```bash
-uv sync
+# Lint
+uvx ruff check .
+
+# Formato (solo verifica)
+uvx ruff format --check .
+
+# Aplicar formato
+uvx ruff format .
+
+# Tests con coverage
+uvx coverage run --branch -m unittest
+uvx coverage report -m
+
+# Todo en una pasada
+./run_test.sh
 ```
 
-### Entorno Docker (Opcional)
-Para levantar el entorno en Docker:
+## Docker (opcional)
+Puedes levantar un entorno de desarrollo con:
 ```bash
 ./ejecutar_docker.sh
 ```
 
-### Pruebas y Linting
-Para ejecutar todas las pruebas y el linting:
-```bash
-./run_test.sh
-```
-
-#### Ejecutar pruebas individuales
-- Solo el linter:
-```bash
-uvx ruff check .
-```
-
-- Solo el formateador:
-```bash
-uvx ruff format --check .
-```
-
-- Solo los tests con coverage:
-```bash
-uvx coverage run --branch -m unittest
-```
-
-- Ver el reporte de coverage:
-```bash
-uvx coverage report -m
-```
-
-## Mejoras Recientes
-
-### Interfaz de Usuario Mejorada
-- **Visualización de Unidades Disponibles**: Las unidades disponibles ahora se muestran automáticamente al inicio de cada turno y se actualizan en tiempo real
-- **Estilo Visual Mejorado**: 
-  - 🪖 **Unidades Generales**: Verde con fondo destacado cuando hay unidades disponibles
-  - 🌍 **Unidades de Continentes**: Azul con fondo destacado para continentes con bonificación
-  - 🚀 **Misiles**: Rojo con estilo distintivo (cuando estén disponibles)
-  - Bordes coloreados y fondos sutiles para mejor visibilidad
-
-### Funcionalidades
-- **Actualización Automática**: Las unidades disponibles se actualizan automáticamente después de agregar unidades al mapa
-- **Feedback Visual**: Colores y iconos distintivos para diferentes tipos de unidades
-- **Soporte para Continentes**: Muestra unidades bonus por control de continentes
-
-### Documentación
-- Diagramas de secuencia actualizados en `docs/diagrams/`
-- Documentación del flujo de agregar unidades
-- Especificaciones de estilo visual
+## Documentación y diagramas
+- Diagramas y notas en `docs/diagrams/` (si corresponde)
+- El código incluye docstrings y type hints en módulos clave
 
 ## Contribuir
 ¡Contribuciones son bienvenidas! Por favor, crea un issue o pull request para sugerir mejoras o reportar problemas.
