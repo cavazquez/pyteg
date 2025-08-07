@@ -41,3 +41,31 @@ ignore = [
 	"DOC201",    # docstring-missing-returns
 	]
 
+[dependency-groups]
+dev = [
+    "mypy>=1.17.1",
+    "pyside6-stubs>=6.7.3.0",
+    "typing-extensions>=4.14.1",
+]
+
+
+[tool.mypy]
+python_version = "3.11"
+ignore_missing_imports = true
+follow_imports = "skip"
+warn_redundant_casts = true
+warn_unused_ignores = true
+no_implicit_optional = true
+strict_equality = true
+disallow_incomplete_defs = false
+disallow_untyped_defs = false
+check_untyped_defs = false
+explicit_package_bases = true
+modules = [
+  "src.gui_admin",
+  "src.client_msg",
+  "src.client_transmisor",
+  "src.server",
+  "src.server_tasks",
+]
+
