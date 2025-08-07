@@ -32,6 +32,10 @@ class VentanaAdmin(QWidget):
 
         self.button = QPushButton("Empezar")
         self.button.clicked.connect(self.empezar)
+        # Permitir activar con Enter
+        self.button.setDefault(True)
+        self.button.setAutoDefault(True)
+        self.seconds_input.returnPressed.connect(self.empezar)
 
         self.layout.addWidget(self.button)
         self.setLayout(self.layout)
