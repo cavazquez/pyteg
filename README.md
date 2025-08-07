@@ -93,6 +93,32 @@ Puedes levantar un entorno de desarrollo con:
 ./ejecutar_docker.sh
 ```
 
+## Demos (GIF/MP4)
+Encontrarás media en `docs/media/`. Para generar clips optimizados:
+
+```bash
+# MP4 recomendado (mejor calidad/tamaño)
+./scripts/make_mp4.sh input.mp4 docs/media/dice_animation.mp4 1280
+
+# GIF (auto-loop en README)
+./scripts/make_gif.sh input.mp4 docs/media/dice_animation.gif 800
+```
+
+Cómo embeber en el README:
+
+```markdown
+<!-- GIF en el repo -->
+![Animación de dados](docs/media/dice_animation.gif)
+
+<!-- MP4 alojado (GitHub muestra un reproductor) -->
+https://user-images.githubusercontent.com/.../dice_animation.mp4
+```
+
+Sugerencias de calidad:
+- Duración 3–10 s, foco en el área relevante
+- 800–1280 px de ancho; 12 fps para GIF, 30 fps para MP4
+- Objetivo < 5 MB por clip cuando sea posible
+
 ## Documentación y diagramas
 - Diagramas y notas en `docs/diagrams/` (si corresponde)
 - El código incluye docstrings y type hints en módulos clave
