@@ -19,15 +19,24 @@ class DebugLogger:
                 elif "client" in script_name:
                     self.process_type = "CLIENT"
                     # Usar timestamp y PID para diferenciar clientes
-                    timestamp = datetime.datetime.now(datetime.UTC).strftime("%H%M%S")
-                    log_file = f"debug_client_{timestamp}_{self.pid}.log"
+                    timestamp = (
+                        datetime.datetime.now(datetime.UTC).strftime("%H%M%S")
+                    )
+                    log_file = (
+                        f"debug_client_{timestamp}_{self.pid}.log"
+                    )
                 else:
                     self.process_type = "OTHER"
                     log_file = f"debug_{self.pid}.log"
             else:
                 log_file = f"debug_{self.pid}.log"
 
-        self.log_file = log_file
+        # Resolver directorio de logs (configurable via env)
+        log_dir_env = os.getenv("PYTEG_LOG_DIR", "logs")
+        log_dir = Path(log_dir_env)
+        log_dir.mkdir(exist_ok=True)
+
+        self.log_file = str(log_dir / log_file)
         # Limpiar el archivo al inicio
         with Path(self.log_file).open("w", encoding="utf-8") as f:
             f.write(
