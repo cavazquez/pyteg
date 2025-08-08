@@ -237,21 +237,85 @@ class Gui(QMainWindow):
         return right_column
 
     def _setup_continent_values(self, layout):
-        # Add the 6 values below the player list
+        """Crea la sección UNIDADES con filas ordenadas e íconos."""
+        # Contenedor principal de la sección
+        section = QFrame()
+        section.setFrameShape(QFrame.StyledPanel)
+        section.setStyleSheet(
+            """
+            QFrame {
+                background: #fafbfe;
+                border: 1px solid #e6e9f2;
+                border-radius: 8px;
+            }
+            QLabel.unit-title {
+                color: #333333;
+                font-size: 13px;
+                font-weight: 700;
+            }
+            QLabel.unit-row {
+                font-weight: 600;
+                color: #555;
+            }
+        """
+        )
+
+        section_layout = QVBoxLayout(section)
+        section_layout.setContentsMargins(10, 10, 10, 10)
+        section_layout.setSpacing(6)
+
+        title = QLabel("UNIDADES")
+        title.setAlignment(Qt.AlignLeft)
+        title.setObjectName("")
+        title.setProperty("class", "unit-title")
+        section_layout.addWidget(title)
+
+        # Diccionario de labels reutilizable en updates
         self.value_labels = {}
-        values = [
-            "Generales",
+
+        # Fila: Generales
+        self._create_unit_row(section_layout, key="Generales", icon="🪖", value=0)
+
+        # Fila: Misiles (inicialmente 0 y oculta si no hay)
+        self._create_unit_row(section_layout, key="Misiles", icon="🚀", value=0)
+        # Se ocultará por defecto hasta que haya valor > 0
+        self.value_labels["Misiles"].parent().setVisible(False)
+
+        # Filas de continentes (incluye Oceanía)
+        for cont in [
             "América del Sur",
             "América del Norte",
             "Europa",
             "Asia",
             "África",
-        ]
-        for value in values:
-            label = QLabel(f"{value}: 0")  # Default value is 0
-            label.setStyleSheet("font-weight: bold;")  # Make the text bold
-            layout.addWidget(label)
-            self.value_labels[value] = label
+            "Oceanía",
+        ]:
+            self._create_unit_row(section_layout, key=cont, icon="🌍", value=0)
+
+        layout.addWidget(section)
+
+    def _create_unit_row(self, parent_layout, key: str, icon: str, value: int):
+        """Crea una fila (icono + etiqueta) y la registra en value_labels."""
+        row = QWidget()
+        row_layout = QHBoxLayout(row)
+        row_layout.setContentsMargins(4, 4, 4, 4)
+        row_layout.setSpacing(6)
+
+        icon_label = QLabel(icon)
+        icon_label.setStyleSheet("font-size: 14px;")
+        row_layout.addWidget(icon_label)
+
+        label = QLabel(f"{key}: {value}")
+        label.setProperty("class", "unit-row")
+        row_layout.addWidget(label)
+
+        # Empujar contenido a la izquierda
+        spacer = QWidget()
+        spacer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        row_layout.addWidget(spacer)
+
+        parent_layout.addWidget(row)
+        self.value_labels[key] = label
 
     def _add_players_title(self, layout):
         # Título para la sección de jugadores
@@ -633,31 +697,28 @@ class Gui(QMainWindow):
                     "font-weight: bold; color: #666666;"
                 )
 
-        # Actualizar la etiqueta de Misiles si está disponible
+        # Actualizar Misiles: usar fila existente y mostrar/ocultar
         if "misiles" in unidades and unidades["misiles"] > 0:
-            # Buscar si ya existe una etiqueta para misiles
-            if not hasattr(self, "misiles_label"):
-                # Insertar después de Generales
-                layout = self.value_labels["Generales"].parent().layout()
-                index = layout.indexOf(self.value_labels["Generales"]) + 1
-
-                self.misiles_label = QLabel(f"🚀 Misiles: {unidades['misiles']}")
-                style = (
-                    "font-weight: bold; "
-                    "color: #D32F2F; "
-                    "background-color: #FFEBEE; "
-                    "padding: 4px 8px; "
-                    "border-radius: 4px; "
-                    "border-left: 3px solid #F44336;"
-                )
-                self.misiles_label.setStyleSheet(style)
-                layout.insertWidget(index, self.misiles_label)
-            else:
-                self.misiles_label.setText(f"🚀 Misiles: {unidades['misiles']}")
-        elif hasattr(self, "misiles_label"):
-            # Si no hay misiles disponibles, eliminar la etiqueta
-            self.misiles_label.deleteLater()
-            del self.misiles_label
+            text = f"🚀 Misiles: {unidades['misiles']}"
+            style = (
+                "font-weight: bold; "
+                "color: #D32F2F; "
+                "background-color: #FFEBEE; "
+                "padding: 4px 8px; "
+                "border-radius: 4px; "
+                "border-left: 3px solid #F44336;"
+            )
+            self.value_labels["Misiles"].setText(text)
+            self.value_labels["Misiles"].setStyleSheet(style)
+            # Mostrar fila completa (parent del label)
+            self.value_labels["Misiles"].parent().setVisible(True)
+        else:
+            # Ocultar y resetear
+            self.value_labels["Misiles"].setText("Misiles: 0")
+            self.value_labels["Misiles"].setStyleSheet(
+                "font-weight: bold; color: #666666;"
+            )
+            self.value_labels["Misiles"].parent().setVisible(False)
 
     def keyPressEvent(self, event):  # noqa: N802
         if event.key() == Qt.Key_Enter or event.key() == Qt.Key_Return:
