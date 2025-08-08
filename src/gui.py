@@ -3,6 +3,7 @@ import contextlib
 from PySide6.QtCore import QSize, Qt, QTimer
 from PySide6.QtGui import QColor, QFont, QPainter, QPixmap
 from PySide6.QtWidgets import (
+    QApplication,
     QDialog,
     QFrame,
     QGridLayout,
@@ -177,8 +178,8 @@ class Gui(QMainWindow):
         self.chat.show()
 
         # Agrego la barra de herramientas
-        toolbar = ToolBar("My main toolbar", self)
-        self.addToolBar(toolbar)
+        self.toolbar = ToolBar("My main toolbar", self)
+        self.addToolBar(self.toolbar)
 
     def _setup_scene_and_view(self):
         # Agrego la escena y la vista
@@ -562,12 +563,23 @@ class Gui(QMainWindow):
         if theme not in {"light", "dark"}:
             return
         self._theme = theme
+        # Aplicar tema global a toda la app (fondos, textos, menús, etc.)
+        self._apply_global_theme()
         self._apply_statusbar_theme()
         # Reaplicar estilos en secciones
         self._apply_units_theme()
         # Reaplicar estilos tarjetas jugadores
         for _, _, w in getattr(self, "player_labels", []):
             self._apply_players_theme(w)
+        # Notificar a la toolbar para actualizar el botón de tema
+        if hasattr(self, "toolbar") and hasattr(self.toolbar, "on_theme_changed"):
+            self.toolbar.on_theme_changed(self._theme)
+
+    def toggle_theme(self):
+        """Alterna entre tema claro y oscuro y aplica el cambio."""
+        current = getattr(self, "_theme", "light")
+        new_theme = "dark" if current != "dark" else "light"
+        self.set_theme(new_theme)
 
     def _apply_statusbar_theme(self):
         if self._theme == "dark":
@@ -594,6 +606,34 @@ class Gui(QMainWindow):
                 QFrame { color: #333; }
                 """
             )
+
+    def _apply_global_theme(self):
+        """Aplica un stylesheet global para tema claro/oscuro en toda la ventana."""
+        app = QApplication.instance()
+        if app is None:
+            return
+        if getattr(self, "_theme", "light") == "dark":
+            app.setStyleSheet(
+                "QWidget { background-color: #1e1f23; color: #e6e6e6; }\n"
+                "QToolBar { background-color: #2b2f36; "
+                "border-bottom: 1px solid #3a3f47; }\n"
+                "QMenu { background-color: #2b2f36; color: #e6e6e6; "
+                "border: 1px solid #3a3f47; }\n"
+                "QMenu::item:selected { background-color: #3a3f47; }\n"
+                "QSplitter::handle { background: #2b2f36; }\n"
+                "QLineEdit, QTextEdit, QPlainTextEdit { background: #252a33; "
+                "color: #e6e6e6; border: 1px solid #3a3f47; }\n"
+                "QListWidget, QTreeWidget, QTableWidget, QScrollArea { "
+                "background: #23262b; color: #e6e6e6; }\n"
+                "QPushButton { background: #3a3f47; color: #e6e6e6; "
+                "border: 1px solid #4a5060; border-radius: 4px; "
+                "padding: 4px 8px; }\n"
+                "QPushButton:hover { background: #444b5a; }\n"
+                "QStatusBar { background: #2b2f36; }\n"
+            )
+        else:
+            # Restaurar estilos por defecto (mantiene estilos locales específicos)
+            app.setStyleSheet("")
 
     def _apply_units_theme(self, root: QWidget | None = None):
         root = root or getattr(self, "centralWidget", lambda: None)()
