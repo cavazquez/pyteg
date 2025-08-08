@@ -1,6 +1,7 @@
 import contextlib
 
-from PySide6.QtCore import QSize, Qt
+from PySide6.QtCore import QSize, Qt, QTimer
+from PySide6.QtGui import QColor, QFont, QPainter, QPixmap
 from PySide6.QtWidgets import (
     QDialog,
     QFrame,
@@ -33,6 +34,8 @@ class Gui(QMainWindow):
         super().__init__()
         self._vivo = True
         self.client = client
+        # Inicializar tema lo antes posible para uso en setup inicial
+        self._theme = "light"
         self.client_by_id = {}
         self.transmisor = ClientNullTransmisor()
         self.conexion = None
@@ -57,24 +60,8 @@ class Gui(QMainWindow):
         # Create a status bar with permanent widgets for turn number and status
         self.status_bar = QStatusBar()
         self.status_bar.setFixedHeight(26)
-        self.status_bar.setStyleSheet(
-            """
-            QStatusBar {
-                background: #f7f7f9;
-                border-top: 1px solid #e1e3e8;
-            }
-            QStatusBar QLabel {
-                color: #333;
-                font-size: 12px;
-            }
-            QLabel[class="pill"] {
-                background: #eef1f7;
-                border: 1px solid #d7dbe6;
-                border-radius: 10px;
-                padding: 2px 8px;
-            }
-        """
-        )
+        # Aplicar tema al status bar (ya existe self._theme)
+        self._apply_statusbar_theme()
 
         # Add a widget for the current player with color indicator and nickname
         self.jugador_actual_widget = QWidget()
@@ -241,24 +228,8 @@ class Gui(QMainWindow):
         # Contenedor principal de la sección
         section = QFrame()
         section.setFrameShape(QFrame.StyledPanel)
-        section.setStyleSheet(
-            """
-            QFrame {
-                background: #fafbfe;
-                border: 1px solid #e6e9f2;
-                border-radius: 8px;
-            }
-            QLabel.unit-title {
-                color: #333333;
-                font-size: 13px;
-                font-weight: 700;
-            }
-            QLabel.unit-row {
-                font-weight: 600;
-                color: #555;
-            }
-        """
-        )
+        section.setObjectName("unitsSection")
+        # Se aplicará stylesheet en _apply_units_theme()
 
         section_layout = QVBoxLayout(section)
         section_layout.setContentsMargins(10, 10, 10, 10)
@@ -266,20 +237,35 @@ class Gui(QMainWindow):
 
         title = QLabel("UNIDADES")
         title.setAlignment(Qt.AlignLeft)
-        title.setObjectName("")
-        title.setProperty("class", "unit-title")
+        title.setObjectName("unitsTitle")
         section_layout.addWidget(title)
 
         # Diccionario de labels reutilizable en updates
         self.value_labels = {}
+        self._row_widgets = {}
+        self._last_units = {}
 
         # Fila: Generales
-        self._create_unit_row(section_layout, key="Generales", icon="🪖", value=0)
+        self._create_unit_row(
+            section_layout,
+            key="Generales",
+            value=0,
+            icon_color="#2E7D32",
+            glyph="G",
+            tooltip="Unidades generales disponibles para colocar",
+        )
 
         # Fila: Misiles (inicialmente 0 y oculta si no hay)
-        self._create_unit_row(section_layout, key="Misiles", icon="🚀", value=0)
+        self._create_unit_row(
+            section_layout,
+            key="Misiles",
+            value=0,
+            icon_color="#D32F2F",
+            glyph="M",
+            tooltip="Misiles disponibles",
+        )
         # Se ocultará por defecto hasta que haya valor > 0
-        self.value_labels["Misiles"].parent().setVisible(False)
+        self._row_widgets["Misiles"].setVisible(False)
 
         # Filas de continentes (incluye Oceanía)
         for cont in [
@@ -290,23 +276,39 @@ class Gui(QMainWindow):
             "África",
             "Oceanía",
         ]:
-            self._create_unit_row(section_layout, key=cont, icon="🌍", value=0)
+            self._create_unit_row(
+                section_layout,
+                key=cont,
+                value=0,
+                icon_color="#1565C0",
+                glyph="C",
+                tooltip=f"Refuerzos por control de {cont}",
+            )
 
         layout.addWidget(section)
+        self._apply_units_theme(section)
 
-    def _create_unit_row(self, parent_layout, key: str, icon: str, value: int):
-        """Crea una fila (icono + etiqueta) y la registra en value_labels."""
-        row = QWidget()
+    def _create_unit_row(  # noqa: PLR0913, PLR0917
+        self,
+        parent_layout,
+        key: str,
+        value: int,
+        icon_color: str,
+        glyph: str,
+        tooltip: str,
+    ):
+        """Crea una fila (ícono dibujado + etiqueta) y la registra en value_labels."""
+        row = QFrame()
+        row.setObjectName("unitRow")
         row_layout = QHBoxLayout(row)
         row_layout.setContentsMargins(4, 4, 4, 4)
         row_layout.setSpacing(6)
 
-        icon_label = QLabel(icon)
-        icon_label.setStyleSheet("font-size: 14px;")
+        icon_label = self._make_circle_icon(icon_color, glyph)
         row_layout.addWidget(icon_label)
 
         label = QLabel(f"{key}: {value}")
-        label.setProperty("class", "unit-row")
+        label.setObjectName("unitRowLabel")
         row_layout.addWidget(label)
 
         # Empujar contenido a la izquierda
@@ -316,6 +318,31 @@ class Gui(QMainWindow):
 
         parent_layout.addWidget(row)
         self.value_labels[key] = label
+        self._row_widgets[key] = row
+        # Tooltip de toda la fila
+        row.setToolTip(tooltip)
+
+    def _make_circle_icon(self, color_hex: str, glyph: str | None) -> QLabel:
+        """Crea un QLabel con un QPixmap de círculo y opcional glifo."""
+        size = 16
+        pm = QPixmap(size, size)
+        pm.fill(QColor(0, 0, 0, 0))
+        painter = QPainter(pm)
+        painter.setRenderHint(QPainter.Antialiasing)
+        painter.setBrush(QColor(color_hex))
+        painter.setPen(QColor(color_hex))
+        painter.drawEllipse(0, 0, size - 1, size - 1)
+        if glyph:
+            painter.setPen(QColor("white"))
+            font = QFont()
+            font.setPointSize(8)
+            font.setBold(True)
+            painter.setFont(font)
+            painter.drawText(pm.rect(), Qt.AlignCenter, glyph)
+        painter.end()
+        label = QLabel()
+        label.setPixmap(pm)
+        return label
 
     def _add_players_title(self, layout):
         # Título para la sección de jugadores
@@ -392,53 +419,33 @@ class Gui(QMainWindow):
 
     def _create_single_player_widget(self, name, color):
         """Crea un widget individual para un jugador"""
-        # Crear un widget para el jugador
+        # Crear un widget para el jugador (estilo tarjeta, neutro)
         player_widget = QFrame()
-        player_widget.setFrameShape(QFrame.StyledPanel)
-        player_widget.setFrameShadow(QFrame.Raised)
+        player_widget.setObjectName("playerCard")
 
         player_layout = QHBoxLayout(player_widget)
         player_layout.setContentsMargins(8, 8, 8, 8)
         player_layout.setSpacing(8)
 
-        # Indicador de turno (círculo)
-        turn_indicator = QLabel()
-        turn_indicator.setFixedSize(12, 12)
+        # Indicador de color (círculo + glifo inicial)
+        turn_indicator = self._make_circle_icon(color.name(), None)
         player_layout.addWidget(turn_indicator)
 
         # Etiqueta con el nombre del jugador
         label = QLabel(name)
         player_layout.addWidget(label)
 
-        # Calcular el contraste para el texto basado en la luminosidad
-        # del color de fondo
-        r, g, b = color.red(), color.green(), color.blue()
-        brightness = (0.299 * r + 0.587 * g + 0.114 * b) / 255.0
-        text_color = "white" if brightness < 0.6 else "black"
-
-        # Aplicar estilos
-        label.setStyleSheet(f"color: {text_color}; font-weight: bold; font-size: 13px;")
-
-        # Estilo del indicador de turno (por ahora todos iguales)
-        turn_indicator.setStyleSheet(f"""
-            background-color: {color.name()};
-            border-radius: 6px;
-        """)
-
-        # Estilo del widget del jugador
-        player_widget.setStyleSheet(f"""
-            QFrame {{
-                background-color: {color.name()};
-                border-radius: 6px;
-                border: 1px solid {"#555555" if brightness < 0.6 else "#CCCCCC"};
-            }}
-        """)
+        # Estilos unificados con sección UNIDADES
+        label.setStyleSheet("color: #333; font-weight: 600; font-size: 13px;")
 
         # Guardar referencia
         self.player_labels.append((label, turn_indicator, player_widget))
 
         # Añadir al layout
         self.players_layout.addWidget(player_widget)
+
+        # Aplicar estilo de tarjeta mediante tema
+        self._apply_players_theme(player_widget)
 
     def abrir_ventana_conectar(self):
         # Cancelar selección al abrir ventana de conexión
@@ -549,6 +556,82 @@ class Gui(QMainWindow):
         if hasattr(self, "_status_temp_label"):
             self._status_temp_label.setText("")
 
+    # ==== Theming & Accessibility ====
+    def set_theme(self, theme: str):
+        """Cambia el tema de la interfaz ("light" o "dark")."""
+        if theme not in {"light", "dark"}:
+            return
+        self._theme = theme
+        self._apply_statusbar_theme()
+        # Reaplicar estilos en secciones
+        self._apply_units_theme()
+        # Reaplicar estilos tarjetas jugadores
+        for _, _, w in getattr(self, "player_labels", []):
+            self._apply_players_theme(w)
+
+    def _apply_statusbar_theme(self):
+        if self._theme == "dark":
+            self.status_bar.setStyleSheet(
+                """
+                QStatusBar { background: #2b2f36; border-top: 1px solid #3a3f47; }
+                QStatusBar QLabel { color: #e6e6e6; font-size: 12px; }
+                QLabel[class="pill"] {
+                    background: #3a3f47; border: 1px solid #4a5060;
+                    border-radius: 10px; padding: 2px 8px; color: #e6e6e6;
+                }
+                QFrame { color: #e6e6e6; }
+                """
+            )
+        else:
+            self.status_bar.setStyleSheet(
+                """
+                QStatusBar { background: #f7f7f9; border-top: 1px solid #e1e3e8; }
+                QStatusBar QLabel { color: #333; font-size: 12px; }
+                QLabel[class="pill"] {
+                    background: #eef1f7; border: 1px solid #d7dbe6;
+                    border-radius: 10px; padding: 2px 8px;
+                }
+                QFrame { color: #333; }
+                """
+            )
+
+    def _apply_units_theme(self, root: QWidget | None = None):
+        root = root or getattr(self, "centralWidget", lambda: None)()
+        theme = getattr(self, "_theme", "light")
+        if theme == "dark":
+            ss = (
+                "#unitsSection { background: #21252b; border: 1px solid #3a3f47;"
+                " border-radius: 8px; }\n"
+                "#unitsTitle { color: #e6e6e6; font-size: 13px; font-weight: 700; }\n"
+                "#unitRowLabel { font-weight: 600; color: #ddd; }\n"
+            )
+        else:
+            ss = (
+                "#unitsSection { background: #fafbfe; border: 1px solid #e6e9f2;"
+                " border-radius: 8px; }\n"
+                "#unitsTitle { color: #333333; font-size: 13px; font-weight: 700; }\n"
+                "#unitRowLabel { font-weight: 600; color: #555; }\n"
+            )
+        # Aplicar al contenedor de la sección si existe
+        if root is None:
+            return
+        # Buscar el QFrame con objectName unitsSection en la jerarquía inmediata
+        # En este contexto, "root" es la sección creada arriba
+        if isinstance(root, QFrame) and root.objectName() == "unitsSection":
+            root.setStyleSheet(ss)
+
+    def _apply_players_theme(self, player_widget: QFrame):
+        if self._theme == "dark":
+            player_widget.setStyleSheet(
+                "#playerCard { background: #272b33; border-radius: 6px;"
+                " border: 1px solid #3a3f47; }"
+            )
+        else:
+            player_widget.setStyleSheet(
+                "#playerCard { background: #ffffff; border-radius: 6px;"
+                " border: 1px solid #e6e9f2; }"
+            )
+
     def update_game_state(self, estado):
         """Update the game state display in the status bar.
 
@@ -630,7 +713,7 @@ class Gui(QMainWindow):
             print(f"Error al actualizar información de mi jugador: {e}")
             self.mi_username_label.setText("[Error]")
 
-    def update_unidades_disponibles(self, unidades):
+    def update_unidades_disponibles(self, unidades):  # noqa: PLR0912
         """Actualiza el panel derecho con las unidades disponibles.
 
         Args:
@@ -650,6 +733,7 @@ class Gui(QMainWindow):
         # Actualizar unidades generales (infantería)
         if "infanteria" in unidades:
             cantidad = unidades["infanteria"]
+            prev = self._last_units.get("Generales", None)
             # Estilo con color verde si hay unidades disponibles
             if cantidad > 0:
                 style = (
@@ -660,18 +744,22 @@ class Gui(QMainWindow):
                     "border-radius: 4px; "
                     "border-left: 3px solid #4CAF50;"
                 )
-                text = f"🪖 Generales: {cantidad}"
+                text = f"Generales: {cantidad}"
             else:
                 style = "font-weight: bold; color: #666666;"
-                text = f"🪖 Generales: {cantidad}"
+                text = f"Generales: {cantidad}"
 
             self.value_labels["Generales"].setText(text)
             self.value_labels["Generales"].setStyleSheet(style)
+            if prev is None or prev != cantidad:
+                self._flash_row("Generales")
+            self._last_units["Generales"] = cantidad
 
         # Actualizar unidades de continentes
         for server_name, gui_name in continent_mapping.items():
             if server_name in unidades and gui_name in self.value_labels:
                 cantidad = unidades[server_name]
+                prev = self._last_units.get(gui_name, None)
                 if cantidad > 0:
                     # Estilo destacado para continentes con unidades disponibles
                     style = (
@@ -682,7 +770,7 @@ class Gui(QMainWindow):
                         "border-radius: 4px; "
                         "border-left: 3px solid #2196F3;"
                     )
-                    text = f"🌍 {gui_name}: {cantidad}"
+                    text = f"{gui_name}: {cantidad}"
                 else:
                     # Estilo normal para continentes sin unidades
                     style = "font-weight: bold; color: #666666;"
@@ -690,6 +778,9 @@ class Gui(QMainWindow):
 
                 self.value_labels[gui_name].setText(text)
                 self.value_labels[gui_name].setStyleSheet(style)
+                if prev is None or prev != cantidad:
+                    self._flash_row(gui_name)
+                self._last_units[gui_name] = cantidad
             elif gui_name in self.value_labels:
                 # Resetear continentes que no tienen unidades disponibles
                 self.value_labels[gui_name].setText(f"{gui_name}: 0")
@@ -699,7 +790,7 @@ class Gui(QMainWindow):
 
         # Actualizar Misiles: usar fila existente y mostrar/ocultar
         if "misiles" in unidades and unidades["misiles"] > 0:
-            text = f"🚀 Misiles: {unidades['misiles']}"
+            text = f"Misiles: {unidades['misiles']}"
             style = (
                 "font-weight: bold; "
                 "color: #D32F2F; "
@@ -711,14 +802,28 @@ class Gui(QMainWindow):
             self.value_labels["Misiles"].setText(text)
             self.value_labels["Misiles"].setStyleSheet(style)
             # Mostrar fila completa (parent del label)
-            self.value_labels["Misiles"].parent().setVisible(True)
+            self._row_widgets["Misiles"].setVisible(True)
+            prev = self._last_units.get("Misiles", None)
+            if prev is None or prev != unidades["misiles"]:
+                self._flash_row("Misiles")
+            self._last_units["Misiles"] = unidades["misiles"]
         else:
             # Ocultar y resetear
             self.value_labels["Misiles"].setText("Misiles: 0")
             self.value_labels["Misiles"].setStyleSheet(
                 "font-weight: bold; color: #666666;"
             )
-            self.value_labels["Misiles"].parent().setVisible(False)
+            self._row_widgets["Misiles"].setVisible(False)
+            self._last_units["Misiles"] = 0
+
+    def _flash_row(self, key: str):
+        """Aplica un highlight temporal a la fila cuando cambian valores."""
+        row = self._row_widgets.get(key)
+        if not row:
+            return
+        original = row.styleSheet()
+        row.setStyleSheet(original + "\n#unitRow { background: #fff8e1; }")
+        QTimer.singleShot(300, lambda: row.setStyleSheet(original))
 
     def keyPressEvent(self, event):  # noqa: N802
         if event.key() == Qt.Key_Enter or event.key() == Qt.Key_Return:
