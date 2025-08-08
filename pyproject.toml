@@ -70,6 +70,17 @@ modules = [
   "src.client_transmisor",
   "src.server",
   "src.server_tasks",
+  # Nuevos módulos añadidos para ampliar el chequeo
+  "src.client_connection",
+  "src.client_tasks",
+  "src.server_game",
+  "src.server_mapa",
+  "src.server_msg",
+  "src.server_state_validator",
+  "src.server_player",
+  "src.gui_toolbar",
+  "src.gui_scene",
+  "src.gui_chat",
 ]
 
 [build-system]

@@ -118,8 +118,12 @@ class PyTegLogger:
         """
         if name is None:
             # Obtener el nombre del módulo llamador
-            frame = inspect.currentframe().f_back
-            name = frame.f_globals.get("__name__", "unknown")
+            frame = inspect.currentframe()
+            caller = frame.f_back if frame is not None else None
+            if caller is not None:
+                name = caller.f_globals.get("__name__", "unknown")
+            else:
+                name = "unknown"
 
         # Si ya existe el logger, devolverlo
         if name in self._loggers:
