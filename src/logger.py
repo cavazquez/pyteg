@@ -13,6 +13,7 @@ Características:
 - Política de retención configurable vía variables de entorno
 """
 
+import datetime
 import inspect
 import logging
 import logging.handlers
@@ -159,15 +160,18 @@ class PyTegLogger:
             filename: Nombre del archivo de log
             process_type: Tipo de proceso
         """
-        log_path = Path("logs") / filename
+        log_dir = Path(os.getenv("PYTEG_LOG_DIR", "logs"))
+        log_dir.mkdir(exist_ok=True)
+        log_path = log_dir / filename
         limits = self._get_limits()
 
-        # Usar RotatingFileHandler para rotación automática (configurable por env)
+        # Rotación por tamaño. El nombre ya incluye fecha y hora.
         file_handler = logging.handlers.RotatingFileHandler(
             log_path,
             maxBytes=limits["max_bytes"],
             backupCount=limits["backup_count"],
             encoding="utf-8",
+            delay=True,
         )
 
         file_handler.setFormatter(self._create_formatter(process_type))
@@ -218,15 +222,10 @@ class PyTegLogger:
         # Evitar duplicar handlers si ya están configurados
         if not logger.handlers:
             process_type = self._determine_process_type()
-            pid = os.getpid()
-
-            # Configurar archivo de log según el tipo de proceso
-            if process_type == "server":
-                log_filename = "server.log"
-            elif process_type == "client":
-                log_filename = f"client_{pid}.log"
-            else:
-                log_filename = f"pyteg_{pid}.log"
+            # Incluir fecha y hora local: pyteg_YYYY-MM-DD_HH.log
+            date_hour = datetime.datetime.now().astimezone().strftime("%Y-%m-%d_%H")
+            default_name = f"pyteg_{date_hour}.log"
+            log_filename = os.getenv("PYTEG_LOG_FILE", default_name)
 
             # Configurar handlers
             self._setup_file_handler(logger, log_filename, process_type)

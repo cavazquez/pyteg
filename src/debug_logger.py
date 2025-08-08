@@ -15,34 +15,34 @@ class DebugLogger:
                 script_name = Path(sys.argv[0]).name
                 if "server" in script_name:
                     self.process_type = "SERVER"
-                    log_file = "debug_server.log"
+                    log_file = None
                 elif "client" in script_name:
                     self.process_type = "CLIENT"
-                    # Usar timestamp y PID para diferenciar clientes
-                    timestamp = datetime.datetime.now(datetime.UTC).strftime("%H%M%S")
-                    log_file = f"debug_client_{timestamp}_{self.pid}.log"
+                    # Unificado: usar archivo compartido configurado
+                    log_file = None
                 else:
                     self.process_type = "OTHER"
-                    log_file = f"debug_{self.pid}.log"
+                    log_file = None
             else:
-                log_file = f"debug_{self.pid}.log"
+                log_file = None
 
         # Resolver directorio de logs (configurable via env)
         log_dir_env = os.getenv("PYTEG_LOG_DIR", "logs")
         log_dir = Path(log_dir_env)
         log_dir.mkdir(exist_ok=True)
+        # Nombre con fecha y hora local si no está configurado por env
+        date_hour = datetime.datetime.now().astimezone().strftime("%Y-%m-%d_%H")
+        default_name = f"pyteg_{date_hour}.log"
+        log_filename = os.getenv("PYTEG_LOG_FILE", default_name)
+        self.log_file = str(log_dir / log_filename)
 
-        self.log_file = str(log_dir / log_file)
-        # Limpiar el archivo al inicio
-        with Path(self.log_file).open("w", encoding="utf-8") as f:
-            f.write(
-                f"=== DEBUG LOG INICIADO {datetime.datetime.now(datetime.UTC)} ===\n"
-            )
-            f.write(f"=== PROCESO: {self.process_type} PID: {self.pid} ===\n")
-            f.write(f"=== ARCHIVO: {self.log_file} ===\n\n")
+        # Escribir encabezado de sesión sin truncar el archivo
+        with Path(self.log_file).open("a", encoding="utf-8") as f:
+            f.write(f"=== DEBUG SESSION {datetime.datetime.now().astimezone()} ===\n")
+            f.write(f"=== PROCESO: {self.process_type} PID: {self.pid} ===\n\n")
 
     def log(self, message):
-        timestamp = datetime.datetime.now(datetime.UTC).strftime("%H:%M:%S.%f")[:-3]
+        timestamp = datetime.datetime.now().astimezone().strftime("%H:%M:%S.%f")[:-3]
         full_message = f"[{self.process_type}:{self.pid}] {message}"
 
         with Path(self.log_file).open("a", encoding="utf-8") as f:
