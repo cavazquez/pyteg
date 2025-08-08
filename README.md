@@ -124,9 +124,17 @@ Puedes levantar un entorno de desarrollo con:
 ```
 
 ## Documentación y diagramas
-- Diagramas y notas en `docs/diagrams/` (si corresponde)
-- El código incluye docstrings y type hints en módulos clave
+ - Documentación central:
+   - Arquitectura: `docs/ARCHITECTURE.md`
+   - Decisiones (ADR): `docs/DECISIONS.md`
+   - Guía de contribución: `docs/CONTRIBUTING.md`
+   - Cambios: `docs/CHANGELOG.md`
+ - Protocolos y mensajes:
+   - `docs/como_crear_mensaje_cliente_a_servidor.md`
+   - `docs/como_crear_mensaje_servidor_a_cliente.md`
+   - `docs/como_crear_mensaje_bidireccional.md`
+ - Diagramas y notas en `docs/diagrams/`
+ - El código incluye docstrings y type hints en módulos clave
 
 ## Contribuir
 ¡Contribuciones son bienvenidas! Por favor, crea un issue o pull request para sugerir mejoras o reportar problemas.
-
