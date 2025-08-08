@@ -26,6 +26,10 @@ Pyteg implementa el juego TEG en un modelo cliente-servidor:
 4) El servidor emite mensajes de resultado/estado a clientes mediante server_transmisor.
 5) client_tasks procesa y actualiza GUI.
 
+### Diagrama de flujo
+Para una vista visual del intercambio de mensajes, ver el diagrama de secuencia en:
+- `docs/diagrams/message_flow.md`
+
 ## Mensajería clave
 - MsgChat (tipos: normal, error, system). Los errores de validación se publican en chat con formato y color.
 - MsgResultadoBatalla: detalla dados, pérdidas y si hubo conquista. Enviado a todos tras cada ataque.
