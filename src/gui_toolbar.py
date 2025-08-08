@@ -28,9 +28,12 @@ class ToolBar(QToolBar):
 
         # Referencias a los botones que se activan/desactivan
         self.button_conectar = None
+        self.button_desconectar = None
         self.button_atacar = None
         self.button_mover = None
         self.button_finalizar_turno = None
+        self.button_fullscreen = None
+        self.button_admin = None
 
         # Configurar la barra de herramientas
         self._setup_action_buttons()
@@ -67,6 +70,7 @@ class ToolBar(QToolBar):
         self.button_conectar.setToolTip("Conectar al servidor")
         self.button_conectar.setStatusTip("Abrir ventana de conexión")
         self.addAction(self.button_conectar)
+
         self.addSeparator()
 
         # Grupo: Acciones de juego
@@ -96,6 +100,8 @@ class ToolBar(QToolBar):
         self.button_finalizar_turno.setStatusTip("Pasar el turno al siguiente jugador")
         self.addAction(self.button_finalizar_turno)
 
+        # Grupo: Administración (removido)
+
     def _setup_size_menu(self):
         """Configura el menú de tamaño y su botón"""
         # Crear y configurar el menú
@@ -104,7 +110,20 @@ class ToolBar(QToolBar):
         # Crear botón de menú con ícono
         size_button = self._create_size_button()
 
-        # Espaciador para empujar el botón de tamaño al extremo derecho
+        # Botón Pantalla Completa (toggle)
+        self.button_fullscreen = QAction(self)
+        icono_full = self._validar_icono(
+            "icons/fullscreen.png", "pantalla completa (toggle)"
+        )
+        self.button_fullscreen.setIcon(icono_full)
+        self.button_fullscreen.setCheckable(True)
+        self.button_fullscreen.setText("Pantalla Completa")
+        self.button_fullscreen.setToolTip("Alternar pantalla completa")
+        self.button_fullscreen.setStatusTip("Entrar/salir de pantalla completa")
+        self.button_fullscreen.triggered.connect(self._toggle_fullscreen)
+        self.addAction(self.button_fullscreen)
+
+        # Espaciador para empujar controles de tamaño a la derecha
         self._setup_spacers_right()
         # Agregar el botón al extremo derecho
         self.addWidget(size_button)
@@ -222,12 +241,16 @@ class ToolBar(QToolBar):
         """Cambia el tamaño de la ventana principal"""
         if width == 0 or height == 0:  # Pantalla completa
             self.main_window.showFullScreen()
+            if self.button_fullscreen:
+                self.button_fullscreen.setChecked(True)
         else:
             # Asegurarse de salir del modo pantalla completa
             self.main_window.showNormal()
             self.main_window.resize(width, height)
             # Centrar la ventana en la pantalla
             self.center_window()
+            if self.button_fullscreen:
+                self.button_fullscreen.setChecked(False)
 
     def fit_to_screen(self):
         """Ajusta la ventana al tamaño de la pantalla con un margen"""
@@ -285,12 +308,14 @@ class ToolBar(QToolBar):
         if self.button_mover:
             self.button_mover.setEnabled(False)
         # El botón finalizar turno permanece siempre habilitado
+        # Botón admin removido
 
     def _habilitar_botones_conectado(self):
         """Habilita los botones apropiados cuando está conectado"""
         # Deshabilitar botón conectar
         if self.button_conectar:
             self.button_conectar.setEnabled(False)
+        # Botón desconectar removido
 
         # Los botones atacar y mover permanecen deshabilitados
         # hasta que se seleccionen países
@@ -333,3 +358,16 @@ class ToolBar(QToolBar):
                     f"Moviendo 1 unidad de {origen} a {destino}", 3000
                 )
                 selection_manager.cancelar_seleccion()
+
+    # Métodos para botones removidos (_desconectar, _abrir_admin) eliminados
+
+    def _toggle_fullscreen(self):
+        """Alterna entre pantalla completa y modo normal."""
+        if self.main_window.isFullScreen():
+            self.main_window.showNormal()
+            if self.button_fullscreen:
+                self.button_fullscreen.setChecked(False)
+        else:
+            self.main_window.showFullScreen()
+            if self.button_fullscreen:
+                self.button_fullscreen.setChecked(True)
