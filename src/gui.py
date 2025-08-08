@@ -8,6 +8,7 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QMainWindow,
+    QSizePolicy,
     QSplitter,
     QStatusBar,
     QVBoxLayout,
@@ -28,7 +29,7 @@ from src.gui_view import QCustomGraphicsView
 
 
 class Gui(QMainWindow):
-    def __init__(self, client):
+    def __init__(self, client):  # noqa: PLR0915
         super().__init__()
         self._vivo = True
         self.client = client
@@ -53,14 +54,33 @@ class Gui(QMainWindow):
 
         self.setup_graphics_view()
 
-        # Create a status bar with permanent widgets for turn number and status message
+        # Create a status bar with permanent widgets for turn number and status
         self.status_bar = QStatusBar()
+        self.status_bar.setFixedHeight(26)
+        self.status_bar.setStyleSheet(
+            """
+            QStatusBar {
+                background: #f7f7f9;
+                border-top: 1px solid #e1e3e8;
+            }
+            QStatusBar QLabel {
+                color: #333;
+                font-size: 12px;
+            }
+            QLabel[class="pill"] {
+                background: #eef1f7;
+                border: 1px solid #d7dbe6;
+                border-radius: 10px;
+                padding: 2px 8px;
+            }
+        """
+        )
 
         # Add a widget for the current player with color indicator and nickname
         self.jugador_actual_widget = QWidget()
         self.jugador_actual_layout = QHBoxLayout(self.jugador_actual_widget)
-        self.jugador_actual_layout.setContentsMargins(0, 0, 0, 0)
-        self.jugador_actual_layout.setSpacing(5)
+        self.jugador_actual_layout.setContentsMargins(4, 0, 4, 0)
+        self.jugador_actual_layout.setSpacing(6)
 
         # Color indicator (square)
         self.color_indicator = QLabel()
@@ -74,18 +94,26 @@ class Gui(QMainWindow):
 
         # Turn and player info
         self.turno_label = QLabel("Turno: 0")
+        self.turno_label.setStyleSheet("font-weight: 600;")
         self.jugador_actual_layout.addWidget(self.turno_label)
 
         self.status_bar.addPermanentWidget(self.jugador_actual_widget)
 
+        # Separator
+        sep1 = QFrame()
+        sep1.setFrameShape(QFrame.VLine)
+        sep1.setFrameShadow(QFrame.Sunken)
+        self.status_bar.addPermanentWidget(sep1)
+
         # Add a widget for "My Player" info
         self.mi_jugador_widget = QWidget()
         self.mi_jugador_layout = QHBoxLayout(self.mi_jugador_widget)
-        self.mi_jugador_layout.setContentsMargins(0, 0, 0, 0)
-        self.mi_jugador_layout.setSpacing(5)
+        self.mi_jugador_layout.setContentsMargins(4, 0, 4, 0)
+        self.mi_jugador_layout.setSpacing(6)
 
         # "Mi jugador:" label
         self.mi_jugador_text = QLabel("Mi jugador:")
+        self.mi_jugador_text.setStyleSheet("color: #555;")
         self.mi_jugador_layout.addWidget(self.mi_jugador_text)
 
         # My color indicator (square)
@@ -100,20 +128,38 @@ class Gui(QMainWindow):
 
         # My username
         self.mi_username_label = QLabel("[No conectado]")
+        self.mi_username_label.setStyleSheet("font-weight: 600;")
         self.mi_jugador_layout.addWidget(self.mi_username_label)
 
         self.status_bar.addPermanentWidget(self.mi_jugador_widget)
 
+        # Separator
+        sep2 = QFrame()
+        sep2.setFrameShape(QFrame.VLine)
+        sep2.setFrameShadow(QFrame.Sunken)
+        self.status_bar.addPermanentWidget(sep2)
+
         # Add a label for the game state
         self.estado_label = QLabel("Estado: Desconectado")
+        self.estado_label.setObjectName("estadoLabel")
+        self.estado_label.setProperty("class", "pill")
         self.status_bar.addPermanentWidget(self.estado_label)
+
+        # Separator
+        sep3 = QFrame()
+        sep3.setFrameShape(QFrame.VLine)
+        sep3.setFrameShadow(QFrame.Sunken)
+        self.status_bar.addPermanentWidget(sep3)
 
         # Add a label for country selection
         self.seleccion_label = QLabel("Selección: Ninguna")
+        self.seleccion_label.setProperty("class", "pill")
         self.status_bar.addPermanentWidget(self.seleccion_label)
 
         # Add a stretch to push the status message to the right
-        self.status_bar.addPermanentWidget(QLabel(""))
+        spacer = QWidget()
+        spacer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        self.status_bar.addPermanentWidget(spacer)
 
         self.setStatusBar(self.status_bar)
 
