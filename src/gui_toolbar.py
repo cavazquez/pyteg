@@ -21,6 +21,9 @@ class ToolBar(QToolBar):
         self.setMovable(False)
         self.setFloatable(False)
         self.setAllowedAreas(Qt.TopToolBarArea)
+        # Mostrar texto al lado del ícono para mejor legibilidad
+        self.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+        self.setIconSize(QSize(24, 24))
         self.main_window = main_window
 
         # Referencias a los botones que se activan/desactivan
@@ -30,7 +33,6 @@ class ToolBar(QToolBar):
         self.button_finalizar_turno = None
 
         # Configurar la barra de herramientas
-        self._setup_spacers()
         self._setup_action_buttons()
         self._setup_size_menu()
 
@@ -50,27 +52,29 @@ class ToolBar(QToolBar):
             )
         return QIcon(ruta_icono)
 
-    def _setup_spacers(self):
-        """Configura los espaciadores en la barra de herramientas"""
-        # Expansor izquierdo
-        left_spacer = QWidget(self)
-        left_spacer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
-        self.addWidget(left_spacer)
-
-        # El expansor derecho se añade después de todos los botones
+    def _setup_spacers_right(self):
+        """Añade un expansor a la derecha para empujar elementos finales"""
+        right_spacer = QWidget(self)
+        right_spacer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        self.addWidget(right_spacer)
 
     def _setup_action_buttons(self):
         """Configura los botones de acción en la barra de herramientas"""
-        # Botón conectar
+        # Grupo: Conexión
         icono_conectar = self._validar_icono("icons/conectar.png", "conectar")
         self.button_conectar = QAction(icono_conectar, "Conectar", self)
         self.button_conectar.triggered.connect(self.main_window.abrir_ventana_conectar)
+        self.button_conectar.setToolTip("Conectar al servidor")
+        self.button_conectar.setStatusTip("Abrir ventana de conexión")
         self.addAction(self.button_conectar)
+        self.addSeparator()
 
-        # Botón atacar
+        # Grupo: Acciones de juego
         icono_atacar = self._validar_icono("icons/atacar.png", "atacar")
         self.button_atacar = QAction(icono_atacar, "Atacar", self)
         self.button_atacar.triggered.connect(self.main_window.atacar)
+        self.button_atacar.setToolTip("Atacar país seleccionado")
+        self.button_atacar.setStatusTip("Ejecutar ataque entre países seleccionados")
         self.addAction(self.button_atacar)
 
         # Botón mover
@@ -78,13 +82,18 @@ class ToolBar(QToolBar):
         self.button_mover = QAction(icono_mover, "Mover", self)
         self.button_mover.setEnabled(False)  # Inicialmente deshabilitado
         self.button_mover.triggered.connect(self._mover_paises_seleccionados)
+        self.button_mover.setToolTip("Mover unidades entre países")
+        self.button_mover.setStatusTip("Mover 1 unidad entre los países seleccionados")
         self.addAction(self.button_mover)
+        self.addSeparator()
 
         # Botón para finalizar el turno
         icono_finalizar = self._validar_icono("icons/finish.png", "finalizar turno")
         self.button_finalizar_turno = QAction(icono_finalizar, "Finalizar Turno", self)
         self.button_finalizar_turno.setEnabled(True)  # Siempre habilitado
         self.button_finalizar_turno.triggered.connect(self.main_window.finalizar_turno)
+        self.button_finalizar_turno.setToolTip("Finalizar tu turno actual")
+        self.button_finalizar_turno.setStatusTip("Pasar el turno al siguiente jugador")
         self.addAction(self.button_finalizar_turno)
 
     def _setup_size_menu(self):
@@ -95,13 +104,10 @@ class ToolBar(QToolBar):
         # Crear botón de menú con ícono
         size_button = self._create_size_button()
 
-        # Agregar el botón a la barra de herramientas
+        # Espaciador para empujar el botón de tamaño al extremo derecho
+        self._setup_spacers_right()
+        # Agregar el botón al extremo derecho
         self.addWidget(size_button)
-
-        # Expansor derecho (se añade aquí después de todos los botones)
-        right_spacer = QWidget(self)
-        right_spacer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
-        self.addWidget(right_spacer)
 
     def _create_size_menu(self):
         """Crea el menú de tamaño con todas sus opciones"""
