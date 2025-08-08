@@ -3,7 +3,6 @@ name = "pyteg"
 version = "0.0.1"
 requires-python = ">=3.11"
 dependencies = [
-    "nuitka>=2.7.12",
     "pyside6==6.9.1",
 ]
 
@@ -46,6 +45,10 @@ dev = [
     "mypy>=1.17.1",
     "pyside6-stubs>=6.7.3.0",
     "typing-extensions>=4.14.1",
+    "ruff",
+    "nuitka>=2.7.12",
+    "hatch",
+    "hatch-nuitka",
 ]
 
 
@@ -68,4 +71,21 @@ modules = [
   "src.server",
   "src.server_tasks",
 ]
+
+[build-system]
+requires = ["hatchling>=1.18", "hatch-nuitka"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src"]
+
+[tool.hatch.build.targets.nuitka]
+# Entradas a compilar con Nuitka
+main = [
+  "src/server.py",
+  "src/run_client.py",
+]
+onefile = true
+standalone = true
+output-dir = "dist"
 
