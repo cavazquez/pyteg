@@ -10,6 +10,7 @@ Características:
 - Formato consistente con timestamps y contexto
 - Rotación automática de archivos
 - Configuración flexible
+- Política de retención configurable vía variables de entorno
 """
 
 import inspect
@@ -17,6 +18,8 @@ import logging
 import logging.handlers
 import os
 import sys
+import time
+from contextlib import suppress
 from pathlib import Path
 
 
@@ -33,6 +36,84 @@ class PyTegLogger:
         """Crea los directorios necesarios para los logs."""
         log_dir = Path("logs")
         log_dir.mkdir(exist_ok=True)
+        # Aplicar política de retención al iniciar
+        self._cleanup_logs(log_dir)
+
+    @staticmethod
+    def _safe_mtime(path: Path) -> float:
+        with suppress(OSError):
+            return path.stat().st_mtime
+        return 0.0
+
+    @staticmethod
+    def _safe_size(path: Path) -> int:
+        with suppress(OSError):
+            return path.stat().st_size
+        return 0
+
+    def _get_limits(self) -> dict[str, int]:
+        """Obtiene límites de logging desde variables de entorno con defaults.
+
+        Returns:
+            dict: max_bytes, backup_count, max_total_mb, max_days, max_client_files
+        """
+
+        def _env_int(name: str, default: int) -> int:
+            try:
+                return int(os.getenv(name, default))
+            except (TypeError, ValueError):
+                return default
+
+        return {
+            "max_bytes": _env_int("PYTEG_LOG_MAX_BYTES", 10 * 1024 * 1024),
+            "backup_count": _env_int("PYTEG_LOG_BACKUP_COUNT", 5),
+            "max_total_mb": _env_int("PYTEG_LOG_MAX_TOTAL_MB", 200),
+            "max_days": _env_int("PYTEG_LOG_MAX_DAYS", 14),
+            "max_client_files": _env_int("PYTEG_LOG_MAX_CLIENT_FILES", 20),
+        }
+
+    def _cleanup_logs(self, log_dir: Path) -> None:
+        """Aplica política de retención en el directorio de logs.
+
+        - Elimina archivos más antiguos que max_days.
+        - Limita el total acumulado a max_total_mb eliminando los más antiguos.
+        - Limita la cantidad de archivos de cliente (client_*.log) a max_client_files.
+        """
+        limits = self._get_limits()
+        now = time.time()
+        max_age = limits["max_days"] * 24 * 3600
+        max_total_bytes = limits["max_total_mb"] * 1024 * 1024
+
+        files = [p for p in log_dir.glob("*.log") if p.is_file()]
+
+        # 1) Eliminar por antigüedad
+        for p in list(files):
+            mtime = self._safe_mtime(p)
+            if now - mtime > max_age:
+                with suppress(OSError):
+                    p.unlink(missing_ok=True)
+                with suppress(ValueError):
+                    files.remove(p)
+
+        # 2) Limitar cantidad de client_*.log
+        client_logs = [p for p in files if p.name.startswith("client_")]
+        if len(client_logs) > limits["max_client_files"]:
+            client_logs.sort(key=self._safe_mtime)
+            to_delete = client_logs[: len(client_logs) - limits["max_client_files"]]
+            for p in to_delete:
+                with suppress(OSError):
+                    p.unlink(missing_ok=True)
+                with suppress(ValueError):
+                    files.remove(p)
+
+        # 3) Limitar tamaño total
+        files.sort(key=self._safe_mtime)  # más antiguos primero
+        total = sum(self._safe_size(p) for p in files)
+        while total > max_total_bytes and files:
+            victim = files.pop(0)
+            with suppress(OSError):
+                victim.unlink(missing_ok=True)
+            total = sum(self._safe_size(p) for p in files)
 
     def _determine_process_type(self) -> str:
         """
@@ -79,12 +160,13 @@ class PyTegLogger:
             process_type: Tipo de proceso
         """
         log_path = Path("logs") / filename
+        limits = self._get_limits()
 
-        # Usar RotatingFileHandler para rotación automática
+        # Usar RotatingFileHandler para rotación automática (configurable por env)
         file_handler = logging.handlers.RotatingFileHandler(
             log_path,
-            maxBytes=10 * 1024 * 1024,  # 10MB por archivo
-            backupCount=5,  # Mantener 5 archivos de backup
+            maxBytes=limits["max_bytes"],
+            backupCount=limits["backup_count"],
             encoding="utf-8",
         )
 

@@ -6,6 +6,7 @@ Todas las fechas en formato YYYY-MM-DD.
 - Documentación centralizada: ARCHITECTURE.md, DECISIONS.md (ADR), CONTRIBUTING.md, CHANGELOG.md.
 - README.md actualizado con enlaces a documentación y comandos canon.
  - Diagrama de flujo de mensajes en `docs/diagrams/message_flow.md` y referencia en `docs/ARCHITECTURE.md`.
+ - Logging: política de retención configurable por variables de entorno (tamaño por archivo, cantidad de backups, tamaño total de carpeta, días de retención y cantidad de logs de cliente). Rotación con `RotatingFileHandler` ahora configurable. Ver `docs/CONTRIBUTING.md`.
 
 ## 2025-08-07
 - Sistema de mensajes de error en chat (tipos: normal, error, system). Ref: 2e82a38.

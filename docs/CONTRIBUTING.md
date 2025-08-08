@@ -42,6 +42,25 @@ uvx mypy --ignore-missing-imports --explicit-package-bases --no-error-summary \
 ./run_test.sh
 ```
 
+## Política de retención de logs
+Los logs se escriben en `logs/` con rotación automática y limpieza periódica. Puedes ajustar los límites vía variables de entorno:
+
+- `PYTEG_LOG_MAX_BYTES` (por archivo, defecto: `10485760` = 10 MB)
+- `PYTEG_LOG_BACKUP_COUNT` (backups por archivo, defecto: `5`)
+- `PYTEG_LOG_MAX_TOTAL_MB` (tamaño total de la carpeta `logs/`, defecto: `200` MB)
+- `PYTEG_LOG_MAX_DAYS` (días máximos de retención, defecto: `14`)
+- `PYTEG_LOG_MAX_CLIENT_FILES` (máximo de archivos `client_*.log`, defecto: `20`)
+
+Ejemplo de ejecución con límites personalizados:
+```bash
+PYTEG_LOG_MAX_BYTES=5242880 \
+PYTEG_LOG_BACKUP_COUNT=3 \
+PYTEG_LOG_MAX_TOTAL_MB=100 \
+PYTEG_LOG_MAX_DAYS=7 \
+PYTEG_LOG_MAX_CLIENT_FILES=10 \
+uv run pyteg-server
+```
+
 ## Estilo y convenciones
 - Límite de línea: 88 caracteres.
 - Ruff como linter y formateador.

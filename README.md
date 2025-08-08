@@ -117,6 +117,9 @@ uvx coverage report -m
 ./run_test.sh
 ```
 
+## Logs y retención
+Los logs se guardan en `logs/` con rotación automática y limpieza periódica. Puedes ajustar límites mediante variables de entorno (tamaño por archivo, cantidad de backups, tamaño total, días de retención y cantidad de logs de cliente). Consulta la sección correspondiente en `docs/CONTRIBUTING.md` para ver los nombres de variables y ejemplos.
+
 ## Docker (opcional)
 Puedes levantar un entorno de desarrollo con:
 ```bash
