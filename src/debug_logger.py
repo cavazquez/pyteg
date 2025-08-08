@@ -19,12 +19,8 @@ class DebugLogger:
                 elif "client" in script_name:
                     self.process_type = "CLIENT"
                     # Usar timestamp y PID para diferenciar clientes
-                    timestamp = (
-                        datetime.datetime.now(datetime.UTC).strftime("%H%M%S")
-                    )
-                    log_file = (
-                        f"debug_client_{timestamp}_{self.pid}.log"
-                    )
+                    timestamp = datetime.datetime.now(datetime.UTC).strftime("%H%M%S")
+                    log_file = f"debug_client_{timestamp}_{self.pid}.log"
                 else:
                     self.process_type = "OTHER"
                     log_file = f"debug_{self.pid}.log"
