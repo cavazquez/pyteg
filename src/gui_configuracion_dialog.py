@@ -1,0 +1,82 @@
+from PySide6.QtCore import Qt
+from PySide6.QtWidgets import (
+    QDialog,
+    QGridLayout,
+    QLabel,
+    QPushButton,
+    QVBoxLayout,
+)
+
+
+class ConfiguracionDialog(QDialog):
+    def __init__(self, parent=None, segundos_por_turno=20, paises_para_victoria=50):
+        super().__init__(parent)
+        self.paises_para_victoria = paises_para_victoria
+        self.setWindowTitle("Configuración de la Partida")
+        self.setFixedSize(350, 200)
+        self.setModal(True)
+
+        # Configurar el layout principal
+        layout = QVBoxLayout()
+        self.setLayout(layout)
+
+        # Título
+        titulo = QLabel("Configuración de la Partida")
+        titulo.setAlignment(Qt.AlignCenter)
+        titulo.setStyleSheet("font-weight: bold; font-size: 14px; margin-bottom: 10px;")
+        layout.addWidget(titulo)
+
+        # Grid layout para los datos
+        grid_layout = QGridLayout()
+        layout.addLayout(grid_layout)
+
+        # Duración del turno
+        duracion_label = QLabel("Duración del turno:")
+        duracion_label.setStyleSheet("font-weight: bold;")
+        duracion_value = QLabel(f"{segundos_por_turno} segundos")
+        grid_layout.addWidget(duracion_label, 0, 0)
+        grid_layout.addWidget(duracion_value, 0, 1)
+
+        # Objetivo de países
+        objetivo_label = QLabel("Países para ganar:")
+        objetivo_label.setStyleSheet("font-weight: bold;")
+        if self.paises_para_victoria == 0:
+            objetivo_text = "Todos los países"
+        else:
+            objetivo_text = str(self.paises_para_victoria)
+        objetivo_value = QLabel(objetivo_text)
+        grid_layout.addWidget(objetivo_label, 1, 0)
+        grid_layout.addWidget(objetivo_value, 1, 1)
+
+        # Separador
+        layout.addSpacing(20)
+
+        # Botón de cerrar
+        boton_cerrar = QPushButton("Cerrar")
+        boton_cerrar.clicked.connect(self.accept)
+        layout.addWidget(boton_cerrar)
+
+        # Aplicar estilos
+        self.setStyleSheet("""
+            QDialog {
+                background-color: #f0f0f0;
+            }
+            QLabel {
+                color: #333;
+                padding: 5px;
+            }
+            QPushButton {
+                background-color: #4CAF50;
+                color: white;
+                border: none;
+                padding: 8px 16px;
+                border-radius: 4px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #45a049;
+            }
+            QPushButton:pressed {
+                background-color: #3d8b40;
+            }
+        """)

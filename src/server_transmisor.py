@@ -3,6 +3,7 @@ from src.server_msg import (
     MsgChat,
     MsgColor,
     MsgColorAsignado,
+    MsgConfiguracionPartida,
     MsgError,
     MsgEstado,
     MsgPais,
@@ -13,6 +14,7 @@ from src.server_msg import (
     MsgUnidadesDisponibles,
     MsgUserId,
     MsgUsername,
+    MsgVictoria,
 )
 
 
@@ -182,4 +184,26 @@ class ServerTransmisor:
             message (str): Mensaje descriptivo del error
         """
         msg = MsgError(error_type, message)
+        self._send_message(msg)
+
+    def enviar_victoria(self, ganador_id, ganador_nombre):
+        """
+        Envía un mensaje de victoria al cliente.
+
+        Args:
+            ganador_id (str): ID del jugador ganador
+            ganador_nombre (str): Nombre del jugador ganador
+        """
+        msg = MsgVictoria(ganador_id, ganador_nombre)
+        self._send_message(msg)
+
+    def enviar_configuracion_partida(self, segundos_por_turno, paises_para_victoria):
+        """
+        Envía la configuración de la partida al cliente.
+
+        Args:
+            segundos_por_turno (int): Duración de cada turno en segundos
+            paises_para_victoria (int): Número de países necesarios para ganar
+        """
+        msg = MsgConfiguracionPartida(segundos_por_turno, paises_para_victoria)
         self._send_message(msg)

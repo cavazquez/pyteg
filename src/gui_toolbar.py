@@ -103,6 +103,21 @@ class ToolBar(QToolBar):
         self.button_finalizar_turno.setStatusTip("Pasar el turno al siguiente jugador")
         self.addAction(self.button_finalizar_turno)
 
+        self.addSeparator()
+
+        # Botón para mostrar configuración de la partida
+        icono_config = self._validar_icono("icons/resize.png", "configuración")
+        self.button_configuracion = QAction(icono_config, "Configuración", self)
+        self.button_configuracion.setEnabled(True)  # Siempre habilitado
+        self.button_configuracion.triggered.connect(
+            self.main_window.mostrar_configuracion_partida
+        )
+        self.button_configuracion.setToolTip("Ver configuración de la partida")
+        self.button_configuracion.setStatusTip(
+            "Mostrar duración de turno y objetivo de países"
+        )
+        self.addAction(self.button_configuracion)
+
         # Grupo: Administración (removido)
 
     def _setup_size_menu(self):

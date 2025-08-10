@@ -28,6 +28,9 @@ class Server:
         self.mazo = None
         # Configuración: segundos por turno (puede ser seteado por el admin)
         self._segundos_por_turno = 20
+        # Configuración: países necesarios para ganar (puede ser seteado por el admin)
+        # 0 = todos los países (modo clásico), >0 = objetivo específico
+        self._paises_para_victoria = 0
 
     def set_segundos_por_turno(self, segundos: int) -> None:
         """Configura la cantidad de segundos por turno.
@@ -37,6 +40,15 @@ class Server:
         """
         if isinstance(segundos, int) and segundos > 0:
             self._segundos_por_turno = segundos
+
+    def set_paises_para_victoria(self, paises: int) -> None:
+        """Configura la cantidad de países necesarios para ganar.
+
+        Args:
+            paises (int): países necesarios para victoria (> 0)
+        """
+        if isinstance(paises, int) and paises > 0:
+            self._paises_para_victoria = paises
 
     def cant_clients(self):
         return len(self._clients)
@@ -185,7 +197,9 @@ class Server:
         print(f"Jugadores conectados: {[j.userid() for j in jugadores]}")
 
         # Crear e iniciar el juego, pasando la referencia al servidor
-        self.game = Game(self.mapa, self.mazo, jugadores, self)
+        self.game = Game(
+            self.mapa, self.mazo, jugadores, self, self._paises_para_victoria
+        )
         self.game.empezar()
 
         # Enviar información de los jugadores y sus colores a todos los clientes
@@ -205,6 +219,10 @@ class Server:
         # Enviar el número de turno inicial a todos los clientes
         print("Enviando número de turno inicial a los clientes...")
         self.enviar_turno_actual()
+
+        # Enviar la configuración de la partida a todos los clientes
+        print("Enviando configuración de la partida a los clientes...")
+        self.enviar_configuracion_partida()
 
         # Iniciar el temporizador de turnos
         print("Iniciando temporizador de turnos...")
@@ -269,6 +287,18 @@ class Server:
         """Envía el estado actual del mapa a todos los clientes conectados."""
         for client in self.dame_clientes():
             client.transmisor.enviar_mapa(self.mapa, self.game)
+
+    def enviar_victoria(self, ganador_id, ganador_nombre):
+        """Envía el mensaje de victoria a todos los clientes conectados."""
+        for client in self.dame_clientes():
+            client.transmisor.enviar_victoria(ganador_id, ganador_nombre)
+
+    def enviar_configuracion_partida(self):
+        """Envía la configuración de la partida a todos los clientes conectados."""
+        for client in self.dame_clientes():
+            client.transmisor.enviar_configuracion_partida(
+                self._segundos_por_turno, self._paises_para_victoria
+            )
 
 
 def parse_arguments() -> argparse.Namespace:

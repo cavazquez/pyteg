@@ -20,6 +20,9 @@ gráfica en Python.
 - Validación de nombres de usuario duplicados (con desconexión)
 - Estado del juego visible en la barra de estado (ronda, turno, color)
 - Bloqueo de nuevas conexiones cuando la partida está en curso
+- **Condición de victoria configurable**: Por defecto 50 países (configurable al crear partida)
+- **Ventana de configuración**: Muestra duración de turno y objetivo de países
+- **Verificación automática de condición de victoria al final de cada ronda**
 - 120+ tests automatizados y linting con Ruff
 
 ## Requisitos

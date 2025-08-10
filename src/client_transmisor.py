@@ -98,8 +98,10 @@ class ClientNullTransmisor(IClientTransmisor):
     def enviar_chat(self, _):
         print("No estas conectado")
 
-    def empezar(self, segundos: int | None = None):  # noqa: ARG002
-        print("No estas conectado")
+    def empezar(
+        self, segundos: int | None = None, paises_para_victoria: int | None = None
+    ):
+        """No-op para el transmisor nulo."""
 
     def seleccionar_color(self):
         print("No estas conectado")
@@ -134,9 +136,11 @@ class ClientTransmisor(IClientTransmisor):
         msg = MsgChat(msg)
         self._conn.send_data(msg.to_json())
 
-    def empezar(self, segundos: int | None = None):
+    def empezar(
+        self, segundos: int | None = None, paises_para_victoria: int | None = None
+    ):
         print("Transmisor empezar()")
-        msg = MsgEmpezar(segundos)
+        msg = MsgEmpezar(segundos, paises_para_victoria)
         self._conn.send_data(msg.to_json())
 
     def seleccionar_color(self, color):

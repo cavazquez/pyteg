@@ -24,6 +24,7 @@ from src.gui_admin import VentanaAdmin
 from src.gui_attack_dialog import AttackDialog
 from src.gui_chat import Chat
 from src.gui_conectar import VentanaConectar
+from src.gui_configuracion_dialog import ConfiguracionDialog
 from src.gui_esperar_jugadores import VentanaEsperarJugadores
 from src.gui_scene import QCustomGraphicsScene
 from src.gui_toolbar import ToolBar
@@ -53,6 +54,10 @@ class Gui(QMainWindow):
         self._jugador_actual_id = None
         self._jugador_actual_nombre = None
         self._jugador_actual_color = None
+
+        # Initialize game configuration
+        self._segundos_por_turno = 20
+        self._paises_para_victoria = 50
 
         self.colores = Colores()
 
@@ -956,3 +961,23 @@ class Gui(QMainWindow):
 
         # Si no se encuentra el país, asumir 0 unidades disponibles
         return 0
+
+    def set_configuracion_partida(self, segundos_por_turno, paises_para_victoria):
+        """
+        Establece la configuración de la partida.
+
+        Args:
+            segundos_por_turno (int): Duración de cada turno en segundos
+            paises_para_victoria (int): Número de países necesarios para ganar
+        """
+        self._segundos_por_turno = segundos_por_turno
+        self._paises_para_victoria = paises_para_victoria
+
+    def mostrar_configuracion_partida(self):
+        """
+        Muestra la ventana de configuración de la partida.
+        """
+        dialog = ConfiguracionDialog(
+            self, self._segundos_por_turno, self._paises_para_victoria
+        )
+        dialog.exec()

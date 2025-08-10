@@ -50,6 +50,7 @@ class ServerTaskEmpezar(IServerTask):
     def __init__(self, data):
         super().__init__(data)
         self._segundos = data.get("segundos")
+        self._paises_para_victoria = data.get("paises_para_victoria")
         self._action_name = "empezar"
 
     def _execute(self, client):
@@ -59,6 +60,15 @@ class ServerTaskEmpezar(IServerTask):
                 segundos_int = int(self._segundos)
                 if segundos_int > 0:
                     client.server.set_segundos_por_turno(segundos_int)
+            except (TypeError, ValueError):
+                pass
+
+        # Configurar países para victoria si se envió desde el cliente
+        if self._paises_para_victoria is not None:
+            try:
+                paises_int = int(self._paises_para_victoria)
+                if paises_int >= 0:  # Permitir 0 para desactivar objetivo específico
+                    client.server.set_paises_para_victoria(paises_int)
             except (TypeError, ValueError):
                 pass
 

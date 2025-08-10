@@ -516,6 +516,76 @@ class ClientTaskResultadoBatalla(IClientTask):
                 )
 
 
+class ClientTaskVictoria(IClientTask):
+    def __init__(self, data):
+        self._ganador_id = data.get("ganador_id")
+        self._ganador_nombre = data.get("ganador_nombre")
+
+    def run(self, main_window):
+        """
+        Muestra un mensaje de victoria cuando alguien gana la partida.
+        """
+        try:
+            # Mostrar mensaje en la barra de estado
+            if hasattr(main_window, "update_status_bar"):
+                main_window.update_status_bar(
+                    f"🏆 ¡{self._ganador_nombre} ha ganado la partida!",
+                    "green",
+                )
+
+            # Mostrar diálogo de victoria
+            msg_box = QMessageBox(main_window)
+            msg_box.setWindowTitle("¡Partida Terminada!")
+            msg_box.setIcon(QMessageBox.Information)
+            msg_box.setText("🏆 ¡Felicitaciones!")
+            msg_box.setInformativeText(
+                f"{self._ganador_nombre} ha ganado la partida "
+                f"controlando el número objetivo de países."
+            )
+            msg_box.setStandardButtons(QMessageBox.Ok)
+            msg_box.exec()
+
+            # También mostrar en el chat
+            if hasattr(main_window, "chat"):
+                main_window.chat.append(
+                    f"🏆 ¡{self._ganador_nombre} ha ganado la partida!", "system"
+                )
+
+        except (AttributeError, RuntimeError) as e:
+            print(f"Error al mostrar mensaje de victoria: {e}")
+
+
+class ClientTaskConfiguracionPartida(IClientTask):
+    def __init__(self, data):
+        self._segundos_por_turno = data.get("segundos_por_turno", 20)
+        self._paises_para_victoria = data.get("paises_para_victoria", 50)
+
+    def run(self, main_window):
+        """
+        Procesa la configuración de la partida y la almacena en la ventana principal.
+        """
+        try:
+            # Almacenar la configuración en la ventana principal
+            if hasattr(main_window, "set_configuracion_partida"):
+                main_window.set_configuracion_partida(
+                    self._segundos_por_turno, self._paises_para_victoria
+                )
+
+            # Mostrar mensaje en la barra de estado
+            if hasattr(main_window, "update_status_bar"):
+                if self._paises_para_victoria == 0:
+                    objetivo_texto = "todos los países"
+                else:
+                    objetivo_texto = f"{self._paises_para_victoria} países"
+                main_window.update_status_bar(
+                    f"Objetivo: {objetivo_texto} | Turno: {self._segundos_por_turno}s",
+                    "blue",
+                )
+
+        except (AttributeError, RuntimeError) as e:
+            print(f"Error al procesar configuración de partida: {e}")
+
+
 dict_task = {
     "chat": ClientTaskChat,
     "sosadmin": ClientTaskSerAdmin,
@@ -531,4 +601,6 @@ dict_task = {
     "actualizar_lista_jugadores": ClientTaskActualizarListaJugadores,
     "error": ClientTaskError,
     "resultado_batalla": ClientTaskResultadoBatalla,
+    "victoria": ClientTaskVictoria,
+    "configuracion_partida": ClientTaskConfiguracionPartida,
 }

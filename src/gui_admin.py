@@ -1,5 +1,6 @@
 from PySide6.QtGui import QIntValidator
 from PySide6.QtWidgets import (
+    QCheckBox,
     QHBoxLayout,
     QLabel,
     QLineEdit,
@@ -31,15 +32,50 @@ class VentanaAdmin(QWidget):
 
         self.layout.addLayout(self.seconds_layout)
 
+        # Checkbox para habilitar objetivo específico de países
+        self.countries_checkbox = QCheckBox("Objetivo específico de países")
+        self.countries_checkbox.setChecked(True)  # habilitado por defecto (50 países)
+        self.countries_checkbox.setToolTip(
+            "Activar para usar un objetivo específico de países "
+            "en lugar de controlar todos"
+        )
+        self.layout.addWidget(self.countries_checkbox)
+
+        # Fila para ingresar países para ganar
+        self.countries_layout = QHBoxLayout()
+        self.countries_label = QLabel("Países para ganar:")
+        self.countries_input = QLineEdit()
+        self.countries_input.setPlaceholderText("p. ej., 30, 50, 42")
+        self.countries_input.setToolTip("Cantidad de países necesarios para ganar")
+        self.countries_input.setValidator(QIntValidator(1, 999, self))
+        self.countries_input.setText("50")  # valor por defecto
+
+        self.countries_layout.addWidget(self.countries_label)
+        self.countries_layout.addWidget(self.countries_input)
+
+        self.layout.addLayout(self.countries_layout)
+
+        # Conectar checkbox para habilitar/deshabilitar el campo de países
+        self.countries_checkbox.toggled.connect(self._toggle_countries_input)
+
         self.button = QPushButton("Empezar")
         self.button.clicked.connect(self.empezar)
         # Permitir activar con Enter
         self.button.setDefault(True)
         self.button.setAutoDefault(True)
         self.seconds_input.returnPressed.connect(self.empezar)
+        self.countries_input.returnPressed.connect(self.empezar)
 
         self.layout.addWidget(self.button)
         self.setLayout(self.layout)
+
+        # Inicializar estado del campo de países
+        self._toggle_countries_input(self.countries_checkbox.isChecked())
+
+    def _toggle_countries_input(self, enabled):
+        """Habilita o deshabilita el campo de países según el checkbox."""
+        self.countries_input.setEnabled(enabled)
+        self.countries_label.setEnabled(enabled)
 
     def empezar(self):
         # Leer y validar los segundos ingresados
@@ -50,7 +86,20 @@ class VentanaAdmin(QWidget):
             except ValueError:
                 segundos = None
 
-        self.main_window.transmisor.empezar(segundos)
+        # Leer y validar los países para ganar según el checkbox
+        paises_para_victoria = None
+        if self.countries_checkbox.isChecked():
+            # Checkbox habilitado: usar valor específico del campo
+            if self.countries_input.text().strip():
+                try:
+                    paises_para_victoria = int(self.countries_input.text())
+                except ValueError:
+                    paises_para_victoria = None
+        else:
+            # Checkbox deshabilitado: usar 0 para indicar "todos los países"
+            paises_para_victoria = 0
+
+        self.main_window.transmisor.empezar(segundos, paises_para_victoria)
         self.close()
 
     def cargar_colores_asignados(self):
