@@ -3,6 +3,13 @@
 Todas las fechas en formato YYYY-MM-DD.
 
 ## Unreleased
+- **Sistema completo de condición de victoria configurable**: 
+  - Condición de victoria cambiada a controlar 50 países (por defecto, configurable)
+  - Configuración del objetivo de países al crear la partida (similar a duración de turno)
+  - Verificación automática al final de cada ronda
+  - Mensaje de victoria (MsgVictoria) con diálogo informativo y notificación en chat
+  - Nueva ventana de configuración en el cliente mostrando duración de turno y objetivo de países
+  - Botón "Configuración" en la toolbar para acceder a la información de la partida
 - Documentación centralizada: ARCHITECTURE.md, DECISIONS.md (ADR), CONTRIBUTING.md, CHANGELOG.md.
 - README.md actualizado con enlaces a documentación y comandos canon.
  - Diagrama de flujo de mensajes en `docs/diagrams/message_flow.md` y referencia en `docs/ARCHITECTURE.md`.

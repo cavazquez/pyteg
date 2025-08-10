@@ -5,7 +5,7 @@ from src.turnos import PrimerTurno, SegundoTurno, SiguientesTurnos
 
 
 class Game:
-    def __init__(self, mapa, mazo, jugadores, server):
+    def __init__(self, mapa, mazo, jugadores, server, paises_para_victoria=50):
         self._mapa = mapa
         self._start = False
         self._turnos = [PrimerTurno("NUllJugador")]
@@ -15,6 +15,7 @@ class Game:
         self._mazo = mazo
         self._cant_canjes = {}
         self._server = server  # Referencia al servidor para notificar cambios
+        self._paises_para_victoria = paises_para_victoria
 
     def empezar(self):
         self._turnos = [PrimerTurno(j) for j in self.lista_jugadores()]
@@ -78,6 +79,18 @@ class Game:
         num = self._num_turno
         cant_jugadores = self.cant_jugadores()
         if num == cant_jugadores:
+            # Verificar condición de victoria al final de la ronda
+            ganador = self._verificar_condicion_victoria()
+            if ganador:
+                # Alguien ganó la partida
+                ganador_id = (
+                    ganador.user_id() if hasattr(ganador, "user_id") else str(ganador)
+                )
+                ganador_nombre = (
+                    ganador.username() if hasattr(ganador, "username") else str(ganador)
+                )
+                self._server.enviar_victoria(ganador_id, ganador_nombre)
+                return  # No continuar con la siguiente ronda
             # Rotar la lista de jugadores para la nueva ronda
             jugadores = self.lista_jugadores()
             if len(jugadores) > 1:
@@ -220,3 +233,42 @@ class Game:
             "resultado": resultado,
             "conquistado": conquistado,
         }
+
+    def _verificar_condicion_victoria(self):
+        """
+        Verifica si algún jugador ha ganado la partida controlando
+        el número objetivo de países.
+
+        Returns:
+            Client: El jugador ganador si existe, None en caso contrario
+        """
+        total_paises = len(self._mapa.paises())
+
+        # Si no hay países en el mapa, no puede haber ganador (edge case para tests)
+        if total_paises == 0:
+            return None
+
+        for jugador in self.lista_jugadores():
+            paises_controlados = self._mapa.cantidad_de_paises_del_jugador(jugador)
+
+            # Si _paises_para_victoria es 0, usar comportamiento clásico
+            # (todos los países)
+            if self._paises_para_victoria == 0:
+                objetivo = total_paises
+            else:
+                objetivo = self._paises_para_victoria
+
+            if paises_controlados >= objetivo:
+                jugador_nombre = (
+                    jugador.username() if hasattr(jugador, "username") else str(jugador)
+                )
+                if self._paises_para_victoria == 0:
+                    print(f"¡{jugador_nombre} ha ganado controlando todos los países!")
+                else:
+                    print(
+                        f"¡{jugador_nombre} ha ganado controlando "
+                        f"{paises_controlados} países!"
+                    )
+                return jugador
+
+        return None

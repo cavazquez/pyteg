@@ -301,3 +301,47 @@ class MsgError(IMsg):
             "message": self._message,
         }
         return json.dumps(data)
+
+
+class MsgVictoria(IMsg):
+    def __init__(self, ganador_id, ganador_nombre):
+        """
+        Inicializa un mensaje de victoria.
+
+        Args:
+            ganador_id (str): ID del jugador ganador
+            ganador_nombre (str): Nombre del jugador ganador
+        """
+        self._tipo = "victoria"
+        self._ganador_id = ganador_id
+        self._ganador_nombre = ganador_nombre
+
+    def to_json(self):
+        data = {
+            "mensaje": self._tipo,
+            "ganador_id": self._ganador_id,
+            "ganador_nombre": self._ganador_nombre,
+        }
+        return json.dumps(data)
+
+
+class MsgConfiguracionPartida(IMsg):
+    def __init__(self, segundos_por_turno, paises_para_victoria):
+        """
+        Inicializa un mensaje con la configuración de la partida.
+
+        Args:
+            segundos_por_turno (int): Duración de cada turno en segundos
+            paises_para_victoria (int): Número de países necesarios para ganar
+        """
+        self._tipo = "configuracion_partida"
+        self._segundos_por_turno = segundos_por_turno
+        self._paises_para_victoria = paises_para_victoria
+
+    def to_json(self):
+        data = {
+            "mensaje": self._tipo,
+            "segundos_por_turno": self._segundos_por_turno,
+            "paises_para_victoria": self._paises_para_victoria,
+        }
+        return json.dumps(data)
