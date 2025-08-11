@@ -1,0 +1,151 @@
+# English translations for PyTeg
+# Copyright (C) 2024 PyTeg Team
+# This file is distributed under the same license as the PyTeg package.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PyTeg 1.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2024-08-10 20:25:00-0300\n"
+"PO-Revision-Date: 2024-08-10 20:25:00-0300\n"
+"Last-Translator: PyTeg Team\n"
+"Language-Team: English\n"
+"Language: en\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+# GUI Configuration Dialog
+msgid "Configuración de la Partida"
+msgstr "Game Configuration"
+
+msgid "Duración del turno:"
+msgstr "Turn duration:"
+
+msgid "{} segundos"
+msgstr "{} seconds"
+
+msgid "Países para ganar:"
+msgstr "Countries to win:"
+
+msgid "Todos los países"
+msgstr "All countries"
+
+msgid "Cerrar"
+msgstr "Close"
+
+# Common UI elements
+msgid "Conectar"
+msgstr "Connect"
+
+msgid "Atacar"
+msgstr "Attack"
+
+msgid "Mover"
+msgstr "Move"
+
+msgid "Finalizar Turno"
+msgstr "End Turn"
+
+msgid "Admin"
+msgstr "Admin"
+
+msgid "Configuración"
+msgstr "Configuration"
+
+# Error messages
+msgid "Error"
+msgstr "Error"
+
+msgid "Ha ocurrido un error."
+msgstr "An error has occurred."
+
+msgid "Nombre de usuario duplicado"
+msgstr "Duplicate username"
+
+msgid "El nombre de usuario que elegiste ya está en uso."
+msgstr "The username you chose is already in use."
+
+msgid "Por favor, elige un nombre de usuario diferente."
+msgstr "Please choose a different username."
+
+# Victory messages
+msgid "¡Partida Terminada!"
+msgstr "Game Over!"
+
+msgid "🏆 ¡Felicitaciones!"
+msgstr "🏆 Congratulations!"
+
+# Connection messages
+msgid "Advertencia"
+msgstr "Warning"
+
+msgid "conexión rehusada."
+msgstr "connection refused."
+
+# Game status
+msgid "Esperando jugadores"
+msgstr "Waiting for players"
+
+msgid "Estado: {}"
+msgstr "Status: {}"
+
+msgid "[No conectado]"
+msgstr "[Not connected]"
+
+msgid "[Error]"
+msgstr "[Error]"
+
+# Attack dialog
+msgid "Seleccionar Unidades de Ataque"
+msgstr "Select Attack Units"
+
+msgid "Resultado de Batalla"
+msgstr "Battle Result"
+
+msgid "Lanzando..."
+msgstr "Rolling..."
+
+# Units
+msgid "Generales"
+msgstr "Generals"
+
+msgid "Misiles"
+msgstr "Missiles"
+
+# Status tips
+msgid "Abrir ventana de conexión"
+msgstr "Open connection window"
+
+msgid "Ejecutar ataque entre países seleccionados"
+msgstr "Execute attack between selected countries"
+
+msgid "Mover 1 unidad entre los países seleccionados"
+msgstr "Move 1 unit between selected countries"
+
+msgid "Pasar el turno al siguiente jugador"
+msgstr "Pass turn to next player"
+
+msgid "Ver configuración de la partida"
+msgstr "View game configuration"
+
+# Time and turns
+msgid "Ronda: {} - Turno: {}"
+msgstr "Round: {} - Turn: {}"
+
+msgid "Turno {} iniciado"
+msgstr "Turn {} started"
+
+msgid "Tiempo restante: {}s"
+msgstr "Time remaining: {}s"
+
+msgid "Objetivo: {} | Turno: {}s"
+msgstr "Objective: {} | Turn: {}s"
+
+# Battle results
+msgid "El ataque de {} a {} fue repelido"
+msgstr "The attack from {} to {} was repelled"
+
+msgid "{} conquistó {} desde {}"
+msgstr "{} conquered {} from {}"

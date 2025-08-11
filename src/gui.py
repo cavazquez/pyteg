@@ -26,9 +26,11 @@ from src.gui_chat import Chat
 from src.gui_conectar import VentanaConectar
 from src.gui_configuracion_dialog import ConfiguracionDialog
 from src.gui_esperar_jugadores import VentanaEsperarJugadores
+from src.gui_language_selector import LanguageSelector
 from src.gui_scene import QCustomGraphicsScene
 from src.gui_toolbar import ToolBar
 from src.gui_view import QCustomGraphicsView
+from src.i18n import translate as _
 
 
 class Gui(QMainWindow):
@@ -43,7 +45,7 @@ class Gui(QMainWindow):
         self.conexion = None
         self.w = None
         self.ventana_conectar = None
-        self.setWindowTitle("PyTeg")
+        self.setWindowTitle(_("PyTeg"))
         # self.setFixedSize(QSize(800, 600))
         self.resize(QSize(1280, 800))
         self.setMinimumSize(QSize(800, 600))
@@ -105,7 +107,7 @@ class Gui(QMainWindow):
         self.mi_jugador_layout.setSpacing(6)
 
         # "Mi jugador:" label
-        self.mi_jugador_text = QLabel("Mi jugador:")
+        self.mi_jugador_text = QLabel(_("Mi jugador:"))
         self.mi_jugador_text.setStyleSheet("color: #555;")
         self.mi_jugador_layout.addWidget(self.mi_jugador_text)
 
@@ -120,7 +122,7 @@ class Gui(QMainWindow):
         self.mi_jugador_layout.addWidget(self.mi_color_indicator)
 
         # My username
-        self.mi_username_label = QLabel("[No conectado]")
+        self.mi_username_label = QLabel(_("[No conectado]"))
         self.mi_username_label.setStyleSheet("font-weight: 600;")
         self.mi_jugador_layout.addWidget(self.mi_username_label)
 
@@ -133,7 +135,7 @@ class Gui(QMainWindow):
         self.status_bar.addPermanentWidget(sep2)
 
         # Add a label for the game state
-        self.estado_label = QLabel("Estado: Desconectado")
+        self.estado_label = QLabel(_("Estado: Desconectado"))
         self.estado_label.setObjectName("estadoLabel")
         self.estado_label.setProperty("class", "pill")
         self.status_bar.addPermanentWidget(self.estado_label)
@@ -145,9 +147,21 @@ class Gui(QMainWindow):
         self.status_bar.addPermanentWidget(sep3)
 
         # Add a label for country selection
-        self.seleccion_label = QLabel("Selección: Ninguna")
+        self.seleccion_label = QLabel(_("Selección: Ninguna"))
         self.seleccion_label.setProperty("class", "pill")
         self.status_bar.addPermanentWidget(self.seleccion_label)
+
+        # Separator
+        sep4 = QFrame()
+        sep4.setFrameShape(QFrame.VLine)
+        sep4.setFrameShadow(QFrame.Sunken)
+        self.status_bar.addPermanentWidget(sep4)
+
+        # Add language selector
+        self.language_selector = LanguageSelector()
+        # Conectar la señal de cambio de idioma
+        self.language_selector.language_changed.connect(self.on_language_changed)
+        self.status_bar.addPermanentWidget(self.language_selector)
 
         # Add a stretch to push the status message to the right
         spacer = QWidget()
@@ -574,7 +588,7 @@ class Gui(QMainWindow):
         # Reaplicar estilos en secciones
         self._apply_units_theme()
         # Reaplicar estilos tarjetas jugadores
-        for _, _, w in getattr(self, "player_labels", []):
+        for _player_id, _player_name, w in getattr(self, "player_labels", []):
             self._apply_players_theme(w)
         # Notificar a la toolbar para actualizar el botón de tema
         if hasattr(self, "toolbar") and hasattr(self.toolbar, "on_theme_changed"):
@@ -981,3 +995,42 @@ class Gui(QMainWindow):
             self, self._segundos_por_turno, self._paises_para_victoria
         )
         dialog.exec()
+
+    def on_language_changed(self, lang_code):
+        """
+        Maneja el cambio de idioma actualizando todos los componentes de la GUI.
+
+        Args:
+            lang_code (str): Código del nuevo idioma (ej: 'es', 'en')
+        """
+        # Actualizar título de la ventana
+        self.setWindowTitle(_("PyTeg"))
+
+        # Actualizar etiquetas de la barra de estado
+        self.mi_jugador_text.setText(_("Mi jugador:"))
+
+        # Actualizar estados si están en valores por defecto
+        if (
+            self.mi_username_label.text() == "[No conectado]"
+            or self.mi_username_label.text() == "[Not connected]"
+        ):
+            self.mi_username_label.setText(_("[No conectado]"))
+
+        if self.estado_label.text().startswith(
+            "Estado:"
+        ) or self.estado_label.text().startswith("Status:"):
+            self.estado_label.setText(_("Estado: Desconectado"))
+
+        if self.seleccion_label.text().startswith(
+            "Selección:"
+        ) or self.seleccion_label.text().startswith("Selection:"):
+            self.seleccion_label.setText(_("Selección: Ninguna"))
+
+        # Actualizar la toolbar
+        if hasattr(self, "toolbar"):
+            self.toolbar.update_language(lang_code)
+
+        # No necesitamos actualizar el selector de idioma porque ya maneja
+        # su propio estado
+
+        print(f"GUI actualizada al idioma: {lang_code}")

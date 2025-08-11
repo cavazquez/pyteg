@@ -3,6 +3,17 @@
 Todas las fechas en formato YYYY-MM-DD.
 
 ## Unreleased
+- **Sistema de internacionalización (i18n) completo**:
+  - Soporte para múltiples idiomas usando gettext de Python
+  - Idiomas disponibles: español (por defecto) e inglés
+  - Detección automática del idioma del sistema al iniciar
+  - Selector de idioma integrado en la barra de estado de la GUI
+  - Módulo `i18n.py` para gestión centralizada de traducciones
+  - Archivos de traducción `.po` para español e inglés en `locales/`
+  - Script de gestión `scripts/manage_translations.py` para extraer, compilar y validar traducciones
+  - Widget `LanguageSelector` para cambio dinámico de idioma
+  - Refactorización de GUI con funciones `_()` para traducción
+  - Documentación completa en README.md sobre uso del sistema i18n
 - **Sistema completo de condición de victoria configurable**: 
   - Condición de victoria cambiada a controlar 50 países (por defecto, configurable)
   - Configuración del objetivo de países al crear la partida (similar a duración de turno)
