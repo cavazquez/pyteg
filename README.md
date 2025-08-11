@@ -23,6 +23,7 @@ gráfica en Python.
 - **Condición de victoria configurable**: Por defecto 50 países (configurable al crear partida)
 - **Ventana de configuración**: Muestra duración de turno y objetivo de países
 - **Verificación automática de condición de victoria al final de cada ronda**
+- **Soporte multiidioma (i18n)**: Español e inglés con selector en la interfaz
 - 120+ tests automatizados y linting con Ruff
 
 ## Requisitos
@@ -127,6 +128,42 @@ Los logs se guardan en `logs/` con rotación automática y limpieza periódica. 
 Puedes levantar un entorno de desarrollo con:
 ```bash
 ./ejecutar_docker.sh
+```
+
+## Soporte multiidioma (i18n)
+
+PyTeg incluye soporte completo para múltiples idiomas usando gettext:
+
+### Idiomas soportados
+- **Español** (es) - Idioma por defecto
+- **English** (en) - Inglés
+
+### Cambiar idioma
+- El idioma se detecta automáticamente del sistema al iniciar
+- Usa el selector de idioma en la barra de estado de la interfaz
+- Los cambios se aplican inmediatamente
+
+### Para desarrolladores
+```bash
+# Extraer strings para traducir
+python3 scripts/manage_translations.py extract
+
+# Compilar traducciones
+python3 scripts/manage_translations.py compile
+
+# Ejecutar todas las tareas de traducción
+python3 scripts/manage_translations.py all
+```
+
+Para marcar texto como traducible en el código:
+```python
+from i18n import _
+
+# Texto simple
+label = QLabel(_("Texto a traducir"))
+
+# Texto con formato
+message = _("Jugador {} ganó").format(player_name)
 ```
 
 ## Documentación y diagramas

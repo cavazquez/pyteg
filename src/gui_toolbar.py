@@ -16,6 +16,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.exception import ImagenNoEncontradaError
+from src.i18n import translate as _
 
 
 class ToolBar(QToolBar):
@@ -45,6 +46,70 @@ class ToolBar(QToolBar):
         # Establecer estado inicial (desconectado)
         self._habilitar_solo_conectar()
 
+    def update_language(self, lang_code: str):
+        """Actualiza todos los textos de la toolbar cuando cambia el idioma."""
+        # Nota: lang_code se recibe para compatibilidad con la señal Qt
+        del lang_code  # Suprimir warning de argumento no usado
+        # Actualizar botones principales
+        self.button_conectar.setText(_("Conectar"))
+        self.button_conectar.setToolTip(_("Conectar al servidor"))
+        self.button_conectar.setStatusTip(_("Abrir ventana de conexión"))
+
+        self.button_atacar.setText(_("Atacar"))
+        self.button_atacar.setToolTip(_("Atacar país seleccionado"))
+        self.button_atacar.setStatusTip(_("Ejecutar ataque entre países seleccionados"))
+
+        self.button_mover.setText(_("Mover"))
+        self.button_mover.setToolTip(_("Mover unidades entre países"))
+        self.button_mover.setStatusTip(
+            _("Mover 1 unidad entre los países seleccionados")
+        )
+
+        self.button_finalizar_turno.setText(_("Finalizar Turno"))
+        self.button_finalizar_turno.setToolTip(_("Finalizar tu turno actual"))
+        self.button_finalizar_turno.setStatusTip(
+            _("Pasar el turno al siguiente jugador")
+        )
+
+        self.button_configuracion.setText(_("Configuración"))
+        self.button_configuracion.setToolTip(_("Ver configuración de la partida"))
+        self.button_configuracion.setStatusTip(
+            _("Mostrar duración de turno y objetivo de países")
+        )
+
+        self.button_fullscreen.setText(_("Pantalla Completa"))
+        self.button_fullscreen.setToolTip(_("Alternar pantalla completa"))
+        self.button_fullscreen.setStatusTip(_("Entrar/salir de pantalla completa"))
+
+        # Recrear el menú de tamaños con las nuevas traducciones
+        self._update_size_menu()
+
+    def _update_size_menu(self):
+        """Actualiza el menú de tamaños con las traducciones actuales."""
+        if hasattr(self, "size_menu"):
+            # Limpiar el menú actual
+            self.size_menu.clear()
+
+            # Recrear sección de tamaños predefinidos
+            self.size_menu.addSection(_("Tamaños predefinidos"))
+
+            # Recrear acciones con las nuevas traducciones
+            size_actions = [
+                (_("Pequeño (800x600)"), 800, 600, "icons/size_small.png"),
+                (_("Mediano (1024x768)"), 1024, 768, "icons/size_medium.png"),
+                (_("Grande (1280x800)"), 1280, 800, "icons/size_large.png"),
+            ]
+
+            for text, width, height, icon_path in size_actions:
+                action = QAction(text, self)
+                try:
+                    icono = self._validar_icono(icon_path, f"tamaño {text}")
+                    action.setIcon(icono)
+                except (FileNotFoundError, OSError):
+                    pass  # Continuar sin ícono si no se encuentra
+                action.triggered.connect(partial(self.resize_window, width, height))
+                self.size_menu.addAction(action)
+
     def _validar_icono(self, ruta_icono, contexto=""):
         """Valida que un archivo de icono existe y se puede cargar.
 
@@ -68,53 +133,59 @@ class ToolBar(QToolBar):
         """Configura los botones de acción en la barra de herramientas"""
         # Grupo: Conexión
         icono_conectar = self._validar_icono("icons/conectar.png", "conectar")
-        self.button_conectar = QAction(icono_conectar, "Conectar", self)
+        self.button_conectar = QAction(icono_conectar, _("Conectar"), self)
         self.button_conectar.triggered.connect(self.main_window.abrir_ventana_conectar)
-        self.button_conectar.setToolTip("Conectar al servidor")
-        self.button_conectar.setStatusTip("Abrir ventana de conexión")
+        self.button_conectar.setToolTip(_("Conectar al servidor"))
+        self.button_conectar.setStatusTip(_("Abrir ventana de conexión"))
         self.addAction(self.button_conectar)
 
         self.addSeparator()
 
         # Grupo: Acciones de juego
         icono_atacar = self._validar_icono("icons/atacar.png", "atacar")
-        self.button_atacar = QAction(icono_atacar, "Atacar", self)
+        self.button_atacar = QAction(icono_atacar, _("Atacar"), self)
         self.button_atacar.triggered.connect(self.main_window.atacar)
-        self.button_atacar.setToolTip("Atacar país seleccionado")
-        self.button_atacar.setStatusTip("Ejecutar ataque entre países seleccionados")
+        self.button_atacar.setToolTip(_("Atacar país seleccionado"))
+        self.button_atacar.setStatusTip(_("Ejecutar ataque entre países seleccionados"))
         self.addAction(self.button_atacar)
 
         # Botón mover
         icono_mover = self._validar_icono("icons/mover.png", "mover")
-        self.button_mover = QAction(icono_mover, "Mover", self)
+        self.button_mover = QAction(icono_mover, _("Mover"), self)
         self.button_mover.setEnabled(False)  # Inicialmente deshabilitado
         self.button_mover.triggered.connect(self._mover_paises_seleccionados)
-        self.button_mover.setToolTip("Mover unidades entre países")
-        self.button_mover.setStatusTip("Mover 1 unidad entre los países seleccionados")
+        self.button_mover.setToolTip(_("Mover unidades entre países"))
+        self.button_mover.setStatusTip(
+            _("Mover 1 unidad entre los países seleccionados")
+        )
         self.addAction(self.button_mover)
         self.addSeparator()
 
         # Botón para finalizar el turno
         icono_finalizar = self._validar_icono("icons/finish.png", "finalizar turno")
-        self.button_finalizar_turno = QAction(icono_finalizar, "Finalizar Turno", self)
+        self.button_finalizar_turno = QAction(
+            icono_finalizar, _("Finalizar Turno"), self
+        )
         self.button_finalizar_turno.setEnabled(True)  # Siempre habilitado
         self.button_finalizar_turno.triggered.connect(self.main_window.finalizar_turno)
-        self.button_finalizar_turno.setToolTip("Finalizar tu turno actual")
-        self.button_finalizar_turno.setStatusTip("Pasar el turno al siguiente jugador")
+        self.button_finalizar_turno.setToolTip(_("Finalizar tu turno actual"))
+        self.button_finalizar_turno.setStatusTip(
+            _("Pasar el turno al siguiente jugador")
+        )
         self.addAction(self.button_finalizar_turno)
 
         self.addSeparator()
 
         # Botón para mostrar configuración de la partida
         icono_config = self._validar_icono("icons/resize.png", "configuración")
-        self.button_configuracion = QAction(icono_config, "Configuración", self)
+        self.button_configuracion = QAction(icono_config, _("Configuración"), self)
         self.button_configuracion.setEnabled(True)  # Siempre habilitado
         self.button_configuracion.triggered.connect(
             self.main_window.mostrar_configuracion_partida
         )
-        self.button_configuracion.setToolTip("Ver configuración de la partida")
+        self.button_configuracion.setToolTip(_("Ver configuración de la partida"))
         self.button_configuracion.setStatusTip(
-            "Mostrar duración de turno y objetivo de países"
+            _("Mostrar duración de turno y objetivo de países")
         )
         self.addAction(self.button_configuracion)
 
@@ -135,9 +206,9 @@ class ToolBar(QToolBar):
         )
         self.button_fullscreen.setIcon(icono_full)
         self.button_fullscreen.setCheckable(True)
-        self.button_fullscreen.setText("Pantalla Completa")
-        self.button_fullscreen.setToolTip("Alternar pantalla completa")
-        self.button_fullscreen.setStatusTip("Entrar/salir de pantalla completa")
+        self.button_fullscreen.setText(_("Pantalla Completa"))
+        self.button_fullscreen.setToolTip(_("Alternar pantalla completa"))
+        self.button_fullscreen.setStatusTip(_("Entrar/salir de pantalla completa"))
         self.button_fullscreen.triggered.connect(self._toggle_fullscreen)
         self.addAction(self.button_fullscreen)
 
@@ -176,13 +247,13 @@ class ToolBar(QToolBar):
         """)
 
         # Sección de tamaños predefinidos
-        menu.addSection("Tamaños predefinidos")
+        menu.addSection(_("Tamaños predefinidos"))
 
         # Acciones para los tamaños predefinidos con íconos
         size_actions = [
-            ("Pequeño (800x600)", 800, 600, "icons/size_small.png"),
-            ("Mediano (1024x768)", 1024, 768, "icons/size_medium.png"),
-            ("Grande (1280x800)", 1280, 800, "icons/size_large.png"),
+            (_("Pequeño (800x600)"), 800, 600, "icons/size_small.png"),
+            (_("Mediano (1024x768)"), 1024, 768, "icons/size_medium.png"),
+            (_("Grande (1280x800)"), 1280, 800, "icons/size_large.png"),
         ]
 
         for text, width, height, icon_path in size_actions:

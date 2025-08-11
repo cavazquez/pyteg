@@ -7,12 +7,14 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
 )
 
+from src.i18n import translate as _
+
 
 class ConfiguracionDialog(QDialog):
     def __init__(self, parent=None, segundos_por_turno=20, paises_para_victoria=50):
         super().__init__(parent)
         self.paises_para_victoria = paises_para_victoria
-        self.setWindowTitle("Configuración de la Partida")
+        self.setWindowTitle(_("Configuración de la Partida"))
         self.setFixedSize(350, 200)
         self.setModal(True)
 
@@ -21,7 +23,7 @@ class ConfiguracionDialog(QDialog):
         self.setLayout(layout)
 
         # Título
-        titulo = QLabel("Configuración de la Partida")
+        titulo = QLabel(_("Configuración de la Partida"))
         titulo.setAlignment(Qt.AlignCenter)
         titulo.setStyleSheet("font-weight: bold; font-size: 14px; margin-bottom: 10px;")
         layout.addWidget(titulo)
@@ -31,17 +33,17 @@ class ConfiguracionDialog(QDialog):
         layout.addLayout(grid_layout)
 
         # Duración del turno
-        duracion_label = QLabel("Duración del turno:")
+        duracion_label = QLabel(_("Duración del turno:"))
         duracion_label.setStyleSheet("font-weight: bold;")
-        duracion_value = QLabel(f"{segundos_por_turno} segundos")
+        duracion_value = QLabel(_("{} segundos").format(segundos_por_turno))
         grid_layout.addWidget(duracion_label, 0, 0)
         grid_layout.addWidget(duracion_value, 0, 1)
 
         # Objetivo de países
-        objetivo_label = QLabel("Países para ganar:")
+        objetivo_label = QLabel(_("Países para ganar:"))
         objetivo_label.setStyleSheet("font-weight: bold;")
         if self.paises_para_victoria == 0:
-            objetivo_text = "Todos los países"
+            objetivo_text = _("Todos los países")
         else:
             objetivo_text = str(self.paises_para_victoria)
         objetivo_value = QLabel(objetivo_text)
@@ -52,7 +54,7 @@ class ConfiguracionDialog(QDialog):
         layout.addSpacing(20)
 
         # Botón de cerrar
-        boton_cerrar = QPushButton("Cerrar")
+        boton_cerrar = QPushButton(_("Cerrar"))
         boton_cerrar.clicked.connect(self.accept)
         layout.addWidget(boton_cerrar)
 
