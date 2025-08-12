@@ -48,6 +48,52 @@ msgstr "Move"
 msgid "Finalizar Turno"
 msgstr "End Turn"
 
+# Connection Window (VentanaConectar)
+msgid "Conectar al servidor"
+msgstr "Connect to Server"
+
+msgid "Conectar a Partida"
+msgstr "Connect to Game"
+
+msgid "Ingresa los datos para conectarte a una partida existente"
+msgstr "Enter the details to connect to an existing game"
+
+msgid "Dirección:"
+msgstr "Address:"
+
+msgid "Puerto:"
+msgstr "Port:"
+
+msgid "Usuario:"
+msgstr "User:"
+
+msgid "Dirección del servidor"
+msgstr "Server address"
+
+msgid "Puerto"
+msgstr "Port"
+
+msgid "Tu nombre en el juego"
+msgstr "Your name in the game"
+
+msgid "Cancelar"
+msgstr "Cancel"
+
+msgid "Por favor ingresa una dirección de servidor válida"
+msgstr "Please enter a valid server address"
+
+msgid "Por favor ingresa un puerto válido"
+msgstr "Please enter a valid port"
+
+msgid "Por favor ingresa un nombre de usuario"
+msgstr "Please enter a username"
+
+msgid "Error al conectar: {}"
+msgstr "Connection error: {}"
+
+msgid "Error de conexión"
+msgstr "Connection Error"
+
 msgid "Admin"
 msgstr "Admin"
 

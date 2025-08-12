@@ -99,8 +99,27 @@ TRANSLATIONS = {
         "Turno {} iniciado": "Turn {} started",
         "Tiempo restante: {}s": "Time remaining: {}s",
         "Objetivo: {} | Turno: {}s": "Objective: {} | Turn: {}s",
+        # Connection Window (VentanaConectar) translations
+        "Conectar al servidor": "Connect to Server",
+        "Conectar a Partida": "Connect to Game",
+        "Ingresa los datos para conectarte a una partida existente": (
+            "Enter the details to connect to an existing game"
+        ),
+        "Dirección:": "Address:",
+        "Puerto:": "Port:",
+        "Usuario:": "User:",
+        "Dirección del servidor": "Server address",
+        "Puerto": "Port",
+        "Tu nombre en el juego": "Your name in the game",
+        "Cancelar": "Cancel",
+        "Por favor ingresa una dirección de servidor válida": (
+            "Please enter a valid server address"
+        ),
+        "Por favor ingresa un puerto válido": "Please enter a valid port",
+        "Por favor ingresa un nombre de usuario": "Please enter a username",
+        "Error al conectar: {}": "Connection error: {}",
+        "Error de conexión": "Connection Error",
         # Toolbar translations
-        "Conectar al servidor": "Connect to server",
         "Abrir ventana de conexión": "Open connection window",
         "Atacar país seleccionado": "Attack selected country",
         "Ejecutar ataque entre países seleccionados": (
