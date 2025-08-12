@@ -1,3 +1,5 @@
+import contextlib
+
 from PySide6.QtCore import QSize, Qt
 from PySide6.QtGui import QIntValidator
 from PySide6.QtWidgets import (
@@ -13,6 +15,7 @@ from PySide6.QtWidgets import (
 
 from src.client_connection import ConnectionClient
 from src.client_transmisor import ClientTransmisor
+from src.i18n import translate as _
 
 
 class VentanaConectar(QDialog):
@@ -39,9 +42,12 @@ class VentanaConectar(QDialog):
         # Establecer el layout principal
         self.setLayout(main_layout)
 
+        # Conectar al selector de idioma para cambios dinámicos
+        self._connect_to_language_selector()
+
     def _setup_window(self):
         """Configura las propiedades básicas de la ventana"""
-        self.setWindowTitle("Conectar al servidor")
+        self.setWindowTitle(_("Conectar al servidor"))
         self.setFixedSize(QSize(400, 300))
         # Quitar botones de maximizar, minimizar y ayuda, dejando solo el de cerrar
         self.setWindowFlags(
@@ -54,7 +60,7 @@ class VentanaConectar(QDialog):
     def _setup_header(self, parent_layout):
         """Configura el título y la descripción"""
         # Título
-        title_label = QLabel("Conectar a Partida")
+        title_label = QLabel(_("Conectar a Partida"))
         title_label.setStyleSheet("""
             font-size: 16px;
             font-weight: bold;
@@ -64,7 +70,9 @@ class VentanaConectar(QDialog):
         parent_layout.addWidget(title_label)
 
         # Descripción
-        desc_label = QLabel("Ingresa los datos para conectarte a una partida existente")
+        desc_label = QLabel(
+            _("Ingresa los datos para conectarte a una partida existente")
+        )
         desc_label.setStyleSheet("""
             font-size: 12px;
             color: #6c757d;
@@ -86,13 +94,13 @@ class VentanaConectar(QDialog):
         # Crear etiquetas con estilo
         label_style = "font-weight: bold; color: #495057; font-size: 13px;"
 
-        addr_label = QLabel("Dirección:")
+        addr_label = QLabel(_("Dirección:"))
         addr_label.setStyleSheet(label_style)
 
-        port_label = QLabel("Puerto:")
+        port_label = QLabel(_("Puerto:"))
         port_label.setStyleSheet(label_style)
 
-        user_label = QLabel("Usuario:")
+        user_label = QLabel(_("Usuario:"))
         user_label.setStyleSheet(label_style)
 
         # Añadir campos al formulario con espaciadores entre ellos
@@ -118,14 +126,14 @@ class VentanaConectar(QDialog):
         """Crea y estiliza los campos de entrada"""
         # Campos de entrada
         self.addr = QLineEdit("localhost")
-        self.addr.setPlaceholderText("Dirección del servidor")
+        self.addr.setPlaceholderText(_("Dirección del servidor"))
 
         self.port = QLineEdit("65432")
         self.port.setValidator(QIntValidator())
-        self.port.setPlaceholderText("Puerto")
+        self.port.setPlaceholderText(_("Puerto"))
 
         self.username = QLineEdit()
-        self.username.setPlaceholderText("Tu nombre en el juego")
+        self.username.setPlaceholderText(_("Tu nombre en el juego"))
 
         # Estilo para los campos
         input_style = """
@@ -158,7 +166,7 @@ class VentanaConectar(QDialog):
         buttons_layout.setSpacing(10)
 
         # Botón cancelar
-        button_cancelar = QPushButton("Cancelar")
+        button_cancelar = QPushButton(_("Cancelar"))
         button_cancelar.clicked.connect(self.reject)
         button_cancelar.setStyleSheet("""
             QPushButton {
@@ -180,7 +188,7 @@ class VentanaConectar(QDialog):
         """)
 
         # Botón conectar
-        button_conectar = QPushButton("Conectar")
+        button_conectar = QPushButton(_("Conectar"))
         button_conectar.setDefault(True)
         button_conectar.clicked.connect(self.connect)
         button_conectar.setStyleSheet("""
@@ -234,17 +242,19 @@ class VentanaConectar(QDialog):
 
             # Validar campos
             if not addr:
-                self._show_error("Por favor ingresa una dirección de servidor válida")
+                self._show_error(
+                    _("Por favor ingresa una dirección de servidor válida")
+                )
                 self.addr.setFocus()
                 return
 
             if not port:
-                self._show_error("Por favor ingresa un puerto válido")
+                self._show_error(_("Por favor ingresa un puerto válido"))
                 self.port.setFocus()
                 return
 
             if not username:
-                self._show_error("Por favor ingresa un nombre de usuario")
+                self._show_error(_("Por favor ingresa un nombre de usuario"))
                 self.username.setFocus()
                 return
 
@@ -257,12 +267,12 @@ class VentanaConectar(QDialog):
             self.accept()  # Cerrar el diálogo si la conexión es exitosa
 
         except (ConnectionError, OSError, ValueError) as e:
-            self._show_error(f"Error al conectar: {e!s}")
+            self._show_error(_("Error al conectar: {}").format(str(e)))
 
     def _show_error(self, message):
         """Muestra un mensaje de error con estilo mejorado"""
         error_box = QMessageBox(self)
-        error_box.setWindowTitle("Error de conexión")
+        error_box.setWindowTitle(_("Error de conexión"))
         error_box.setText(message)
         error_box.setIcon(QMessageBox.Critical)
         error_box.setStandardButtons(QMessageBox.Ok)
@@ -290,5 +300,68 @@ class VentanaConectar(QDialog):
                 background-color: #3a56d4;
             }
         """)
+        error_box.exec()
 
-        error_box.exec_()
+    def _connect_to_language_selector(self):
+        """Conecta al selector de idioma para cambios dinámicos"""
+        try:
+            # Conectar directamente al selector de idioma de la ventana principal
+            if hasattr(self._main_window, "language_selector") and hasattr(
+                self._main_window.language_selector, "language_changed"
+            ):
+                # Desconectar cualquier conexión anterior para evitar duplicados
+                with contextlib.suppress(TypeError, RuntimeError):
+                    self._main_window.language_selector.language_changed.disconnect(
+                        self.update_language
+                    )
+
+                # Conectar la señal
+                self._main_window.language_selector.language_changed.connect(
+                    self.update_language
+                )
+
+        except (AttributeError, TypeError, RuntimeError) as e:
+            print(f"DEBUG: Error conectando al selector de idioma: {e}")
+
+    def update_language(self):
+        """Actualiza todos los textos de la interfaz al cambiar el idioma"""
+
+        # Actualizar título de la ventana
+        self.setWindowTitle(_("Conectar al servidor"))
+
+        # Buscar y actualizar todos los QLabel
+        labels = self.findChildren(QLabel)
+        for label in labels:
+            current_text = label.text()
+            if current_text in {"Conectar a Partida", "Connect to Game"}:
+                label.setText(_("Conectar a Partida"))
+            elif current_text in {
+                "Ingresa los datos para conectarte a una partida existente",
+                "Enter the details to connect to an existing game",
+            }:
+                label.setText(
+                    _("Ingresa los datos para conectarte a una partida existente")
+                )
+            elif current_text in {"Dirección:", "Address:", "Direccion:"}:
+                label.setText(_("Dirección:"))
+            elif current_text in {"Puerto:", "Port:"}:
+                label.setText(_("Puerto:"))
+            elif current_text in {"Usuario:", "User:"}:
+                label.setText(_("Usuario:"))
+
+        # Buscar y actualizar todos los QPushButton
+        buttons = self.findChildren(QPushButton)
+        for button in buttons:
+            current_text = button.text()
+            if current_text in {"Cancelar", "Cancel"}:
+                button.setText(_("Cancelar"))
+            elif current_text in {"Conectar", "Connect"}:
+                button.setText(_("Conectar"))
+
+        # Actualizar placeholders
+        if hasattr(self, "addr"):
+            self.addr.setPlaceholderText(_("Dirección del servidor"))
+        if hasattr(self, "port"):
+            self.port.setPlaceholderText(_("Puerto"))
+        if hasattr(self, "username"):
+            self.username.setPlaceholderText(_("Tu nombre en el juego"))

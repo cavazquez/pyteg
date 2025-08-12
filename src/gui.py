@@ -471,8 +471,11 @@ class Gui(QMainWindow):
         # Cancelar selección al abrir ventana de conexión
         if hasattr(self.scene, "selection_manager"):
             self.scene.selection_manager.cancelar_seleccion()
-        self.ventana_conectar = None
-        self.ventana_conectar = VentanaConectar(self)
+
+        # Mantener referencia persistente para conexión al selector de idioma
+        if not hasattr(self, "ventana_conectar") or self.ventana_conectar is None:
+            self.ventana_conectar = VentanaConectar(self)
+
         self.ventana_conectar.show()
 
     def ventana_admin(self):
