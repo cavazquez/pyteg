@@ -28,9 +28,11 @@ class ThemeManager:
         # Reaplicar estilos en secciones
         self._apply_units_theme()
         # Reaplicar estilos tarjetas jugadores
-        player_labels = getattr(self.main_window, "player_labels", [])
-        for _player_id, _player_name, w in player_labels:
-            self._apply_players_theme(w)
+        if hasattr(self.main_window, "players_manager"):
+            players_manager = self.main_window.players_manager
+            player_labels = getattr(players_manager, "player_labels", [])
+            for _player_id, _player_name, w in player_labels:
+                self._apply_players_theme(w)
         # Notificar a la toolbar para actualizar el botón de tema
         toolbar = self.main_window.toolbar
         has_toolbar = hasattr(self.main_window, "toolbar")
