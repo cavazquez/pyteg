@@ -2,7 +2,6 @@ import contextlib
 
 from PySide6.QtCore import QSize, Qt
 from PySide6.QtWidgets import (
-    QDialog,
     QFrame,
     QHBoxLayout,
     QLabel,
@@ -15,10 +14,10 @@ from PySide6.QtWidgets import (
 from src.client_transmisor import ClientNullTransmisor
 from src.cliente_colores import Colores
 from src.gui_admin import VentanaAdmin
-from src.gui_attack_dialog import AttackDialog
 from src.gui_conectar import VentanaConectar
 from src.gui_configuracion_dialog import ConfiguracionDialog
 from src.gui_esperar_jugadores import VentanaEsperarJugadores
+from src.gui_game_actions import GameActionsManager
 from src.gui_language_selector import LanguageSelector
 from src.gui_layout_manager import LayoutManager
 from src.gui_players_manager import PlayersManager
@@ -50,6 +49,7 @@ class Gui(QMainWindow):
         self.players_manager = PlayersManager(self)
         self.status_manager = StatusManager(self)
         self.units_manager = UnitsManager(self)
+        self.game_actions_manager = GameActionsManager(self)
         self.setMinimumSize(QSize(800, 600))
         self.setMouseTracking(True)
 
@@ -315,63 +315,11 @@ class Gui(QMainWindow):
 
     def finalizar_turno(self):
         """Método llamado cuando se hace clic en el botón Finalizar Turno."""
-        # Aquí puedes agregar la lógica para finalizar el turno actual
-        # Por ejemplo, notificar al servidor que el turno ha terminado
-        if hasattr(self, "transmisor") and hasattr(self.transmisor, "finalizar_turno"):
-            self.transmisor.finalizar_turno()
-            # Cancelar selección después de finalizar turno
-            if hasattr(self.scene, "selection_manager"):
-                self.scene.selection_manager.cancelar_seleccion()
-        else:
-            print("No se pudo finalizar el turno: transmisor no disponible")
+        self.game_actions_manager.finalizar_turno()
 
     def atacar(self):
         """Método llamado cuando se hace clic en el botón Atacar de la toolbar."""
-        # Verificar que tenemos un selection_manager
-        if not hasattr(self.scene, "selection_manager"):
-            self.update_status_bar(
-                "Error: No hay sistema de selección disponible", "red"
-            )
-            return
-
-        selection_manager = self.scene.selection_manager
-        origen = selection_manager.get_pais_origen()
-        destino = selection_manager.get_pais_destino()
-
-        if not origen:
-            self.update_status_bar("Selecciona un país de origen primero", "orange")
-            return
-
-        if not destino:
-            self.update_status_bar(
-                "Selecciona un país de destino después del origen", "orange"
-            )
-            return
-
-        if hasattr(self, "transmisor") and hasattr(self.transmisor, "atacar"):
-            # Obtener información del país atacante para determinar unidades disponibles
-            max_unidades = self.get_max_attack_units(origen)
-
-            if max_unidades < 1:
-                self.update_status_bar(
-                    f"No hay suficientes unidades en {origen} para atacar", "orange"
-                )
-                return
-
-            # Mostrar diálogo para seleccionar cantidad de unidades
-            dialog = AttackDialog(origen, destino, max_unidades, self)
-            if dialog.exec() == QDialog.Accepted:
-                cantidad_unidades = dialog.get_cantidad_unidades()
-                self.transmisor.atacar(origen, destino, cantidad_unidades)
-                self.update_status_bar(
-                    f"Atacando de {origen} a {destino} con {cantidad_unidades} "
-                    f"unidad{'es' if cantidad_unidades > 1 else ''}...",
-                    "blue",
-                )
-                # Cancelar selección después de atacar
-                selection_manager.cancelar_seleccion()
-        else:
-            self.update_status_bar("Error: No hay conexión disponible", "red")
+        self.game_actions_manager.atacar()
 
     def get_max_attack_units(self, pais):
         """
@@ -383,17 +331,7 @@ class Gui(QMainWindow):
         Returns:
             int: Máximo número de unidades disponibles (1-3)
         """
-        # Buscar el país en la escena para obtener sus unidades
-        if hasattr(self.scene, "paises") and pais in self.scene.paises:
-            pais_widget = self.scene.paises[pais]
-            unidades_totales = pais_widget.get_unidades()
-            # Se necesita dejar al menos 1 unidad en el país
-            unidades_disponibles = max(0, unidades_totales - 1)
-            # Máximo 3 unidades para atacar
-            return min(unidades_disponibles, 3)
-
-        # Si no se encuentra el país, asumir 0 unidades disponibles
-        return 0
+        return self.game_actions_manager.get_max_attack_units(pais)
 
     def set_configuracion_partida(self, segundos_por_turno, paises_para_victoria):
         """
