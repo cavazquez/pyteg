@@ -16,7 +16,8 @@ Pyteg implementa el juego TEG en un modelo cliente-servidor:
 - server_msg.py: definición de mensajes (chat, mapa, turnos, resultados de batalla, etc.).
 - client_connection.py: manejo de conexión y estado conectado/desconectado.
 - client_tasks.py: procesamiento de mensajes en el cliente y actualización de UI.
-- gui.py y gui_*: ventanas, diálogos y toolbar.
+- gui.py: ventana principal refactorizada modularmente con gestores especializados.
+- gui_*: módulos especializados de la interfaz gráfica (layout, temas, jugadores, status, unidades, acciones).
 - run_client.py: punto de entrada del cliente.
 
 ## Flujo de mensajes
@@ -41,6 +42,48 @@ Para una vista visual del intercambio de mensajes, ver el diagrama de secuencia 
 - Ataques: restringidos en los dos primeros turnos; requieren países adyacentes, dueño válido y unidades suficientes; el atacante puede lanzar 1 a 3 dados según unidades.
 - Movimiento: requiere adyacencia y unidades disponibles (no vaciar país origen si la regla lo impide).
 - Chat de errores: toda acción inválida genera un mensaje de error visible para el jugador con formato ⚠️ rojo.
+
+## Arquitectura modular de la GUI
+
+La interfaz gráfica ha sido refactorizada en una arquitectura modular para mejorar mantenibilidad, legibilidad y escalabilidad:
+
+### Ventana principal (gui.py - 366 líneas)
+- **Responsabilidad**: Coordinación de gestores, eventos de Qt, ventanas auxiliares
+- **Gestores integrados**: Instancia y coordina todos los gestores especializados
+- **Reducción**: 65% menos líneas (de ~1039 a 366 líneas)
+
+### Gestores especializados
+
+#### LayoutManager (gui_layout_manager.py - 313 líneas)
+- **Responsabilidad**: Estructura visual, widgets base, layout de ventana
+- **Funciones clave**: Creación de paneles, configuración de splitters, iconos
+
+#### ThemeManager (gui_theme_manager.py - 115 líneas)
+- **Responsabilidad**: Gestión de temas claro/oscuro, estilos CSS
+- **Funciones clave**: Aplicación de temas, toggle de modo, estilos por componente
+
+#### PlayersManager (gui_players_manager.py - 92 líneas)
+- **Responsabilidad**: Lista de jugadores, widgets de jugador, indicadores de color
+- **Funciones clave**: Actualización de lista, creación de widgets, iconos circulares
+
+#### StatusManager (gui_status_manager.py - 125 líneas)
+- **Responsabilidad**: Barra de estado, información de jugador actual, mensajes
+- **Funciones clave**: Actualización de estado de juego, información de turno
+
+#### UnitsManager (gui_units_manager.py - 111 líneas)
+- **Responsabilidad**: Panel de unidades disponibles, efectos visuales
+- **Funciones clave**: Actualización de unidades, efectos de flash, estilos
+
+#### GameActionsManager (gui_game_actions.py - 79 líneas)
+- **Responsabilidad**: Acciones del juego (atacar, finalizar turno)
+- **Funciones clave**: Lógica de ataque, finalización de turno, cálculo de unidades
+
+### Beneficios de la arquitectura modular
+- **Separación de responsabilidades**: Cada gestor tiene una función específica
+- **Mantenibilidad**: Fácil localización y modificación de funcionalidad
+- **Escalabilidad**: Nuevas funcionalidades pueden agregarse sin impactar otros módulos
+- **Testabilidad**: Cada gestor puede ser probado independientemente
+- **Legibilidad**: Código más organizado y comprensible
 
 ## Estados de la GUI
 - Toolbar (gui_toolbar.py):

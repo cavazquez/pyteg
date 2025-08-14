@@ -91,11 +91,25 @@ uv run hatch build -t wheel -t sdist
   - `server_tasks.py`: acciones validadas del servidor
   - `client_connection.py`: conexión del cliente
   - `client_tasks.py`: tareas que procesan mensajes
-  - `gui.py` y `gui_*`: interfaz gráfica y diálogos
+  - `gui.py`: interfaz gráfica principal (refactorizada modularmente)
+  - `gui_*`: módulos especializados de la interfaz gráfica
   - `run_client.py`: punto de entrada del cliente
 - `tests/`: suite de tests
 - `run_test.sh`: pruebas y linting de una pasada
 - `ejecutar_docker.sh`: entorno en Docker (opcional)
+
+### Arquitectura modular de la GUI
+La interfaz gráfica ha sido refactorizada en módulos especializados para mejorar mantenibilidad:
+
+- **`gui.py`** (366 líneas): Ventana principal y coordinación de gestores
+- **`gui_layout_manager.py`**: Gestión de layout y estructura visual
+- **`gui_theme_manager.py`**: Gestión de temas claro/oscuro
+- **`gui_players_manager.py`**: Gestión de lista y widgets de jugadores
+- **`gui_status_manager.py`**: Gestión de barra de estado y mensajes
+- **`gui_units_manager.py`**: Gestión de unidades y efectos visuales
+- **`gui_game_actions.py`**: Acciones del juego (atacar, finalizar turno)
+
+Esta arquitectura modular reduce la complejidad del archivo principal en un 65% (de ~1039 a 366 líneas) mientras mantiene toda la funcionalidad intacta.
 
 ## Desarrollo
 Formateo y estilo:

@@ -61,6 +61,34 @@ PYTEG_LOG_MAX_CLIENT_FILES=10 \
 uv run pyteg-server
 ```
 
+## Arquitectura modular de la GUI
+
+La interfaz gráfica sigue una arquitectura modular con gestores especializados:
+
+### Estructura de archivos GUI
+- **`gui.py`**: Ventana principal y coordinación de gestores
+- **`gui_layout_manager.py`**: Gestión de layout y estructura visual
+- **`gui_theme_manager.py`**: Gestión de temas y estilos
+- **`gui_players_manager.py`**: Gestión de jugadores y widgets
+- **`gui_status_manager.py`**: Gestión de barra de estado
+- **`gui_units_manager.py`**: Gestión de unidades disponibles
+- **`gui_game_actions.py`**: Acciones del juego (atacar, finalizar turno)
+
+### Principios de diseño
+- **Separación de responsabilidades**: Cada gestor tiene una función específica
+- **Coordinación centralizada**: `gui.py` orquesta todos los gestores
+- **Referencias compartidas**: Los gestores acceden al main window para UI y estado
+- **Modularidad**: Nuevas funcionalidades se agregan en el gestor apropiado
+
+### Guías para modificaciones GUI
+1. **Nuevas funcionalidades**: Agregar al gestor apropiado o crear uno nuevo
+2. **Cambios de layout**: Modificar `LayoutManager`
+3. **Cambios de tema**: Modificar `ThemeManager`
+4. **Nuevas acciones**: Agregar a `GameActionsManager`
+5. **Cambios de estado**: Modificar `StatusManager`
+
+Ver diagrama completo en `docs/diagrams/gui_modular_architecture.md`.
+
 ## Estilo y convenciones
 - Límite de línea: 88 caracteres.
 - Ruff como linter y formateador.
