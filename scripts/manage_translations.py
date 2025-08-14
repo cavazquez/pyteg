@@ -87,7 +87,7 @@ def _create_basic_mo_file(mo_file):
 
 
 def compile_translations_manual():
-    """Compilación manual básica de .po a .mo."""
+    """Compilación manual usando msgfmt."""
     for lang_dir in LOCALES_DIR.iterdir():
         if not lang_dir.is_dir():
             continue
@@ -99,15 +99,21 @@ def compile_translations_manual():
             continue
 
         try:
-            # Parsear archivo .po
-            _translations = _parse_po_file(po_file)
-
-            # Crear archivo .mo básico
-            _create_basic_mo_file(mo_file)
-            print(f"✓ Archivo .mo creado (básico): {mo_file}")
-
-        except (OSError, UnicodeDecodeError, ValueError) as e:
-            print(f"❌ Error compilando {po_file}: {e}")
+            # Usar msgfmt para compilar archivos .po
+            cmd = ["msgfmt", str(po_file), "-o", str(mo_file)]
+            subprocess.run(cmd, check=True, timeout=30)  # noqa: S603
+            print(f"✓ Compilado con msgfmt: {po_file} -> {mo_file}")
+        except subprocess.CalledProcessError as e:
+            print(f"❌ Error compilando {po_file} con msgfmt: {e}")
+        except FileNotFoundError:
+            print("❌ msgfmt no encontrado. Instala gettext-tools")
+            # Fallback: crear archivo .mo básico
+            try:
+                _translations = _parse_po_file(po_file)
+                _create_basic_mo_file(mo_file)
+                print(f"✓ Archivo .mo creado (básico): {mo_file}")
+            except (OSError, UnicodeDecodeError, ValueError) as e:
+                print(f"❌ Error compilando {po_file}: {e}")
 
 
 def extract_strings():
