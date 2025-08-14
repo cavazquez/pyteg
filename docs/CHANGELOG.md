@@ -3,6 +3,19 @@
 Todas las fechas en formato YYYY-MM-DD.
 
 ## Unreleased
+- **Refactorización modular completa de la GUI**:
+  - Arquitectura modular para mejorar mantenibilidad, legibilidad y escalabilidad
+  - Reducción del 65% en líneas de código del archivo principal (de ~1039 a 366 líneas)
+  - Separación en 6 gestores especializados con responsabilidades específicas:
+    - `LayoutManager` (313 líneas): Estructura visual, widgets base, layout de ventana
+    - `ThemeManager` (115 líneas): Gestión de temas claro/oscuro, estilos CSS
+    - `PlayersManager` (92 líneas): Lista de jugadores, widgets de jugador, indicadores de color
+    - `StatusManager` (125 líneas): Barra de estado, información de jugador actual, mensajes
+    - `UnitsManager` (111 líneas): Panel de unidades disponibles, efectos visuales
+    - `GameActionsManager` (79 líneas): Acciones del juego (atacar, finalizar turno)
+  - Ventana principal (`gui.py`) enfocada en coordinación de gestores y eventos de Qt
+  - Mantenimiento de toda la funcionalidad original con 121 tests pasando
+  - Documentación actualizada en README.md y ARCHITECTURE.md
 - **Sistema de internacionalización (i18n) completo**:
   - Soporte para múltiples idiomas usando gettext de Python
   - Idiomas disponibles: español (por defecto) e inglés
