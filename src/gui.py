@@ -1,6 +1,6 @@
 import contextlib
 
-from PySide6.QtCore import QSize, Qt, QTimer
+from PySide6.QtCore import QSize, Qt
 from PySide6.QtWidgets import (
     QDialog,
     QFrame,
@@ -24,6 +24,7 @@ from src.gui_layout_manager import LayoutManager
 from src.gui_players_manager import PlayersManager
 from src.gui_status_manager import StatusManager
 from src.gui_theme_manager import ThemeManager
+from src.gui_units_manager import UnitsManager
 from src.i18n import translate as _
 
 
@@ -48,6 +49,7 @@ class Gui(QMainWindow):
         self.theme_manager = ThemeManager(self)
         self.players_manager = PlayersManager(self)
         self.status_manager = StatusManager(self)
+        self.units_manager = UnitsManager(self)
         self.setMinimumSize(QSize(800, 600))
         self.setMouseTracking(True)
 
@@ -292,117 +294,14 @@ class Gui(QMainWindow):
         """
         self.status_manager.update_mi_jugador_info()
 
-    def update_unidades_disponibles(self, unidades):  # noqa: PLR0912
+    def update_unidades_disponibles(self, unidades):
         """Actualiza el panel derecho con las unidades disponibles.
 
         Args:
             unidades (dict): Diccionario con el tipo de unidad y la cantidad disponible.
                 Ejemplo: {"infanteria": 5, "misiles": 2, "Africa": 3}
         """
-        # Mapeo de nombres de continentes del servidor a los de la GUI
-        continent_mapping = {
-            "Africa": "África",
-            "Europa": "Europa",
-            "Asia": "Asia",
-            "América del Sur": "América del Sur",
-            "América del Norte": "América del Norte",
-            "Oceanía": "Oceanía",
-        }
-
-        # Actualizar unidades generales (infantería)
-        if "infanteria" in unidades:
-            cantidad = unidades["infanteria"]
-            prev = self._last_units.get("Generales", None)
-            # Estilo con color verde si hay unidades disponibles
-            if cantidad > 0:
-                style = (
-                    "font-weight: bold; "
-                    "color: #2E7D32; "
-                    "background-color: #E8F5E8; "
-                    "padding: 4px 8px; "
-                    "border-radius: 4px; "
-                    "border-left: 3px solid #4CAF50;"
-                )
-                text = f"Generales: {cantidad}"
-            else:
-                style = "font-weight: bold; color: #666666;"
-                text = f"Generales: {cantidad}"
-
-            self.value_labels["Generales"].setText(text)
-            self.value_labels["Generales"].setStyleSheet(style)
-            if prev is None or prev != cantidad:
-                self._flash_row("Generales")
-            self._last_units["Generales"] = cantidad
-
-        # Actualizar unidades de continentes
-        for server_name, gui_name in continent_mapping.items():
-            if server_name in unidades and gui_name in self.value_labels:
-                cantidad = unidades[server_name]
-                prev = self._last_units.get(gui_name, None)
-                if cantidad > 0:
-                    # Estilo destacado para continentes con unidades disponibles
-                    style = (
-                        "font-weight: bold; "
-                        "color: #1565C0; "
-                        "background-color: #E3F2FD; "
-                        "padding: 4px 8px; "
-                        "border-radius: 4px; "
-                        "border-left: 3px solid #2196F3;"
-                    )
-                    text = f"{gui_name}: {cantidad}"
-                else:
-                    # Estilo normal para continentes sin unidades
-                    style = "font-weight: bold; color: #666666;"
-                    text = f"{gui_name}: 0"
-
-                self.value_labels[gui_name].setText(text)
-                self.value_labels[gui_name].setStyleSheet(style)
-                if prev is None or prev != cantidad:
-                    self._flash_row(gui_name)
-                self._last_units[gui_name] = cantidad
-            elif gui_name in self.value_labels:
-                # Resetear continentes que no tienen unidades disponibles
-                self.value_labels[gui_name].setText(f"{gui_name}: 0")
-                self.value_labels[gui_name].setStyleSheet(
-                    "font-weight: bold; color: #666666;"
-                )
-
-        # Actualizar Misiles: usar fila existente y mostrar/ocultar
-        if "misiles" in unidades and unidades["misiles"] > 0:
-            text = f"Misiles: {unidades['misiles']}"
-            style = (
-                "font-weight: bold; "
-                "color: #D32F2F; "
-                "background-color: #FFEBEE; "
-                "padding: 4px 8px; "
-                "border-radius: 4px; "
-                "border-left: 3px solid #F44336;"
-            )
-            self.value_labels["Misiles"].setText(text)
-            self.value_labels["Misiles"].setStyleSheet(style)
-            # Mostrar fila completa (parent del label)
-            self._row_widgets["Misiles"].setVisible(True)
-            prev = self._last_units.get("Misiles", None)
-            if prev is None or prev != unidades["misiles"]:
-                self._flash_row("Misiles")
-            self._last_units["Misiles"] = unidades["misiles"]
-        else:
-            # Ocultar y resetear
-            self.value_labels["Misiles"].setText("Misiles: 0")
-            self.value_labels["Misiles"].setStyleSheet(
-                "font-weight: bold; color: #666666;"
-            )
-            self._row_widgets["Misiles"].setVisible(False)
-            self._last_units["Misiles"] = 0
-
-    def _flash_row(self, key: str):
-        """Aplica un highlight temporal a la fila cuando cambian valores."""
-        row = self._row_widgets.get(key)
-        if not row:
-            return
-        original = row.styleSheet()
-        row.setStyleSheet(original + "\n#unitRow { background: #fff8e1; }")
-        QTimer.singleShot(300, lambda: row.setStyleSheet(original))
+        self.units_manager.update_unidades_disponibles(unidades)
 
     def keyPressEvent(self, event):  # noqa: N802
         if event.key() == Qt.Key_Enter or event.key() == Qt.Key_Return:
