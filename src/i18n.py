@@ -1,22 +1,24 @@
 """
 Módulo de internacionalización (i18n) para PyTeg.
 
-Este módulo proporciona soporte básico para múltiples idiomas.
+Este módulo proporciona soporte para múltiples idiomas usando gettext.
 """
 
+import gettext
 import locale
 from pathlib import Path
 
 # Directorio base del proyecto
 BASE_DIR = Path(__file__).parent.parent
+LOCALES_DIR = BASE_DIR / "locales"
 
 
 class I18nManager:
-    """Gestor de internacionalización para evitar variables globales."""
+    """Gestor de internacionalización usando gettext."""
 
     def __init__(self):
         self.current_language: str | None = None
-        self.translations: dict[str, str] = {}
+        self._translation = None
 
     def set_language(self, language: str) -> bool:
         """Establece el idioma de la aplicación."""
@@ -25,17 +27,34 @@ class I18nManager:
                 print(f"Idioma '{language}' no disponible. Usando español por defecto.")
                 language = "es"
 
-            # Cargar traducciones
-            self.translations = (
-                {} if language == "es" else TRANSLATIONS.get(language, {})
-            )
+            # Configurar gettext
+            if language == "es":
+                # Para español, usar gettext nulo (sin traducción)
+                self._translation = gettext.NullTranslations()
+            else:
+                # Cargar archivo .mo para otros idiomas
+                try:
+                    self._translation = gettext.translation(
+                        "pyteg",
+                        localedir=str(LOCALES_DIR),
+                        languages=[language],
+                        fallback=True,
+                    )
+                except FileNotFoundError:
+                    print(
+                        f"Archivo de traducción no encontrado para '{language}', "
+                        "usando fallback"
+                    )
+                    self._translation = gettext.NullTranslations()
+
             self.current_language = language
             print(f"Idioma establecido: {language}")
-        except (KeyError, TypeError, ValueError) as e:
+
+        except (OSError, ValueError) as e:
             print(f"Error al establecer idioma '{language}': {e}")
             # Fallback a español
+            self._translation = gettext.NullTranslations()
             self.current_language = "es"
-            self.translations = {}
             return False
         else:
             return True
@@ -45,106 +64,20 @@ class I18nManager:
         return self.current_language or "es"
 
     def translate(self, text: str) -> str:
-        """Traduce un texto."""
-        return self.translations.get(text, text)
+        """Traduce un texto usando gettext."""
+        if self._translation is None:
+            return text
+        return self._translation.gettext(text)
+
+    def ngettext(self, singular: str, plural: str, n: int) -> str:
+        """Traduce plurales usando gettext."""
+        if self._translation is None:
+            return singular if n == 1 else plural
+        return self._translation.ngettext(singular, plural, n)
 
 
 # Instancia global del gestor
 _i18n_manager = I18nManager()
-
-
-# Traducciones hardcodeadas para evitar problemas de archivos
-TRANSLATIONS = {
-    "en": {
-        "PyTeg": "PyTeg",
-        "Mi jugador:": "My player:",
-        "[No conectado]": "[Not connected]",
-        "Estado: Desconectado": "Status: Disconnected",
-        "Selección: Ninguna": "Selection: None",
-        "Configuración de la Partida": "Game Configuration",
-        "Duración del turno:": "Turn duration:",
-        "{} segundos": "{} seconds",
-        "Países para ganar:": "Countries to win:",
-        "Todos los países": "All countries",
-        "Cerrar": "Close",
-        "Idioma:": "Language:",
-        "Conectar": "Connect",
-        "Atacar": "Attack",
-        "Mover": "Move",
-        "Finalizar Turno": "End Turn",
-        "Admin": "Admin",
-        "Configuración": "Configuration",
-        "Error": "Error",
-        "Ha ocurrido un error.": "An error has occurred.",
-        "Nombre de usuario duplicado": "Duplicate username",
-        "El nombre de usuario que elegiste ya está en uso.": (
-            "The username you chose is already in use."
-        ),
-        "Por favor, elige un nombre de usuario diferente.": (
-            "Please choose a different username."
-        ),
-        "¡Partida Terminada!": "Game Over!",
-        "🏆 ¡Felicitaciones!": "🏆 Congratulations!",
-        "Advertencia": "Warning",
-        "conexión rehusada.": "connection refused.",
-        "Esperando jugadores": "Waiting for players",
-        "Estado: {}": "Status: {}",
-        "[Error]": "[Error]",
-        "Seleccionar Unidades de Ataque": "Select Attack Units",
-        "Resultado de Batalla": "Battle Result",
-        "Lanzando...": "Rolling...",
-        "Generales": "Generals",
-        "Misiles": "Missiles",
-        "Ronda: {} - Turno: {}": "Round: {} - Turn: {}",
-        "Turno {} iniciado": "Turn {} started",
-        "Tiempo restante: {}s": "Time remaining: {}s",
-        "Objetivo: {} | Turno: {}s": "Objective: {} | Turn: {}s",
-        # Connection Window (VentanaConectar) translations
-        "Conectar al servidor": "Connect to Server",
-        "Conectar a Partida": "Connect to Game",
-        "Ingresa los datos para conectarte a una partida existente": (
-            "Enter the details to connect to an existing game"
-        ),
-        "Dirección:": "Address:",
-        "Puerto:": "Port:",
-        "Usuario:": "User:",
-        "Dirección del servidor": "Server address",
-        "Puerto": "Port",
-        "Tu nombre en el juego": "Your name in the game",
-        "Cancelar": "Cancel",
-        "Por favor ingresa una dirección de servidor válida": (
-            "Please enter a valid server address"
-        ),
-        "Por favor ingresa un puerto válido": "Please enter a valid port",
-        "Por favor ingresa un nombre de usuario": "Please enter a username",
-        "Error al conectar: {}": "Connection error: {}",
-        "Error de conexión": "Connection Error",
-        # Toolbar translations
-        "Abrir ventana de conexión": "Open connection window",
-        "Atacar país seleccionado": "Attack selected country",
-        "Ejecutar ataque entre países seleccionados": (
-            "Execute attack between selected countries"
-        ),
-        "Mover unidades entre países": "Move units between countries",
-        "Mover 1 unidad entre los países seleccionados": (
-            "Move 1 unit between selected countries"
-        ),
-        "Finalizar tu turno actual": "End your current turn",
-        "Pasar el turno al siguiente jugador": "Pass turn to next player",
-        "Ver configuración de la partida": "View game configuration",
-        "Mostrar duración de turno y objetivo de países": (
-            "Show turn duration and country objective"
-        ),
-        "Pantalla Completa": "Full Screen",
-        "Alternar pantalla completa": "Toggle full screen",
-        "Entrar/salir de pantalla completa": "Enter/exit full screen",
-        "Tamaños predefinidos": "Predefined sizes",
-        "Tamaño personalizado": "Custom size",
-        "Pequeño (800x600)": "Small (800x600)",
-        "Mediano (1024x768)": "Medium (1024x768)",
-        "Grande (1280x800)": "Large (1280x800)",
-    }
-}
 
 
 def get_available_languages() -> list[str]:
@@ -225,7 +158,7 @@ translate = _
 
 def ngettext(singular: str, plural: str, n: int) -> str:
     """
-    Función de traducción para plurales.
+    Función de traducción para plurales usando gettext.
 
     Args:
         singular: Forma singular
@@ -235,8 +168,7 @@ def ngettext(singular: str, plural: str, n: int) -> str:
     Returns:
         Texto traducido en la forma apropiada
     """
-    base_text = singular if n == 1 else plural
-    return _i18n_manager.translate(base_text)
+    return _i18n_manager.ngettext(singular, plural, n)
 
 
 # Inicializar con el idioma del sistema

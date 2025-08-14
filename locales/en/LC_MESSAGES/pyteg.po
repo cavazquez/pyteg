@@ -143,6 +143,12 @@ msgstr "[Not connected]"
 msgid "[Error]"
 msgstr "[Error]"
 
+msgid "Estado: Desconectado"
+msgstr "Status: Disconnected"
+
+msgid "Selección: Ninguna"
+msgstr "Selection: None"
+
 # Attack dialog
 msgid "Seleccionar Unidades de Ataque"
 msgstr "Select Attack Units"
@@ -164,17 +170,50 @@ msgstr "Missiles"
 msgid "Abrir ventana de conexión"
 msgstr "Open connection window"
 
+msgid "Atacar país seleccionado"
+msgstr "Attack selected country"
+
 msgid "Ejecutar ataque entre países seleccionados"
 msgstr "Execute attack between selected countries"
 
+msgid "Mover unidades entre países"
+msgstr "Move units between countries"
+
 msgid "Mover 1 unidad entre los países seleccionados"
 msgstr "Move 1 unit between selected countries"
+
+msgid "Finalizar tu turno actual"
+msgstr "End your current turn"
 
 msgid "Pasar el turno al siguiente jugador"
 msgstr "Pass turn to next player"
 
 msgid "Ver configuración de la partida"
 msgstr "View game configuration"
+
+msgid "Mostrar duración de turno y objetivo de países"
+msgstr "Show turn duration and country objective"
+
+msgid "Pantalla Completa"
+msgstr "Full Screen"
+
+msgid "Alternar pantalla completa"
+msgstr "Toggle full screen"
+
+msgid "Entrar/salir de pantalla completa"
+msgstr "Enter/exit full screen"
+
+msgid "Tamaños predefinidos"
+msgstr "Predefined sizes"
+
+msgid "Pequeño (800x600)"
+msgstr "Small (800x600)"
+
+msgid "Mediano (1024x768)"
+msgstr "Medium (1024x768)"
+
+msgid "Grande (1280x800)"
+msgstr "Large (1280x800)"
 
 # Time and turns
 msgid "Ronda: {} - Turno: {}"
