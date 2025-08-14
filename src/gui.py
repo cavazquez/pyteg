@@ -14,7 +14,6 @@ from PySide6.QtWidgets import (
 
 from src.client_transmisor import ClientNullTransmisor
 from src.cliente_colores import Colores
-from src.debug_logger import debug_logger
 from src.gui_admin import VentanaAdmin
 from src.gui_attack_dialog import AttackDialog
 from src.gui_conectar import VentanaConectar
@@ -23,6 +22,7 @@ from src.gui_esperar_jugadores import VentanaEsperarJugadores
 from src.gui_language_selector import LanguageSelector
 from src.gui_layout_manager import LayoutManager
 from src.gui_players_manager import PlayersManager
+from src.gui_status_manager import StatusManager
 from src.gui_theme_manager import ThemeManager
 from src.i18n import translate as _
 
@@ -47,6 +47,7 @@ class Gui(QMainWindow):
         self.layout_manager = LayoutManager(self)
         self.theme_manager = ThemeManager(self)
         self.players_manager = PlayersManager(self)
+        self.status_manager = StatusManager(self)
         self.setMinimumSize(QSize(800, 600))
         self.setMouseTracking(True)
 
@@ -270,29 +271,11 @@ class Gui(QMainWindow):
             text (str): The message to display in the status bar
             color (str, optional): Color for the text (e.g., 'green', 'red', '#ff0000')
         """
-        # Apply color styling if provided
-        if color:
-            # Create a temporary label to apply color styling
-            if not hasattr(self, "_status_temp_label"):
-                self._status_temp_label = QLabel()
-                self.status_bar.addWidget(self._status_temp_label)
-
-            self._status_temp_label.setText(text)
-            self._status_temp_label.setStyleSheet(f"color: {color}; font-weight: bold;")
-            # Clear the default message to avoid duplication
-            self.status_bar.clearMessage()
-        else:
-            # Use default status bar message
-            if hasattr(self, "_status_temp_label"):
-                self._status_temp_label.setText("")
-            self.status_bar.showMessage(text)
+        self.status_manager.update_status_bar(text, color)
 
     def clear_status_bar(self):
         """Clear the status bar message, but keep the turn number."""
-        self.status_bar.clearMessage()
-        # Also clear the temporary colored label if it exists
-        if hasattr(self, "_status_temp_label"):
-            self._status_temp_label.setText("")
+        self.status_manager.clear_status_bar()
 
     def update_game_state(self, estado):
         """Update the game state display in the status bar.
@@ -300,80 +283,14 @@ class Gui(QMainWindow):
         Args:
             estado (str): The current game state
         """
-        # Traducir estados técnicos a nombres más amigables
-        estados_amigables = {
-            "INICIAL": "Inicial",
-            "EsperarJugadores": "Esperando Jugadores",
-            "JUGANDO": "En Juego",
-            "FINALIZADO": "Finalizado",
-            "Conectado": "Conectado",
-            "Desconectado": "Desconectado",
-        }
-
-        estado_mostrar = estados_amigables.get(estado, estado)
-        self.estado_label.setText(f"Estado: {estado_mostrar}")
+        self.status_manager.update_game_state(estado)
 
     def update_mi_jugador_info(self):
         """Actualiza la información del usuario actual (mi jugador).
 
         Actualiza la información en la barra de estado.
         """
-        try:
-            debug_logger.log("GUI: update_mi_jugador_info llamado")
-            # Verificar que tenemos un cliente conectado
-            if (
-                not hasattr(self, "client")
-                or not self.client
-                or not self.client.userid()
-            ):
-                debug_logger.log("GUI: No hay cliente conectado")
-                self.mi_username_label.setText("[No conectado]")
-                self.mi_color_indicator.setStyleSheet("""
-                    background-color: #cccccc;
-                    border: 1px solid #999999;
-                    border-radius: 2px;
-                """)
-                return
-
-            # Obtener mi usuario ID
-            mi_user_id = self.client.userid()
-            debug_logger.log(f"GUI: Mi user_id: {mi_user_id}")
-
-            # Obtener mi nombre de usuario
-            mi_username = "[Sin nombre]"
-            if hasattr(self.client, "username") and self.client.username():
-                mi_username = self.client.username()
-            debug_logger.log(f"GUI: Mi username: {mi_username}")
-
-            # Obtener mi color asignado
-            mi_color = None
-            if hasattr(self, "colores") and self.colores:
-                mi_color = self.colores.color_asignado(mi_user_id)
-                debug_logger.log(f"GUI: Mi color: {mi_color}")
-
-            # Actualizar el nombre de usuario
-            self.mi_username_label.setText(mi_username)
-
-            # Actualizar el color
-            if mi_color and hasattr(mi_color, "name"):
-                color_hex = mi_color.name()  # Obtener color en formato hexadecimal
-                debug_logger.log(f"GUI: Color hex: {color_hex}")
-                self.mi_color_indicator.setStyleSheet(f"""
-                    background-color: {color_hex};
-                    border: 1px solid #999999;
-                    border-radius: 2px;
-                """)
-            else:
-                debug_logger.log("GUI: No hay color asignado, usando color por defecto")
-                # Color por defecto si no hay color asignado
-                self.mi_color_indicator.setStyleSheet("""
-                    background-color: #cccccc;
-                    border: 1px solid #999999;
-                    border-radius: 2px;
-                """)
-        except (AttributeError, KeyError, ValueError) as e:
-            print(f"Error al actualizar información de mi jugador: {e}")
-            self.mi_username_label.setText("[Error]")
+        self.status_manager.update_mi_jugador_info()
 
     def update_unidades_disponibles(self, unidades):  # noqa: PLR0912
         """Actualiza el panel derecho con las unidades disponibles.
