@@ -2,7 +2,6 @@ import contextlib
 
 from PySide6.QtCore import QSize, Qt, QTimer
 from PySide6.QtWidgets import (
-    QApplication,
     QDialog,
     QFrame,
     QHBoxLayout,
@@ -23,6 +22,7 @@ from src.gui_configuracion_dialog import ConfiguracionDialog
 from src.gui_esperar_jugadores import VentanaEsperarJugadores
 from src.gui_language_selector import LanguageSelector
 from src.gui_layout_manager import LayoutManager
+from src.gui_theme_manager import ThemeManager
 from src.i18n import translate as _
 
 
@@ -42,8 +42,9 @@ class Gui(QMainWindow):
         # self.setFixedSize(QSize(800, 600))
         self.resize(QSize(1280, 800))
 
-        # Inicializar el gestor de layout
+        # Inicializar gestores
         self.layout_manager = LayoutManager(self)
+        self.theme_manager = ThemeManager(self)
         self.setMinimumSize(QSize(800, 600))
         self.setMouseTracking(True)
 
@@ -66,7 +67,7 @@ class Gui(QMainWindow):
         self.status_bar = QStatusBar()
         self.status_bar.setFixedHeight(26)
         # Aplicar tema al status bar (ya existe self._theme)
-        self._apply_statusbar_theme()
+        self.theme_manager._apply_statusbar_theme()  # noqa: SLF001
 
         # Add a widget for the current player with color indicator and nickname
         self.jugador_actual_widget = QWidget()
@@ -221,7 +222,7 @@ class Gui(QMainWindow):
         self.players_layout.addWidget(player_widget)
 
         # Aplicar estilo de tarjeta mediante tema
-        self._apply_players_theme(player_widget)
+        self.theme_manager._apply_players_theme(player_widget)  # noqa: SLF001
 
     def abrir_ventana_conectar(self):
         # Cancelar selección al abrir ventana de conexión
@@ -334,121 +335,6 @@ class Gui(QMainWindow):
         # Also clear the temporary colored label if it exists
         if hasattr(self, "_status_temp_label"):
             self._status_temp_label.setText("")
-
-    # ==== Theming & Accessibility ====
-    def set_theme(self, theme: str):
-        """Cambia el tema de la interfaz ("light" o "dark")."""
-        if theme not in {"light", "dark"}:
-            return
-        self._theme = theme
-        # Aplicar tema global a toda la app (fondos, textos, menús, etc.)
-        self._apply_global_theme()
-        self._apply_statusbar_theme()
-        # Reaplicar estilos en secciones
-        self._apply_units_theme()
-        # Reaplicar estilos tarjetas jugadores
-        for _player_id, _player_name, w in getattr(self, "player_labels", []):
-            self._apply_players_theme(w)
-        # Notificar a la toolbar para actualizar el botón de tema
-        if hasattr(self, "toolbar") and hasattr(self.toolbar, "on_theme_changed"):
-            self.toolbar.on_theme_changed(self._theme)
-
-    def toggle_theme(self):
-        """Alterna entre tema claro y oscuro y aplica el cambio."""
-        current = getattr(self, "_theme", "light")
-        new_theme = "dark" if current != "dark" else "light"
-        self.set_theme(new_theme)
-
-    def _apply_statusbar_theme(self):
-        if self._theme == "dark":
-            self.status_bar.setStyleSheet(
-                """
-                QStatusBar { background: #2b2f36; border-top: 1px solid #3a3f47; }
-                QStatusBar QLabel { color: #e6e6e6; font-size: 12px; }
-                QLabel[class="pill"] {
-                    background: #3a3f47; border: 1px solid #4a5060;
-                    border-radius: 10px; padding: 2px 8px; color: #e6e6e6;
-                }
-                QFrame { color: #e6e6e6; }
-                """
-            )
-        else:
-            self.status_bar.setStyleSheet(
-                """
-                QStatusBar { background: #f7f7f9; border-top: 1px solid #e1e3e8; }
-                QStatusBar QLabel { color: #333; font-size: 12px; }
-                QLabel[class="pill"] {
-                    background: #eef1f7; border: 1px solid #d7dbe6;
-                    border-radius: 10px; padding: 2px 8px;
-                }
-                QFrame { color: #333; }
-                """
-            )
-
-    def _apply_global_theme(self):
-        """Aplica un stylesheet global para tema claro/oscuro en toda la ventana."""
-        app = QApplication.instance()
-        if app is None:
-            return
-        if getattr(self, "_theme", "light") == "dark":
-            app.setStyleSheet(
-                "QWidget { background-color: #1e1f23; color: #e6e6e6; }\n"
-                "QToolBar { background-color: #2b2f36; "
-                "border-bottom: 1px solid #3a3f47; }\n"
-                "QMenu { background-color: #2b2f36; color: #e6e6e6; "
-                "border: 1px solid #3a3f47; }\n"
-                "QMenu::item:selected { background-color: #3a3f47; }\n"
-                "QSplitter::handle { background: #2b2f36; }\n"
-                "QLineEdit, QTextEdit, QPlainTextEdit { background: #252a33; "
-                "color: #e6e6e6; border: 1px solid #3a3f47; }\n"
-                "QListWidget, QTreeWidget, QTableWidget, QScrollArea { "
-                "background: #23262b; color: #e6e6e6; }\n"
-                "QPushButton { background: #3a3f47; color: #e6e6e6; "
-                "border: 1px solid #4a5060; border-radius: 4px; "
-                "padding: 4px 8px; }\n"
-                "QPushButton:hover { background: #444b5a; }\n"
-                "QStatusBar { background: #2b2f36; }\n"
-            )
-        else:
-            # Restaurar estilos por defecto (mantiene estilos locales específicos)
-            app.setStyleSheet("")
-
-    def _apply_units_theme(self, root: QWidget | None = None):
-        root = root or getattr(self, "centralWidget", lambda: None)()
-        theme = getattr(self, "_theme", "light")
-        if theme == "dark":
-            ss = (
-                "#unitsSection { background: #21252b; border: 1px solid #3a3f47;"
-                " border-radius: 8px; }\n"
-                "#unitsTitle { color: #e6e6e6; font-size: 13px; font-weight: 700; }\n"
-                "#unitRowLabel { font-weight: 600; color: #ddd; }\n"
-            )
-        else:
-            ss = (
-                "#unitsSection { background: #fafbfe; border: 1px solid #e6e9f2;"
-                " border-radius: 8px; }\n"
-                "#unitsTitle { color: #333333; font-size: 13px; font-weight: 700; }\n"
-                "#unitRowLabel { font-weight: 600; color: #555; }\n"
-            )
-        # Aplicar al contenedor de la sección si existe
-        if root is None:
-            return
-        # Buscar el QFrame con objectName unitsSection en la jerarquía inmediata
-        # En este contexto, "root" es la sección creada arriba
-        if isinstance(root, QFrame) and root.objectName() == "unitsSection":
-            root.setStyleSheet(ss)
-
-    def _apply_players_theme(self, player_widget: QFrame):
-        if self._theme == "dark":
-            player_widget.setStyleSheet(
-                "#playerCard { background: #272b33; border-radius: 6px;"
-                " border: 1px solid #3a3f47; }"
-            )
-        else:
-            player_widget.setStyleSheet(
-                "#playerCard { background: #ffffff; border-radius: 6px;"
-                " border: 1px solid #e6e9f2; }"
-            )
 
     def update_game_state(self, estado):
         """Update the game state display in the status bar.

@@ -166,7 +166,7 @@ class LayoutManager:
             )
 
         layout.addWidget(section)
-        self.main_window._apply_units_theme(section)  # noqa: SLF001
+        self.main_window.theme_manager._apply_units_theme(section)  # noqa: SLF001
 
     def _create_unit_row(  # noqa: PLR0913, PLR0917
         self,
