@@ -1,19 +1,15 @@
 import contextlib
 
 from PySide6.QtCore import QSize, Qt, QTimer
-from PySide6.QtGui import QColor, QFont, QPainter, QPixmap
 from PySide6.QtWidgets import (
     QApplication,
     QDialog,
     QFrame,
-    QGridLayout,
     QHBoxLayout,
     QLabel,
     QMainWindow,
     QSizePolicy,
-    QSplitter,
     QStatusBar,
-    QVBoxLayout,
     QWidget,
 )
 
@@ -22,14 +18,11 @@ from src.cliente_colores import Colores
 from src.debug_logger import debug_logger
 from src.gui_admin import VentanaAdmin
 from src.gui_attack_dialog import AttackDialog
-from src.gui_chat import Chat
 from src.gui_conectar import VentanaConectar
 from src.gui_configuracion_dialog import ConfiguracionDialog
 from src.gui_esperar_jugadores import VentanaEsperarJugadores
 from src.gui_language_selector import LanguageSelector
-from src.gui_scene import QCustomGraphicsScene
-from src.gui_toolbar import ToolBar
-from src.gui_view import QCustomGraphicsView
+from src.gui_layout_manager import LayoutManager
 from src.i18n import translate as _
 
 
@@ -48,6 +41,9 @@ class Gui(QMainWindow):
         self.setWindowTitle(_("PyTeg"))
         # self.setFixedSize(QSize(800, 600))
         self.resize(QSize(1280, 800))
+
+        # Inicializar el gestor de layout
+        self.layout_manager = LayoutManager(self)
         self.setMinimumSize(QSize(800, 600))
         self.setMouseTracking(True)
 
@@ -63,7 +59,8 @@ class Gui(QMainWindow):
 
         self.colores = Colores()
 
-        self.setup_graphics_view()
+        # Configurar la vista gráfica usando el layout manager
+        self.layout_manager.setup_graphics_view()
 
         # Create a status bar with permanent widgets for turn number and status
         self.status_bar = QStatusBar()
@@ -174,247 +171,6 @@ class Gui(QMainWindow):
 
     def vivo(self):
         return self._vivo
-
-    def setup_graphics_view(self):
-        # Inicializar componentes principales
-        self._setup_chat_and_toolbar()
-        self._setup_scene_and_view()
-
-        # Crear splitters y layout principal
-        vertical_splitter = self._create_vertical_splitter()
-        horizontal_splitter = self._create_horizontal_splitter(vertical_splitter)
-
-        # Configurar columna derecha
-        right_column = self._setup_right_column()
-        horizontal_splitter.addWidget(right_column)
-
-        # Configurar el layout principal
-        self._setup_main_layout(horizontal_splitter)
-
-    def _setup_chat_and_toolbar(self):
-        # Agrego el Chat
-        self.chat = Chat(self)
-        self.chat.show()
-
-        # Agrego la barra de herramientas
-        self.toolbar = ToolBar("My main toolbar", self)
-        self.addToolBar(self.toolbar)
-
-    def _setup_scene_and_view(self):
-        # Agrego la escena y la vista
-        self.scene = QCustomGraphicsScene(self)
-        self.view = QCustomGraphicsView(self.scene, self)
-
-    def _create_vertical_splitter(self):
-        # Create a splitter to hold the QGraphicsView and Chat
-        vertical_splitter = QSplitter()
-        vertical_splitter.setOrientation(Qt.Vertical)
-        vertical_splitter.addWidget(self.view)
-        vertical_splitter.addWidget(self.chat)
-        vertical_splitter.setStretchFactor(0, 9)  # 90% for QGraphicsView
-        vertical_splitter.setStretchFactor(1, 1)  # 10% for Chat
-        return vertical_splitter
-
-    def _create_horizontal_splitter(self, vertical_splitter):
-        # Create a horizontal splitter to hold the vertical splitter
-        horizontal_splitter = QSplitter()
-        horizontal_splitter.setOrientation(Qt.Horizontal)
-        horizontal_splitter.addWidget(vertical_splitter)
-        return horizontal_splitter
-
-    def _setup_right_column(self):
-        # Create a placeholder widget for the right column
-        right_column = QWidget()
-        right_column_layout = QVBoxLayout()
-        right_column_layout.setContentsMargins(10, 15, 10, 10)
-        right_column_layout.setSpacing(8)
-
-        # Añadir título y lista de jugadores
-        self._add_players_title(right_column_layout)
-        self._setup_players_list(right_column_layout)
-
-        # Add a spacer to separate the player list from the values
-        right_column_layout.addStretch()
-
-        # Add the 6 values below the player list
-        self._setup_continent_values(right_column_layout)
-
-        # Configurar el layout de la columna derecha
-        right_column.setLayout(right_column_layout)
-        return right_column
-
-    def _setup_continent_values(self, layout):
-        """Crea la sección UNIDADES con filas ordenadas e íconos."""
-        # Contenedor principal de la sección
-        section = QFrame()
-        section.setFrameShape(QFrame.StyledPanel)
-        section.setObjectName("unitsSection")
-        # Se aplicará stylesheet en _apply_units_theme()
-
-        section_layout = QVBoxLayout(section)
-        section_layout.setContentsMargins(10, 10, 10, 10)
-        section_layout.setSpacing(6)
-
-        title = QLabel("UNIDADES")
-        title.setAlignment(Qt.AlignLeft)
-        title.setObjectName("unitsTitle")
-        section_layout.addWidget(title)
-
-        # Diccionario de labels reutilizable en updates
-        self.value_labels = {}
-        self._row_widgets = {}
-        self._last_units = {}
-
-        # Fila: Generales
-        self._create_unit_row(
-            section_layout,
-            key="Generales",
-            value=0,
-            icon_color="#2E7D32",
-            glyph="G",
-            tooltip="Unidades generales disponibles para colocar",
-        )
-
-        # Fila: Misiles (inicialmente 0 y oculta si no hay)
-        self._create_unit_row(
-            section_layout,
-            key="Misiles",
-            value=0,
-            icon_color="#D32F2F",
-            glyph="M",
-            tooltip="Misiles disponibles",
-        )
-        # Se ocultará por defecto hasta que haya valor > 0
-        self._row_widgets["Misiles"].setVisible(False)
-
-        # Filas de continentes (incluye Oceanía)
-        for cont in [
-            "América del Sur",
-            "América del Norte",
-            "Europa",
-            "Asia",
-            "África",
-            "Oceanía",
-        ]:
-            self._create_unit_row(
-                section_layout,
-                key=cont,
-                value=0,
-                icon_color="#1565C0",
-                glyph="C",
-                tooltip=f"Refuerzos por control de {cont}",
-            )
-
-        layout.addWidget(section)
-        self._apply_units_theme(section)
-
-    def _create_unit_row(  # noqa: PLR0913, PLR0917
-        self,
-        parent_layout,
-        key: str,
-        value: int,
-        icon_color: str,
-        glyph: str,
-        tooltip: str,
-    ):
-        """Crea una fila (ícono dibujado + etiqueta) y la registra en value_labels."""
-        row = QFrame()
-        row.setObjectName("unitRow")
-        row_layout = QHBoxLayout(row)
-        row_layout.setContentsMargins(4, 4, 4, 4)
-        row_layout.setSpacing(6)
-
-        icon_label = self._make_circle_icon(icon_color, glyph)
-        row_layout.addWidget(icon_label)
-
-        label = QLabel(f"{key}: {value}")
-        label.setObjectName("unitRowLabel")
-        row_layout.addWidget(label)
-
-        # Empujar contenido a la izquierda
-        spacer = QWidget()
-        spacer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
-        row_layout.addWidget(spacer)
-
-        parent_layout.addWidget(row)
-        self.value_labels[key] = label
-        self._row_widgets[key] = row
-        # Tooltip de toda la fila
-        row.setToolTip(tooltip)
-
-    def _make_circle_icon(self, color_hex: str, glyph: str | None) -> QLabel:
-        """Crea un QLabel con un QPixmap de círculo y opcional glifo."""
-        size = 16
-        pm = QPixmap(size, size)
-        pm.fill(QColor(0, 0, 0, 0))
-        painter = QPainter(pm)
-        painter.setRenderHint(QPainter.Antialiasing)
-        painter.setBrush(QColor(color_hex))
-        painter.setPen(QColor(color_hex))
-        painter.drawEllipse(0, 0, size - 1, size - 1)
-        if glyph:
-            painter.setPen(QColor("white"))
-            font = QFont()
-            font.setPointSize(8)
-            font.setBold(True)
-            painter.setFont(font)
-            painter.drawText(pm.rect(), Qt.AlignCenter, glyph)
-        painter.end()
-        label = QLabel()
-        label.setPixmap(pm)
-        return label
-
-    def _add_players_title(self, layout):
-        # Título para la sección de jugadores
-        players_title = QLabel("JUGADORES")
-        players_title.setAlignment(Qt.AlignCenter)
-        players_title.setStyleSheet("""
-            QLabel {
-                color: #333333;
-                font-size: 14px;
-                font-weight: bold;
-                padding: 5px;
-                border-bottom: 2px solid #4361ee;
-                margin-bottom: 10px;
-            }
-        """)
-        layout.addWidget(players_title)
-
-    def _setup_players_list(self, layout):
-        # Crear un contenedor para la lista de jugadores sin scroll
-        players_container = QWidget()
-        players_layout = QVBoxLayout(players_container)
-        players_layout.setContentsMargins(0, 0, 0, 0)
-        players_layout.setSpacing(6)
-
-        # Add a list of players to the right column
-        self.player_labels = []
-        self._create_player_widgets(players_layout)
-
-        # Añadir un espaciador al final de la lista de jugadores
-        players_layout.addStretch()
-
-        # Añadir el contenedor al layout principal
-        layout.addWidget(players_container)
-
-    def _create_player_widgets(self, layout):
-        # Inicializar lista vacía - se crearán dinámicamente
-        self.players_layout = layout
-
-    def _setup_main_layout(self, horizontal_splitter):
-        # Create a widget to hold the QGraphicsView and input area
-        self.main_widget = QWidget(self)
-        main_layout = QGridLayout()
-        main_layout.addWidget(horizontal_splitter, 0, 0)
-        self.main_widget.setLayout(main_layout)
-        self.setCentralWidget(self.main_widget)
-
-        # Configurar factores de estiramiento para el splitter horizontal
-        horizontal_splitter.setStretchFactor(0, 8)  # 80% for the left side
-        horizontal_splitter.setStretchFactor(1, 2)  # 20% for the right column
-
-        # Asegurar que la vista se muestre
-        self.view.show()
 
     def update_player_list(self, players):
         """
