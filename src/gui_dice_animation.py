@@ -127,7 +127,7 @@ class BattleResultDialog(QDialog):
         self.batalla_data = batalla_data
         self.setWindowTitle("Resultado de Batalla")
         self.setModal(True)
-        self.setFixedSize(500, 400)
+        self.setFixedSize(600, 500)
 
         # Centrar en la pantalla
         if parent:
