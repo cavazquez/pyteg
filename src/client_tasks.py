@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 
+from PySide6.QtCore import QTimer
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import QMessageBox
 
@@ -463,48 +464,33 @@ class ClientTaskResultadoBatalla(IClientTask):
 
     def run(self, main_window):
         """
-        Muestra el resultado de una batalla con animación de dados.
+        Muestra el resultado de una batalla con comportamiento diferenciado:
+        - Atacante: Ve animación completa de dados
+        - Espectadores: Ven efectos visuales (titilación + pérdidas flotantes)
         """
         try:
-            # Preparar datos de la batalla para el diálogo
-            batalla_data = {
-                "origen": self._origen,
-                "destino": self._destino,
-                "atacante": self._atacante,
-                "defensor": self._defensor,
-                "dados_atacante": self._dados_atacante,
-                "dados_defensor": self._dados_defensor,
-                "resultado": self._resultado,
-                "conquistado": self._conquistado,
-            }
+            # Obtener nombre del jugador actual
+            mi_nombre = None
+            if hasattr(main_window, "client") and hasattr(
+                main_window.client, "username"
+            ):
+                mi_nombre = main_window.client.username()
 
-            # Mostrar diálogo de animación de dados
-            dialog = BattleResultDialog(batalla_data, main_window)
+            # Verificar si soy el atacante
+            soy_atacante = mi_nombre == self._atacante
 
-            # Conectar señal para actualizar barra de estado cuando termine
-            def on_animation_finished():
-                if self._conquistado:
-                    mensaje = f"¡{self._atacante} ha conquistado {self._destino}!"
-                    color = "green"
-                else:
-                    mensaje = (
-                        f"El ataque de {self._atacante} a {self._destino} fue repelido"
-                    )
-                    color = "orange"
+            if soy_atacante:
+                # SOY EL ATACANTE: Mostrar animación completa
+                self._mostrar_animacion_completa(main_window)
+            else:
+                # SOY ESPECTADOR: Mostrar efectos visuales
+                self._mostrar_efectos_batalla(main_window)
 
-                if hasattr(main_window, "update_status_bar"):
-                    main_window.update_status_bar(mensaje, color)
-
-            dialog.animation_finished.connect(on_animation_finished)
-            dialog.exec()  # Mostrar diálogo modal
-
-            # También imprimir en consola para debug
+            # Debug info
             print(f"Batalla: {self._origen} -> {self._destino}")
             print(f"Atacante: {self._atacante}, Defensor: {self._defensor}")
-            print(f"Dados atacante: {self._dados_atacante}")
-            print(f"Dados defensor: {self._dados_defensor}")
+            print(f"Mi nombre: {mi_nombre}, Soy atacante: {soy_atacante}")
             print(f"Conquistado: {self._conquistado}")
-            print(f"Resultado: {self._resultado}")
 
         except (AttributeError, KeyError, ValueError) as e:
             print(f"Error al mostrar resultado de batalla: {e}")
@@ -514,6 +500,139 @@ class ClientTaskResultadoBatalla(IClientTask):
                     f"Error mostrando batalla: {self._atacante} vs {self._defensor}",
                     "red",
                 )
+
+    def _mostrar_animacion_completa(self, main_window):
+        """Muestra la animación completa de dados para el atacante."""
+
+        # Preparar datos de la batalla para el diálogo
+        batalla_data = {
+            "origen": self._origen,
+            "destino": self._destino,
+            "atacante": self._atacante,
+            "defensor": self._defensor,
+            "dados_atacante": self._dados_atacante,
+            "dados_defensor": self._dados_defensor,
+            "resultado": self._resultado,
+            "conquistado": self._conquistado,
+        }
+
+        # Mostrar diálogo de animación de dados
+        dialog = BattleResultDialog(batalla_data, main_window)
+
+        # Conectar señal para actualizar barra de estado cuando termine
+        def on_animation_finished():
+            if self._conquistado:
+                mensaje = f"¡Has conquistado {self._destino}!"
+                color = "green"
+            else:
+                mensaje = f"Tu ataque a {self._destino} fue repelido"
+                color = "orange"
+
+            if hasattr(main_window, "update_status_bar"):
+                main_window.update_status_bar(mensaje, color)
+
+        dialog.animation_finished.connect(on_animation_finished)
+        dialog.exec()  # Mostrar diálogo modal
+
+    def _mostrar_efectos_batalla(self, main_window):
+        """Muestra efectos visuales para espectadores (titilación + pérdidas)."""
+        try:
+            # 1. Iniciar titilación en países origen y destino
+            self._iniciar_titilacion_paises(main_window)
+
+            # 2. Mostrar mensaje en barra de estado
+            mensaje = f"Batalla: {self._atacante} ataca {self._destino}"
+            if hasattr(main_window, "update_status_bar"):
+                main_window.update_status_bar(mensaje, "blue")
+
+            # 3. Programar mostrar pérdidas flotantes después de 2.5 segundos
+            QTimer.singleShot(
+                2500, lambda: self._mostrar_perdidas_flotantes(main_window)
+            )
+
+        except (AttributeError, RuntimeError) as e:
+            print(f"Error mostrando efectos de batalla: {e}")
+
+    def _iniciar_titilacion_paises(self, main_window):
+        """Inicia la titilación en los países origen y destino."""
+        try:
+            if hasattr(main_window, "scene") and hasattr(main_window.scene, "paises"):
+                # Obtener países origen y destino
+                pais_origen = main_window.scene.paises.get(self._origen)
+                pais_destino = main_window.scene.paises.get(self._destino)
+
+                # Iniciar titilación si los países existen
+                if pais_origen and hasattr(pais_origen, "iniciar_titilacion_batalla"):
+                    pais_origen.iniciar_titilacion_batalla()
+
+                if pais_destino and hasattr(pais_destino, "iniciar_titilacion_batalla"):
+                    pais_destino.iniciar_titilacion_batalla()
+
+        except (AttributeError, RuntimeError) as e:
+            print(f"Error iniciando titilación: {e}")
+
+    def _mostrar_perdidas_flotantes(self, main_window):
+        """Muestra las pérdidas flotantes y detiene la titilación."""
+        try:
+            # Detener titilación
+            self._detener_titilacion_paises(main_window)
+
+            # Calcular pérdidas
+            perdedores = self._resultado.get("restar", [])
+            perdidas_atacante = perdedores.count(self._atacante)
+            perdidas_defensor = perdedores.count(self._defensor)
+
+            # Mostrar pérdidas flotantes
+            if perdidas_atacante > 0:
+                self._mostrar_perdida_flotante(
+                    main_window, self._origen, perdidas_atacante
+                )
+
+            if perdidas_defensor > 0:
+                self._mostrar_perdida_flotante(
+                    main_window, self._destino, perdidas_defensor
+                )
+
+            # Actualizar barra de estado con resultado final
+            if self._conquistado:
+                mensaje = f"¡{self._atacante} conquistó {self._destino}!"
+                color = "green"
+            else:
+                mensaje = f"{self._defensor} defendió {self._destino}"
+                color = "orange"
+
+            if hasattr(main_window, "update_status_bar"):
+                main_window.update_status_bar(mensaje, color)
+
+        except (AttributeError, RuntimeError) as e:
+            print(f"Error mostrando pérdidas flotantes: {e}")
+
+    def _detener_titilacion_paises(self, main_window):
+        """Detiene la titilación en los países origen y destino."""
+        try:
+            if hasattr(main_window, "scene") and hasattr(main_window.scene, "paises"):
+                pais_origen = main_window.scene.paises.get(self._origen)
+                pais_destino = main_window.scene.paises.get(self._destino)
+
+                if pais_origen and hasattr(pais_origen, "detener_titilacion_batalla"):
+                    pais_origen.detener_titilacion_batalla()
+
+                if pais_destino and hasattr(pais_destino, "detener_titilacion_batalla"):
+                    pais_destino.detener_titilacion_batalla()
+
+        except (AttributeError, RuntimeError) as e:
+            print(f"Error deteniendo titilación: {e}")
+
+    def _mostrar_perdida_flotante(self, main_window, nombre_pais, perdidas):
+        """Muestra una pérdida flotante sobre un país específico."""
+        try:
+            if hasattr(main_window, "scene") and hasattr(main_window.scene, "paises"):
+                pais = main_window.scene.paises.get(nombre_pais)
+                if pais and hasattr(pais, "mostrar_perdida_flotante"):
+                    pais.mostrar_perdida_flotante(perdidas)
+
+        except (AttributeError, RuntimeError) as e:
+            print(f"Error mostrando pérdida flotante: {e}")
 
 
 class ClientTaskVictoria(IClientTask):

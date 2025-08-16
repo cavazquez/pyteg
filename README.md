@@ -14,6 +14,7 @@ gráfica en Python.
 
 ## Características clave
 - Cliente gráfico con PySide6 y animación de dados en las batallas
+- **Efectos visuales inmersivos**: Atacante ve animación completa, espectadores ven titilación de países y pérdidas flotantes
 - Modo multijugador con servidor TCP y validación de estados
 - Restricción de ataques en los dos primeros turnos
 - Elección de cantidad de unidades para atacar (1 a 3)
