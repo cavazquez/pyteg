@@ -3,6 +3,18 @@
 Todas las fechas en formato YYYY-MM-DD.
 
 ## Unreleased
+- **Sistema de efectos visuales inmersivos para batallas**:
+  - Comportamiento diferenciado según rol del jugador:
+    - **Atacante**: Ve animación completa de dados y diálogo de resultado
+    - **Espectadores**: Ven efectos visuales (titilación de países + pérdidas flotantes)
+  - Efectos visuales implementados:
+    - Titilación roja/naranja en países origen y destino durante la batalla (2.5 segundos)
+    - Animación de pérdidas flotantes en rojo con desvanecimiento y movimiento hacia arriba
+    - Mensajes informativos en barra de estado con colores diferenciados
+  - Reutilización del mensaje `MsgResultadoBatalla` existente sin cambios en el protocolo
+  - Detección automática del rol del jugador comparando con el atacante
+  - Integración completa con sistema de animación de dados existente
+  - Manejo robusto de errores con excepciones específicas
 - **Refactorización modular completa de la GUI**:
   - Arquitectura modular para mejorar mantenibilidad, legibilidad y escalabilidad
   - Reducción del 65% en líneas de código del archivo principal (de ~1039 a 366 líneas)
