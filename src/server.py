@@ -2,6 +2,7 @@ import argparse
 import sys
 
 from src.build_mapa import build_mapa
+from src.mazo import Mazo
 from src.server_color import ServerColor
 from src.server_estado import Estado
 from src.server_game import Game
@@ -23,9 +24,18 @@ class Server:
         # Inicializar el mapa
         self.mapa = Mapa(build_mapa)
 
+        # Inicializar el mazo con los países del mapa y símbolos de cartas
+        paises = self.mapa.paises()
+        simbolos = ["Galeon", "Globo", "Canon", "Comodin"]
+        self.mazo = Mazo(paises, simbolos)
+
+        # Mostrar información del mazo creado
+        print(f"Mazo inicializado con {self.mazo.cantidad_tarjetas()} tarjetas")
+        print(f"Países: {paises}")
+        print(f"Símbolos disponibles: {simbolos}")
+
         # Timer de turnos (se inicializa en None y se arranca al empezar la partida)
         self._turno_timer = None
-        self.mazo = None
         # Configuración: segundos por turno (puede ser seteado por el admin)
         self._segundos_por_turno = 20
         # Configuración: países necesarios para ganar (puede ser seteado por el admin)

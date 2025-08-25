@@ -36,6 +36,7 @@ class ToolBar(QToolBar):
         self.button_atacar = None
         self.button_mover = None
         self.button_finalizar_turno = None
+        self.button_tarjetas = None
         self.button_fullscreen = None
         self.button_admin = None
 
@@ -160,6 +161,15 @@ class ToolBar(QToolBar):
         )
         self.addAction(self.button_mover)
         self.addSeparator()
+
+        # Botón para mostrar tarjetas del jugador
+        icono_tarjetas = self._validar_icono("icons/default_size.png", "tarjetas")
+        self.button_tarjetas = QAction(icono_tarjetas, _("Tarjetas"), self)
+        self.button_tarjetas.setEnabled(True)
+        self.button_tarjetas.triggered.connect(self.main_window.mostrar_tarjetas)
+        self.button_tarjetas.setToolTip(_("Ver mis tarjetas"))
+        self.button_tarjetas.setStatusTip(_("Mostrar tarjetas asignadas al jugador"))
+        self.addAction(self.button_tarjetas)
 
         # Botón para finalizar el turno
         icono_finalizar = self._validar_icono("icons/finish.png", "finalizar turno")

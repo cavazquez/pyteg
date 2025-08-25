@@ -22,6 +22,7 @@ from src.gui_language_selector import LanguageSelector
 from src.gui_layout_manager import LayoutManager
 from src.gui_players_manager import PlayersManager
 from src.gui_status_manager import StatusManager
+from src.gui_tarjetas_dialog import TarjetasDialog
 from src.gui_theme_manager import ThemeManager
 from src.gui_units_manager import UnitsManager
 from src.i18n import translate as _
@@ -391,3 +392,8 @@ class Gui(QMainWindow):
         # su propio estado
 
         print(f"GUI actualizada al idioma: {lang_code}")
+
+    def mostrar_tarjetas(self):
+        """Muestra la ventana de tarjetas del jugador."""
+        dialog = TarjetasDialog(self)
+        dialog.exec()
