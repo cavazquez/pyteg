@@ -39,7 +39,8 @@ class ConnectionClient(QWidget):
 
     def send_data(self, data):
         print(f"Enviando {data}")
-        encode_data = Utf8.encode(data)
+        # Agregar separador \0 al final del mensaje
+        encode_data = Utf8.encode(data + "\0")
         self._socket.write(encode_data)
 
     def read_data(self):

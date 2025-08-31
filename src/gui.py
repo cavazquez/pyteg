@@ -395,5 +395,16 @@ class Gui(QMainWindow):
 
     def mostrar_tarjetas(self):
         """Muestra la ventana de tarjetas del jugador."""
+        # Solicitar tarjetas actualizadas al servidor
+        self.transmisor.solicitar_tarjetas()
+
         dialog = TarjetasDialog(self)
+
+        # Si tenemos tarjetas del servidor, usarlas inmediatamente
+        if hasattr(self, "tarjetas_jugador") and self.tarjetas_jugador:
+            dialog.actualizar_tarjetas(self.tarjetas_jugador)
+        else:
+            # Si no hay tarjetas, usar lista vacía para mostrar slots vacíos
+            dialog.actualizar_tarjetas([])
+
         dialog.exec()

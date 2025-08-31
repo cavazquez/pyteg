@@ -29,11 +29,6 @@ class Server:
         simbolos = ["Galeon", "Globo", "Canon", "Comodin"]
         self.mazo = Mazo(paises, simbolos)
 
-        # Mostrar información del mazo creado
-        print(f"Mazo inicializado con {self.mazo.cantidad_tarjetas()} tarjetas")
-        print(f"Países: {paises}")
-        print(f"Símbolos disponibles: {simbolos}")
-
         # Timer de turnos (se inicializa en None y se arranca al empezar la partida)
         self._turno_timer = None
         # Configuración: segundos por turno (puede ser seteado por el admin)
@@ -309,6 +304,19 @@ class Server:
             client.transmisor.enviar_configuracion_partida(
                 self._segundos_por_turno, self._paises_para_victoria
             )
+
+    def enviar_tarjetas_jugador(self, client):
+        """Envía las tarjetas del jugador específico al cliente."""
+        tarjetas_jugador = self.mazo.tarjetas_asignadas(client)
+        tarjetas_data = [
+            {"pais": tarjeta.pais, "simbolo": tarjeta.simbolo}
+            for tarjeta in tarjetas_jugador
+        ]
+        print(
+            f"Enviando {len(tarjetas_data)} tarjetas a {client.username()}: "
+            f"{tarjetas_data}"
+        )
+        client.transmisor.enviar_tarjetas_jugador(tarjetas_data)
 
 
 def parse_arguments() -> argparse.Namespace:

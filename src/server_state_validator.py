@@ -35,6 +35,8 @@ class ServerStateValidator:
             "mover_unidad": [estado.JUGANDO],
             "atacar": [estado.JUGANDO],
             "finalizar_turno": [estado.JUGANDO],
+            "solicitar_tarjetas": [estado.JUGANDO],
+            "reclamar_tarjeta": [estado.JUGANDO],
         }
 
     def validar_accion(self, action_name: str, server) -> None:

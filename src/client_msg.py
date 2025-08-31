@@ -157,3 +157,23 @@ class MsgFinalizarTurno(IMsg):
     def to_json(self):
         data = {"mensaje": self._tipo}
         return json.dumps(data)
+
+
+class MsgSolicitarTarjetas(IMsg):
+    def __init__(self):
+        """Crea un mensaje para solicitar las tarjetas del jugador."""
+        self._tipo = "solicitar_tarjetas"
+
+    def to_json(self):
+        data = {"mensaje": self._tipo}
+        return json.dumps(data)
+
+
+class MsgReclamarTarjeta(IMsg):
+    def __init__(self):
+        """Crea un mensaje para reclamar una tarjeta."""
+        self._tipo = "reclamar_tarjeta"
+
+    def to_json(self):
+        data = {"mensaje": self._tipo}
+        return json.dumps(data)

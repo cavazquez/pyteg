@@ -20,7 +20,7 @@ class ConnectionServer:
             print("BrokenPipeError:", ex)
         except (ConnectionError, OSError) as ex:
             print("Exception:", ex)
-        return data
+        return data.split("\0")
 
     def send(self, data):
         print(f"Enviando {data}")

@@ -16,6 +16,9 @@ class Game:
         self._cant_canjes = {}
         self._server = server  # Referencia al servidor para notificar cambios
         self._paises_para_victoria = paises_para_victoria
+        self._jugadores_pueden_reclamar = (
+            set()
+        )  # Jugadores elegibles para reclamar tarjetas
 
     def empezar(self):
         self._turnos = [PrimerTurno(j) for j in self.lista_jugadores()]
@@ -251,12 +254,10 @@ class Game:
         for jugador in self.lista_jugadores():
             paises_controlados = self._mapa.cantidad_de_paises_del_jugador(jugador)
 
-            # Si _paises_para_victoria es 0, usar comportamiento clásico
-            # (todos los países)
-            if self._paises_para_victoria == 0:
+            if self.paises_para_victoria() == 0:
                 objetivo = total_paises
             else:
-                objetivo = self._paises_para_victoria
+                objetivo = self.paises_para_victoria()
 
             if paises_controlados >= objetivo:
                 jugador_nombre = (
@@ -272,3 +273,19 @@ class Game:
                 return jugador
 
         return None
+
+    def marcar_jugador_puede_reclamar(self, jugador):
+        """Marca a un jugador como elegible para reclamar tarjeta."""
+        self._jugadores_pueden_reclamar.add(jugador)
+
+    def puede_reclamar_tarjeta(self, jugador):
+        """Verifica si un jugador puede reclamar tarjeta."""
+        return jugador in self._jugadores_pueden_reclamar
+
+    def reclamar_tarjeta_jugador(self, jugador):
+        """Remueve al jugador de la lista de elegibles tras reclamar."""
+        self._jugadores_pueden_reclamar.discard(jugador)
+
+    def limpiar_elegibilidad_reclamar(self):
+        """Limpia la elegibilidad de reclamar tarjetas (al finalizar turno)."""
+        self._jugadores_pueden_reclamar.clear()

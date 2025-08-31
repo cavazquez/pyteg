@@ -200,8 +200,7 @@ class TarjetasDialog(QDialog):
                 background-color: #95a5a6;
             }
         """)
-        # Lógica pendiente de implementar
-        # self.button_reclamar.clicked.connect(self.reclamar_tarjeta)
+        self.button_reclamar.clicked.connect(self.reclamar_tarjeta)
 
         # Botón Canje
         self.button_canje = QPushButton(_("Canje"))
@@ -246,3 +245,16 @@ class TarjetasDialog(QDialog):
         # Actualizar el layout
         layout = self.layout()
         layout.insertWidget(1, self.tarjetas_widget)
+
+    def reclamar_tarjeta(self):
+        """Reclama una tarjeta del servidor."""
+        try:
+            # Obtener referencia al transmisor desde la ventana padre
+            if hasattr(self.parent(), "transmisor"):
+                self.parent().transmisor.reclamar_tarjeta()
+                # Solicitar tarjetas actualizadas inmediatamente después de reclamar
+                self.parent().transmisor.solicitar_tarjetas()
+            else:
+                print("Error: No se puede acceder al transmisor")
+        except (AttributeError, RuntimeError) as e:
+            print(f"Error al reclamar tarjeta: {e}")
