@@ -343,10 +343,18 @@ class ServerTaskAtacar(IServerTask):
         for cliente in client.server.dame_clientes():
             cliente.transmisor.enviar_resultado_batalla(batalla_data)
 
+        # Marcar que el jugador conquistó un país en este turno
+        # (para poder reclamar tarjeta)
+        if info_batalla["conquistado"]:
+            print(
+                f"{client.username()} conquistó {self._destino} - "
+                f"puede reclamar tarjeta"
+            )
+            # Marcar al jugador como elegible para reclamar tarjeta
+            client.server.game.marcar_jugador_puede_reclamar(client)
+
         # Notificar a todos los clientes sobre el cambio en el mapa
         client.server.enviar_mapa()
-
-        # Dar una tarjeta al jugador si conquistó un país
         # (esto se podría implementar más adelante)
 
 
@@ -366,12 +374,64 @@ class ServerTaskFinalizarTurno(IServerTask):
             client.transmisor.enviar_error_chat("No es tu turno")
             return
 
+        # Limpiar elegibilidad para reclamar tarjetas del turno anterior
+        client.server.game.limpiar_elegibilidad_reclamar()
+
         # Finalizar el turno actual
         client.server.game.finalizar_turno()
 
         # Notificar a todos los clientes sobre el cambio de turno
         client.server.enviar_turno_actual()
         client.server.enviar_mapa()
+
+
+class ServerTaskSolicitarTarjetas(IServerTask):
+    def __init__(self, data):
+        super().__init__(data)
+        # No necesita validación de estado específica
+
+    def _execute(self, client):
+        """Envía las tarjetas del jugador al cliente que las solicita."""
+        client.server.enviar_tarjetas_jugador(client)
+
+
+class ServerTaskReclamarTarjeta(IServerTask):
+    def __init__(self, data):
+        super().__init__(data)
+        self._action_name = "reclamar_tarjeta"
+
+    def _execute(self, client):
+        """Reclama una tarjeta si el jugador conquistó un país en este turno."""
+        # Verificar que el juego haya comenzado
+        if not hasattr(client.server, "game") or client.server.game is None:
+            client.transmisor.enviar_error_chat("El juego no ha comenzado")
+            return
+
+        # Verificar que sea el turno del jugador
+        turno_actual = client.server.game.turno_actual()
+        if turno_actual.jugador_actual() != client:
+            client.transmisor.enviar_error_chat("No es tu turno")
+            return
+
+        # Verificar que el jugador pueda reclamar tarjeta (conquistó país en este turno)
+        if not client.server.game.puede_reclamar_tarjeta(client):
+            client.transmisor.enviar_error_chat(
+                "No has conquistado ningún país en este turno"
+            )
+            return
+
+        # Asignar la tarjeta
+        print(f"Asignando tarjeta a {client.username()} por reclamación manual")
+        client.server.game.dame_una_tarjeta(client)
+
+        # Remover al jugador de la lista de elegibles (solo una tarjeta por turno)
+        client.server.game.reclamar_tarjeta_jugador(client)
+
+        # Enviar tarjetas actualizadas al cliente
+        client.server.enviar_tarjetas_jugador(client)
+
+        # Notificar éxito
+        client.transmisor.enviar_sistema("Tarjeta reclamada exitosamente")
 
 
 dict_task = {
@@ -384,4 +444,6 @@ dict_task = {
     "mover_unidad": ServerTaskMoverUnidad,
     "atacar": ServerTaskAtacar,
     "finalizar_turno": ServerTaskFinalizarTurno,
+    "solicitar_tarjetas": ServerTaskSolicitarTarjetas,
+    "reclamar_tarjeta": ServerTaskReclamarTarjeta,
 }

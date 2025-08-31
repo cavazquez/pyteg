@@ -8,8 +8,10 @@ from src.client_msg import (
     MsgEmpezarPartida,
     MsgFinalizarTurno,
     MsgMoverUnidad,
+    MsgReclamarTarjeta,
     MsgSeleccionarColor,
     MsgSetUsername,
+    MsgSolicitarTarjetas,
 )
 
 
@@ -90,6 +92,18 @@ class IClientTransmisor(ABC):
         Envía un mensaje al servidor para finalizar el turno actual.
         """
 
+    @abstractmethod
+    def solicitar_tarjetas(self):
+        """
+        Solicita al servidor las tarjetas del jugador.
+        """
+
+    @abstractmethod
+    def reclamar_tarjeta(self):
+        """
+        Reclama una tarjeta después de conquistar un país.
+        """
+
 
 class ClientNullTransmisor(IClientTransmisor):
     def __init__(self):
@@ -126,6 +140,12 @@ class ClientNullTransmisor(IClientTransmisor):
 
     def finalizar_turno(self):
         print("No puedes finalizar el turno. No estás conectado.")
+
+    def solicitar_tarjetas(self):
+        print("No puedes ver tarjetas. No estás conectado.")
+
+    def reclamar_tarjeta(self):
+        print("No puedes reclamar tarjetas. No estás conectado.")
 
 
 class ClientTransmisor(IClientTransmisor):
@@ -215,4 +235,18 @@ class ClientTransmisor(IClientTransmisor):
         Envía un mensaje al servidor para finalizar el turno actual.
         """
         msg = MsgFinalizarTurno()
+        self._conn.send_data(msg.to_json())
+
+    def solicitar_tarjetas(self):
+        """
+        Solicita al servidor las tarjetas del jugador.
+        """
+        msg = MsgSolicitarTarjetas()
+        self._conn.send_data(msg.to_json())
+
+    def reclamar_tarjeta(self):
+        """
+        Reclama una tarjeta después de conquistar un país.
+        """
+        msg = MsgReclamarTarjeta()
         self._conn.send_data(msg.to_json())

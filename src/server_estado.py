@@ -71,6 +71,8 @@ class Estado:
             "mover_unidad": [self.JUGANDO],
             "atacar": [self.JUGANDO],
             "finalizar_turno": [self.JUGANDO],
+            "solicitar_tarjetas": [self.JUGANDO],
+            "reclamar_tarjeta": [self.JUGANDO],
         }
 
         estados_permitidos = acciones_validas.get(accion, [])

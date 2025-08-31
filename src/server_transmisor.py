@@ -9,6 +9,7 @@ from src.server_msg import (
     MsgPais,
     MsgResultadoBatalla,
     MsgSosAdmin,
+    MsgTarjetasJugador,
     MsgTiempo,
     MsgTurno,
     MsgUnidadesDisponibles,
@@ -206,4 +207,15 @@ class ServerTransmisor:
             paises_para_victoria (int): Número de países necesarios para ganar
         """
         msg = MsgConfiguracionPartida(segundos_por_turno, paises_para_victoria)
+        self._send_message(msg)
+
+    def enviar_tarjetas_jugador(self, tarjetas):
+        """
+        Envía las tarjetas del jugador al cliente.
+
+        Args:
+            tarjetas (list): Lista de tarjetas con formato
+                [{"pais": str, "simbolo": str}, ...]
+        """
+        msg = MsgTarjetasJugador(tarjetas)
         self._send_message(msg)

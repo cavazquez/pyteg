@@ -345,3 +345,43 @@ class MsgConfiguracionPartida(IMsg):
             "paises_para_victoria": self._paises_para_victoria,
         }
         return json.dumps(data)
+
+
+class MsgTarjetasJugador(IMsg):
+    def __init__(self, tarjetas):
+        """
+        Inicializa un mensaje con las tarjetas del jugador.
+
+        Args:
+            tarjetas (list): Lista de tarjetas con formato
+                [{"pais": str, "simbolo": str}, ...]
+        """
+        self._tipo = "tarjetas_jugador"
+        self._tarjetas = tarjetas
+
+    def to_json(self):
+        data = {
+            "mensaje": self._tipo,
+            "tarjetas": self._tarjetas,
+        }
+        return json.dumps(data)
+
+
+class MsgSolicitarTarjetas(IMsg):
+    def __init__(self):
+        """Mensaje para solicitar las tarjetas del jugador al servidor."""
+        self._tipo = "solicitar_tarjetas"
+
+    def to_json(self):
+        data = {"mensaje": self._tipo}
+        return json.dumps(data)
+
+
+class MsgReclamarTarjeta(IMsg):
+    def __init__(self):
+        """Mensaje para reclamar una tarjeta después de conquistar un país."""
+        self._tipo = "reclamar_tarjeta"
+
+    def to_json(self):
+        data = {"mensaje": self._tipo}
+        return json.dumps(data)

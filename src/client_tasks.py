@@ -6,8 +6,9 @@ from PySide6.QtWidgets import QMessageBox
 
 from src.client import Client
 from src.client_color import Color
-from src.debug_logger import debug_logger
 from src.gui_dice_animation import BattleResultDialog
+from src.gui_tarjetas_dialog import TarjetasDialog
+from src.logger import get_logger
 
 
 class IClientTask(ABC):
@@ -137,18 +138,20 @@ class ClientTaskColorAsignado(IClientTask):
             # Actualizar información del usuario actual si es su color
             if hasattr(main_window, "client") and main_window.client:
                 mi_user_id = main_window.client.userid()
-                debug_logger.log(
-                    f"ClientTaskColorAsignado: Mi user_id: {mi_user_id}, "
-                    f"Color asignado a: {id_user}"
+                debug_logger = get_logger("client.tasks")
+                debug_logger.debug(
+                    "ClientTaskColorAsignado: Mi user_id: %s, Color asignado a: %s",
+                    mi_user_id,
+                    id_user,
                 )
                 if mi_user_id == id_user:
-                    debug_logger.log(
+                    debug_logger.debug(
                         "ClientTaskColorAsignado: ES MI COLOR, actualizando mi info"
                     )
                     if hasattr(main_window, "update_mi_jugador_info"):
                         main_window.update_mi_jugador_info()
                 else:
-                    debug_logger.log(
+                    debug_logger.debug(
                         "ClientTaskColorAsignado: NO es mi color, no actualizo"
                     )
 
@@ -191,21 +194,23 @@ class ClientTaskUserId(IClientTask):
 
     def run(self, main_window):
         userid = int(self._msg.get("user_id"))
-        debug_logger.log(f"ClientTaskUserId: Recibido user_id {userid}")
+        debug_logger = get_logger("client.tasks")
+        debug_logger.debug("ClientTaskUserId: Recibido user_id %s", userid)
 
         # Solo establecer el ID del cliente actual si aún no tiene uno
         if not main_window.client.userid():
-            debug_logger.log(
-                f"ClientTaskUserId: Estableciendo {userid} como MI user_id"
+            debug_logger.debug(
+                "ClientTaskUserId: Estableciendo %s como MI user_id", userid
             )
             main_window.client.set_userid(userid)
             # Actualizar información del usuario actual
             if hasattr(main_window, "update_mi_jugador_info"):
                 main_window.update_mi_jugador_info()
         else:
-            debug_logger.log(
-                f"ClientTaskUserId: Ya tengo user_id {main_window.client.userid()}, "
-                f"agregando {userid} a la lista"
+            debug_logger.debug(
+                "ClientTaskUserId: Ya tengo user_id %s, agregando %s a la lista",
+                main_window.client.userid(),
+                userid,
             )
 
         # Siempre mantener información de todos los jugadores
@@ -705,6 +710,44 @@ class ClientTaskConfiguracionPartida(IClientTask):
             print(f"Error al procesar configuración de partida: {e}")
 
 
+class ClientTaskTarjetasJugador(IClientTask):
+    def __init__(self, data):
+        self._tarjetas = data.get("tarjetas", [])
+
+    def run(self, main_window):
+        """
+        Actualiza las tarjetas del jugador en la GUI.
+
+        Args:
+            main_window: Ventana principal de la GUI
+        """
+        try:
+            # Almacenar las tarjetas en la GUI para uso posterior
+            if hasattr(main_window, "tarjetas_jugador"):
+                main_window.tarjetas_jugador = self._tarjetas
+            else:
+                # Si no existe el atributo, crearlo
+                main_window.tarjetas_jugador = self._tarjetas
+
+            debug_logger = get_logger("client.tasks")
+            debug_logger.info(
+                "Tarjetas del jugador actualizadas: %s tarjetas", len(self._tarjetas)
+            )
+            print(
+                f"ClientTaskTarjetasJugador: Recibidas {len(self._tarjetas)} tarjetas: "
+                f"{self._tarjetas}"
+            )
+
+            # Si hay un diálogo de tarjetas abierto, actualizarlo
+            for widget in main_window.findChildren(TarjetasDialog):
+                if widget.isVisible():
+                    widget.actualizar_tarjetas(self._tarjetas)
+                    debug_logger.info("Diálogo de tarjetas actualizado automáticamente")
+
+        except (AttributeError, RuntimeError) as e:
+            print(f"Error al procesar tarjetas del jugador: {e}")
+
+
 dict_task = {
     "chat": ClientTaskChat,
     "sosadmin": ClientTaskSerAdmin,
@@ -722,4 +765,5 @@ dict_task = {
     "resultado_batalla": ClientTaskResultadoBatalla,
     "victoria": ClientTaskVictoria,
     "configuracion_partida": ClientTaskConfiguracionPartida,
+    "tarjetas_jugador": ClientTaskTarjetasJugador,
 }

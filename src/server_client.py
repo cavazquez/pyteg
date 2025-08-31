@@ -122,14 +122,18 @@ class Client:
         self.transmisor.enviar_estado(self.server.estado.estado_actual())
 
         while vivo:
-            data = self.recibir()
+            datas = self.recibir()
 
-            if not data:
+            if not datas or (len(datas) == 1 and not datas[0]):
                 vivo = False
                 continue
 
-            data_json = json.loads(data)
-            self.ejecutar_mensaje(data_json)
+            for data in datas:
+                try:
+                    data_json = json.loads(data)
+                    self.ejecutar_mensaje(data_json)
+                except json.JSONDecodeError:
+                    print(f"Mensaje no JSON recibido: {data}")
 
         # Cuando el cliente se desconecta, quitarlo del servidor
         self._logger.info(
