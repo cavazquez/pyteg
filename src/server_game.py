@@ -254,10 +254,10 @@ class Game:
         for jugador in self.lista_jugadores():
             paises_controlados = self._mapa.cantidad_de_paises_del_jugador(jugador)
 
-            if self.paises_para_victoria() == 0:
+            if self._paises_para_victoria == 0:
                 objetivo = total_paises
             else:
-                objetivo = self.paises_para_victoria()
+                objetivo = self._paises_para_victoria
 
             if paises_controlados >= objetivo:
                 jugador_nombre = (
