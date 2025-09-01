@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 from src.client_msg import (
     MsgAgregarUnidad,
     MsgAtacar,
+    MsgCanjeEspecial,
     MsgChat,
     MsgEmpezar,
     MsgEmpezarPartida,
@@ -104,6 +105,15 @@ class IClientTransmisor(ABC):
         Reclama una tarjeta después de conquistar un país.
         """
 
+    @abstractmethod
+    def canje_especial(self, pais):
+        """
+        Realiza un canje especial de país + tarjeta por 2 unidades.
+
+        Args:
+            pais (str): Nombre del país donde se agregaran las unidades
+        """
+
 
 class ClientNullTransmisor(IClientTransmisor):
     def __init__(self):
@@ -146,6 +156,11 @@ class ClientNullTransmisor(IClientTransmisor):
 
     def reclamar_tarjeta(self):
         print("No puedes reclamar tarjetas. No estás conectado.")
+
+    def canje_especial(self, pais):
+        """Realiza un canje especial cuando no está conectado."""
+        _ = pais  # Evitar warning de argumento no usado
+        print("No puedes realizar canje especial. No estás conectado.")
 
 
 class ClientTransmisor(IClientTransmisor):
@@ -249,4 +264,14 @@ class ClientTransmisor(IClientTransmisor):
         Reclama una tarjeta después de conquistar un país.
         """
         msg = MsgReclamarTarjeta()
+        self._conn.send_data(msg.to_json())
+
+    def canje_especial(self, pais):
+        """
+        Realiza un canje especial de país + tarjeta por 2 unidades.
+
+        Args:
+            pais (str): Nombre del país donde se agregaran las unidades
+        """
+        msg = MsgCanjeEspecial(pais)
         self._conn.send_data(msg.to_json())

@@ -434,6 +434,67 @@ class ServerTaskReclamarTarjeta(IServerTask):
         client.transmisor.enviar_sistema("Tarjeta reclamada exitosamente")
 
 
+class ServerTaskCanjeEspecial(IServerTask):
+    def __init__(self, data):
+        super().__init__(data)
+        self._pais = data.get("pais")
+        self._action_name = "canje_especial"
+
+    def _execute(self, client):
+        """Ejecuta el canje especial de país + tarjeta por 2 unidades."""
+        mapa = client.server.game.mapa()
+        mazo = client.server.game.mazo()
+
+        # Validar que el jugador posee el país
+        if not mapa.jugador_posee_pais(client, self._pais):
+            client.transmisor.enviar_error_chat(f"No posees el país {self._pais}")
+            return
+
+        # Buscar y remover la tarjeta correspondiente al país
+        tarjeta_encontrada = None
+        tarjetas_jugador = mazo.tarjetas_asignadas(client)
+
+        if len(tarjetas_jugador) == 0:
+            client.transmisor.enviar_error_chat(
+                "No tienes tarjetas. Conquista países para obtener tarjetas."
+            )
+            return
+
+        for tarjeta in tarjetas_jugador:
+            if tarjeta.pais == self._pais:
+                tarjeta_encontrada = tarjeta
+                break
+
+        if not tarjeta_encontrada:
+            client.transmisor.enviar_error_chat(
+                f"No posees la tarjeta del país {self._pais}"
+            )
+            return
+
+        # Realizar el canje especial
+        # 1. Remover la tarjeta del jugador
+        tarjeta_encontrada.desasignar()
+        tarjeta_encontrada.desusar()
+
+        # 2. Agregar 2 unidades al país
+        mapa.agregar_una_unidad(self._pais)
+        mapa.agregar_una_unidad(self._pais)
+
+        # 3. Notificar a todos los clientes sobre el cambio en el mapa
+        client.server.enviar_mapa()
+
+        # 4. Enviar notificación específica del canje especial
+        client.transmisor.enviar_canje_especial(self._pais, 2)
+
+        # 5. Actualizar tarjetas del jugador
+        client.server.enviar_tarjetas_jugador(client)
+
+        # 6. Notificar éxito
+        client.transmisor.enviar_sistema(
+            f"Canje especial realizado: +2 unidades en {self._pais}"
+        )
+
+
 dict_task = {
     "chat": ServerTaskChat,
     "empezar": ServerTaskEmpezar,
@@ -446,4 +507,5 @@ dict_task = {
     "finalizar_turno": ServerTaskFinalizarTurno,
     "solicitar_tarjetas": ServerTaskSolicitarTarjetas,
     "reclamar_tarjeta": ServerTaskReclamarTarjeta,
+    "canje_especial": ServerTaskCanjeEspecial,
 }

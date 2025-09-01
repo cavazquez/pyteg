@@ -385,3 +385,18 @@ class MsgReclamarTarjeta(IMsg):
     def to_json(self):
         data = {"mensaje": self._tipo}
         return json.dumps(data)
+
+
+class MsgCanjeEspecial(IMsg):
+    def __init__(self, pais, unidades_agregadas):
+        self._tipo = "canje_especial"
+        self._pais = pais
+        self._unidades_agregadas = unidades_agregadas
+
+    def to_json(self):
+        data = {
+            "mensaje": self._tipo,
+            "pais": self._pais,
+            "unidades_agregadas": self._unidades_agregadas,
+        }
+        return json.dumps(data)

@@ -3,6 +3,7 @@ Validador de tareas del servidor basado en estados.
 """
 
 from src.exception import EstadoInvalidoError
+from src.server_estado import Estado
 
 
 class ServerStateValidator:
@@ -12,32 +13,7 @@ class ServerStateValidator:
     """
 
     def __init__(self):
-        """Inicializa el validador con el mapeo de acciones válidas por estado."""
-        self._acciones_validas = {}
-
-    def _get_acciones_validas(self, estado) -> dict[str, list[str]]:
-        """
-        Obtiene el mapeo de acciones válidas para cada estado.
-
-        Args:
-            estado: Instancia del objeto Estado del servidor
-
-        Returns:
-            Dict con las acciones válidas para cada estado
-        """
-        return {
-            "empezar": [estado.INICIAL],
-            "empezar_partida": [estado.ESPERAR_JUGADORES],
-            "seleccionar_color": [estado.INICIAL, estado.ESPERAR_JUGADORES],
-            "set_username": [estado.INICIAL, estado.ESPERAR_JUGADORES],
-            "chat": [estado.INICIAL, estado.ESPERAR_JUGADORES, estado.JUGANDO],
-            "agregar_unidad": [estado.JUGANDO],
-            "mover_unidad": [estado.JUGANDO],
-            "atacar": [estado.JUGANDO],
-            "finalizar_turno": [estado.JUGANDO],
-            "solicitar_tarjetas": [estado.JUGANDO],
-            "reclamar_tarjeta": [estado.JUGANDO],
-        }
+        """Inicializa el validador."""
 
     def validar_accion(self, action_name: str, server) -> None:
         """
@@ -54,7 +30,7 @@ class ServerStateValidator:
             return  # No hay validación necesaria
 
         if not server.estado.puede_ejecutar_accion(action_name):
-            acciones_validas = self._get_acciones_validas(server.estado)
+            acciones_validas = Estado.get_acciones_validas()
             estados_validos = acciones_validas.get(action_name, [])
 
             raise EstadoInvalidoError(

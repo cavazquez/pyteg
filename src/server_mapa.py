@@ -90,6 +90,10 @@ class Mapa:
             [pais for pais in self.paises() if self.ocupado_por(pais) == jugador],
         )
 
+    def jugador_posee_pais(self, jugador, pais):
+        """Verifica si un jugador específico posee un país determinado."""
+        return self.ocupado_por(pais) == jugador
+
     def cantidad_de_paises_del_jugador_por_continente(self, jugador, continente):
         return len(
             [

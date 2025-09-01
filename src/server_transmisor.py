@@ -1,5 +1,6 @@
 from src.server_msg import (
     MsgActualizarListaJugadores,
+    MsgCanjeEspecial,
     MsgChat,
     MsgColor,
     MsgColorAsignado,
@@ -218,4 +219,15 @@ class ServerTransmisor:
                 [{"pais": str, "simbolo": str}, ...]
         """
         msg = MsgTarjetasJugador(tarjetas)
+        self._send_message(msg)
+
+    def enviar_canje_especial(self, pais, unidades_agregadas):
+        """
+        Envía notificación de canje especial al cliente.
+
+        Args:
+            pais (str): Nombre del país donde se agregaron las unidades
+            unidades_agregadas (int): Cantidad de unidades agregadas
+        """
+        msg = MsgCanjeEspecial(pais, unidades_agregadas)
         self._send_message(msg)

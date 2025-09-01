@@ -51,6 +51,29 @@ class Estado:
         """Verifica si el estado es finalizado."""
         return self._estado_actual == self.FINALIZADO
 
+    @classmethod
+    def get_acciones_validas(cls):
+        """
+        Obtiene el mapeo centralizado de acciones válidas para cada estado.
+
+        Returns:
+            Dict con las acciones válidas para cada estado
+        """
+        return {
+            "empezar": [cls.INICIAL],
+            "empezar_partida": [cls.ESPERAR_JUGADORES],
+            "seleccionar_color": [cls.INICIAL, cls.ESPERAR_JUGADORES],
+            "set_username": [cls.INICIAL, cls.ESPERAR_JUGADORES],
+            "chat": [cls.INICIAL, cls.ESPERAR_JUGADORES, cls.JUGANDO],
+            "agregar_unidad": [cls.JUGANDO],
+            "mover_unidad": [cls.JUGANDO],
+            "atacar": [cls.JUGANDO],
+            "finalizar_turno": [cls.JUGANDO],
+            "solicitar_tarjetas": [cls.JUGANDO],
+            "reclamar_tarjeta": [cls.JUGANDO],
+            "canje_especial": [cls.JUGANDO],
+        }
+
     def puede_ejecutar_accion(self, accion):
         """Verifica si una acción puede ejecutarse en el estado actual.
 
@@ -60,20 +83,6 @@ class Estado:
         Returns:
             bool: True si la acción puede ejecutarse, False en caso contrario
         """
-        # Mapeo de acciones y estados válidos
-        acciones_validas = {
-            "empezar": [self.INICIAL],
-            "empezar_partida": [self.ESPERAR_JUGADORES],
-            "seleccionar_color": [self.INICIAL, self.ESPERAR_JUGADORES],
-            "set_username": [self.INICIAL, self.ESPERAR_JUGADORES],
-            "chat": [self.INICIAL, self.ESPERAR_JUGADORES, self.JUGANDO],
-            "agregar_unidad": [self.JUGANDO],
-            "mover_unidad": [self.JUGANDO],
-            "atacar": [self.JUGANDO],
-            "finalizar_turno": [self.JUGANDO],
-            "solicitar_tarjetas": [self.JUGANDO],
-            "reclamar_tarjeta": [self.JUGANDO],
-        }
-
+        acciones_validas = self.get_acciones_validas()
         estados_permitidos = acciones_validas.get(accion, [])
         return self._estado_actual in estados_permitidos
