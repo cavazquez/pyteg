@@ -177,3 +177,14 @@ class MsgReclamarTarjeta(IMsg):
     def to_json(self):
         data = {"mensaje": self._tipo}
         return json.dumps(data)
+
+
+class MsgCanjeEspecial(IMsg):
+    def __init__(self, pais):
+        """Crea un mensaje para canje especial de país + tarjeta."""
+        self._tipo = "canje_especial"
+        self._pais = pais
+
+    def to_json(self):
+        data = {"mensaje": self._tipo, "pais": self._pais}
+        return json.dumps(data)

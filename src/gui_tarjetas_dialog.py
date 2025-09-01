@@ -4,7 +4,6 @@ from PySide6.QtWidgets import (
     QGridLayout,
     QHBoxLayout,
     QLabel,
-    QMessageBox,
     QPushButton,
     QVBoxLayout,
     QWidget,
@@ -428,8 +427,17 @@ class TarjetasDialog(QDialog):
             # Verificar si son 3 iguales o 3 diferentes
             simbolos = [tarjeta.simbolo for tarjeta in self.tarjetas_seleccionadas]
             return len(set(simbolos)) == 1 or len(set(simbolos)) == 3
+        if cantidad == 1:
+            # Canje especial: una tarjeta si poseo el país
+            return self._puede_realizar_canje_especial()
 
         return False
+
+    def _puede_realizar_canje_especial(self):
+        """Verifica si se puede realizar un canje especial (país + tarjeta)."""
+        # La validación real de posesión del país se hace en el servidor
+        # Aquí solo verificamos que hay exactamente una tarjeta seleccionada
+        return len(self.tarjetas_seleccionadas) == 1
 
     def seleccionar_todas(self):
         """Selecciona todas las tarjetas disponibles."""
@@ -454,6 +462,8 @@ class TarjetasDialog(QDialog):
         if not self._puede_realizar_canje():
             return
 
+        cantidad_seleccionadas = len(self.tarjetas_seleccionadas)
+
         # Obtener información de las tarjetas seleccionadas
         tarjetas_info = [
             {"pais": tarjeta.pais, "simbolo": tarjeta.simbolo, "index": tarjeta.index}
@@ -463,16 +473,13 @@ class TarjetasDialog(QDialog):
         try:
             # Enviar comando de canje al servidor
             if hasattr(self.parent(), "transmisor"):
-                # Aquí se implementaría el envío al servidor
-                # self.parent().transmisor.canjear_tarjetas(tarjetas_info)
-                print(f"Canjeando tarjetas: {tarjetas_info}")
-
-                # Por ahora, mostrar mensaje de confirmación
-                QMessageBox.information(
-                    self,
-                    _("Canje Realizado"),
-                    _("Se han canjeado %s tarjetas.") % len(tarjetas_info),
-                )
+                if cantidad_seleccionadas == 1:
+                    # Canje especial: país + tarjeta = 2 unidades
+                    tarjeta = self.tarjetas_seleccionadas[0]
+                    self.parent().transmisor.canje_especial(tarjeta.pais)
+                else:
+                    # Canje normal: 3 tarjetas
+                    self.parent().transmisor.canjear_tarjetas(tarjetas_info)
 
                 # Deseleccionar todas las tarjetas después del canje
                 self.deseleccionar_todas()
