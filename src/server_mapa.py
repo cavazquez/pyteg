@@ -3,32 +3,38 @@ from random import shuffle
 
 
 class Mapa:
+    # Constantes para índices de la estructura de datos del mapa
+    _UNIDADES = 0
+    _CONTINENTE = 1
+    _JUGADOR = 2
+    _ADYACENTES = 3
+
     def __init__(self, build_mapa):
         self._mapa = (
             build_mapa()
         )  # Ahora build_mapa ya devuelve el diccionario completo
 
     def agregar_una_unidad(self, pais):
-        self._mapa[pais][0] += 1
+        self._mapa[pais][self._UNIDADES] += 1
 
     def restar_una_unidad(self, pais):
-        self._mapa[pais][0] -= 1
+        self._mapa[pais][self._UNIDADES] -= 1
 
     def cantidad_unidades(self, pais):
-        return self._mapa[pais][0]
+        return self._mapa[pais][self._UNIDADES]
 
     def set_unidades(self, pais, cant):
-        self._mapa[pais][0] = cant
+        self._mapa[pais][self._UNIDADES] = cant
 
     def mover(self, desde, hacia, cantidad):
-        self._mapa[desde][0] -= cantidad
-        self._mapa[hacia][0] += cantidad
+        self._mapa[desde][self._UNIDADES] -= cantidad
+        self._mapa[hacia][self._UNIDADES] += cantidad
 
     def continente(self, pais):
-        return self._mapa[pais][1]
+        return self._mapa[pais][self._CONTINENTE]
 
     def ocupado_por(self, pais):
-        return self._mapa[pais][2]
+        return self._mapa[pais][self._JUGADOR]
 
     def paises(self):
         if self._mapa:
@@ -83,7 +89,7 @@ class Mapa:
         )
 
     def asignar_pais(self, jugador, pais):
-        self._mapa[pais][2] = jugador
+        self._mapa[pais][self._JUGADOR] = jugador
 
     def cantidad_de_paises_del_jugador(self, jugador):
         return len(
@@ -104,47 +110,37 @@ class Mapa:
             ],
         )
 
-    def tiene_toda_europa(self, jugador):
-        continente = "Europa"
+    def jugador_controla_continente(self, jugador, continente):
+        """Verifica si un jugador controla completamente un continente.
+
+        Args:
+            jugador (str): ID del jugador
+            continente (str): Nombre del continente
+
+        Returns:
+            bool: True si el jugador controla todo el continente
+        """
         return self.cantidad_de_paises_del_jugador_por_continente(
-            jugador,
-            continente,
+            jugador, continente
         ) == self.cantidad_de_paises_por_continente(continente)
+
+    def tiene_toda_europa(self, jugador):
+        return self.jugador_controla_continente(jugador, "Europa")
 
     def tiene_toda_asia(self, jugador):
-        continente = "Asia"
-        return self.cantidad_de_paises_del_jugador_por_continente(
-            jugador,
-            continente,
-        ) == self.cantidad_de_paises_por_continente(continente)
+        return self.jugador_controla_continente(jugador, "Asia")
 
     def tiene_toda_oceania(self, jugador):
-        continente = "Oceania"
-        return self.cantidad_de_paises_del_jugador_por_continente(
-            jugador,
-            continente,
-        ) == self.cantidad_de_paises_por_continente(continente)
+        return self.jugador_controla_continente(jugador, "Oceania")
 
     def tiene_toda_africa(self, jugador):
-        continente = "Africa"
-        return self.cantidad_de_paises_del_jugador_por_continente(
-            jugador,
-            continente,
-        ) == self.cantidad_de_paises_por_continente(continente)
+        return self.jugador_controla_continente(jugador, "Africa")
 
     def tiene_toda_america_del_sur(self, jugador):
-        continente = "Sudamerica"
-        return self.cantidad_de_paises_del_jugador_por_continente(
-            jugador,
-            continente,
-        ) == self.cantidad_de_paises_por_continente(continente)
+        return self.jugador_controla_continente(jugador, "Sudamerica")
 
     def tiene_toda_america_del_norte(self, jugador):
-        continente = "Norteamerica"
-        return self.cantidad_de_paises_del_jugador_por_continente(
-            jugador,
-            continente,
-        ) == self.cantidad_de_paises_por_continente(continente)
+        return self.jugador_controla_continente(jugador, "Norteamerica")
 
     def __str__(self):
         return json.dumps(self._mapa)
@@ -161,5 +157,5 @@ class Mapa:
             o lista vacía si no hay adyacentes definidos
         """
         if pais in self._mapa:
-            return self._mapa[pais][3]
+            return self._mapa[pais][self._ADYACENTES]
         return []
