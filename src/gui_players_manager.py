@@ -28,6 +28,7 @@ class PlayersManager:
         """
         self.main_window = main_window
         self.player_labels = []
+        self.current_player_name = None
 
     def update_player_list(self, players):
         """
@@ -41,6 +42,9 @@ class PlayersManager:
         # Crear widgets solo para jugadores activos
         for name, color in players:
             self._create_single_player_widget(name, color)
+
+        # Aplicar sombreado al jugador actual si existe
+        self._update_current_player_highlight()
 
     def _clear_player_widgets(self):
         """Elimina todos los widgets de jugadores existentes"""
@@ -102,3 +106,51 @@ class PlayersManager:
         label = QLabel()
         label.setPixmap(pm)
         return label
+
+    def set_current_player(self, player_name):
+        """
+        Establece el jugador actual y actualiza el sombreado.
+
+        Args:
+            player_name (str): Nombre del jugador que tiene el turno actual
+        """
+        self.current_player_name = player_name
+        self._update_current_player_highlight()
+
+    def _update_current_player_highlight(self):
+        """Actualiza el sombreado del jugador en su turno"""
+        if not hasattr(self, "player_labels") or not self.player_labels:
+            return
+
+        for label, _turn_indicator, player_widget in self.player_labels:
+            player_name = label.text()
+            is_current_player = self.current_player_name == player_name
+
+            # Aplicar o quitar sombreado según si es el jugador actual
+            if is_current_player:
+                self._apply_current_player_style(player_widget, label)
+            else:
+                self._apply_normal_player_style(player_widget, label)
+
+    def _apply_current_player_style(self, player_widget, label):
+        """Aplica el estilo de sombreado al jugador en su turno"""
+        # Estilo con sombreado sutil para el jugador actual
+        player_widget.setStyleSheet("""
+            QFrame#playerCard {
+                background-color: #e8f4f8;
+                border: 2px solid #4a90e2;
+                border-radius: 8px;
+                padding: 4px;
+            }
+        """)
+
+        # Texto más destacado para el jugador actual
+        label.setStyleSheet("color: #2c5aa0; font-weight: 700; font-size: 13px;")
+
+    def _apply_normal_player_style(self, player_widget, label):
+        """Aplica el estilo normal a jugadores que no están en su turno"""
+        # Aplicar estilo de tarjeta normal mediante tema
+        self.main_window.theme_manager._apply_players_theme(player_widget)  # noqa: SLF001
+
+        # Texto normal
+        label.setStyleSheet("color: #333; font-weight: 600; font-size: 13px;")
