@@ -267,6 +267,10 @@ class Gui(QMainWindow):
                 border-radius: 2px;
             """)
 
+        # Actualizar sombreado del jugador en su turno
+        if jugador_actual_nombre:
+            self.players_manager.set_current_player(jugador_actual_nombre)
+
     def update_status_bar(self, text, color=None):
         """Update the status bar with the given text.
 
