@@ -255,8 +255,7 @@ class ClientTaskTiempo(IClientTask):
 
     def run(self, main_window):
         tiempo = int(self._msg.get("tiempo", 0))
-        # Solo mostrar el tiempo restante, la información del jugador
-        # ya se muestra en la barra de estado con el cuadrado de color
+        # Mostrar el tiempo restante en el widget dedicado del lado derecho
         if tiempo > 0:
             # Determinar color basado en tiempo restante
             if tiempo > 20:  # Mucho tiempo - Verde
@@ -266,9 +265,9 @@ class ClientTaskTiempo(IClientTask):
             else:  # Muy poco tiempo - Rojo
                 color = "red"
 
-            main_window.update_status_bar(f"Tiempo restante: {tiempo}s", color=color)
+            main_window.update_timer_display(f"Tiempo: {tiempo}s", color=color)
         else:
-            main_window.clear_status_bar()
+            main_window.update_timer_display("")
 
 
 class ClientTaskUsername(IClientTask):
