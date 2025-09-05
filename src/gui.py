@@ -157,6 +157,18 @@ class Gui(QMainWindow):
         self.language_selector.language_changed.connect(self.on_language_changed)
         self.status_bar.addPermanentWidget(self.language_selector)
 
+        # Separator
+        sep5 = QFrame()
+        sep5.setFrameShape(QFrame.VLine)
+        sep5.setFrameShadow(QFrame.Sunken)
+        self.status_bar.addPermanentWidget(sep5)
+
+        # Add timer widget for countdown
+        self.timer_label = QLabel("")
+        self.timer_label.setStyleSheet("font-weight: bold; padding: 2px 8px;")
+        self.timer_label.setMinimumWidth(120)
+        self.status_bar.addPermanentWidget(self.timer_label)
+
         # Add a stretch to push the status message to the right
         spacer = QWidget()
         spacer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
@@ -250,6 +262,21 @@ class Gui(QMainWindow):
             color (str, optional): Color for the text (e.g., 'green', 'red', '#ff0000')
         """
         self.status_manager.update_status_bar(text, color)
+
+    def update_timer_display(self, text, color=None):
+        """Update the timer display in the status bar.
+
+        Args:
+            text (str): The timer text to display
+            color (str, optional): Color for the text
+        """
+        if color:
+            self.timer_label.setStyleSheet(
+                f"font-weight: bold; padding: 2px 8px; color: {color};"
+            )
+        else:
+            self.timer_label.setStyleSheet("font-weight: bold; padding: 2px 8px;")
+        self.timer_label.setText(text)
 
     def clear_status_bar(self):
         """Clear the status bar message, but keep the turn number."""
