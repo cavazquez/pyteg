@@ -81,16 +81,6 @@ class Gui(QMainWindow):
         self.jugador_actual_layout.setContentsMargins(4, 0, 4, 0)
         self.jugador_actual_layout.setSpacing(6)
 
-        # Color indicator (square)
-        self.color_indicator = QLabel()
-        self.color_indicator.setFixedSize(16, 16)
-        self.color_indicator.setStyleSheet("""
-            background-color: #cccccc;
-            border: 1px solid #999999;
-            border-radius: 2px;
-        """)
-        self.jugador_actual_layout.addWidget(self.color_indicator)
-
         # Turn and player info
         self.turno_label = QLabel("Turno: 0")
         self.turno_label.setStyleSheet("font-weight: 600;")
@@ -246,26 +236,7 @@ class Gui(QMainWindow):
         self._jugador_actual_color = jugador_actual_color
 
         # Actualizar el texto del turno
-        if jugador_actual_nombre:
-            self.turno_label.setText(
-                f"Ronda: {num_ronda} - Turno: {jugador_actual_nombre}"
-            )
-        else:
-            self.turno_label.setText(f"Ronda: {num_ronda} - Turno: {num_turno + 1}")
-
-        # Actualizar el indicador de color
-        if jugador_actual_color:
-            self.color_indicator.setStyleSheet(f"""
-                background-color: {jugador_actual_color};
-                border: 1px solid #999999;
-                border-radius: 2px;
-            """)
-        else:
-            self.color_indicator.setStyleSheet("""
-                background-color: #cccccc;
-                border: 1px solid #999999;
-                border-radius: 2px;
-            """)
+        self.turno_label.setText(f"Ronda: {num_ronda} - Turno: {num_turno + 1}")
 
         # Actualizar sombreado del jugador en su turno
         if jugador_actual_nombre:
