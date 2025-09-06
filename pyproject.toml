@@ -116,6 +116,7 @@ modules = [
   "src.batalla",
   "src.build_mapa",
   "src.calculos",
+  "src.toml_reader",
 ]
 
 [build-system]
