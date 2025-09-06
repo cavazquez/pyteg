@@ -13,7 +13,7 @@ from src.gui_unidades import Unidades
 
 class Circulo(QGraphicsEllipseItem):
     def __init__(self, pos_x_abs, pos_y_abs):
-        super().__init__(pos_x_abs, pos_y_abs, 30, 30)
+        super().__init__(pos_x_abs, pos_y_abs, 16, 16)
 
         # Establecer el color del borde y del relleno del círculo
         self.setPen(QPen(Qt.blue))
