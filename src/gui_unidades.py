@@ -11,7 +11,7 @@ from PySide6.QtWidgets import (
 class Unidades(QGraphicsTextItem):
     def __init__(self, circulo_rect):
         super().__init__("0")
-        font = QFont("Helvetica [Cronyx]", 14, QFont.Bold)
+        font = QFont("Helvetica [Cronyx]", 8, QFont.Bold)
         self.setFont(font)
 
         # Establecer color de texto blanco para mejor contraste

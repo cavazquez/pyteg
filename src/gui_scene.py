@@ -180,7 +180,7 @@ class QCustomGraphicsScene(QGraphicsScene):
         folder = "themes/"
 
         reader = TomlReader(
-            Path("themes/test/paises.toml").read_text(encoding="locale"),
+            Path("themes/classic/paises.toml").read_text(encoding="locale"),
         )
 
         for continente in reader.get_continentes():

@@ -39,6 +39,7 @@ class ToolBar(QToolBar):
         self.button_tarjetas = None
         self.button_fullscreen = None
         self.button_admin = None
+        self.button_reset_zoom = None
 
         # Configurar la barra de herramientas
         self._setup_action_buttons()
@@ -52,6 +53,8 @@ class ToolBar(QToolBar):
         # Nota: lang_code se recibe para compatibilidad con la señal Qt
         del lang_code  # Suprimir warning de argumento no usado
         # Actualizar botones principales
+        if hasattr(self, "button_tarjetas"):
+            self.button_tarjetas.setText(_("Tarjetas"))
         self.button_conectar.setText(_("Conectar"))
         self.button_conectar.setToolTip(_("Conectar al servidor"))
         self.button_conectar.setStatusTip(_("Abrir ventana de conexión"))
@@ -81,6 +84,12 @@ class ToolBar(QToolBar):
         self.button_fullscreen.setText(_("Pantalla Completa"))
         self.button_fullscreen.setToolTip(_("Alternar pantalla completa"))
         self.button_fullscreen.setStatusTip(_("Entrar/salir de pantalla completa"))
+
+        self.button_reset_zoom.setText(_("Ajustar Mapa"))
+        self.button_reset_zoom.setToolTip(_("Ajustar mapa a la ventana"))
+        self.button_reset_zoom.setStatusTip(
+            _("Resetear zoom y ajustar mapa al tamaño de la ventana")
+        )
 
         # Recrear el menú de tamaños con las nuevas traducciones
         self._update_size_menu()
@@ -198,6 +207,17 @@ class ToolBar(QToolBar):
             _("Mostrar duración de turno y objetivo de países")
         )
         self.addAction(self.button_configuracion)
+
+        # Botón para resetear zoom del mapa
+        icono_zoom = self._validar_icono("icons/default_size.png", "resetear zoom")
+        self.button_reset_zoom = QAction(icono_zoom, _("Ajustar Mapa"), self)
+        self.button_reset_zoom.setEnabled(True)  # Siempre habilitado
+        self.button_reset_zoom.triggered.connect(self._reset_map_zoom)
+        self.button_reset_zoom.setToolTip(_("Ajustar mapa a la ventana"))
+        self.button_reset_zoom.setStatusTip(
+            _("Resetear zoom y ajustar mapa al tamaño de la ventana")
+        )
+        self.addAction(self.button_reset_zoom)
 
         # Grupo: Administración (removido)
 
@@ -470,3 +490,14 @@ class ToolBar(QToolBar):
             self.main_window.showFullScreen()
             if self.button_fullscreen:
                 self.button_fullscreen.setChecked(True)
+
+    def _reset_map_zoom(self):
+        """Resetea el zoom del mapa para ajustarlo a la ventana"""
+        if hasattr(self.main_window, "w") and self.main_window.w:
+            # Acceder a la vista del mapa y resetear el zoom
+            view = self.main_window.w
+            if hasattr(view, "reset_zoom"):
+                view.reset_zoom()
+                self.main_window.status_bar.showMessage(
+                    _("Mapa ajustado al tamaño de la ventana"), 2000
+                )
