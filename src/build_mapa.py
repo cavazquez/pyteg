@@ -5,7 +5,7 @@ from src.toml_reader import TomlReader
 
 def build_mapa():
     # Crear el lector TOML
-    toml_path = Path("themes/test/paises.toml")
+    toml_path = Path("themes/classic/paises.toml")
     toml_content = toml_path.read_text(encoding="utf-8")
     reader = TomlReader(toml_content)
 
