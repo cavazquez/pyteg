@@ -28,7 +28,7 @@ class QCustomGraphicsView(QGraphicsView):
             self.fitInView(self.scene().sceneRect(), Qt.KeepAspectRatio)
 
     def resizeEvent(self, event: QResizeEvent):  # noqa: N802
-        """Manejar el redimensionamiento de la vista para escalar el mapa automáticamente"""
+        """Manejar el redimensionamiento de la vista para escalar el mapa."""
         super().resizeEvent(event)
         if self.scene():
             # Ajustar la vista al contenido manteniendo la proporción

@@ -139,7 +139,7 @@ class ToolBar(QToolBar):
         right_spacer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         self.addWidget(right_spacer)
 
-    def _setup_action_buttons(self):
+    def _setup_action_buttons(self):  # noqa: PLR0915
         """Configura los botones de acción en la barra de herramientas"""
         # Grupo: Conexión
         icono_conectar = self._validar_icono("icons/conectar.png", "conectar")
