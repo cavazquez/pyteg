@@ -361,7 +361,7 @@ army_y = 0
 
 [Asia.Taimiria]
 continente = "Asia"
-file = "classic/taimiria.png"
+file = "classic/taimir.png"
 pos_x = 173
 pos_y = 0
 army_x = 0
@@ -377,7 +377,7 @@ army_y = 15
 
 [Asia.Kamchatka]
 continente = "Asia"
-file = "classic/kamchatka.png"
+file = "classic/katchatka.png"
 pos_x = 224
 pos_y = -10
 army_x = 0
