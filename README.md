@@ -85,18 +85,16 @@ uv run hatch build -t wheel -t sdist
 ```
 
 ## Estructura del proyecto
-- `src/`: código fuente
-  - `server.py`: servidor y loop principal
-  - `server_game.py`: lógica del juego y batallas
-  - `server_mapa.py`: estado del mapa y países
-  - `server_tasks.py`: acciones validadas del servidor
-  - `client_connection.py`: conexión del cliente
-  - `client_tasks.py`: tareas que procesan mensajes
-  - `gui.py`: interfaz gráfica principal (refactorizada modularmente)
-  - `gui_*`: módulos especializados de la interfaz gráfica
-  - `run_client.py`: punto de entrada del cliente
-- `tests/`: suite de tests
-- `run_test.sh`: pruebas y linting de una pasada
+- `src/`: Código fuente principal
+- `tests/`: Tests unitarios
+- `themes/`: Temas visuales y mapas
+  - `classic/`: Tema clásico con mapa mundial completo (50 países)
+    - `paises.toml`: Configuración de países y continentes
+    - `cartas.toml`: Configuración de cartas del juego
+    - `*.png`: Archivos de imagen de países y cartas
+  - `test/`: Tema de prueba con mapa reducido (6 países)
+- `locales/`: Archivos de traducción (español/inglés)
+- `docs/`: Documentación técnica
 - `ejecutar_docker.sh`: entorno en Docker (opcional)
 
 ### Arquitectura modular de la GUI

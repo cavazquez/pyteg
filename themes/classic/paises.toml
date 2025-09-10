@@ -1,8 +1,3 @@
-[Cartas]
-jocker = "tar_comodin.png"
-ballon = "tar_globo.png"
-cannon = "tar_canon.png"
-ship = "tar_galeon.png"
 
 [Sudamerica]
 pos_x = 190 

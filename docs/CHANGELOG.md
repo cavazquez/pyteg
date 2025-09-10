@@ -3,6 +3,12 @@
 Todas las fechas en formato YYYY-MM-DD.
 
 ## Unreleased
+- **Separación de configuración de cartas y países**:
+  - Creado archivo `themes/classic/cartas.toml` separado para configuración de cartas del juego
+  - Removida sección `[Cartas]` de `paises.toml` para mejor separación de responsabilidades
+  - Actualizado `TomlReader` para cargar ambos archivos con compatibilidad hacia atrás
+  - Mejorada organización modular: países/continentes vs. mecánicas de juego
+  - Todos los tests (137) pasan correctamente tras la refactorización
 - **Sistema de efectos visuales inmersivos para batallas**:
   - Comportamiento diferenciado según rol del jugador:
     - **Atacante**: Ve animación completa de dados y diálogo de resultado
