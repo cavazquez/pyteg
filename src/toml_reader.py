@@ -7,20 +7,39 @@ class TomlReaderError(Exception):
 
 
 class TomlReader:
-    def __init__(self, toml_string: str):
+    def __init__(self, paises_toml_string: str, cartas_toml_string: str | None = None):
         """Inicializa el TomlReader con validación completa de estructura.
 
         Args:
-            toml_string: String con contenido TOML válido
+            paises_toml_string: String con contenido TOML de países y continentes
+            cartas_toml_string: String con contenido TOML de cartas (opcional)
 
         Raises:
             TomlReaderError: Si la estructura TOML no es válida
         """
         try:
-            self.parsed_toml = tomllib.loads(toml_string)
+            self.parsed_toml = tomllib.loads(paises_toml_string)
         except tomllib.TOMLDecodeError as e:
-            msg = f"Error al parsear TOML: {e}"
+            msg = f"Error al parsear TOML de países: {e}"
             raise TomlReaderError(msg) from e
+
+        # Procesar cartas desde archivo separado o desde el mismo archivo
+        if cartas_toml_string is not None:
+            try:
+                cartas_parsed = tomllib.loads(cartas_toml_string)
+                if "Cartas" not in cartas_parsed:
+                    msg = "Archivo de cartas debe contener sección 'Cartas'"
+                    raise TomlReaderError(msg)
+                self.cartas = cartas_parsed["Cartas"]
+            except tomllib.TOMLDecodeError as e:
+                msg = f"Error al parsear TOML de cartas: {e}"
+                raise TomlReaderError(msg) from e
+        # Compatibilidad: buscar cartas en el archivo de países
+        elif "Cartas" in self.parsed_toml:
+            self.cartas = self.parsed_toml["Cartas"]
+        else:
+            msg = "No se encontró sección 'Cartas' en ningún archivo"
+            raise TomlReaderError(msg)
 
         # Validar estructura básica
         self._validar_estructura_basica()
@@ -30,8 +49,7 @@ class TomlReader:
         self.paises: dict[str, dict[str, Any]] = {}
         self._pais_a_continente: dict[str, str] = {}  # Índice inverso para performance
 
-        # Procesar cartas
-        self.cartas = self.parsed_toml["Cartas"]
+        # Validar cartas
         self._validar_cartas()
 
         # Procesar adyacencias (opcional)
@@ -54,10 +72,6 @@ class TomlReader:
         """
         if not isinstance(self.parsed_toml, dict):
             msg = "El TOML debe ser un diccionario en el nivel raíz"
-            raise TomlReaderError(msg)
-
-        if "Cartas" not in self.parsed_toml:
-            msg = "Sección 'Cartas' requerida no encontrada"
             raise TomlReaderError(msg)
 
         # Verificar que hay al menos un continente

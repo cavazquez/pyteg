@@ -6,8 +6,9 @@ from src.toml_reader import TomlReader
 
 class TestTomlReader(unittest.TestCase):
     def test_init(self):
-        toml_string = Path("themes/classic/paises.toml").read_text(encoding="locale")
-        self.assertTrue(TomlReader(toml_string))
+        paises_string = Path("themes/classic/paises.toml").read_text(encoding="locale")
+        cartas_string = Path("themes/classic/cartas.toml").read_text(encoding="locale")
+        self.assertTrue(TomlReader(paises_string, cartas_string))
 
     def test_continente(self):
         toml_string = """

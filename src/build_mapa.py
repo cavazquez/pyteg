@@ -4,10 +4,14 @@ from src.toml_reader import TomlReader
 
 
 def build_mapa():
-    # Crear el lector TOML
-    toml_path = Path("themes/classic/paises.toml")
-    toml_content = toml_path.read_text(encoding="utf-8")
-    reader = TomlReader(toml_content)
+    # Crear el lector TOML con archivos separados
+    paises_path = Path("themes/classic/paises.toml")
+    cartas_path = Path("themes/classic/cartas.toml")
+
+    paises_content = paises_path.read_text(encoding="utf-8")
+    cartas_content = cartas_path.read_text(encoding="utf-8")
+
+    reader = TomlReader(paises_content, cartas_content)
 
     # Construir el diccionario del mapa
     # Ahora cada país tendrá: [unidades, continente, dueño, [paises_adyacentes]]
