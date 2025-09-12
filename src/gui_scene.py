@@ -182,7 +182,10 @@ class QCustomGraphicsScene(QGraphicsScene):
 
         paises_content = Path("themes/classic/paises.toml").read_text(encoding="locale")
         cartas_content = Path("themes/classic/cartas.toml").read_text(encoding="locale")
-        reader = TomlReader(paises_content, cartas_content)
+        adyacencias_content = Path("themes/classic/adyacencias.toml").read_text(
+            encoding="locale"
+        )
+        reader = TomlReader(paises_content, cartas_content, adyacencias_content)
 
         for continente in reader.get_continentes():
             cor_x, cor_y = reader.coordenadas_continente(continente)

@@ -97,6 +97,14 @@ uv run hatch build -t wheel -t sdist
 - `docs/`: Documentación técnica
 - `ejecutar_docker.sh`: entorno en Docker (opcional)
 
+### Estructura de archivos de configuración
+
+El juego utiliza archivos TOML para la configuración:
+
+- `themes/classic/paises.toml`: Configuración de países, continentes y sus propiedades visuales
+- `themes/classic/cartas.toml`: Configuración de cartas del juego (separado desde v1.x)
+- `themes/classic/adyacencias.toml`: Configuración de adyacencias entre países (separado desde v1.x)
+
 ### Arquitectura modular de la GUI
 La interfaz gráfica ha sido refactorizada en módulos especializados para mejorar mantenibilidad:
 

@@ -426,6 +426,3 @@ pos_y = 146
 army_x = 0
 army_y = 0
 
-[Adyacencias]
-Argentina = ["Chile", "Brasil", "Peru", "Uruguay"]
-Chile = ["Argentina", "Peru"]

@@ -2,7 +2,15 @@
 
 Todas las fechas en formato YYYY-MM-DD.
 
-## Unreleased
+## [Unreleased]
+
+### Added
+- **Separación de adyacencias en archivo independiente**:
+  - Creado archivo `themes/classic/adyacencias.toml` con todas las adyacencias del mapa clásico
+  - Removida sección `[Adyacencias]` de `paises.toml` para mejor organización modular
+  - Actualizado `TomlReader` para cargar adyacencias desde archivo separado con compatibilidad hacia atrás
+  - Mejorada separación de responsabilidades: geografía vs. conectividad del mapa
+  - Todos los tests (137) pasan correctamente tras la refactorización
 - **Separación de configuración de cartas y países**:
   - Creado archivo `themes/classic/cartas.toml` separado para configuración de cartas del juego
   - Removida sección `[Cartas]` de `paises.toml` para mejor separación de responsabilidades

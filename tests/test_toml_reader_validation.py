@@ -157,8 +157,14 @@ class TestTomlReaderValidation(unittest.TestCase):
         # como string, no como sección
 
         # Simular el caso modificando directamente parsed_toml
-        reader = TomlReader('[Cartas]\njocker = "test.png"')
-        reader.parsed_toml["Adyacencias"] = "string_instead_of_dict"
+        # Test con adyacencias como string en lugar de diccionario
+        adyacencias_invalidas = """
+        [Adyacencias]
+        # Forzar que Adyacencias sea string manipulando después del parsing
+        """
+        reader = TomlReader(
+            '[Cartas]\njocker = "test.png"', None, adyacencias_invalidas
+        )
         reader.adyacencias = "string_instead_of_dict"
 
         with self.assertRaises(TomlReaderError) as context:
