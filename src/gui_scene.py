@@ -173,7 +173,8 @@ class QCustomGraphicsScene(QGraphicsScene):
         for item in items:
             if isinstance(item, QGraphicsPixmapItem):
                 pais = item.nombre()
-                menu = Menu(pais, self.main_window)
+                # Pasar explícitamente la ventana principal como padre para Wayland
+                menu = Menu(pais, self.main_window, parent=self.main_window)
                 menu.exec_(event.screenPos())
 
     def load_map_data(self):

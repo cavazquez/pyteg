@@ -11,7 +11,9 @@ class Menu(QMenu):
     pais_origen = None
 
     def __init__(self, pais, main_window, parent=None):
-        super().__init__(parent)
+        # En Wayland, el menú necesita tener la ventana principal como padre
+        # para evitar errores de "grabbing popup"
+        super().__init__(parent or main_window)
         self.pais = pais
         self.main_window = main_window
         self.transmisor = main_window.transmisor
