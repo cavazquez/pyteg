@@ -1,4 +1,7 @@
+from typing import ClassVar
+
 from PySide6.QtCore import Qt, Signal
+from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import (
     QDialog,
     QGridLayout,
@@ -16,6 +19,14 @@ class TarjetaWidget(QWidget):
     """Widget que representa una tarjeta individual."""
 
     seleccionada = Signal(object)  # Señal emitida cuando se selecciona/deselecciona
+
+    # Mapeo de símbolos a archivos de imagen
+    SIMBOLOS_IMAGENES: ClassVar[dict[str, str]] = {
+        "Galeon": "themes/classic/tar_galeon.png",
+        "Globo": "themes/classic/tar_globo.png",
+        "Canon": "themes/classic/tar_canon.png",
+        "Comodin": "themes/classic/tar_comodin.png",
+    }
 
     def __init__(self, pais, simbolo, index=0):
         super().__init__()
@@ -44,14 +55,29 @@ class TarjetaWidget(QWidget):
             }
         """)
 
-        # Etiqueta del símbolo
-        self.label_simbolo = QLabel(self.simbolo)
+        # Etiqueta del símbolo con imagen
+        self.label_simbolo = QLabel()
         self.label_simbolo.setAlignment(Qt.AlignCenter)
+
+        # Cargar imagen del símbolo si existe
+        imagen_path = self.SIMBOLOS_IMAGENES.get(self.simbolo)
+        if imagen_path:
+            pixmap = QPixmap(imagen_path)
+            if not pixmap.isNull():
+                # Escalar la imagen a un tamaño apropiado
+                scaled_pixmap = pixmap.scaled(
+                    32, 32, Qt.KeepAspectRatio, Qt.SmoothTransformation
+                )
+                self.label_simbolo.setPixmap(scaled_pixmap)
+            else:
+                # Si no se puede cargar la imagen, mostrar texto
+                self.label_simbolo.setText(self.simbolo)
+        else:
+            # Si no hay mapeo, mostrar texto
+            self.label_simbolo.setText(self.simbolo)
+
         self.label_simbolo.setStyleSheet("""
             QLabel {
-                font-size: 14px;
-                font-weight: bold;
-                color: #2c3e50;
                 padding: 8px;
                 margin-top: 5px;
             }
