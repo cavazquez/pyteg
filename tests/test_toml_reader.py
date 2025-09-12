@@ -8,11 +8,16 @@ class TestTomlReader(unittest.TestCase):
     def test_init(self):
         paises_string = Path("themes/classic/paises.toml").read_text(encoding="locale")
         cartas_string = Path("themes/classic/cartas.toml").read_text(encoding="locale")
-        self.assertTrue(TomlReader(paises_string, cartas_string))
+        adyacencias_string = Path("themes/classic/adyacencias.toml").read_text(
+            encoding="locale"
+        )
+        self.assertTrue(TomlReader(paises_string, cartas_string, adyacencias_string))
 
     def test_continente(self):
         toml_string = """
         [Cartas]
+        jocker = "test.png"
+
         [Pangea]
         pos_x = 20
         pos_y = 30
@@ -24,6 +29,8 @@ class TestTomlReader(unittest.TestCase):
     def test_continente_sin_pais(self):
         toml_string = """
         [Cartas]
+        jocker = "test.png"
+
         [Pangea]
         pos_x = 20
         pos_y = 30
@@ -35,16 +42,19 @@ class TestTomlReader(unittest.TestCase):
     def test_todos_los_paises(self):
         toml_string = """
         [Cartas]
+        jocker = "test.png"
+
         [Pangea]
         pos_x = 20
         pos_y = 30
 
         [Pangea.Argentina]
+
         [Pangea.Brasil]
 
         [Africa]
-        pos_x = 50
-        pos_y = 23
+        pos_x = 100
+        pos_y = 200
 
         [Africa.Francia]
         """
@@ -56,16 +66,19 @@ class TestTomlReader(unittest.TestCase):
     def test_get_paises(self):
         toml_string = """
         [Cartas]
+        jocker = "test.png"
+
         [Pangea]
         pos_x = 20
         pos_y = 30
 
         [Pangea.Argentina]
+
         [Pangea.Brasil]
 
         [Africa]
-        pos_x = 50
-        pos_y = 23
+        pos_x = 100
+        pos_y = 200
 
         [Africa.Francia]
         """
@@ -81,16 +94,19 @@ class TestTomlReader(unittest.TestCase):
     def test_get_continentes(self):
         toml_string = """
         [Cartas]
+        jocker = "test.png"
+
         [Pangea]
         pos_x = 20
         pos_y = 30
 
         [Pangea.Argentina]
+
         [Pangea.Brasil]
 
         [Africa]
-        pos_x = 50
-        pos_y = 23
+        pos_x = 100
+        pos_y = 200
 
         [Africa.Francia]
         """
@@ -102,6 +118,8 @@ class TestTomlReader(unittest.TestCase):
     def test_coordenadas_continente(self):
         toml_string = """
         [Cartas]
+        jocker = "test.png"
+
         [Pangea]
         pos_x = 20
         pos_y = 30
@@ -114,6 +132,8 @@ class TestTomlReader(unittest.TestCase):
     def test_coordenadas(self):
         toml_string = """
         [Cartas]
+        jocker = "test.png"
+
         [Pangea]
         pos_x = 20
         pos_y = 30
@@ -142,6 +162,8 @@ class TestTomlReader(unittest.TestCase):
     def test_img_path(self):
         toml_string = """
         [Cartas]
+        jocker = "test.png"
+
         [Pangea]
         pos_x = 20
         pos_y = 30

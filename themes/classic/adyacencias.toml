@@ -1,0 +1,66 @@
+# Adyacencias del mapa clásico del TEG
+# Cada país lista los países con los que comparte frontera
+
+[Adyacencias]
+
+# Sudamérica
+Argentina = ["Chile", "Brasil", "Peru", "Uruguay"]
+Brasil = ["Argentina", "Peru", "Colombia", "Uruguay"]
+Chile = ["Argentina", "Peru"]
+Colombia = ["Brasil", "Peru", "Mexico"]
+Peru = ["Argentina", "Brasil", "Chile", "Colombia"]
+Uruguay = ["Argentina", "Brasil"]
+
+# Norteamérica
+Alaska = ["Yukon", "Oregon", "Kamchatka"]
+California = ["Oregon", "NuevaYork", "Mexico"]
+Canada = ["Yukon", "Oregon", "NuevaYork", "Terranova", "Labrador", "Groenlandia"]
+Groenlandia = ["Canada", "Labrador", "Islandia"]
+Labrador = ["Canada", "Groenlandia", "Terranova"]
+Mexico = ["California", "NuevaYork", "Colombia"]
+NuevaYork = ["California", "Canada", "Oregon", "Terranova", "Mexico"]
+Oregon = ["Alaska", "California", "Canada", "NuevaYork", "Yukon"]
+Terranova = ["Canada", "Labrador", "NuevaYork"]
+Yukon = ["Alaska", "Canada", "Oregon"]
+
+# Europa
+Alemania = ["Francia", "Italia", "Polonia", "Suecia"]
+Espana = ["Francia", "Sahara"]
+Francia = ["Alemania", "Espana", "GranBretana", "Italia"]
+GranBretana = ["Francia", "Islandia", "Suecia"]
+Islandia = ["GranBretana", "Groenlandia", "Suecia"]
+Italia = ["Alemania", "Francia", "Polonia", "Egipto", "Sahara"]
+Polonia = ["Alemania", "Italia", "Rusia", "Tartaria"]
+Rusia = ["Polonia", "Suecia", "Tartaria", "Aral", "Iran"]
+Suecia = ["Alemania", "GranBretana", "Islandia", "Rusia"]
+
+# África
+Egipto = ["Italia", "Sahara", "Etiopia", "Israel"]
+Etiopia = ["Egipto", "Sahara", "Zaire", "Madagascar"]
+Madagascar = ["Etiopia", "Sudafrica", "Zaire"]
+Sahara = ["Espana", "Italia", "Egipto", "Etiopia", "Zaire"]
+Sudafrica = ["Madagascar", "Zaire"]
+Zaire = ["Sahara", "Etiopia", "Madagascar", "Sudafrica"]
+
+# Asia
+Arabia = ["Turquia", "Iran", "India"]
+Aral = ["Rusia", "Tartaria", "Siberia", "China", "Iran"]
+China = ["Aral", "Siberia", "Mongolia", "Gobi", "India", "Malasia"]
+Gobi = ["China", "Mongolia", "India"]
+India = ["Arabia", "China", "Gobi", "Malasia"]
+Iran = ["Rusia", "Aral", "Arabia", "Turquia"]
+Israel = ["Egipto", "Turquia"]
+Japon = ["Kamchatka", "Mongolia"]
+Kamchatka = ["Alaska", "Japon", "Mongolia", "Siberia"]
+Malasia = ["China", "India", "Sumatra"]
+Mongolia = ["China", "Gobi", "Japon", "Kamchatka", "Siberia"]
+Siberia = ["Aral", "China", "Kamchatka", "Mongolia", "Tartaria", "Taimiria"]
+Taimiria = ["Siberia", "Tartaria"]
+Tartaria = ["Polonia", "Rusia", "Aral", "Siberia", "Taimiria"]
+Turquia = ["Arabia", "Iran", "Israel"]
+
+# Oceanía
+Australia = ["Sumatra", "Java", "Borneo"]
+Borneo = ["Australia", "Java", "Sumatra"]
+Java = ["Australia", "Borneo", "Sumatra"]
+Sumatra = ["Australia", "Borneo", "Java", "Malasia"]

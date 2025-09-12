@@ -7,12 +7,18 @@ class TomlReaderError(Exception):
 
 
 class TomlReader:
-    def __init__(self, paises_toml_string: str, cartas_toml_string: str | None = None):
+    def __init__(
+        self,
+        paises_toml_string: str,
+        cartas_toml_string: str | None = None,
+        adyacencias_toml_string: str | None = None,
+    ):
         """Inicializa el TomlReader con validación completa de estructura.
 
         Args:
             paises_toml_string: String con contenido TOML de países y continentes
             cartas_toml_string: String con contenido TOML de cartas (opcional)
+            adyacencias_toml_string: String con contenido TOML de adyacencias (opcional)
 
         Raises:
             TomlReaderError: Si la estructura TOML no es válida
@@ -41,6 +47,24 @@ class TomlReader:
             msg = "No se encontró sección 'Cartas' en ningún archivo"
             raise TomlReaderError(msg)
 
+        # Procesar adyacencias desde archivo separado o desde el mismo archivo
+        self.adyacencias: dict[str, list[str]] = {}
+        if adyacencias_toml_string is not None:
+            try:
+                adyacencias_parsed = tomllib.loads(adyacencias_toml_string)
+                if "Adyacencias" not in adyacencias_parsed:
+                    msg = "Archivo de adyacencias debe contener sección 'Adyacencias'"
+                    raise TomlReaderError(msg)
+                self.adyacencias = adyacencias_parsed["Adyacencias"]
+                self._validar_adyacencias()
+            except tomllib.TOMLDecodeError as e:
+                msg = f"Error al parsear TOML de adyacencias: {e}"
+                raise TomlReaderError(msg) from e
+        # Compatibilidad: buscar adyacencias en el archivo de países
+        elif "Adyacencias" in self.parsed_toml:
+            self.adyacencias = self.parsed_toml["Adyacencias"]
+            self._validar_adyacencias()
+
         # Validar estructura básica
         self._validar_estructura_basica()
 
@@ -51,12 +75,6 @@ class TomlReader:
 
         # Validar cartas
         self._validar_cartas()
-
-        # Procesar adyacencias (opcional)
-        self.adyacencias: dict[str, list[str]] = {}
-        if "Adyacencias" in self.parsed_toml:
-            self.adyacencias = self.parsed_toml["Adyacencias"]
-            self._validar_adyacencias()
 
         # Procesar continentes y países
         self._procesar_continentes_y_paises()
