@@ -63,6 +63,11 @@ class Gui(QMainWindow):
         # Initialize game configuration
         self._segundos_por_turno = 20
         self._paises_para_victoria = 50
+        self._objetivos_secretos = False
+
+        # Initialize secret objective variables
+        self._objetivo_secreto_id = None
+        self._objetivo_secreto_descripcion = None
 
         self.colores = Colores()
 
@@ -336,23 +341,34 @@ class Gui(QMainWindow):
         """
         return self.game_actions_manager.get_max_attack_units(pais)
 
-    def set_configuracion_partida(self, segundos_por_turno, paises_para_victoria):
+    def set_configuracion_partida(
+        self, segundos_por_turno, paises_para_victoria, *, objetivos_secretos=False
+    ):
         """
         Establece la configuración de la partida.
 
         Args:
             segundos_por_turno (int): Duración de cada turno en segundos
             paises_para_victoria (int): Número de países necesarios para ganar
+            objetivos_secretos (bool): Si los objetivos secretos están activados
         """
         self._segundos_por_turno = segundos_por_turno
         self._paises_para_victoria = paises_para_victoria
+        self._objetivos_secretos = objetivos_secretos
+
+        # Inicializar variables para objetivo secreto
+        self._objetivo_secreto_id = None
+        self._objetivo_secreto_descripcion = None
 
     def mostrar_configuracion_partida(self):
         """
         Muestra la ventana de configuración de la partida.
         """
         dialog = ConfiguracionDialog(
-            self, self._segundos_por_turno, self._paises_para_victoria
+            self,
+            self._segundos_por_turno,
+            self._paises_para_victoria,
+            objetivos_secretos=self._objetivos_secretos,
         )
         dialog.exec()
 
@@ -371,15 +387,16 @@ class Gui(QMainWindow):
 
         # Actualizar estados si están en valores por defecto
         if (
-            self.mi_username_label.text() == "[No conectado]"
-            or self.mi_username_label.text() == "[Not connected]"
+            self.estado_text.text() == "Esperando jugadores"
+            or self.estado_text.text() == "Waiting for players"
         ):
-            self.mi_username_label.setText(_("[No conectado]"))
+            self.estado_text.setText(_("Esperando jugadores"))
 
-        if self.estado_label.text().startswith(
-            "Estado:"
-        ) or self.estado_label.text().startswith("Status:"):
-            self.estado_label.setText(_("Estado: Desconectado"))
+        if (
+            self.turno_text.text() == "Esperando turno"
+            or self.turno_text.text() == "Waiting for turn"
+        ):
+            self.turno_text.setText(_("Esperando turno"))
 
         if self.seleccion_label.text().startswith(
             "Selección:"
@@ -395,6 +412,24 @@ class Gui(QMainWindow):
 
         print(f"GUI actualizada al idioma: {lang_code}")
 
+    def set_objetivo_secreto(self, objetivo_id, descripcion):
+        """
+        Establece el objetivo secreto del jugador.
+
+        Args:
+            objetivo_id (str): ID del objetivo secreto
+            descripcion (str): Descripción del objetivo secreto
+        """
+        self._objetivo_secreto_id = objetivo_id
+        self._objetivo_secreto_descripcion = descripcion
+
+        # Si hay un diálogo de tarjetas abierto, actualizarlo
+        from src.gui_tarjetas_dialog import TarjetasDialog  # noqa: PLC0415
+
+        for widget in self.findChildren(TarjetasDialog):
+            if widget.isVisible():
+                widget.set_objetivo_secreto(objetivo_id, descripcion)
+
     def mostrar_tarjetas(self):
         """Muestra la ventana de tarjetas del jugador."""
         # Solicitar tarjetas actualizadas al servidor
@@ -408,5 +443,11 @@ class Gui(QMainWindow):
         else:
             # Si no hay tarjetas, usar lista vacía para mostrar slots vacíos
             dialog.actualizar_tarjetas([])
+
+        # Si tenemos un objetivo secreto, mostrarlo en el diálogo
+        if self._objetivo_secreto_id and self._objetivo_secreto_descripcion:
+            dialog.set_objetivo_secreto(
+                self._objetivo_secreto_id, self._objetivo_secreto_descripcion
+            )
 
         dialog.exec()

@@ -240,7 +240,7 @@ class Game:
     def _verificar_condicion_victoria(self):
         """
         Verifica si algún jugador ha ganado la partida controlando
-        el número objetivo de países.
+        el número objetivo de países o cumpliendo su objetivo secreto.
 
         Returns:
             Client: El jugador ganador si existe, None en caso contrario
@@ -251,6 +251,33 @@ class Game:
         if total_paises == 0:
             return None
 
+        # Verificar objetivos secretos si están activados
+        if (
+            hasattr(self._server, "_objetivos_secretos")
+            and self._server._objetivos_secretos  # noqa: SLF001
+        ):
+            for jugador in self.lista_jugadores():
+                if self._server.objetivos_secretos.verificar_condicion_victoria(
+                    jugador.userid(),
+                    self._mapa._mapa,  # noqa: SLF001
+                    self._server.color,
+                ):
+                    jugador_nombre = (
+                        jugador.username()
+                        if hasattr(jugador, "username")
+                        else str(jugador)
+                    )
+                    objetivo = self._server.objetivos_secretos.get_objetivo_jugador(
+                        jugador.userid()
+                    )
+                    print(
+                        f"¡{jugador_nombre} ha ganado cumpliendo su objetivo secreto!"
+                    )
+                    if objetivo:
+                        print(f"Objetivo cumplido: {objetivo['descripcion']}")
+                    return jugador
+
+        # Verificar condición de victoria tradicional (por países)
         for jugador in self.lista_jugadores():
             paises_controlados = self._mapa.cantidad_de_paises_del_jugador(jugador)
 

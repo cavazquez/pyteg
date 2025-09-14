@@ -11,11 +11,19 @@ from src.i18n import translate as _
 
 
 class ConfiguracionDialog(QDialog):
-    def __init__(self, parent=None, segundos_por_turno=20, paises_para_victoria=50):
+    def __init__(
+        self,
+        parent=None,
+        segundos_por_turno=20,
+        paises_para_victoria=50,
+        *,
+        objetivos_secretos=False,
+    ):
         super().__init__(parent)
         self.paises_para_victoria = paises_para_victoria
+        self.objetivos_secretos = objetivos_secretos
         self.setWindowTitle(_("Configuración de la Partida"))
-        self.setFixedSize(350, 200)
+        self.setFixedSize(350, 250)
         self.setModal(True)
 
         # Configurar el layout principal
@@ -49,6 +57,16 @@ class ConfiguracionDialog(QDialog):
         objetivo_value = QLabel(objetivo_text)
         grid_layout.addWidget(objetivo_label, 1, 0)
         grid_layout.addWidget(objetivo_value, 1, 1)
+
+        # Objetivos secretos
+        objetivos_label = QLabel(_("Objetivos secretos:"))
+        objetivos_label.setStyleSheet("font-weight: bold;")
+        objetivos_text = (
+            _("Activados") if self.objetivos_secretos else _("Desactivados")
+        )
+        objetivos_value = QLabel(objetivos_text)
+        grid_layout.addWidget(objetivos_label, 2, 0)
+        grid_layout.addWidget(objetivos_value, 2, 1)
 
         # Separador
         layout.addSpacing(20)

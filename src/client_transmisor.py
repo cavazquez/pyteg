@@ -26,7 +26,13 @@ class IClientTransmisor(ABC):
         pass
 
     @abstractmethod
-    def empezar(self, segundos: int | None = None):
+    def empezar(
+        self,
+        segundos: int | None = None,
+        paises_para_victoria: int | None = None,
+        *,
+        objetivos_secretos: bool = False,
+    ):
         pass
 
     @abstractmethod
@@ -123,7 +129,11 @@ class ClientNullTransmisor(IClientTransmisor):
         print("No estas conectado")
 
     def empezar(
-        self, segundos: int | None = None, paises_para_victoria: int | None = None
+        self,
+        segundos: int | None = None,
+        paises_para_victoria: int | None = None,
+        *,
+        objetivos_secretos: bool = False,
     ):
         """No-op para el transmisor nulo."""
 
@@ -172,10 +182,16 @@ class ClientTransmisor(IClientTransmisor):
         self._conn.send_data(msg.to_json())
 
     def empezar(
-        self, segundos: int | None = None, paises_para_victoria: int | None = None
+        self,
+        segundos: int | None = None,
+        paises_para_victoria: int | None = None,
+        *,
+        objetivos_secretos: bool = False,
     ):
         print("Transmisor empezar()")
-        msg = MsgEmpezar(segundos, paises_para_victoria)
+        msg = MsgEmpezar(
+            segundos, paises_para_victoria, objetivos_secretos=objetivos_secretos
+        )
         self._conn.send_data(msg.to_json())
 
     def seleccionar_color(self, color):

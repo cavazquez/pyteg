@@ -326,23 +326,50 @@ class MsgVictoria(IMsg):
 
 
 class MsgConfiguracionPartida(IMsg):
-    def __init__(self, segundos_por_turno, paises_para_victoria):
+    def __init__(
+        self, segundos_por_turno, paises_para_victoria, *, objetivos_secretos=False
+    ):
         """
         Inicializa un mensaje con la configuración de la partida.
 
         Args:
             segundos_por_turno (int): Duración de cada turno en segundos
             paises_para_victoria (int): Número de países necesarios para ganar
+            objetivos_secretos (bool): Si los objetivos secretos están activados
         """
         self._tipo = "configuracion_partida"
         self._segundos_por_turno = segundos_por_turno
         self._paises_para_victoria = paises_para_victoria
+        self._objetivos_secretos = objetivos_secretos
 
     def to_json(self):
         data = {
             "mensaje": self._tipo,
             "segundos_por_turno": self._segundos_por_turno,
             "paises_para_victoria": self._paises_para_victoria,
+            "objetivos_secretos": self._objetivos_secretos,
+        }
+        return json.dumps(data)
+
+
+class MsgObjetivoSecreto(IMsg):
+    def __init__(self, objetivo_id, descripcion):
+        """
+        Inicializa un mensaje con el objetivo secreto asignado al jugador.
+
+        Args:
+            objetivo_id (str): ID del objetivo secreto
+            descripcion (str): Descripción del objetivo secreto
+        """
+        self._tipo = "objetivo_secreto"
+        self._objetivo_id = objetivo_id
+        self._descripcion = descripcion
+
+    def to_json(self):
+        data = {
+            "mensaje": self._tipo,
+            "objetivo_id": self._objetivo_id,
+            "descripcion": self._descripcion,
         }
         return json.dumps(data)
 

@@ -1,13 +1,16 @@
 import argparse
 import sys
+from pathlib import Path
 
 from src.build_mapa import build_mapa
 from src.mazo import Mazo
+from src.objetivos_secretos import ObjetivosSecretos
 from src.server_color import ServerColor
 from src.server_estado import Estado
 from src.server_game import Game
 from src.server_mapa import Mapa
 from src.server_registrar_jugadores import registrar_jugadores
+from src.toml_reader import TomlReader
 from src.turno_timer import TurnoTimer
 
 
@@ -29,6 +32,24 @@ class Server:
         simbolos = ["Galeon", "Globo", "Canon", "Comodin"]
         self.mazo = Mazo(paises, simbolos)
 
+        # Inicializar sistema de objetivos secretos
+
+        # Crear TomlReader para objetivos secretos
+        paises_path = Path("themes/classic/paises.toml")
+        cartas_path = Path("themes/classic/cartas.toml")
+        adyacencias_path = Path("themes/classic/adyacencias.toml")
+        objetivos_path = Path("themes/classic/objetivos_secretos.toml")
+
+        paises_content = paises_path.read_text(encoding="utf-8")
+        cartas_content = cartas_path.read_text(encoding="utf-8")
+        adyacencias_content = adyacencias_path.read_text(encoding="utf-8")
+        objetivos_content = objetivos_path.read_text(encoding="utf-8")
+
+        toml_reader = TomlReader(
+            paises_content, cartas_content, adyacencias_content, objetivos_content
+        )
+        self.objetivos_secretos = ObjetivosSecretos(toml_reader)
+
         # Timer de turnos (se inicializa en None y se arranca al empezar la partida)
         self._turno_timer = None
         # Configuración: segundos por turno (puede ser seteado por el admin)
@@ -36,6 +57,8 @@ class Server:
         # Configuración: países necesarios para ganar (puede ser seteado por el admin)
         # 0 = todos los países (modo clásico), >0 = objetivo específico
         self._paises_para_victoria = 0
+        # Configuración: objetivos secretos activados
+        self._objetivos_secretos = False
 
     def set_segundos_por_turno(self, segundos: int) -> None:
         """Configura la cantidad de segundos por turno.
@@ -54,6 +77,14 @@ class Server:
         """
         if isinstance(paises, int) and paises > 0:
             self._paises_para_victoria = paises
+
+    def set_objetivos_secretos(self, *, activados: bool) -> None:
+        """Configura si los objetivos secretos están activados.
+
+        Args:
+            activados (bool): True si los objetivos secretos están activados
+        """
+        self._objetivos_secretos = activados
 
     def cant_clients(self):
         return len(self._clients)
@@ -229,6 +260,12 @@ class Server:
         print("Enviando configuración de la partida a los clientes...")
         self.enviar_configuracion_partida()
 
+        # Asignar y enviar objetivos secretos si están activados
+        if self._objetivos_secretos:
+            print("Asignando objetivos secretos a los jugadores...")
+            self.objetivos_secretos.asignar_objetivos_aleatorios(jugadores)
+            self.enviar_objetivos_secretos()
+
         # Iniciar el temporizador de turnos
         print("Iniciando temporizador de turnos...")
         self._turno_timer = TurnoTimer(
@@ -302,7 +339,9 @@ class Server:
         """Envía la configuración de la partida a todos los clientes conectados."""
         for client in self.dame_clientes():
             client.transmisor.enviar_configuracion_partida(
-                self._segundos_por_turno, self._paises_para_victoria
+                self._segundos_por_turno,
+                self._paises_para_victoria,
+                objetivos_secretos=self._objetivos_secretos,
             )
 
     def enviar_tarjetas_jugador(self, client):
@@ -317,6 +356,27 @@ class Server:
             f"{tarjetas_data}"
         )
         client.transmisor.enviar_tarjetas_jugador(tarjetas_data)
+
+    def enviar_objetivos_secretos(self):
+        """Envía el objetivo secreto asignado a cada jugador."""
+        print("=== ENVIANDO OBJETIVOS SECRETOS ===")
+        for client in self.dame_clientes():
+            user_id = client.userid()
+            print(f"Procesando cliente {client.username()} (ID: {user_id})")
+            objetivo = self.objetivos_secretos.get_objetivo_jugador(user_id)
+            if objetivo:
+                print(
+                    f"Enviando objetivo a {client.username()}: "
+                    f"{objetivo['descripcion']}"
+                )
+                client.transmisor.enviar_objetivo_secreto(
+                    objetivo["id"], objetivo["descripcion"]
+                )
+            else:
+                print(
+                    f"No hay objetivo asignado para {client.username()} (ID: {user_id})"
+                )
+        print("=== FIN ENVÍO OBJETIVOS SECRETOS ===")
 
 
 def parse_arguments() -> argparse.Namespace:

@@ -682,6 +682,7 @@ class ClientTaskConfiguracionPartida(IClientTask):
     def __init__(self, data):
         self._segundos_por_turno = data.get("segundos_por_turno", 20)
         self._paises_para_victoria = data.get("paises_para_victoria", 50)
+        self._objetivos_secretos = data.get("objetivos_secretos", False)
 
     def run(self, main_window):
         """
@@ -691,7 +692,9 @@ class ClientTaskConfiguracionPartida(IClientTask):
             # Almacenar la configuración en la ventana principal
             if hasattr(main_window, "set_configuracion_partida"):
                 main_window.set_configuracion_partida(
-                    self._segundos_por_turno, self._paises_para_victoria
+                    self._segundos_por_turno,
+                    self._paises_para_victoria,
+                    objetivos_secretos=self._objetivos_secretos,
                 )
 
             # Mostrar mensaje en la barra de estado
@@ -707,6 +710,42 @@ class ClientTaskConfiguracionPartida(IClientTask):
 
         except (AttributeError, RuntimeError) as e:
             print(f"Error al procesar configuración de partida: {e}")
+
+
+class ClientTaskObjetivoSecreto(IClientTask):
+    def __init__(self, data):
+        self._objetivo_id = data.get("objetivo_id", "")
+        self._descripcion = data.get("descripcion", "")
+
+    def run(self, main_window):
+        """
+        Procesa el objetivo secreto asignado y lo almacena en la ventana principal.
+        """
+        try:
+            print(
+                f"ClientTaskObjetivoSecreto: Recibido objetivo - ID: "
+                f"{self._objetivo_id}, Desc: {self._descripcion}"
+            )
+
+            # Almacenar el objetivo secreto en la ventana principal
+            if hasattr(main_window, "set_objetivo_secreto"):
+                main_window.set_objetivo_secreto(self._objetivo_id, self._descripcion)
+                print("ClientTaskObjetivoSecreto: Objetivo almacenado en main_window")
+            else:
+                print(
+                    "ClientTaskObjetivoSecreto: main_window no tiene método "
+                    "set_objetivo_secreto"
+                )
+
+            # Mostrar mensaje en el chat del sistema
+            if hasattr(main_window, "chat"):
+                main_window.chat.append(
+                    f"Objetivo secreto asignado: {self._descripcion}", "system"
+                )
+                print("ClientTaskObjetivoSecreto: Mensaje agregado al chat")
+
+        except (AttributeError, RuntimeError) as e:
+            print(f"Error al procesar objetivo secreto: {e}")
 
 
 class ClientTaskTarjetasJugador(IClientTask):
@@ -765,4 +804,5 @@ dict_task = {
     "victoria": ClientTaskVictoria,
     "configuracion_partida": ClientTaskConfiguracionPartida,
     "tarjetas_jugador": ClientTaskTarjetasJugador,
+    "objetivo_secreto": ClientTaskObjetivoSecreto,
 }
