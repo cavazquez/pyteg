@@ -153,7 +153,7 @@ class TarjetasDialog(QDialog):
         super().__init__(parent)
         self.setWindowTitle(_("Mis Tarjetas"))
         self.setModal(True)
-        self.setFixedSize(600, 450)  # Aumentado para acomodar info de selección
+        self.setFixedSize(600, 550)  # Aumentado para acomodar objetivo secreto
 
         # Lista de tarjetas de ejemplo (máximo 4)
         self.tarjetas = [
@@ -165,6 +165,10 @@ class TarjetasDialog(QDialog):
         # Lista de widgets de tarjetas para manejar selección
         self.tarjetas_widgets = []
         self.tarjetas_seleccionadas = []
+
+        # Objetivo secreto asignado
+        self.objetivo_secreto_id = None
+        self.objetivo_secreto_descripcion = None
 
         self._setup_ui()
 
@@ -188,6 +192,10 @@ class TarjetasDialog(QDialog):
         # Área de tarjetas
         self.tarjetas_widget = self._create_tarjetas_area()
         layout.addWidget(self.tarjetas_widget)
+
+        # Objetivo secreto
+        self.objetivo_widget = self._create_objetivo_secreto_area()
+        layout.addWidget(self.objetivo_widget)
 
         # Información de selección
         self.info_seleccion = self._create_info_seleccion()
@@ -260,6 +268,47 @@ class TarjetasDialog(QDialog):
 
         widget.setLayout(grid_layout)
         return widget
+
+    def _create_objetivo_secreto_area(self):
+        """Crea el área para mostrar el objetivo secreto."""
+        container = QWidget()
+        layout = QVBoxLayout()
+
+        # Título de objetivo secreto
+        titulo_objetivo = QLabel(_("Objetivo Secreto"))
+        titulo_objetivo.setAlignment(Qt.AlignCenter)
+        titulo_objetivo.setStyleSheet("""
+            QLabel {
+                font-size: 14px;
+                font-weight: bold;
+                color: #8e44ad;
+                padding: 5px;
+                background-color: #f8f9fa;
+                border-radius: 5px;
+                margin-bottom: 5px;
+            }
+        """)
+        layout.addWidget(titulo_objetivo)
+
+        # Descripción del objetivo secreto
+        self.label_objetivo = QLabel(_("No hay objetivo secreto asignado"))
+        self.label_objetivo.setWordWrap(True)
+        self.label_objetivo.setAlignment(Qt.AlignCenter)
+        self.label_objetivo.setStyleSheet("""
+            QLabel {
+                font-size: 12px;
+                color: #2c3e50;
+                padding: 10px;
+                background-color: #ecf0f1;
+                border: 1px solid #bdc3c7;
+                border-radius: 5px;
+                margin: 5px;
+            }
+        """)
+        layout.addWidget(self.label_objetivo)
+
+        container.setLayout(layout)
+        return container
 
     def _create_buttons_layout(self):
         """Crea el layout con los botones de acción."""
@@ -526,3 +575,16 @@ class TarjetasDialog(QDialog):
                 print("Error: No se puede acceder al transmisor")
         except (AttributeError, RuntimeError) as e:
             print(f"Error al reclamar tarjeta: {e}")
+
+    def set_objetivo_secreto(self, objetivo_id, descripcion):
+        """Establece el objetivo secreto del jugador."""
+        self.objetivo_secreto_id = objetivo_id
+        self.objetivo_secreto_descripcion = descripcion
+        self.label_objetivo.setText(descripcion)
+
+    def get_objetivo_secreto(self):
+        """Obtiene el objetivo secreto asignado."""
+        return {
+            "id": self.objetivo_secreto_id,
+            "descripcion": self.objetivo_secreto_descripcion,
+        }

@@ -25,7 +25,7 @@ class VentanaAdmin(QWidget):
         self.seconds_input.setPlaceholderText("p. ej., 30, 60, 120")
         self.seconds_input.setToolTip("Duración del turno en segundos")
         self.seconds_input.setValidator(QIntValidator(0, 3600, self))
-        self.seconds_input.setText("0")  # valor por defecto
+        self.seconds_input.setText("20")  # valor por defecto
 
         self.seconds_layout.addWidget(self.seconds_label)
         self.seconds_layout.addWidget(self.seconds_input)
@@ -54,6 +54,15 @@ class VentanaAdmin(QWidget):
         self.countries_layout.addWidget(self.countries_input)
 
         self.layout.addLayout(self.countries_layout)
+
+        # Checkbox para habilitar objetivos secretos
+        self.objetivos_secretos_checkbox = QCheckBox("Objetivos secretos")
+        self.objetivos_secretos_checkbox.setChecked(True)  # deshabilitado por defecto
+        self.objetivos_secretos_checkbox.setToolTip(
+            "Activar para usar objetivos secretos del TEG clásico "
+            "en lugar de solo conquistar países"
+        )
+        self.layout.addWidget(self.objetivos_secretos_checkbox)
 
         # Conectar checkbox para habilitar/deshabilitar el campo de países
         self.countries_checkbox.toggled.connect(self._toggle_countries_input)
@@ -99,7 +108,12 @@ class VentanaAdmin(QWidget):
             # Checkbox deshabilitado: usar 0 para indicar "todos los países"
             paises_para_victoria = 0
 
-        self.main_window.transmisor.empezar(segundos, paises_para_victoria)
+        # Leer configuración de objetivos secretos
+        objetivos_secretos = self.objetivos_secretos_checkbox.isChecked()
+
+        self.main_window.transmisor.empezar(
+            segundos, paises_para_victoria, objetivos_secretos=objetivos_secretos
+        )
         self.close()
 
     def cargar_colores_asignados(self):

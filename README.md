@@ -22,7 +22,8 @@ gráfica en Python.
 - Estado del juego visible en la barra de estado (ronda, turno, color)
 - Bloqueo de nuevas conexiones cuando la partida está en curso
 - **Condición de victoria configurable**: Por defecto 50 países (configurable al crear partida)
-- **Ventana de configuración**: Muestra duración de turno y objetivo de países
+- **Objetivos secretos**: Sistema opcional de objetivos secretos del TEG clásico
+- **Ventana de configuración**: Muestra duración de turno, objetivo de países y objetivos secretos
 - **Verificación automática de condición de victoria al final de cada ronda**
 - **Soporte multiidioma (i18n)**: Español e inglés con selector en la interfaz
 - 120+ tests automatizados y linting con Ruff
@@ -104,6 +105,7 @@ El juego utiliza archivos TOML para la configuración:
 - `themes/classic/paises.toml`: Configuración de países, continentes y sus propiedades visuales
 - `themes/classic/cartas.toml`: Configuración de cartas del juego (separado desde v1.x)
 - `themes/classic/adyacencias.toml`: Configuración de adyacencias entre países (separado desde v1.x)
+- `themes/classic/objetivos_secretos.toml`: Configuración de objetivos secretos del TEG clásico
 
 ### Arquitectura modular de la GUI
 La interfaz gráfica ha sido refactorizada en módulos especializados para mejorar mantenibilidad:

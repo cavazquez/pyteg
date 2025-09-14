@@ -5,6 +5,14 @@ Todas las fechas en formato YYYY-MM-DD.
 ## [Unreleased]
 
 ### Added
+- **Sistema de objetivos secretos**: Implementación completa del sistema de objetivos secretos del TEG clásico
+  - Archivo de configuración `themes/classic/objetivos_secretos.toml` con objetivos tradicionales
+  - Opción configurable para activar/desactivar objetivos secretos al crear partida
+  - Asignación aleatoria de objetivos secretos a jugadores al iniciar la partida
+  - Visualización del objetivo secreto en la ventana de tarjetas del jugador
+  - Verificación automática de condiciones de victoria por objetivo secreto
+  - Soporte para tres tipos de objetivos: conquistar países, destruir jugador, conquistar continentes
+  - Tests unitarios para el sistema de objetivos secretos
 - **Separación de adyacencias en archivo independiente**:
   - Creado archivo `themes/classic/adyacencias.toml` con todas las adyacencias del mapa clásico
   - Removida sección `[Adyacencias]` de `paises.toml` para mejor organización modular

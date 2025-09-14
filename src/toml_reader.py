@@ -7,11 +7,12 @@ class TomlReaderError(Exception):
 
 
 class TomlReader:
-    def __init__(
+    def __init__(  # noqa: PLR0912, PLR0915
         self,
         paises_toml_string: str,
         cartas_toml_string: str | None = None,
         adyacencias_toml_string: str | None = None,
+        objetivos_secretos_toml_string: str | None = None,
     ):
         """Inicializa el TomlReader con validación completa de estructura.
 
@@ -19,6 +20,8 @@ class TomlReader:
             paises_toml_string: String con contenido TOML de países y continentes
             cartas_toml_string: String con contenido TOML de cartas (opcional)
             adyacencias_toml_string: String con contenido TOML de adyacencias (opcional)
+            objetivos_secretos_toml_string: String con contenido TOML de objetivos
+                secretos (opcional)
 
         Raises:
             TomlReaderError: Si la estructura TOML no es válida
@@ -64,6 +67,23 @@ class TomlReader:
         elif "Adyacencias" in self.parsed_toml:
             self.adyacencias = self.parsed_toml["Adyacencias"]
             self._validar_adyacencias()
+
+        # Procesar objetivos secretos desde archivo separado
+        self.objetivos_secretos: dict[str, dict[str, Any]] = {}
+        if objetivos_secretos_toml_string is not None:
+            try:
+                objetivos_parsed = tomllib.loads(objetivos_secretos_toml_string)
+                if "Objetivos" not in objetivos_parsed:
+                    msg = (
+                        "Archivo de objetivos secretos debe contener "
+                        "sección 'Objetivos'"
+                    )
+                    raise TomlReaderError(msg)
+                self.objetivos_secretos = objetivos_parsed["Objetivos"]
+                self._validar_objetivos_secretos()
+            except tomllib.TOMLDecodeError as e:
+                msg = f"Error al parsear TOML de objetivos secretos: {e}"
+                raise TomlReaderError(msg) from e
 
         # Validar estructura básica
         self._validar_estructura_basica()
@@ -143,6 +163,52 @@ class TomlReader:
                 if not isinstance(adyacente, str):
                     msg = f"País adyacente debe ser string: {adyacente}"
                     raise TomlReaderError(msg)
+
+    def _validar_objetivos_secretos(self) -> None:
+        """Valida la estructura de objetivos secretos si existe.
+
+        Raises:
+            TomlReaderError: Si la estructura de objetivos secretos no es válida
+        """
+        if not isinstance(self.objetivos_secretos, dict):
+            msg = "La sección 'Objetivos' debe ser un diccionario"
+            raise TomlReaderError(msg)
+
+        for objetivo_id, objetivo_data in self.objetivos_secretos.items():
+            if not isinstance(objetivo_id, str):
+                msg = f"El ID del objetivo debe ser string: {objetivo_id}"
+                raise TomlReaderError(msg)
+
+            if not isinstance(objetivo_data, dict):
+                msg = f"Los datos del objetivo '{objetivo_id}' deben ser un diccionario"
+                raise TomlReaderError(msg)
+
+            # Validar campos requeridos
+            if "id" not in objetivo_data:
+                msg = f"Objetivo '{objetivo_id}' debe tener campo 'id'"
+                raise TomlReaderError(msg)
+
+            if "descripcion" not in objetivo_data:
+                msg = f"Objetivo '{objetivo_id}' debe tener campo 'descripcion'"
+                raise TomlReaderError(msg)
+
+            if "tipo" not in objetivo_data:
+                msg = f"Objetivo '{objetivo_id}' debe tener campo 'tipo'"
+                raise TomlReaderError(msg)
+
+            # Validar tipos válidos
+            tipos_validos = [
+                "destruir_jugador",
+                "conquistar_continentes",
+                "conquistar_paises",
+                "conquistar_paises_con_tropas",
+            ]
+            if objetivo_data["tipo"] not in tipos_validos:
+                msg = (
+                    f"Tipo de objetivo '{objetivo_data['tipo']}' no es válido. "
+                    f"Tipos válidos: {tipos_validos}"
+                )
+                raise TomlReaderError(msg)
 
     def _procesar_continentes_y_paises(self) -> None:
         """Procesa continentes y países con validación.
@@ -353,3 +419,30 @@ class TomlReader:
             o lista vacía si no hay adyacentes definidos
         """
         return self.adyacencias.get(pais, [])
+
+    def get_objetivos_secretos(self) -> dict[str, dict[str, Any]]:
+        """Obtiene diccionario de objetivos secretos del juego.
+
+        Returns:
+            Diccionario con objetivos secretos y sus datos
+        """
+        return self.objetivos_secretos
+
+    def get_objetivo_secreto(self, objetivo_id: str) -> dict[str, Any] | None:
+        """Obtiene los datos de un objetivo secreto específico.
+
+        Args:
+            objetivo_id: ID del objetivo secreto
+
+        Returns:
+            Diccionario con datos del objetivo o None si no existe
+        """
+        return self.objetivos_secretos.get(objetivo_id)
+
+    def get_lista_objetivos_secretos(self) -> list[str]:
+        """Obtiene lista de IDs de todos los objetivos secretos disponibles.
+
+        Returns:
+            Lista con IDs de objetivos secretos
+        """
+        return list(self.objetivos_secretos.keys())

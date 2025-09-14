@@ -7,6 +7,7 @@ from src.server_msg import (
     MsgConfiguracionPartida,
     MsgError,
     MsgEstado,
+    MsgObjetivoSecreto,
     MsgPais,
     MsgResultadoBatalla,
     MsgSosAdmin,
@@ -199,15 +200,22 @@ class ServerTransmisor:
         msg = MsgVictoria(ganador_id, ganador_nombre)
         self._send_message(msg)
 
-    def enviar_configuracion_partida(self, segundos_por_turno, paises_para_victoria):
+    def enviar_configuracion_partida(
+        self, segundos_por_turno, paises_para_victoria, *, objetivos_secretos=False
+    ):
         """
         Envía la configuración de la partida al cliente.
 
         Args:
             segundos_por_turno (int): Duración de cada turno en segundos
             paises_para_victoria (int): Número de países necesarios para ganar
+            objetivos_secretos (bool): Si los objetivos secretos están activados
         """
-        msg = MsgConfiguracionPartida(segundos_por_turno, paises_para_victoria)
+        msg = MsgConfiguracionPartida(
+            segundos_por_turno,
+            paises_para_victoria,
+            objetivos_secretos=objetivos_secretos,
+        )
         self._send_message(msg)
 
     def enviar_tarjetas_jugador(self, tarjetas):
@@ -219,6 +227,21 @@ class ServerTransmisor:
                 [{"pais": str, "simbolo": str}, ...]
         """
         msg = MsgTarjetasJugador(tarjetas)
+        self._send_message(msg)
+
+    def enviar_objetivo_secreto(self, objetivo_id, descripcion):
+        """
+        Envía el objetivo secreto asignado al jugador.
+
+        Args:
+            objetivo_id (str): ID del objetivo secreto
+            descripcion (str): Descripción del objetivo secreto
+        """
+        print(
+            f"ServerTransmisor: Enviando objetivo secreto - ID: {objetivo_id}, "
+            f"Desc: {descripcion}"
+        )
+        msg = MsgObjetivoSecreto(objetivo_id, descripcion)
         self._send_message(msg)
 
     def enviar_canje_especial(self, pais, unidades_agregadas):
