@@ -2,6 +2,8 @@ from pathlib import Path
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import (
+    QBrush,
+    QColor,
     QMouseEvent,
 )
 from PySide6.QtWidgets import (
@@ -130,6 +132,8 @@ class QCustomGraphicsScene(QGraphicsScene):
         super().__init__(parent)
         self.main_window = main_window
         self.paises = {}
+        # Configurar fondo celeste que representa el agua/océano
+        self.setBackgroundBrush(QBrush(QColor("#87CEEB")))  # Sky Blue / Celeste suave
         # Crear el manejador de selección de países
         self.selection_manager = CountrySelectionManager(main_window, self)
         self.load_map_data()
