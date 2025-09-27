@@ -71,6 +71,7 @@ jobs:
           uv run python -m unittest discover
 
       - name: Build binaries with Nuitka
+        shell: bash
         run: |
           # Build server
           uv run python -m nuitka \
