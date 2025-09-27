@@ -12,6 +12,7 @@ from src.server_registrar_jugadores import registrar_jugadores
 from src.toml_reader import TomlReader
 from src.turno_timer import TurnoTimer
 from src.utils import get_resource_path
+from src.version import NAME, VERSION
 
 
 class Server:
@@ -417,6 +418,7 @@ def main():
     """
     args = parse_arguments()
 
+    print(f"{NAME} v{VERSION}")
     print(f"Iniciando servidor en {args.host}:{args.port}")
     if args.verbose:
         print("Modo verboso activado")
