@@ -99,6 +99,7 @@ jobs:
             --enable-plugin=pyside6 \
             --include-data-dir=themes=themes \
             --include-data-dir=locales=locales \
+            --include-data-dir=icons=icons \
             src/run_client.py
 
       - name: Create platform-specific archive
@@ -137,20 +138,13 @@ jobs:
       - name: Display structure of downloaded files
         run: ls -la artifacts/
 
-      - name: Extract version from tag
-        id: version
-        run: echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
-
       - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
-          release_name: PyTeg ${{ steps.version.outputs.version }}
+          name: PyTeg ${{ github.ref_name }}
           body: |
-            ## PyTeg ${{ steps.version.outputs.version }}
+            ## PyTeg ${{ github.ref_name }}
             
             Binarios compilados para múltiples plataformas del juego PyTeg.
             
@@ -175,43 +169,8 @@ jobs:
             Para más información, consulta el [README](https://github.com/cavazquez/pyteg/blob/main/README.md).
           draft: true
           prerelease: false
-
-      - name: Upload Linux x86_64 Release Asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: artifacts/pyteg-linux-x86_64/pyteg-linux-x86_64.tar.gz
-          asset_name: pyteg-linux-x86_64.tar.gz
-          asset_content_type: application/gzip
-
-      - name: Upload Windows x86_64 Release Asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: artifacts/pyteg-windows-x86_64/pyteg-windows-x86_64.zip
-          asset_name: pyteg-windows-x86_64.zip
-          asset_content_type: application/zip
-
-      - name: Upload macOS x86_64 Release Asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: artifacts/pyteg-macos-x86_64/pyteg-macos-x86_64.tar.gz
-          asset_name: pyteg-macos-x86_64.tar.gz
-          asset_content_type: application/gzip
-
-      - name: Upload macOS ARM64 Release Asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: artifacts/pyteg-macos-arm64/pyteg-macos-arm64.tar.gz
-          asset_name: pyteg-macos-arm64.tar.gz
-          asset_content_type: application/gzip
+          files: |
+            artifacts/pyteg-linux-x86_64/pyteg-linux-x86_64.tar.gz
+            artifacts/pyteg-windows-x86_64/pyteg-windows-x86_64.zip
+            artifacts/pyteg-macos-x86_64/pyteg-macos-x86_64.tar.gz
+            artifacts/pyteg-macos-arm64/pyteg-macos-arm64.tar.gz
