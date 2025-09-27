@@ -1,4 +1,3 @@
-import pathlib
 from functools import partial
 
 from PySide6.QtCore import QSize, Qt
@@ -17,6 +16,7 @@ from PySide6.QtWidgets import (
 
 from src.exception import ImagenNoEncontradaError
 from src.i18n import translate as _
+from src.utils import get_resource_path
 
 
 class ToolBar(QToolBar):
@@ -126,12 +126,13 @@ class ToolBar(QToolBar):
         Raises:
             ImagenNoEncontradaError: Si el archivo de icono no existe.
         """
-        if not pathlib.Path(ruta_icono).exists():
+        ruta_completa = get_resource_path(ruta_icono)
+        if not ruta_completa.exists():
             contexto_msg = f" ({contexto})" if contexto else ""
             raise ImagenNoEncontradaError(
-                ruta_icono, f"icono de la barra de herramientas{contexto_msg}"
+                str(ruta_completa), f"icono de la barra de herramientas{contexto_msg}"
             )
-        return QIcon(ruta_icono)
+        return QIcon(str(ruta_completa))
 
     def _setup_spacers_right(self):
         """Añade un expansor a la derecha para empujar elementos finales"""

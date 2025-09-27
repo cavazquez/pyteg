@@ -13,6 +13,7 @@ from PySide6.QtWidgets import (
 )
 
 from src.i18n import translate as _
+from src.utils import get_resource_path
 
 
 class TarjetaWidget(QWidget):
@@ -62,7 +63,7 @@ class TarjetaWidget(QWidget):
         # Cargar imagen del símbolo si existe
         imagen_path = self.SIMBOLOS_IMAGENES.get(self.simbolo)
         if imagen_path:
-            pixmap = QPixmap(imagen_path)
+            pixmap = QPixmap(str(get_resource_path(imagen_path)))
             if not pixmap.isNull():
                 # Escalar la imagen a un tamaño apropiado
                 scaled_pixmap = pixmap.scaled(

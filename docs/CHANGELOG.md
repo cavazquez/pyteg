@@ -4,6 +4,12 @@ Todas las fechas en formato YYYY-MM-DD.
 
 ## [Unreleased]
 
+### Fixed
+- **Corrección de carga de recursos en binarios**: Solucionado problema donde los binarios compilados con Nuitka no podían cargar iconos y otros recursos
+  - Implementada función `get_resource_path()` en `src/utils.py` que maneja rutas de recursos tanto en desarrollo como en binarios empaquetados
+  - Actualizada carga de iconos en toolbar, imágenes de países, imágenes de tarjetas y archivos TOML
+  - Los binarios ahora funcionan correctamente sin errores de `ImagenNoEncontradaError`
+
 ### Added
 - **Sistema automatizado de releases multiplataforma**:
   - Nuevo workflow de GitHub Actions (`build-release.yml`) que construye binarios para múltiples plataformas
