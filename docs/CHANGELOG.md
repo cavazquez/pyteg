@@ -5,6 +5,16 @@ Todas las fechas en formato YYYY-MM-DD.
 ## [Unreleased]
 
 ### Added
+- **Sistema automatizado de releases multiplataforma**:
+  - Nuevo workflow de GitHub Actions (`build-release.yml`) que construye binarios para múltiples plataformas
+  - Se activa automáticamente al pushear tags que comiencen con `v` (ej: `v1.0.0`)
+  - Soporta 4 plataformas: Linux x86_64, Windows x86_64, macOS x86_64, macOS ARM64
+  - Construye binarios standalone usando Nuitka para servidor y cliente
+  - Incluye todos los assets necesarios (themes, locales) en los binarios del cliente
+  - Ejecuta tests en cada plataforma antes de construir
+  - Crea borrador de release privado con binarios adjuntos y descripción detallada (requiere publicación manual)
+  - Genera archivos comprimidos apropiados para cada plataforma (.tar.gz para Unix, .zip para Windows)
+  - Documentación actualizada en README con instrucciones para crear releases
 - **Sistema de objetivos secretos**: Implementación completa del sistema de objetivos secretos del TEG clásico
   - Archivo de configuración `themes/classic/objetivos_secretos.toml` con objetivos tradicionales
   - Opción configurable para activar/desactivar objetivos secretos al crear partida

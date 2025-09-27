@@ -1,0 +1,212 @@
+name: Build Release Binaries
+
+on:
+  push:
+    tags:
+      - 'v*'  # Triggers on version tags like v1.0.0, v1.2.3, etc.
+
+jobs:
+  build:
+    name: Build ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: linux
+            arch: x86_64
+            executable_suffix: ""
+          - os: windows-latest
+            platform: windows
+            arch: x86_64
+            executable_suffix: ".exe"
+          - os: macos-latest
+            platform: macos
+            arch: x86_64
+            executable_suffix: ""
+          - os: macos-14  # Apple Silicon
+            platform: macos
+            arch: arm64
+            executable_suffix: ""
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.11"
+          version: latest
+          enable-cache: true
+
+      - name: Install dependencies
+        run: |
+          uv sync --dev
+
+      - name: Install system dependencies (Linux)
+        if: matrix.platform == 'linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libgl1-mesa-dev \
+            libglib2.0-0 \
+            libxkbcommon-x11-0 \
+            libxcb-icccm4 \
+            libxcb-image0 \
+            libxcb-keysyms1 \
+            libxcb-randr0 \
+            libxcb-render-util0 \
+            libxcb-xinerama0 \
+            libxcb-xfixes0 \
+            libfontconfig1 \
+            libxrender1 \
+            libxi6 \
+            libxext6 \
+            libx11-6
+
+      - name: Run tests
+        run: |
+          uv run python -m unittest discover
+
+      - name: Build binaries with Nuitka
+        run: |
+          # Build server
+          uv run python -m nuitka \
+            --onefile \
+            --standalone \
+            --output-filename=pyteg-server${{ matrix.executable_suffix }} \
+            --output-dir=dist \
+            --assume-yes-for-downloads \
+            --disable-console \
+            --enable-plugin=pyside6 \
+            src/server.py
+
+          # Build client
+          uv run python -m nuitka \
+            --onefile \
+            --standalone \
+            --output-filename=pyteg-client${{ matrix.executable_suffix }} \
+            --output-dir=dist \
+            --assume-yes-for-downloads \
+            --disable-console \
+            --enable-plugin=pyside6 \
+            --include-data-dir=themes=themes \
+            --include-data-dir=locales=locales \
+            src/run_client.py
+
+      - name: Create platform-specific archive
+        shell: bash
+        run: |
+          cd dist
+          if [ "${{ matrix.platform }}" = "windows" ]; then
+            7z a pyteg-${{ matrix.platform }}-${{ matrix.arch }}.zip pyteg-server${{ matrix.executable_suffix }} pyteg-client${{ matrix.executable_suffix }}
+          else
+            tar -czf pyteg-${{ matrix.platform }}-${{ matrix.arch }}.tar.gz pyteg-server${{ matrix.executable_suffix }} pyteg-client${{ matrix.executable_suffix }}
+          fi
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: pyteg-${{ matrix.platform }}-${{ matrix.arch }}
+          path: |
+            dist/pyteg-${{ matrix.platform }}-${{ matrix.arch }}.*
+          retention-days: 30
+
+  release:
+    name: Create Release
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Display structure of downloaded files
+        run: ls -la artifacts/
+
+      - name: Extract version from tag
+        id: version
+        run: echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref_name }}
+          release_name: PyTeg ${{ steps.version.outputs.version }}
+          body: |
+            ## PyTeg ${{ steps.version.outputs.version }}
+            
+            Binarios compilados para múltiples plataformas del juego PyTeg.
+            
+            ### Descargas disponibles:
+            - **Linux x86_64**: `pyteg-linux-x86_64.tar.gz`
+            - **Windows x86_64**: `pyteg-windows-x86_64.zip`
+            - **macOS x86_64**: `pyteg-macos-x86_64.tar.gz`
+            - **macOS ARM64**: `pyteg-macos-arm64.tar.gz`
+            
+            ### Instrucciones:
+            1. Descarga el archivo correspondiente a tu plataforma
+            2. Extrae el contenido
+            3. Ejecuta `pyteg-server` para iniciar el servidor
+            4. Ejecuta `pyteg-client` para iniciar el cliente
+            
+            ### Requisitos:
+            - No se requieren dependencias adicionales (binarios standalone)
+            - En Linux puede requerir librerías del sistema (ver README)
+            
+            ---
+            
+            Para más información, consulta el [README](https://github.com/cavazquez/pyteg/blob/main/README.md).
+          draft: true
+          prerelease: false
+
+      - name: Upload Linux x86_64 Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: artifacts/pyteg-linux-x86_64/pyteg-linux-x86_64.tar.gz
+          asset_name: pyteg-linux-x86_64.tar.gz
+          asset_content_type: application/gzip
+
+      - name: Upload Windows x86_64 Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: artifacts/pyteg-windows-x86_64/pyteg-windows-x86_64.zip
+          asset_name: pyteg-windows-x86_64.zip
+          asset_content_type: application/zip
+
+      - name: Upload macOS x86_64 Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: artifacts/pyteg-macos-x86_64/pyteg-macos-x86_64.tar.gz
+          asset_name: pyteg-macos-x86_64.tar.gz
+          asset_content_type: application/gzip
+
+      - name: Upload macOS ARM64 Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: artifacts/pyteg-macos-arm64/pyteg-macos-arm64.tar.gz
+          asset_name: pyteg-macos-arm64.tar.gz
+          asset_content_type: application/gzip
