@@ -202,5 +202,51 @@ message = _("Jugador {} ganó").format(player_name)
  - Diagramas y notas en `docs/diagrams/`
  - El código incluye docstrings y type hints en módulos clave
 
+## Releases y Binarios
+
+### Descargar binarios compilados
+Los binarios compilados para múltiples plataformas están disponibles en la [página de releases](https://github.com/cavazquez/pyteg/releases):
+
+- **Linux x86_64**: `pyteg-linux-x86_64.tar.gz`
+- **Windows x86_64**: `pyteg-windows-x86_64.zip`  
+- **macOS x86_64**: `pyteg-macos-x86_64.tar.gz`
+- **macOS ARM64**: `pyteg-macos-arm64.tar.gz`
+
+Los binarios son standalone (no requieren Python instalado) e incluyen todos los assets necesarios.
+
+### Crear un nuevo release
+Para crear un nuevo release con binarios compilados:
+
+1. **Actualizar la versión** en `pyproject.toml`:
+   ```toml
+   [project]
+   version = "1.0.0"  # Nueva versión
+   ```
+
+2. **Actualizar el CHANGELOG** en `docs/CHANGELOG.md` con los cambios de la nueva versión.
+
+3. **Crear y pushear el tag**:
+   ```bash
+   git add pyproject.toml docs/CHANGELOG.md
+   git commit -m "Bump version to 1.0.0"
+   git tag v1.0.0
+   git push origin main
+   git push origin v1.0.0
+   ```
+
+4. **GitHub Actions automáticamente**:
+   - Construirá binarios para todas las plataformas
+   - Ejecutará los tests en cada plataforma
+   - Creará un **borrador de release privado** con los binarios adjuntos
+   - Generará archivos comprimidos para cada plataforma
+
+5. **Publicar el release manualmente**:
+   - Ve a la [página de releases](https://github.com/cavazquez/pyteg/releases) en GitHub
+   - Encontrarás un borrador con todos los binarios adjuntos
+   - Revisa los binarios y la descripción del release
+   - Haz clic en **"Publish release"** para hacerlo público
+
+El workflow se ejecuta solo cuando se pushea un tag que comience con `v` (ej: `v1.0.0`, `v2.1.3`).
+
 ## Contribuir
 ¡Contribuciones son bienvenidas! Por favor, crea un issue o pull request para sugerir mejoras o reportar problemas.
