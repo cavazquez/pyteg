@@ -184,10 +184,10 @@ class QCustomGraphicsScene(QGraphicsScene):
     def load_map_data(self):
         folder = "themes/"
 
-        paises_content = Path("themes/classic/paises.toml").read_text(encoding="locale")
-        cartas_content = Path("themes/classic/cartas.toml").read_text(encoding="locale")
+        paises_content = Path("themes/classic/paises.toml").read_text(encoding="utf-8")
+        cartas_content = Path("themes/classic/cartas.toml").read_text(encoding="utf-8")
         adyacencias_content = Path("themes/classic/adyacencias.toml").read_text(
-            encoding="locale"
+            encoding="utf-8"
         )
         reader = TomlReader(paises_content, cartas_content, adyacencias_content)
 

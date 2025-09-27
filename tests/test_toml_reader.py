@@ -6,10 +6,10 @@ from src.toml_reader import TomlReader
 
 class TestTomlReader(unittest.TestCase):
     def test_init(self):
-        paises_string = Path("themes/classic/paises.toml").read_text(encoding="locale")
-        cartas_string = Path("themes/classic/cartas.toml").read_text(encoding="locale")
+        paises_string = Path("themes/classic/paises.toml").read_text(encoding="utf-8")
+        cartas_string = Path("themes/classic/cartas.toml").read_text(encoding="utf-8")
         adyacencias_string = Path("themes/classic/adyacencias.toml").read_text(
-            encoding="locale"
+            encoding="utf-8"
         )
         self.assertTrue(TomlReader(paises_string, cartas_string, adyacencias_string))
 
