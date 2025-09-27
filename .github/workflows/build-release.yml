@@ -77,22 +77,26 @@ jobs:
       - name: Build binaries with Nuitka
         shell: bash
         run: |
+          # Extract version from tag (remove 'v' prefix)
+          VERSION=${GITHUB_REF_NAME#v}
+          
           # Build server
-          uv run python -m nuitka \
+          PYTEG_VERSION=${VERSION} uv run python -m nuitka \
             --onefile \
             --standalone \
-            --output-filename=pyteg-server${{ matrix.executable_suffix }} \
+            --output-filename=pyteg-server-${VERSION}${{ matrix.executable_suffix }} \
             --output-dir=dist \
             --assume-yes-for-downloads \
             --disable-console \
             --enable-plugin=pyside6 \
+            --include-data-dir=themes=themes \
             src/server.py
 
           # Build client
-          uv run python -m nuitka \
+          PYTEG_VERSION=${VERSION} uv run python -m nuitka \
             --onefile \
             --standalone \
-            --output-filename=pyteg-client${{ matrix.executable_suffix }} \
+            --output-filename=pyteg-client-${VERSION}${{ matrix.executable_suffix }} \
             --output-dir=dist \
             --assume-yes-for-downloads \
             --disable-console \
@@ -106,10 +110,13 @@ jobs:
         shell: bash
         run: |
           cd dist
+          # Extract version from tag (remove 'v' prefix)
+          VERSION=${GITHUB_REF_NAME#v}
+          
           if [ "${{ matrix.platform }}" = "windows" ]; then
-            7z a pyteg-${{ matrix.platform }}-${{ matrix.arch }}.zip pyteg-server${{ matrix.executable_suffix }} pyteg-client${{ matrix.executable_suffix }}
+            7z a pyteg-${VERSION}-${{ matrix.platform }}-${{ matrix.arch }}.zip pyteg-server-${VERSION}${{ matrix.executable_suffix }} pyteg-client-${VERSION}${{ matrix.executable_suffix }}
           else
-            tar -czf pyteg-${{ matrix.platform }}-${{ matrix.arch }}.tar.gz pyteg-server${{ matrix.executable_suffix }} pyteg-client${{ matrix.executable_suffix }}
+            tar -czf pyteg-${VERSION}-${{ matrix.platform }}-${{ matrix.arch }}.tar.gz pyteg-server-${VERSION}${{ matrix.executable_suffix }} pyteg-client-${VERSION}${{ matrix.executable_suffix }}
           fi
 
       - name: Upload build artifacts
@@ -117,7 +124,7 @@ jobs:
         with:
           name: pyteg-${{ matrix.platform }}-${{ matrix.arch }}
           path: |
-            dist/pyteg-${{ matrix.platform }}-${{ matrix.arch }}.*
+            dist/pyteg-*-${{ matrix.platform }}-${{ matrix.arch }}.*
           retention-days: 30
 
   release:
@@ -148,17 +155,22 @@ jobs:
             
             Binarios compilados para múltiples plataformas del juego PyTeg.
             
+            ### Correcciones en esta versión:
+            - ✅ **Carga de recursos corregida**: Los binarios ahora cargan correctamente iconos, imágenes y archivos de configuración
+            - ✅ **Servidor funcional**: Incluye archivos de configuración necesarios para el funcionamiento del servidor
+            - ✅ **Versionado consistente**: Los binarios incluyen la versión en el nombre del archivo
+            
             ### Descargas disponibles:
-            - **Linux x86_64**: `pyteg-linux-x86_64.tar.gz`
-            - **Windows x86_64**: `pyteg-windows-x86_64.zip`
-            - **macOS x86_64**: `pyteg-macos-x86_64.tar.gz`
-            - **macOS ARM64**: `pyteg-macos-arm64.tar.gz`
+            - **Linux x86_64**: `pyteg-${{ github.ref_name }}-linux-x86_64.tar.gz`
+            - **Windows x86_64**: `pyteg-${{ github.ref_name }}-windows-x86_64.zip`
+            - **macOS x86_64**: `pyteg-${{ github.ref_name }}-macos-x86_64.tar.gz`
+            - **macOS ARM64**: `pyteg-${{ github.ref_name }}-macos-arm64.tar.gz`
             
             ### Instrucciones:
             1. Descarga el archivo correspondiente a tu plataforma
             2. Extrae el contenido
-            3. Ejecuta `pyteg-server` para iniciar el servidor
-            4. Ejecuta `pyteg-client` para iniciar el cliente
+            3. Ejecuta `pyteg-server-${{ github.ref_name }}` para iniciar el servidor
+            4. Ejecuta `pyteg-client-${{ github.ref_name }}` para iniciar el cliente
             
             ### Requisitos:
             - No se requieren dependencias adicionales (binarios standalone)
@@ -170,7 +182,7 @@ jobs:
           draft: true
           prerelease: false
           files: |
-            artifacts/pyteg-linux-x86_64/pyteg-linux-x86_64.tar.gz
-            artifacts/pyteg-windows-x86_64/pyteg-windows-x86_64.zip
-            artifacts/pyteg-macos-x86_64/pyteg-macos-x86_64.tar.gz
-            artifacts/pyteg-macos-arm64/pyteg-macos-arm64.tar.gz
+            artifacts/pyteg-linux-x86_64/pyteg-*-linux-x86_64.tar.gz
+            artifacts/pyteg-windows-x86_64/pyteg-*-windows-x86_64.zip
+            artifacts/pyteg-macos-x86_64/pyteg-*-macos-x86_64.tar.gz
+            artifacts/pyteg-macos-arm64/pyteg-*-macos-arm64.tar.gz

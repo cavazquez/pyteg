@@ -8,9 +8,15 @@ Todas las fechas en formato YYYY-MM-DD.
 - **Corrección de carga de recursos en binarios**: Solucionado problema donde los binarios compilados con Nuitka no podían cargar iconos y otros recursos
   - Implementada función `get_resource_path()` en `src/utils.py` que maneja rutas de recursos tanto en desarrollo como en binarios empaquetados
   - Actualizada carga de iconos en toolbar, imágenes de países, imágenes de tarjetas y archivos TOML
+  - Servidor ahora incluye directorio `themes` en el build para acceder a archivos de configuración
   - Los binarios ahora funcionan correctamente sin errores de `ImagenNoEncontradaError`
 
 ### Added
+- **Sistema de versionado consistente**: Los binarios ahora incluyen la versión en el nombre del archivo y la muestran al ejecutarse
+  - Nuevo módulo `src/version.py` para gestión centralizada de versiones
+  - Consistencia entre `pyproject.toml` y tags de Git
+  - Binarios nombrados con formato `pyteg-{server|client}-{version}` (ej: `pyteg-server-0.0.6`)
+  - Archivos comprimidos incluyen versión: `pyteg-{version}-{platform}-{arch}` (ej: `pyteg-0.0.6-linux-x86_64.tar.gz`)
 - **Sistema automatizado de releases multiplataforma**:
   - Nuevo workflow de GitHub Actions (`build-release.yml`) que construye binarios para múltiples plataformas
   - Se activa automáticamente al pushear tags que comiencen con `v` (ej: `v1.0.0`)
