@@ -1,6 +1,5 @@
 import argparse
 import sys
-from pathlib import Path
 
 from src.build_mapa import build_mapa
 from src.mazo import Mazo
@@ -12,6 +11,7 @@ from src.server_mapa import Mapa
 from src.server_registrar_jugadores import registrar_jugadores
 from src.toml_reader import TomlReader
 from src.turno_timer import TurnoTimer
+from src.utils import get_resource_path
 
 
 class Server:
@@ -35,10 +35,10 @@ class Server:
         # Inicializar sistema de objetivos secretos
 
         # Crear TomlReader para objetivos secretos
-        paises_path = Path("themes/classic/paises.toml")
-        cartas_path = Path("themes/classic/cartas.toml")
-        adyacencias_path = Path("themes/classic/adyacencias.toml")
-        objetivos_path = Path("themes/classic/objetivos_secretos.toml")
+        paises_path = get_resource_path("themes/classic/paises.toml")
+        cartas_path = get_resource_path("themes/classic/cartas.toml")
+        adyacencias_path = get_resource_path("themes/classic/adyacencias.toml")
+        objetivos_path = get_resource_path("themes/classic/objetivos_secretos.toml")
 
         paises_content = paises_path.read_text(encoding="utf-8")
         cartas_content = cartas_path.read_text(encoding="utf-8")

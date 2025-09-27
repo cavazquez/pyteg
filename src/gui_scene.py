@@ -1,5 +1,3 @@
-from pathlib import Path
-
 from PySide6.QtCore import Qt
 from PySide6.QtGui import (
     QBrush,
@@ -15,6 +13,7 @@ from src.gui_menu import Menu
 from src.gui_pais import Pais
 from src.gui_toolbar import ToolBar
 from src.toml_reader import TomlReader
+from src.utils import get_resource_path
 
 
 class CountrySelectionManager:
@@ -184,11 +183,15 @@ class QCustomGraphicsScene(QGraphicsScene):
     def load_map_data(self):
         folder = "themes/"
 
-        paises_content = Path("themes/classic/paises.toml").read_text(encoding="utf-8")
-        cartas_content = Path("themes/classic/cartas.toml").read_text(encoding="utf-8")
-        adyacencias_content = Path("themes/classic/adyacencias.toml").read_text(
+        paises_content = get_resource_path("themes/classic/paises.toml").read_text(
             encoding="utf-8"
         )
+        cartas_content = get_resource_path("themes/classic/cartas.toml").read_text(
+            encoding="utf-8"
+        )
+        adyacencias_content = get_resource_path(
+            "themes/classic/adyacencias.toml"
+        ).read_text(encoding="utf-8")
         reader = TomlReader(paises_content, cartas_content, adyacencias_content)
 
         for continente in reader.get_continentes():
@@ -198,7 +201,7 @@ class QCustomGraphicsScene(QGraphicsScene):
                 pos_x, pos_y, army_x, army_y = reader.coordenadas(pais)
                 x = cor_x + pos_x
                 y = cor_y + pos_y
-                abs_img_path = folder + reader.img_path(pais)
+                abs_img_path = str(get_resource_path(folder + reader.img_path(pais)))
                 pixmap_item = Pais(
                     abs_img_path,
                     (pais, continente),
