@@ -15,15 +15,17 @@ class ConfiguracionDialog(QDialog):
         self,
         parent=None,
         segundos_por_turno=20,
-        paises_para_victoria=50,
+        paises_para_victoria=30,
         *,
         objetivos_secretos=False,
+        misiles_habilitados=False,
     ):
         super().__init__(parent)
         self.paises_para_victoria = paises_para_victoria
         self.objetivos_secretos = objetivos_secretos
+        self.misiles_habilitados = misiles_habilitados
         self.setWindowTitle(_("Configuración de la Partida"))
-        self.setFixedSize(350, 250)
+        self.setFixedSize(350, 280)
         self.setModal(True)
 
         # Configurar el layout principal
@@ -67,6 +69,14 @@ class ConfiguracionDialog(QDialog):
         objetivos_value = QLabel(objetivos_text)
         grid_layout.addWidget(objetivos_label, 2, 0)
         grid_layout.addWidget(objetivos_value, 2, 1)
+
+        # Misiles
+        misiles_label = QLabel(_("Misiles:"))
+        misiles_label.setStyleSheet("font-weight: bold;")
+        misiles_text = _("Activados") if self.misiles_habilitados else _("Desactivados")
+        misiles_value = QLabel(misiles_text)
+        grid_layout.addWidget(misiles_label, 3, 0)
+        grid_layout.addWidget(misiles_value, 3, 1)
 
         # Separador
         layout.addSpacing(20)

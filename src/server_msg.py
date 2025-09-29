@@ -327,7 +327,12 @@ class MsgVictoria(IMsg):
 
 class MsgConfiguracionPartida(IMsg):
     def __init__(
-        self, segundos_por_turno, paises_para_victoria, *, objetivos_secretos=False
+        self,
+        segundos_por_turno,
+        paises_para_victoria,
+        *,
+        objetivos_secretos=False,
+        misiles_habilitados=False,
     ):
         """
         Inicializa un mensaje con la configuración de la partida.
@@ -336,11 +341,13 @@ class MsgConfiguracionPartida(IMsg):
             segundos_por_turno (int): Duración de cada turno en segundos
             paises_para_victoria (int): Número de países necesarios para ganar
             objetivos_secretos (bool): Si los objetivos secretos están activados
+            misiles_habilitados (bool): Si el sistema de misiles está habilitado
         """
         self._tipo = "configuracion_partida"
         self._segundos_por_turno = segundos_por_turno
         self._paises_para_victoria = paises_para_victoria
         self._objetivos_secretos = objetivos_secretos
+        self._misiles_habilitados = misiles_habilitados
 
     def to_json(self):
         data = {
@@ -348,6 +355,7 @@ class MsgConfiguracionPartida(IMsg):
             "segundos_por_turno": self._segundos_por_turno,
             "paises_para_victoria": self._paises_para_victoria,
             "objetivos_secretos": self._objetivos_secretos,
+            "misiles_habilitados": self._misiles_habilitados,
         }
         return json.dumps(data)
 
@@ -425,5 +433,62 @@ class MsgCanjeEspecial(IMsg):
             "mensaje": self._tipo,
             "pais": self._pais,
             "unidades_agregadas": self._unidades_agregadas,
+        }
+        return json.dumps(data)
+
+
+class MsgResultadoMisil(IMsg):
+    def __init__(self, resultado_data):
+        """
+        Inicializa un mensaje con el resultado del lanzamiento de un misil.
+
+        Args:
+            resultado_data (dict): Diccionario con todos los datos del misil:
+                - jugador (str): Nombre del jugador que lanzó el misil
+                - pais_origen (str): País desde donde se lanzó
+                - pais_destino (str): País atacado
+                - distancia (int): Distancia entre países
+                - dano (int): Daño causado (unidades perdidas)
+                - unidades_restantes (int): Unidades que quedan en destino
+        """
+        self._tipo = "resultado_misil"
+        self._jugador = resultado_data["jugador"]
+        self._pais_origen = resultado_data["pais_origen"]
+        self._pais_destino = resultado_data["pais_destino"]
+        self._distancia = resultado_data["distancia"]
+        self._dano = resultado_data["dano"]
+        self._unidades_restantes = resultado_data["unidades_restantes"]
+
+    def to_json(self):
+        data = {
+            "mensaje": self._tipo,
+            "jugador": self._jugador,
+            "pais_origen": self._pais_origen,
+            "pais_destino": self._pais_destino,
+            "distancia": self._distancia,
+            "dano": self._dano,
+            "unidades_restantes": self._unidades_restantes,
+        }
+        return json.dumps(data)
+
+
+class MsgMisilAgregado(IMsg):
+    def __init__(self, pais, cantidad_misiles):
+        """
+        Inicializa un mensaje para notificar que se agregó un misil a un país.
+
+        Args:
+            pais (str): Nombre del país donde se agregó el misil
+            cantidad_misiles (int): Cantidad total de misiles en el país
+        """
+        self._tipo = "misil_agregado"
+        self._pais = pais
+        self._cantidad_misiles = cantidad_misiles
+
+    def to_json(self):
+        data = {
+            "mensaje": self._tipo,
+            "pais": self._pais,
+            "cantidad_misiles": self._cantidad_misiles,
         }
         return json.dumps(data)

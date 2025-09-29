@@ -211,3 +211,14 @@ class QCustomGraphicsScene(QGraphicsScene):
                 pixmap_item.set_main_window(self.main_window)
                 self.paises[pais] = pixmap_item
                 self.addItem(pixmap_item)
+
+    def obtener_pais(self, nombre_pais):
+        """Retorna el widget del país especificado.
+
+        Args:
+            nombre_pais (str): Nombre del país a buscar
+
+        Returns:
+            Pais | None: Widget del país o None si no existe
+        """
+        return self.paises.get(nombre_pais)

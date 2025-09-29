@@ -5,7 +5,7 @@ from src.turnos import PrimerTurno, SegundoTurno, SiguientesTurnos
 
 
 class Game:
-    def __init__(self, mapa, mazo, jugadores, server, paises_para_victoria=50):
+    def __init__(self, mapa, mazo, jugadores, server, paises_para_victoria=30):
         self._mapa = mapa
         self._start = False
         self._turnos = [PrimerTurno("NUllJugador")]

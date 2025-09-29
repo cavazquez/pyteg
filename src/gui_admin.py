@@ -57,12 +57,20 @@ class VentanaAdmin(QWidget):
 
         # Checkbox para habilitar objetivos secretos
         self.objetivos_secretos_checkbox = QCheckBox("Objetivos secretos")
-        self.objetivos_secretos_checkbox.setChecked(True)  # deshabilitado por defecto
+        self.objetivos_secretos_checkbox.setChecked(True)
         self.objetivos_secretos_checkbox.setToolTip(
             "Activar para usar objetivos secretos del TEG clásico "
             "en lugar de solo conquistar países"
         )
         self.layout.addWidget(self.objetivos_secretos_checkbox)
+
+        # Checkbox para habilitar misiles
+        self.misiles_checkbox = QCheckBox("Habilitar Misiles")
+        self.misiles_checkbox.setChecked(True)  # habilitado por defecto
+        self.misiles_checkbox.setToolTip(
+            "Activar para permitir canjear y lanzar misiles durante la partida"
+        )
+        self.layout.addWidget(self.misiles_checkbox)
 
         # Conectar checkbox para habilitar/deshabilitar el campo de países
         self.countries_checkbox.toggled.connect(self._toggle_countries_input)
@@ -111,8 +119,14 @@ class VentanaAdmin(QWidget):
         # Leer configuración de objetivos secretos
         objetivos_secretos = self.objetivos_secretos_checkbox.isChecked()
 
+        # Leer configuración de misiles
+        misiles_habilitados = self.misiles_checkbox.isChecked()
+
         self.main_window.transmisor.empezar(
-            segundos, paises_para_victoria, objetivos_secretos=objetivos_secretos
+            segundos,
+            paises_para_victoria,
+            objetivos_secretos=objetivos_secretos,
+            misiles_habilitados=misiles_habilitados,
         )
         self.close()
 

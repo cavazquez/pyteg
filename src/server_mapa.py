@@ -1,4 +1,5 @@
 import json
+from collections import deque
 from collections.abc import Callable
 from random import shuffle
 from typing import Any
@@ -10,11 +11,28 @@ class Mapa:
     _CONTINENTE = 1
     _JUGADOR = 2
     _ADYACENTES = 3
+    _MISILES = 4
 
     def __init__(self, build_mapa: Callable[[], dict[str, list[Any]]]):
         self._mapa = (
             build_mapa()
         )  # Ahora build_mapa ya devuelve el diccionario completo
+        self._inicializar_misiles()
+
+    def _inicializar_misiles(self) -> None:
+        """Inicializa el campo de misiles para todos los países."""
+        # Validar que el mapa no sea None
+        if self._mapa is None:
+            return
+
+        for pais in self._mapa:
+            # Si el país no tiene el índice de misiles, agregarlo con valor 0
+            if len(self._mapa[pais]) <= self._MISILES:
+                # Extender la lista para incluir el campo de misiles
+                while len(self._mapa[pais]) <= self._MISILES:
+                    self._mapa[pais].append(
+                        0 if len(self._mapa[pais]) == self._MISILES else []
+                    )
 
     def agregar_una_unidad(self, pais: str) -> None:
         self._mapa[pais][self._UNIDADES] += 1
@@ -163,3 +181,87 @@ class Mapa:
         if pais in self._mapa:
             return self._mapa[pais][self._ADYACENTES]
         return []
+
+    # ========== Métodos para el sistema de misiles ==========
+
+    def agregar_misil(self, pais: str) -> None:
+        """Agrega un misil al país especificado.
+
+        Args:
+            pais (str): Nombre del país donde se agregará el misil
+        """
+        if pais in self._mapa:
+            self._mapa[pais][self._MISILES] += 1
+
+    def cantidad_misiles(self, pais: str) -> int:
+        """Retorna la cantidad de misiles en el país especificado.
+
+        Args:
+            pais (str): Nombre del país
+
+        Returns:
+            int: Cantidad de misiles en el país
+        """
+        if pais in self._mapa:
+            return self._mapa[pais][self._MISILES]
+        return 0
+
+    def usar_misil(self, pais: str) -> None:
+        """Usa un misil del país especificado (lo decrementa en 1).
+
+        Args:
+            pais (str): Nombre del país desde donde se lanzará el misil
+        """
+        if pais in self._mapa and self._mapa[pais][self._MISILES] > 0:
+            self._mapa[pais][self._MISILES] -= 1
+
+    def calcular_distancia(self, pais_origen: str, pais_destino: str) -> int:
+        """Calcula la distancia mínima entre dos países usando BFS.
+
+        Args:
+            pais_origen (str): País de origen
+            pais_destino (str): País de destino
+
+        Returns:
+            int: Distancia mínima en saltos entre países,
+            o -1 si no hay camino
+        """
+        if pais_origen not in self._mapa or pais_destino not in self._mapa:
+            return -1
+
+        if pais_origen == pais_destino:
+            return 0
+
+        # BFS para encontrar la distancia mínima
+        visitados = {pais_origen}
+        cola: deque[tuple[str, int]] = deque([(pais_origen, 0)])
+
+        while cola:
+            pais_actual, distancia = cola.popleft()
+
+            for pais_adyacente in self.obtener_paises_adyacentes(pais_actual):
+                if pais_adyacente == pais_destino:
+                    return distancia + 1
+
+                if pais_adyacente not in visitados:
+                    visitados.add(pais_adyacente)
+                    cola.append((pais_adyacente, distancia + 1))
+
+        return -1  # No hay camino
+
+    def calcular_dano_misil(self, distancia: int) -> int:
+        """Calcula el daño que causa un misil según la distancia.
+
+        Args:
+            distancia (int): Distancia en saltos entre países
+
+        Returns:
+            int: Cantidad de unidades de daño (3, 2, 1, o 0 si fuera de rango)
+        """
+        if distancia == 1:
+            return 3
+        if distancia == 2:
+            return 2
+        if distancia == 3:
+            return 1
+        return 0  # Fuera de rango

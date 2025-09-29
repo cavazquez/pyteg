@@ -46,6 +46,10 @@ class Pais(QGraphicsPixmapItem):
         self._titilacion_effect = None
         self._perdida_flotante = None
 
+        # Variable para el indicador de misiles
+        self._misiles_text = None
+        self._cantidad_misiles = 0
+
         self.cargar_circulo()
 
     def cargar_circulo(self):
@@ -68,6 +72,44 @@ class Pais(QGraphicsPixmapItem):
     def get_unidades(self):
         """Retorna la cantidad de unidades como entero."""
         return self._circle.get_unidades()
+
+    def actualizar_misiles(self, cantidad):
+        """Actualiza el indicador visual de misiles en el país.
+
+        Args:
+            cantidad (int): Cantidad de misiles en el país
+        """
+        try:
+            self._cantidad_misiles = cantidad
+
+            # Si no hay misiles, ocultar el indicador
+            if cantidad == 0:
+                if self._misiles_text:
+                    if self._misiles_text.scene():
+                        self._misiles_text.scene().removeItem(self._misiles_text)
+                    self._misiles_text = None
+                return
+
+            # Si ya existe el texto, actualizarlo
+            if self._misiles_text:
+                self._misiles_text.setPlainText(f"🚀{cantidad}")
+            else:
+                # Crear nuevo indicador de misiles
+                self._misiles_text = QGraphicsTextItem(f"🚀{cantidad}")
+                self._misiles_text.setParentItem(self)
+
+                # Configurar fuente y color
+                font = QFont("Arial", 12, QFont.Bold)
+                self._misiles_text.setFont(font)
+                self._misiles_text.setDefaultTextColor(QColor(255, 50, 50))
+
+                # Posicionar arriba del círculo de unidades
+                pos_x = self._army_x - 15
+                pos_y = self._army_y - 45
+                self._misiles_text.setPos(pos_x, pos_y)
+
+        except (AttributeError, RuntimeError) as e:
+            print(f"Error actualizando misiles en {self._nombre}: {e}")
 
     def set_main_window(self, main_window):
         """Establece la referencia a la ventana principal"""

@@ -72,6 +72,8 @@ class Estado:
             "solicitar_tarjetas": [cls.JUGANDO],
             "reclamar_tarjeta": [cls.JUGANDO],
             "canje_especial": [cls.JUGANDO],
+            "canjear_misil": [cls.JUGANDO],
+            "lanzar_misil": [cls.JUGANDO],
         }
 
     def puede_ejecutar_accion(self, accion):
