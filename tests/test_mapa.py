@@ -235,9 +235,13 @@ class TestMap(unittest.TestCase):
             }
 
         mapa = Mapa(build_mapa)
+        # Ahora incluye el campo de misiles (índice 4) inicializado en 0
         self.assertEqual(
             str(mapa),
-            '{"Argentina": [1, "Africa", "Mengano"], "Uruguay": [10, "Africa", null]}',
+            (
+                '{"Argentina": [1, "Africa", "Mengano", [], 0], '
+                '"Uruguay": [10, "Africa", null, [], 0]}'
+            ),
         )
 
     def test_aplicar_resultado_batalla(self):

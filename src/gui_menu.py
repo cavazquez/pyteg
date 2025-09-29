@@ -37,6 +37,9 @@ class Menu(QMenu):
         self.action_mover_seleccion = QAction("Mover", self)
         self.action_cancelar_seleccion = QAction("Cancelar Selección", self)
 
+        # Acción para canjear misil
+        self.action_canjear_misil = QAction("Canjear Misil (6 unidades)", self)
+
         # Conectar acciones a sus respectivos manejadores
         self.action_agregar_infanteria.triggered.connect(self.agregar_infanteria)
         self.action_agregar_misil.triggered.connect(self.agregar_misil)
@@ -56,6 +59,9 @@ class Menu(QMenu):
         self.action_mover_seleccion.triggered.connect(self.mover)
         self.action_cancelar_seleccion.triggered.connect(self.cancelar_seleccion_menu)
 
+        # Conectar acción de canjear misil
+        self.action_canjear_misil.triggered.connect(self.canjear_misil)
+
         # Configurar el menú
         self.actualizar_menu()
 
@@ -71,6 +77,15 @@ class Menu(QMenu):
         self.addAction(self.action_agregar_infanteria)
         self.addAction(self.action_agregar_misil)
         self.addSeparator()
+
+        # Mostrar opción de canjear misil (solo si está habilitado)
+        misiles_habilitados = (
+            hasattr(self.main_window, "misiles_habilitados")
+            and self.main_window.misiles_habilitados
+        )
+        if misiles_habilitados:
+            self.addAction(self.action_canjear_misil)
+            self.addSeparator()
 
         # Mostrar opciones de mover (sistema antiguo)
         if Menu.pais_origen is None:
@@ -215,3 +230,8 @@ class Menu(QMenu):
         selection_manager = getattr(self.main_window.scene, "selection_manager", None)
         if selection_manager:
             selection_manager.cancelar_seleccion()
+
+    def canjear_misil(self):
+        """Canjea 6 unidades por 1 misil en el país actual"""
+        if hasattr(self.main_window, "canjear_misil"):
+            self.main_window.canjear_misil(self.pais)

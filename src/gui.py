@@ -62,8 +62,9 @@ class Gui(QMainWindow):
 
         # Initialize game configuration
         self._segundos_por_turno = 20
-        self._paises_para_victoria = 50
+        self._paises_para_victoria = 30
         self._objetivos_secretos = False
+        self.misiles_habilitados = False
 
         # Initialize secret objective variables
         self._objetivo_secreto_id = None
@@ -341,8 +342,37 @@ class Gui(QMainWindow):
         """
         return self.game_actions_manager.get_max_attack_units(pais)
 
+    def canjear_misil(self, pais):
+        """Canjea 6 unidades por 1 misil en el país especificado.
+
+        Args:
+            pais (str): Nombre del país donde canjear el misil
+        """
+        if self.transmisor:
+            self.transmisor.canjear_misil(pais)
+            self.status_bar.showMessage(f"Canjeando misil en {pais}...", 3000)
+
+    def lanzar_misil(self, pais_origen, pais_destino):
+        """Lanza un misil desde un país hacia otro.
+
+        Args:
+            pais_origen (str): País desde donde se lanza el misil
+            pais_destino (str): País objetivo del misil
+        """
+        if self.transmisor:
+            self.transmisor.lanzar_misil(pais_origen, pais_destino)
+            self.status_bar.showMessage(
+                f"Lanzando misil desde {pais_origen} hacia {pais_destino}...",
+                3000,
+            )
+
     def set_configuracion_partida(
-        self, segundos_por_turno, paises_para_victoria, *, objetivos_secretos=False
+        self,
+        segundos_por_turno,
+        paises_para_victoria,
+        *,
+        objetivos_secretos=False,
+        misiles_habilitados=False,
     ):
         """
         Establece la configuración de la partida.
@@ -351,10 +381,12 @@ class Gui(QMainWindow):
             segundos_por_turno (int): Duración de cada turno en segundos
             paises_para_victoria (int): Número de países necesarios para ganar
             objetivos_secretos (bool): Si los objetivos secretos están activados
+            misiles_habilitados (bool): Si el sistema de misiles está habilitado
         """
         self._segundos_por_turno = segundos_por_turno
         self._paises_para_victoria = paises_para_victoria
         self._objetivos_secretos = objetivos_secretos
+        self.misiles_habilitados = misiles_habilitados
 
         # Inicializar variables para objetivo secreto
         self._objetivo_secreto_id = None
@@ -369,6 +401,7 @@ class Gui(QMainWindow):
             self._segundos_por_turno,
             self._paises_para_victoria,
             objetivos_secretos=self._objetivos_secretos,
+            misiles_habilitados=self.misiles_habilitados,
         )
         dialog.exec()
 

@@ -681,8 +681,9 @@ class ClientTaskVictoria(IClientTask):
 class ClientTaskConfiguracionPartida(IClientTask):
     def __init__(self, data):
         self._segundos_por_turno = data.get("segundos_por_turno", 20)
-        self._paises_para_victoria = data.get("paises_para_victoria", 50)
+        self._paises_para_victoria = data.get("paises_para_victoria", 30)
         self._objetivos_secretos = data.get("objetivos_secretos", False)
+        self._misiles_habilitados = data.get("misiles_habilitados", False)
 
     def run(self, main_window):
         """
@@ -695,6 +696,7 @@ class ClientTaskConfiguracionPartida(IClientTask):
                     self._segundos_por_turno,
                     self._paises_para_victoria,
                     objetivos_secretos=self._objetivos_secretos,
+                    misiles_habilitados=self._misiles_habilitados,
                 )
 
             # Mostrar mensaje en la barra de estado
@@ -786,6 +788,63 @@ class ClientTaskTarjetasJugador(IClientTask):
             print(f"Error al procesar tarjetas del jugador: {e}")
 
 
+class ClientTaskResultadoMisil(IClientTask):
+    def __init__(self, data):
+        self._jugador = data.get("jugador")
+        self._pais_origen = data.get("pais_origen")
+        self._pais_destino = data.get("pais_destino")
+        self._distancia = data.get("distancia")
+        self._dano = data.get("dano")
+        self._unidades_restantes = data.get("unidades_restantes")
+
+    def run(self, main_window):
+        """Procesa el resultado del lanzamiento de un misil."""
+        try:
+            # Mostrar mensaje en el chat
+            mensaje = (
+                f"🚀 {self._jugador} lanzó un misil desde {self._pais_origen} "
+                f"hacia {self._pais_destino} (distancia: {self._distancia}). "
+                f"Daño: {self._dano} unidades. "
+                f"Unidades restantes: {self._unidades_restantes}"
+            )
+            main_window.chat.append(mensaje, "system")
+
+            # Mostrar mensaje temporal en barra de estado
+            if hasattr(main_window, "status_bar"):
+                status_mensaje = (
+                    f"Misil: {self._pais_origen} → {self._pais_destino} "
+                    f"(-{self._dano} unidades)"
+                )
+                main_window.status_bar.showMessage(status_mensaje, 5000)
+
+        except (AttributeError, KeyError, TypeError) as e:
+            print(f"Error al procesar resultado de misil: {e}")
+
+
+class ClientTaskMisilAgregado(IClientTask):
+    def __init__(self, data):
+        self._pais = data.get("pais")
+        self._cantidad_misiles = data.get("cantidad_misiles")
+
+    def run(self, main_window):
+        """Actualiza la cantidad de misiles de un país en la interfaz."""
+        try:
+            # Actualizar visualmente el país en el mapa
+            # (Esto se implementará en la GUI cuando agregue el indicador visual)
+            if hasattr(main_window, "scene") and main_window.scene:
+                pais_widget = main_window.scene.obtener_pais(self._pais)
+                if pais_widget and hasattr(pais_widget, "actualizar_misiles"):
+                    pais_widget.actualizar_misiles(self._cantidad_misiles)
+
+            # Mensaje en barra de estado
+            if hasattr(main_window, "status_bar"):
+                mensaje = f"{self._pais} ahora tiene {self._cantidad_misiles} misil(es)"
+                main_window.status_bar.showMessage(mensaje, 3000)
+
+        except (AttributeError, KeyError, TypeError) as e:
+            print(f"Error al actualizar misiles en {self._pais}: {e}")
+
+
 dict_task = {
     "chat": ClientTaskChat,
     "sosadmin": ClientTaskSerAdmin,
@@ -805,4 +864,6 @@ dict_task = {
     "configuracion_partida": ClientTaskConfiguracionPartida,
     "tarjetas_jugador": ClientTaskTarjetasJugador,
     "objetivo_secreto": ClientTaskObjetivoSecreto,
+    "resultado_misil": ClientTaskResultadoMisil,
+    "misil_agregado": ClientTaskMisilAgregado,
 }

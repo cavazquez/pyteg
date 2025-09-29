@@ -7,9 +7,11 @@ from src.server_msg import (
     MsgConfiguracionPartida,
     MsgError,
     MsgEstado,
+    MsgMisilAgregado,
     MsgObjetivoSecreto,
     MsgPais,
     MsgResultadoBatalla,
+    MsgResultadoMisil,
     MsgSosAdmin,
     MsgTarjetasJugador,
     MsgTiempo,
@@ -201,7 +203,12 @@ class ServerTransmisor:
         self._send_message(msg)
 
     def enviar_configuracion_partida(
-        self, segundos_por_turno, paises_para_victoria, *, objetivos_secretos=False
+        self,
+        segundos_por_turno,
+        paises_para_victoria,
+        *,
+        objetivos_secretos=False,
+        misiles_habilitados=False,
     ):
         """
         Envía la configuración de la partida al cliente.
@@ -210,11 +217,13 @@ class ServerTransmisor:
             segundos_por_turno (int): Duración de cada turno en segundos
             paises_para_victoria (int): Número de países necesarios para ganar
             objetivos_secretos (bool): Si los objetivos secretos están activados
+            misiles_habilitados (bool): Si el sistema de misiles está habilitado
         """
         msg = MsgConfiguracionPartida(
             segundos_por_turno,
             paises_para_victoria,
             objetivos_secretos=objetivos_secretos,
+            misiles_habilitados=misiles_habilitados,
         )
         self._send_message(msg)
 
@@ -253,4 +262,31 @@ class ServerTransmisor:
             unidades_agregadas (int): Cantidad de unidades agregadas
         """
         msg = MsgCanjeEspecial(pais, unidades_agregadas)
+        self._send_message(msg)
+
+    def enviar_resultado_misil(self, resultado_data):
+        """
+        Envía el resultado del lanzamiento de un misil al cliente.
+
+        Args:
+            resultado_data (dict): Diccionario con los datos del misil:
+                - jugador (str): Nombre del jugador que lanzó el misil
+                - pais_origen (str): País desde donde se lanzó
+                - pais_destino (str): País atacado
+                - distancia (int): Distancia entre países
+                - dano (int): Daño causado
+                - unidades_restantes (int): Unidades que quedan en destino
+        """
+        msg = MsgResultadoMisil(resultado_data)
+        self._send_message(msg)
+
+    def enviar_misil_agregado(self, pais, cantidad_misiles):
+        """
+        Envía notificación de que se agregó un misil a un país.
+
+        Args:
+            pais (str): Nombre del país donde se agregó el misil
+            cantidad_misiles (int): Cantidad total de misiles en el país
+        """
+        msg = MsgMisilAgregado(pais, cantidad_misiles)
         self._send_message(msg)

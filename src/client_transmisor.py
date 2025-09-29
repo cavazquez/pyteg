@@ -3,11 +3,13 @@ from abc import ABC, abstractmethod
 from src.client_msg import (
     MsgAgregarUnidad,
     MsgAtacar,
+    MsgCanjearMisil,
     MsgCanjeEspecial,
     MsgChat,
     MsgEmpezar,
     MsgEmpezarPartida,
     MsgFinalizarTurno,
+    MsgLanzarMisil,
     MsgMoverUnidad,
     MsgReclamarTarjeta,
     MsgSeleccionarColor,
@@ -32,6 +34,7 @@ class IClientTransmisor(ABC):
         paises_para_victoria: int | None = None,
         *,
         objetivos_secretos: bool = False,
+        misiles_habilitados: bool = False,
     ):
         pass
 
@@ -120,6 +123,25 @@ class IClientTransmisor(ABC):
             pais (str): Nombre del país donde se agregaran las unidades
         """
 
+    @abstractmethod
+    def canjear_misil(self, pais):
+        """
+        Canjea 6 unidades por 1 misil en un país.
+
+        Args:
+            pais (str): Nombre del país donde se canjeará el misil
+        """
+
+    @abstractmethod
+    def lanzar_misil(self, pais_origen, pais_destino):
+        """
+        Lanza un misil desde un país hacia otro.
+
+        Args:
+            pais_origen (str): País desde donde se lanza el misil
+            pais_destino (str): País objetivo del misil
+        """
+
 
 class ClientNullTransmisor(IClientTransmisor):
     def __init__(self):
@@ -134,6 +156,7 @@ class ClientNullTransmisor(IClientTransmisor):
         paises_para_victoria: int | None = None,
         *,
         objetivos_secretos: bool = False,
+        misiles_habilitados: bool = False,
     ):
         """No-op para el transmisor nulo."""
 
@@ -172,6 +195,16 @@ class ClientNullTransmisor(IClientTransmisor):
         _ = pais  # Evitar warning de argumento no usado
         print("No puedes realizar canje especial. No estás conectado.")
 
+    def canjear_misil(self, pais):
+        """Canjea un misil cuando no está conectado."""
+        _ = pais  # Evitar warning de argumento no usado
+        print("No puedes canjear misiles. No estás conectado.")
+
+    def lanzar_misil(self, pais_origen, pais_destino):
+        """Lanza un misil cuando no está conectado."""
+        _, _ = pais_origen, pais_destino  # Evitar warning de argumentos no usados
+        print("No puedes lanzar misiles. No estás conectado.")
+
 
 class ClientTransmisor(IClientTransmisor):
     def __init__(self, conn):
@@ -187,10 +220,14 @@ class ClientTransmisor(IClientTransmisor):
         paises_para_victoria: int | None = None,
         *,
         objetivos_secretos: bool = False,
+        misiles_habilitados: bool = False,
     ):
         print("Transmisor empezar()")
         msg = MsgEmpezar(
-            segundos, paises_para_victoria, objetivos_secretos=objetivos_secretos
+            segundos,
+            paises_para_victoria,
+            objetivos_secretos=objetivos_secretos,
+            misiles_habilitados=misiles_habilitados,
         )
         self._conn.send_data(msg.to_json())
 
@@ -290,4 +327,27 @@ class ClientTransmisor(IClientTransmisor):
             pais (str): Nombre del país donde se agregaran las unidades
         """
         msg = MsgCanjeEspecial(pais)
+        self._conn.send_data(msg.to_json())
+
+    def canjear_misil(self, pais):
+        """
+        Canjea 6 unidades por 1 misil en un país.
+
+        Args:
+            pais (str): Nombre del país donde se canjeará el misil
+        """
+        print(f"Canjeando misil en {pais}")
+        msg = MsgCanjearMisil(pais)
+        self._conn.send_data(msg.to_json())
+
+    def lanzar_misil(self, pais_origen, pais_destino):
+        """
+        Lanza un misil desde un país hacia otro.
+
+        Args:
+            pais_origen (str): País desde donde se lanza el misil
+            pais_destino (str): País objetivo del misil
+        """
+        print(f"Lanzando misil desde {pais_origen} hacia {pais_destino}")
+        msg = MsgLanzarMisil(pais_origen, pais_destino)
         self._conn.send_data(msg.to_json())

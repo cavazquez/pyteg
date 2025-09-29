@@ -52,6 +52,7 @@ class ServerTaskEmpezar(IServerTask):
         self._segundos = data.get("segundos")
         self._paises_para_victoria = data.get("paises_para_victoria")
         self._objetivos_secretos = data.get("objetivos_secretos", False)
+        self._misiles_habilitados = data.get("misiles_habilitados", False)
         self._action_name = "empezar"
 
     def _execute(self, client):
@@ -76,6 +77,10 @@ class ServerTaskEmpezar(IServerTask):
         # Configurar objetivos secretos si se envió desde el cliente
         client.server.set_objetivos_secretos(activados=self._objetivos_secretos)
         print(f"DEBUG: Objetivos secretos configurados: {self._objetivos_secretos}")
+
+        # Configurar misiles si se envió desde el cliente
+        client.server.set_misiles_habilitados(activados=self._misiles_habilitados)
+        print(f"DEBUG: Misiles habilitados: {self._misiles_habilitados}")
 
         if client.server.estado.esperar_jugadores():
             client.server.enviar_estado()
@@ -500,10 +505,189 @@ class ServerTaskCanjeEspecial(IServerTask):
         )
 
 
+class ServerTaskCanjearMisil(IServerTask):
+    def __init__(self, data):
+        super().__init__(data)
+        self._pais = data.get("pais")
+        self._action_name = "canjear_misil"
+
+    def _execute(self, client):
+        # 1. Verificar que los misiles estén habilitados
+        if not client.server.misiles_habilitados():
+            client.transmisor.enviar_error_chat(
+                "Los misiles no están habilitados en esta partida"
+            )
+            return
+
+        # 2. Verificar que el juego haya comenzado
+        if not hasattr(client.server, "game") or client.server.game is None:
+            client.transmisor.enviar_error_chat("El juego no ha comenzado")
+            return
+
+        # 3. Verificar que sea el turno del cliente
+        turno_actual = client.server.game.turno_actual()
+        if turno_actual.jugador_actual() != client:
+            client.transmisor.enviar_error_chat("No es tu turno")
+            return
+
+        # 4. Verificar que el cliente sea dueño del país
+        if client.server.mapa.ocupado_por(self._pais) != client:
+            client.transmisor.enviar_error_chat(f"No eres dueño de {self._pais}")
+            return
+
+        # 5. Verificar que el país tenga al menos 6 unidades
+        unidades = client.server.mapa.cantidad_unidades(self._pais)
+        if unidades < 6:
+            client.transmisor.enviar_error_chat(
+                f"Se requieren al menos 6 unidades para canjear un misil. "
+                f"{self._pais} tiene {unidades} unidades."
+            )
+            return
+
+        # 6. Restar las 6 unidades del país
+        for _ in range(6):
+            client.server.mapa.restar_una_unidad(self._pais)
+
+        # 7. Agregar misil al país
+        client.server.mapa.agregar_misil(self._pais)
+        cantidad_misiles = client.server.mapa.cantidad_misiles(self._pais)
+
+        # 8. Notificar cambios a todos los clientes
+        client.server.enviar_misil_agregado(self._pais, cantidad_misiles)
+        # Actualizar el mapa completo para mostrar cambios en unidades
+        client.server.enviar_mapa()
+
+        # 10. Notificar éxito al jugador
+        client.transmisor.enviar_sistema(
+            f"Misil canjeado en {self._pais}: -6 unidades, +1 misil. "
+            f"Total: {cantidad_misiles} misiles"
+        )
+
+
+class ServerTaskLanzarMisil(IServerTask):
+    def __init__(self, data):
+        super().__init__(data)
+        self._pais_origen = data.get("pais_origen")
+        self._pais_destino = data.get("pais_destino")
+        self._action_name = "lanzar_misil"
+
+    def _execute(self, client):
+        # Validar precondiciones y permisos
+        error = self._validar_lanzamiento_misil(client)
+        if error:
+            client.transmisor.enviar_error_chat(error)
+            return
+
+        # Calcular distancia y daño
+        distancia = client.server.mapa.calcular_distancia(
+            self._pais_origen, self._pais_destino
+        )
+        dano = client.server.mapa.calcular_dano_misil(distancia)
+
+        # Aplicar el daño y usar el misil
+        for _ in range(dano):
+            client.server.mapa.restar_una_unidad(self._pais_destino)
+        client.server.mapa.usar_misil(self._pais_origen)
+
+        # Notificar resultados
+        self._notificar_resultado_misil(client, distancia, dano)
+
+    def _validar_lanzamiento_misil(self, client) -> str | None:
+        """Valida todas las condiciones para lanzar un misil.
+
+        Returns:
+            str | None: Mensaje de error si hay alguna validación fallida,
+            None si todo es válido.
+        """
+        # Validar configuración y estado del juego
+        error = self._validar_estado_juego(client)
+        if error:
+            return error
+
+        # Validar posesión y disponibilidad
+        error = self._validar_posesion_misil(client)
+        if error:
+            return error
+
+        # Validar distancia y daño
+        return self._validar_distancia_dano(client)
+
+    def _validar_estado_juego(self, client) -> str | None:
+        """Valida que el juego esté en estado correcto."""
+        if not client.server.misiles_habilitados():
+            return "Los misiles no están habilitados en esta partida"
+
+        if not hasattr(client.server, "game") or client.server.game is None:
+            return "El juego no ha comenzado"
+
+        turno_actual = client.server.game.turno_actual()
+        if turno_actual.jugador_actual() != client:
+            return "No es tu turno"
+
+        return None
+
+    def _validar_posesion_misil(self, client) -> str | None:
+        """Valida posesión de países y disponibilidad de misiles."""
+        if client.server.mapa.ocupado_por(self._pais_origen) != client:
+            return f"No eres dueño de {self._pais_origen}"
+
+        if client.server.mapa.cantidad_misiles(self._pais_origen) == 0:
+            return f"{self._pais_origen} no tiene misiles disponibles"
+
+        if client.server.mapa.ocupado_por(self._pais_destino) == client:
+            return "No puedes lanzar misiles a tus propios países"
+
+        return None
+
+    def _validar_distancia_dano(self, client) -> str | None:
+        """Valida distancia y daño del misil."""
+        distancia = client.server.mapa.calcular_distancia(
+            self._pais_origen, self._pais_destino
+        )
+
+        if distancia == -1:
+            return f"No hay camino entre {self._pais_origen} y {self._pais_destino}"
+
+        if distancia > 3:
+            return (
+                f"El objetivo está demasiado lejos (distancia: {distancia}). "
+                "Máximo: 3 saltos"
+            )
+
+        dano = client.server.mapa.calcular_dano_misil(distancia)
+        unidades_destino = client.server.mapa.cantidad_unidades(self._pais_destino)
+        if unidades_destino <= dano:
+            return (
+                f"El ataque dejaría a {self._pais_destino} sin unidades. "
+                f"El país debe conservar al menos 1 unidad. "
+                f"Unidades actuales: {unidades_destino}, Daño: {dano}"
+            )
+
+        return None
+
+    def _notificar_resultado_misil(self, client, distancia, dano):
+        """Notifica el resultado del lanzamiento del misil a todos."""
+        unidades_restantes = client.server.mapa.cantidad_unidades(self._pais_destino)
+
+        resultado_data = {
+            "jugador": client.username(),
+            "pais_origen": self._pais_origen,
+            "pais_destino": self._pais_destino,
+            "distancia": distancia,
+            "dano": dano,
+            "unidades_restantes": unidades_restantes,
+        }
+
+        client.server.enviar_resultado_misil(resultado_data)
+        # Actualizar el mapa completo y misiles
+        client.server.enviar_mapa()
+        cantidad_misiles_origen = client.server.mapa.cantidad_misiles(self._pais_origen)
+        client.server.enviar_misil_agregado(self._pais_origen, cantidad_misiles_origen)
+
+
 dict_task = {
     "chat": ServerTaskChat,
     "empezar": ServerTaskEmpezar,
-    "seleccionar_color": ServerTaskSeleccionarColor,
     "empezar_partida": ServerTaskEmpezarPartida,
     "set_username": ServerTaskSetUsername,
     "agregar_unidad": ServerTaskAgregarUnidad,
@@ -513,4 +697,6 @@ dict_task = {
     "solicitar_tarjetas": ServerTaskSolicitarTarjetas,
     "reclamar_tarjeta": ServerTaskReclamarTarjeta,
     "canje_especial": ServerTaskCanjeEspecial,
+    "canjear_misil": ServerTaskCanjearMisil,
+    "lanzar_misil": ServerTaskLanzarMisil,
 }

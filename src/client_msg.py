@@ -27,11 +27,13 @@ class MsgEmpezar(IMsg):
         paises_para_victoria: int | None = None,
         *,
         objetivos_secretos: bool = False,
+        misiles_habilitados: bool = False,
     ):
         self._tipo = "empezar"
         self._segundos = segundos
         self._paises_para_victoria = paises_para_victoria
         self._objetivos_secretos = objetivos_secretos
+        self._misiles_habilitados = misiles_habilitados
 
     def to_json(self):
         data = {"mensaje": self._tipo}
@@ -40,6 +42,7 @@ class MsgEmpezar(IMsg):
         if self._paises_para_victoria is not None:
             data["paises_para_victoria"] = self._paises_para_victoria
         data["objetivos_secretos"] = self._objetivos_secretos
+        data["misiles_habilitados"] = self._misiles_habilitados
         return json.dumps(data)
 
 
@@ -193,4 +196,42 @@ class MsgCanjeEspecial(IMsg):
 
     def to_json(self):
         data = {"mensaje": self._tipo, "pais": self._pais}
+        return json.dumps(data)
+
+
+class MsgCanjearMisil(IMsg):
+    def __init__(self, pais):
+        """
+        Crea un mensaje para canjear 6 unidades por 1 misil en un país.
+
+        Args:
+            pais (str): Nombre del país donde se canjeará el misil
+        """
+        self._tipo = "canjear_misil"
+        self._pais = pais
+
+    def to_json(self):
+        data = {"mensaje": self._tipo, "pais": self._pais}
+        return json.dumps(data)
+
+
+class MsgLanzarMisil(IMsg):
+    def __init__(self, pais_origen, pais_destino):
+        """
+        Crea un mensaje para lanzar un misil desde un país hacia otro.
+
+        Args:
+            pais_origen (str): País desde donde se lanza el misil
+            pais_destino (str): País objetivo del misil
+        """
+        self._tipo = "lanzar_misil"
+        self._pais_origen = pais_origen
+        self._pais_destino = pais_destino
+
+    def to_json(self):
+        data = {
+            "mensaje": self._tipo,
+            "pais_origen": self._pais_origen,
+            "pais_destino": self._pais_destino,
+        }
         return json.dumps(data)

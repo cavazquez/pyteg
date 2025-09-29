@@ -60,6 +60,8 @@ class Server:
         self._paises_para_victoria = 0
         # Configuración: objetivos secretos activados
         self._objetivos_secretos = False
+        # Configuración: misiles habilitados
+        self._misiles_habilitados = False
 
     def set_segundos_por_turno(self, segundos: int) -> None:
         """Configura la cantidad de segundos por turno.
@@ -86,6 +88,22 @@ class Server:
             activados (bool): True si los objetivos secretos están activados
         """
         self._objetivos_secretos = activados
+
+    def set_misiles_habilitados(self, *, activados: bool) -> None:
+        """Configura si los misiles están habilitados.
+
+        Args:
+            activados (bool): True si los misiles están habilitados
+        """
+        self._misiles_habilitados = activados
+
+    def misiles_habilitados(self) -> bool:
+        """Retorna si los misiles están habilitados en esta partida.
+
+        Returns:
+            bool: True si los misiles están habilitados
+        """
+        return self._misiles_habilitados
 
     def cant_clients(self):
         return len(self._clients)
@@ -343,7 +361,27 @@ class Server:
                 self._segundos_por_turno,
                 self._paises_para_victoria,
                 objetivos_secretos=self._objetivos_secretos,
+                misiles_habilitados=self._misiles_habilitados,
             )
+
+    def enviar_resultado_misil(self, resultado_data):
+        """Envía el resultado del lanzamiento de un misil a todos los clientes.
+
+        Args:
+            resultado_data (dict): Datos del resultado del misil
+        """
+        for client in self.dame_clientes():
+            client.transmisor.enviar_resultado_misil(resultado_data)
+
+    def enviar_misil_agregado(self, pais, cantidad_misiles):
+        """Envía notificación de que se agregó un misil a un país.
+
+        Args:
+            pais (str): Nombre del país donde se agregó el misil
+            cantidad_misiles (int): Cantidad total de misiles en el país
+        """
+        for client in self.dame_clientes():
+            client.transmisor.enviar_misil_agregado(pais, cantidad_misiles)
 
     def enviar_tarjetas_jugador(self, client):
         """Envía las tarjetas del jugador específico al cliente."""

@@ -181,7 +181,8 @@ class ObjetivosSecretos:
         paises_con_tropas_suficientes = 0
 
         for pais_data in mapa.values():
-            unidades, _, dueno, _ = pais_data
+            # Estructura: [unidades, continente, jugador, adyacentes, misiles]
+            unidades, _, dueno, *_ = pais_data
             if dueno and dueno.userid() == client_id and unidades >= tropas_minimas:
                 paises_con_tropas_suficientes += 1
 
@@ -191,7 +192,8 @@ class ObjetivosSecretos:
         """Cuenta la cantidad de países que controla un jugador."""
         contador = 0
         for pais_data in mapa.values():
-            _, _, dueno, _ = pais_data
+            # Estructura: [unidades, continente, jugador, adyacentes, misiles]
+            _, _, dueno, *_ = pais_data
             if dueno and dueno.userid() == client_id:
                 contador += 1
         return contador
@@ -207,7 +209,8 @@ class ObjetivosSecretos:
             if not pais_data:
                 return False
 
-            _, _, dueno, _ = pais_data
+            # Estructura: [unidades, continente, jugador, adyacentes, misiles]
+            _, _, dueno, *_ = pais_data  # *_ captura adyacentes y misiles
             if not dueno or dueno.userid() != client_id:
                 return False
 
