@@ -27,6 +27,9 @@ class ConnectionClient(QWidget):
 
     def on_connected(self):
         print(f"Conectado a {self._host}:{self._port}")
+        # Reproducir sonido de conexión
+        if hasattr(self._main_window, "sound_manager"):
+            self._main_window.sound_manager.play_connect()
         # Actualizar estado en la interfaz
         self._main_window.update_game_state("Conectado")
         # Usar el transmisor de main_window
@@ -36,6 +39,10 @@ class ConnectionClient(QWidget):
         print("Estoy conectado?")
         print(f"{self._socket.state()}")
         return self._socket.state() == QAbstractSocket.ConnectedState
+
+    def get_main_window(self):
+        """Obtiene la ventana principal."""
+        return self._main_window
 
     def send_data(self, data):
         print(f"Enviando {data}")
@@ -88,6 +95,9 @@ class ConnectionClient(QWidget):
                 self._main_window.toolbar.actualizar_estado_conexion(conectado=True)
         elif state == QAbstractSocket.UnconnectedState:
             print("Desconectado.")
+            # Reproducir sonido de desconexión
+            if hasattr(self._main_window, "sound_manager"):
+                self._main_window.sound_manager.play_disconnect()
             self._main_window.update_game_state("Desconectado")
             # Actualizar estado de botones en la toolbar
             if hasattr(self._main_window, "toolbar"):

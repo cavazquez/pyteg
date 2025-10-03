@@ -241,6 +241,10 @@ class ClientTaskTurno(IClientTask):
             jugador_actual_color,
         )
 
+        # Reproducir sonido de cambio de turno
+        if hasattr(main_window, "sound_manager"):
+            main_window.sound_manager.play_turn()
+
         # Mostrar mensaje de inicio de turno en el chat
         main_window.chat.append(f"Turno {num_turno + 1} iniciado", "system")
 
@@ -483,6 +487,10 @@ class ClientTaskResultadoBatalla(IClientTask):
             # Verificar si soy el atacante
             soy_atacante = mi_nombre == self._atacante
 
+            # Reproducir sonido de ataque
+            if hasattr(main_window, "sound_manager"):
+                main_window.sound_manager.play_attack()
+
             if soy_atacante:
                 # SOY EL ATACANTE: Mostrar animación completa
                 self._mostrar_animacion_completa(main_window)
@@ -649,6 +657,10 @@ class ClientTaskVictoria(IClientTask):
         Muestra un mensaje de victoria cuando alguien gana la partida.
         """
         try:
+            # Reproducir sonido de victoria
+            if hasattr(main_window, "sound_manager"):
+                main_window.sound_manager.play_victory()
+
             # Mostrar mensaje en la barra de estado
             if hasattr(main_window, "update_status_bar"):
                 main_window.update_status_bar(

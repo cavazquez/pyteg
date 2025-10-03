@@ -21,11 +21,13 @@ from src.gui_game_actions import GameActionsManager
 from src.gui_language_selector import LanguageSelector
 from src.gui_layout_manager import LayoutManager
 from src.gui_players_manager import PlayersManager
+from src.gui_sound_control import SoundControlWidget
 from src.gui_status_manager import StatusManager
 from src.gui_tarjetas_dialog import TarjetasDialog
 from src.gui_theme_manager import ThemeManager
 from src.gui_units_manager import UnitsManager
 from src.i18n import translate as _
+from src.sound_manager import SoundManager
 
 
 class Gui(QMainWindow):
@@ -51,6 +53,7 @@ class Gui(QMainWindow):
         self.status_manager = StatusManager(self)
         self.units_manager = UnitsManager(self)
         self.game_actions_manager = GameActionsManager(self)
+        self.sound_manager = SoundManager()
         self.setMinimumSize(QSize(800, 600))
         self.setMouseTracking(True)
 
@@ -168,6 +171,16 @@ class Gui(QMainWindow):
         sep5.setFrameShape(QFrame.VLine)
         sep5.setFrameShadow(QFrame.Sunken)
         self.status_bar.addPermanentWidget(sep5)
+
+        # Add sound control widget
+        self.sound_control = SoundControlWidget(self.sound_manager)
+        self.status_bar.addPermanentWidget(self.sound_control)
+
+        # Separator
+        sep6 = QFrame()
+        sep6.setFrameShape(QFrame.VLine)
+        sep6.setFrameShadow(QFrame.Sunken)
+        self.status_bar.addPermanentWidget(sep6)
 
         # Add timer widget for countdown
         self.timer_label = QLabel("")
@@ -321,6 +334,8 @@ class Gui(QMainWindow):
 
     def closeEvent(self, _):  # noqa: N802
         self._vivo = False
+        # Limpiar recursos del gestor de sonidos
+        self.sound_manager.cleanup()
 
     def finalizar_turno(self):
         """Método llamado cuando se hace clic en el botón Finalizar Turno."""

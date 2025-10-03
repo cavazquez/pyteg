@@ -269,6 +269,11 @@ class ClientTransmisor(IClientTransmisor):
         """
         print(f"Moviendo {cantidad} unidad(es) de {origen} a {destino}")
 
+        # Reproducir sonido de movimiento
+        main_window = self._conn.get_main_window()
+        if main_window and hasattr(main_window, "sound_manager"):
+            main_window.sound_manager.play_move()
+
         msg = MsgMoverUnidad(origen, destino, cantidad)
         self._conn.send_data(msg.to_json())
 

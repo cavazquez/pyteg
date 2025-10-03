@@ -15,6 +15,7 @@ gráfica en Python.
 ## Características clave
 - Cliente gráfico con PySide6 y animación de dados en las batallas
 - **Efectos visuales inmersivos**: Atacante ve animación completa, espectadores ven titilación de países y pérdidas flotantes
+- **Sistema de sonidos**: Efectos de audio para batallas, movimientos, turnos y eventos del juego con controles de volumen
 - Modo multijugador con servidor TCP y validación de estados
 - Restricción de ataques en los dos primeros turnos
 - Elección de cantidad de unidades para atacar (1 a 3)
@@ -26,7 +27,7 @@ gráfica en Python.
 - **Ventana de configuración**: Muestra duración de turno, objetivo de países y objetivos secretos
 - **Verificación automática de condición de victoria al final de cada ronda**
 - **Soporte multiidioma (i18n)**: Español e inglés con selector en la interfaz
-- 120+ tests automatizados y linting con Ruff
+- 160+ tests automatizados y linting con Ruff
 
 ## Requisitos
 - Python 3.11 o superior
