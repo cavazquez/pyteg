@@ -40,6 +40,13 @@ class TestCalculos(unittest.TestCase):
         mapa = Mapa(build_mapa)
         self.assertEqual(Calculos.calcular_unidades_generales(mapa, "Mengano"), 4)
 
+    def test_calcular_unidades_continente_invalido(self):
+        mapa = Mapa(lambda: {})
+        self.assertEqual(
+            Calculos.calcular_unidades_continente(mapa, "Mengano", "Atlantis"),
+            0,
+        )
+
     def test_calcular_unidades_con_toda_europa(self):
         def build_mapa():
             return {
