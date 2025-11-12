@@ -41,7 +41,7 @@ class TestCalculos(unittest.TestCase):
         self.assertEqual(Calculos.calcular_unidades_generales(mapa, "Mengano"), 4)
 
     def test_calcular_unidades_continente_invalido(self):
-        mapa = Mapa(lambda: {})
+        mapa = Mapa(dict)
         self.assertEqual(
             Calculos.calcular_unidades_continente(mapa, "Mengano", "Atlantis"),
             0,
