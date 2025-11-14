@@ -3,7 +3,7 @@ name = "pyteg"
 version = "0.0.6"
 requires-python = ">=3.11"
 dependencies = [
-    "polib>=1.2.0",
+    "polib==1.2.0",
     "pyside6==6.10.0",
 ]
 
@@ -43,13 +43,13 @@ ignore = [
 
 [dependency-groups]
 dev = [
-    "mypy>=1.17.1",
-    "pyside6-stubs>=6.7.3.0",
-    "typing-extensions>=4.14.1",
-    "ruff",
-    "nuitka>=2.7.12",
-    "hatch",
-    "hatch-nuitka",
+    "mypy==1.18.2",
+    "pyside6-stubs==6.7.3.0",
+    "typing-extensions==4.15.0",
+    "ruff==0.14.4",
+    "nuitka==2.8.4",
+    "hatch==1.15.1",
+    "hatch-nuitka==0.0.4",
 ]
 
 
@@ -120,7 +120,7 @@ modules = [
 ]
 
 [build-system]
-requires = ["hatchling>=1.18", "hatch-nuitka"]
+requires = ["hatchling==1.18", "hatch-nuitka"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
