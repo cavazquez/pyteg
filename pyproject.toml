@@ -46,7 +46,7 @@ dev = [
     "mypy==1.18.2",
     "pyside6-stubs==6.7.3.0",
     "typing-extensions==4.15.0",
-    "ruff==0.14.4",
+    "ruff==0.14.5",
     "nuitka==2.8.4",
     "hatch==1.15.1",
     "hatch-nuitka==0.0.4",
