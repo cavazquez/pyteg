@@ -598,19 +598,19 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "polib", specifier = ">=1.2.0" },
+    { name = "polib", specifier = "==1.2.0" },
     { name = "pyside6", specifier = "==6.10.0" },
 ]
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "hatch" },
-    { name = "hatch-nuitka" },
-    { name = "mypy", specifier = ">=1.17.1" },
-    { name = "nuitka", specifier = ">=2.7.12" },
-    { name = "pyside6-stubs", specifier = ">=6.7.3.0" },
-    { name = "ruff" },
-    { name = "typing-extensions", specifier = ">=4.14.1" },
+    { name = "hatch", specifier = "==1.15.1" },
+    { name = "hatch-nuitka", specifier = "==0.0.4" },
+    { name = "mypy", specifier = "==1.18.2" },
+    { name = "nuitka", specifier = "==2.8.4" },
+    { name = "pyside6-stubs", specifier = "==6.7.3.0" },
+    { name = "ruff", specifier = "==0.14.4" },
+    { name = "typing-extensions", specifier = "==4.15.0" },
 ]
 
 [[package]]
