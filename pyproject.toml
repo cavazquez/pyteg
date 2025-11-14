@@ -120,7 +120,7 @@ modules = [
 ]
 
 [build-system]
-requires = ["hatchling==1.18", "hatch-nuitka"]
+requires = ["hatchling>=1.18", "hatch-nuitka"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
