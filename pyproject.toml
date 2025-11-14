@@ -47,7 +47,7 @@ dev = [
     "pyside6-stubs==6.7.3.0",
     "typing-extensions==4.15.0",
     "ruff==0.14.5",
-    "nuitka==2.8.4",
+    "nuitka==2.8.6",
     "hatch==1.15.1",
     "hatch-nuitka==0.0.4",
 ]
