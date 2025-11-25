@@ -7,6 +7,7 @@ from itertools import cycle
 from random import sample
 from typing import TYPE_CHECKING, Any
 
+from src.config import CARDS_FOR_EXCHANGE, MIN_CARDS_SAME_SYMBOL_FOR_EXCHANGE
 from src.tarjeta_de_pais import TarjetaDePais
 
 if TYPE_CHECKING:
@@ -134,12 +135,12 @@ class Mazo:
 
         """
         simbolo = self.simbolo_asignado_almenos_3_tarjetas(jugador)[0]
-        if simbolo[1] >= 3:
+        if simbolo[1] >= MIN_CARDS_SAME_SYMBOL_FOR_EXCHANGE:
             return [
                 tarjeta
                 for tarjeta in self.tarjetas_asignadas(jugador)
                 if tarjeta.simbolo == simbolo[0]
-            ][:3]
+            ][:CARDS_FOR_EXCHANGE]
         acum: set[str] = set()
         res: list[TarjetaDePais] = []
         for tarjeta in self.tarjetas_asignadas(jugador):

@@ -102,4 +102,4 @@ Todas las fechas en formato YYYY-MM-DD.
 - Envío de unidades disponibles al inicio de turno y tras agregar unidades.
 - Toolbar: botones Atacar/Mover según selección y conexión; Finalizar Turno siempre habilitado.
 - AttackDialog: tamaño aumentado a 400x280 para mejor UX. Ref: edfc535.
-- run_test.sh: agregado mypy con foco en aridad de llamadas.
+- run_tests.sh: agregado mypy con foco en aridad de llamadas.

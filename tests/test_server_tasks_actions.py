@@ -83,17 +83,24 @@ class FakeMapa:
         self.units[nombre] = unidades
         self.adyacentes[nombre] = list(adyacentes)
 
-    def ocupado_por(self, pais: str) -> object:
+    def ocupado_por(self, pais: str) -> str:
         """Obtiene el propietario de un país.
 
         Args:
             pais: Nombre del país.
 
         Returns:
-            Propietario del país.
+            ID del propietario del país como string.
 
         """
-        return self.owners.get(pais)
+        owner = self.owners.get(pais)
+        if owner is None:
+            return ""
+        # Si el propietario tiene userid(), retornar su ID como string
+        if hasattr(owner, "userid"):
+            return str(owner.userid())
+        # Si es un objeto genérico, retornar su representación como string
+        return str(id(owner))
 
     def agregar_una_unidad(self, pais: str) -> None:
         """Agrega una unidad a un país.
@@ -297,6 +304,8 @@ class FakeServer:
 class FakeClient:
     """Cliente falso para tests."""
 
+    _next_id = 1
+
     def __init__(self, name: str = "Tester") -> None:
         """Inicializa el cliente falso.
 
@@ -305,6 +314,8 @@ class FakeClient:
 
         """
         self._name = name
+        self._id = FakeClient._next_id
+        FakeClient._next_id += 1
         self.transmisor = FakeTransmisor()
         self.server: FakeServer | None = None
 
@@ -324,7 +335,7 @@ class FakeClient:
             ID de usuario.
 
         """
-        return 1
+        return self._id
 
 
 class ServerTaskTests(unittest.TestCase):

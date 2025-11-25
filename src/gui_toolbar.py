@@ -169,7 +169,7 @@ class ToolBar(QToolBar):
         )
         self.addWidget(right_spacer)
 
-    def _setup_action_buttons(self) -> None:  # noqa: PLR0915
+    def _setup_action_buttons(self) -> None:
         """Configura los botones de acción en la barra de herramientas."""
         # Grupo: Conexión
         icono_conectar = self._validar_icono("icons/conectar.png", "conectar")

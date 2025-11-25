@@ -100,7 +100,7 @@ La interfaz gráfica ha sido refactorizada en una arquitectura modular para mejo
 
 ## Pruebas y calidad
 - 120+ tests en tests/.
-- run_test.sh ejecuta: ruff check, ruff format, coverage, y mypy (enfoque en aridad de llamadas).
+- run_tests.sh ejecuta: ruff check, ruff format, coverage, y mypy (enfoque en aridad de llamadas).
 
 ## Extensión del protocolo
 Guías en docs/ sobre cómo crear mensajes cliente-servidor y bidireccionales. Ver:

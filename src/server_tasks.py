@@ -6,10 +6,27 @@ from abc import ABC, abstractmethod
 from collections.abc import Callable
 from typing import Any
 
+from src.config import (
+    MIN_UNITS_FOR_ATTACK,
+    MIN_UNITS_TO_LEAVE,
+    MISSILE_MAX_DISTANCE,
+    MISSILE_UNIT_COST,
+    SPECIAL_EXCHANGE_UNITS,
+    VALID_UNIT_TYPES,
+)
 from src.exception import MensajeNoValidoError
 from src.logger import get_logger
 from src.server_state_validator import ServerStateValidator
-from src.turnos import PrimerTurno, SegundoTurno
+from src.server_validators import (
+    AdjacencyValidator,
+    AttackRestrictionValidator,
+    CountryOwnershipValidator,
+    GameStateValidator,
+    TurnValidator,
+    UnitTypeValidator,
+    UnitValidator,
+    ValidationError,
+)
 
 LOGGER = get_logger("server.tasks")
 
@@ -223,6 +240,21 @@ class ServerTaskSetUsername(IServerTask):
 class ServerTaskAgregarUnidad(IServerTask):
     """Tarea para agregar unidades a un país."""
 
+    def _validate_field_not_none(self, field_value: Any, field_name: str) -> None:
+        """Valida que un campo no sea None.
+
+        Args:
+            field_value: Valor del campo a validar.
+            field_name: Nombre del campo para el mensaje de error.
+
+        Raises:
+            ValidationError: Si el campo es None.
+
+        """
+        if field_value is None:
+            error_msg = f"{field_name} no especificado"
+            raise ValidationError(error_msg)
+
     def __init__(self, data: dict[str, Any]) -> None:
         """Inicializa la tarea de agregar unidad.
 
@@ -231,44 +263,64 @@ class ServerTaskAgregarUnidad(IServerTask):
 
         """
         super().__init__(data)
-        self._pais = data.get("pais")
-        self._tipo_unidad = data.get("tipo_unidad")
+        self._pais: str | None = data.get("pais")
+        self._tipo_unidad: str | None = data.get("tipo_unidad")
         self._cantidad = data.get("cantidad", 1)  # Por defecto 1 si no se especifica
         self._action_name = "agregar_unidad"
 
-    def _execute(self, client: Any) -> None:
-        # Verificar que sea el turno del cliente actual
-        if not hasattr(client.server, "game") or client.server.game is None:
-            client.transmisor.enviar_error_chat("El juego no ha comenzado")
-            return
+    def _validate_units_available(self, turno_actual: Any, cantidad: int) -> None:
+        """Valida que haya suficientes unidades disponibles.
 
-        turno_actual = client.server.game.turno_actual()
-        if turno_actual.jugador_actual() != client:
-            client.transmisor.enviar_error_chat("No es tu turno")
-            return
+        Args:
+            turno_actual: Turno actual del juego.
+            cantidad: Cantidad de unidades requeridas.
 
-        # Verificar que el cliente sea el dueño del país
-        if client.server.mapa.ocupado_por(self._pais) != client:
-            client.transmisor.enviar_error_chat(f"No eres dueño de {self._pais}")
-            return
+        Raises:
+            ValidationError: Si no hay suficientes unidades disponibles.
 
-        # Verificar que el tipo de unidad sea válido
-        if self._tipo_unidad not in {"infanteria", "misil"}:
-            client.transmisor.enviar_error_chat(
-                "Tipo de unidad no válido. Debe ser 'infanteria' o 'misil'."
-            )
-            return
-
-        # Verificar que el jugador tenga suficientes unidades disponibles
+        """
         if (
             not hasattr(turno_actual, "cant_unidades")
-            or turno_actual.cant_unidades() < self._cantidad
+            or turno_actual.cant_unidades() < cantidad
         ):
-            client.transmisor.enviar_error_chat(
+            msg = (
                 f"No hay suficientes unidades disponibles para agregar "
-                f"{self._cantidad} unidades"
+                f"{cantidad} unidades"
             )
+            raise ValidationError(msg)
+
+    def _execute(self, client: Any) -> None:
+        try:
+            # Validar que los datos requeridos estén presentes
+            self._validate_field_not_none(self._pais, "País")
+            self._validate_field_not_none(self._tipo_unidad, "Tipo de unidad")
+
+            # Type narrowing: después de las validaciones, estos valores no son None
+            if self._pais is None or self._tipo_unidad is None:
+                return  # No debería llegar aquí, pero ayuda a MyPy
+
+            # Validar turno y estado del juego
+            TurnValidator.validate_turn(client, client.server.game)
+            GameStateValidator.validate_game_started(client.server.game)
+
+            # Validar propiedad del país
+            CountryOwnershipValidator.validate_ownership(
+                client, client.server.mapa, self._pais
+            )
+
+            # Validar tipo de unidad
+            UnitTypeValidator.validate_unit_type(self._tipo_unidad, VALID_UNIT_TYPES)
+
+            # Verificar que el jugador tenga suficientes unidades disponibles
+            turno_actual = client.server.game.turno_actual()
+            self._validate_units_available(turno_actual, self._cantidad)
+
+        except ValidationError as e:
+            client.transmisor.enviar_error_chat(e.mensaje)
             return
+
+        # Obtener el turno actual para usar después
+        turno_actual = client.server.game.turno_actual()
 
         # Agregar la unidad al país
         for _ in range(self._cantidad):
@@ -302,37 +354,56 @@ class ServerTaskMoverUnidad(IServerTask):
 
         """
         super().__init__(data)
-        self._origen = data.get("origen")
-        self._destino = data.get("destino")
+        self._origen: str | None = data.get("origen")
+        self._destino: str | None = data.get("destino")
         self._cantidad = data.get("cantidad", 1)  # Por defecto 1 si no se especifica
         self._action_name = "mover_unidad"
 
+    def _validate_required_fields(self) -> None:
+        """Valida que los campos requeridos estén presentes.
+
+        Raises:
+            ValidationError: Si algún campo requerido es None.
+
+        """
+        if self._origen is None:
+            error_msg = "País de origen no especificado"
+            raise ValidationError(error_msg)
+        if self._destino is None:
+            error_msg = "País de destino no especificado"
+            raise ValidationError(error_msg)
+
     def _execute(self, client: Any) -> None:
-        # Verificar que el cliente sea el dueño del país de origen
-        if client.server.mapa.ocupado_por(self._origen) != client:
-            client.transmisor.enviar_error_chat(f"No eres dueño de {self._origen}")
-            return
+        try:
+            # Validar que los datos requeridos estén presentes
+            self._validate_required_fields()
 
-        # Verificar que el país de destino sea del mismo jugador
-        if client.server.mapa.ocupado_por(self._destino) != client:
-            client.transmisor.enviar_error_chat(f"No eres dueño de {self._destino}")
-            return
+            # Validar propiedad del país de origen
+            # Type narrowing: después de las validaciones, estos valores no son None
+            if self._origen is None or self._destino is None:
+                return  # No debería llegar aquí, pero ayuda a MyPy
 
-        # Verificar que los países sean adyacentes
-        paises_adyacentes = client.server.mapa.obtener_paises_adyacentes(self._origen)
-        if self._destino not in paises_adyacentes:
-            client.transmisor.enviar_error_chat(
-                f"{self._destino} no es adyacente a {self._origen}"
+            CountryOwnershipValidator.validate_ownership(
+                client, client.server.mapa, self._origen
             )
-            return
 
-        # Verificar que haya suficientes unidades para mover
-        unidades_origen = client.server.mapa.cantidad_unidades(self._origen)
-        if unidades_origen <= self._cantidad:
-            client.transmisor.enviar_error_chat(
-                f"No hay suficientes unidades en {self._origen} "
-                f"para mover {self._cantidad}"
+            # Validar adyacencia (antes de validar propiedad del destino)
+            AdjacencyValidator.validate_adjacent(
+                client.server.mapa, self._origen, self._destino
             )
+
+            # Validar propiedad del país de destino
+            CountryOwnershipValidator.validate_ownership(
+                client, client.server.mapa, self._destino
+            )
+
+            # Validar suficientes unidades para mover
+            UnitValidator.validate_sufficient_units_to_move(
+                client.server.mapa, self._origen, self._cantidad
+            )
+
+        except ValidationError as e:
+            client.transmisor.enviar_error_chat(e.mensaje)
             return
 
         # Mover las unidades
@@ -351,6 +422,20 @@ class ServerTaskMoverUnidad(IServerTask):
 class ServerTaskAtacar(IServerTask):
     """Tarea para procesar ataques entre países."""
 
+    def _validate_required_fields(self) -> None:
+        """Valida que los campos requeridos estén presentes.
+
+        Raises:
+            ValidationError: Si algún campo requerido es None.
+
+        """
+        if self._origen is None:
+            error_msg = "País de origen no especificado"
+            raise ValidationError(error_msg)
+        if self._destino is None:
+            error_msg = "País de destino no especificado"
+            raise ValidationError(error_msg)
+
     def __init__(self, data: dict[str, Any]) -> None:
         """Inicializa la tarea de atacar.
 
@@ -359,51 +444,59 @@ class ServerTaskAtacar(IServerTask):
 
         """
         super().__init__(data)
-        self._origen = data.get("origen")
-        self._destino = data.get("destino")
+        self._origen: str | None = data.get("origen")
+        self._destino: str | None = data.get("destino")
         self._cantidad_unidades = data.get("cantidad_unidades")
         self._action_name = "atacar"
 
     def _execute(self, client: Any) -> None:
-        # Verificar que no sea primer o segundo turno
-        turno_actual = client.server.game.turno_actual()
-        if isinstance(turno_actual, PrimerTurno | SegundoTurno):
-            client.transmisor.enviar_error_chat(
-                "No se puede atacar en los primeros 2 turnos. "
-                "Debe esperar al tercer turno."
-            )
-            return
+        try:
+            # Validar que los datos requeridos estén presentes
+            self._validate_required_fields()
 
-        # Verificar que el cliente sea el dueño del país de origen
-        if client.server.mapa.ocupado_por(self._origen) != client:
-            client.transmisor.enviar_error_chat(f"No eres dueño de {self._origen}")
-            return
+            # Type narrowing: después de las validaciones, estos valores no son None
+            if self._origen is None or self._destino is None:
+                return  # No debería llegar aquí, pero ayuda a MyPy
 
-        # Verificar que el país de destino sea de otro jugador
-        if client.server.mapa.ocupado_por(self._destino) == client:
-            client.transmisor.enviar_error_chat(
-                f"No puedes atacar tu propio país: {self._destino}"
-            )
-            return
+            # Validar estado del juego
+            GameStateValidator.validate_game_started(client.server.game)
 
-        # Verificar que los países sean adyacentes
-        paises_adyacentes = client.server.mapa.obtener_paises_adyacentes(self._origen)
-        if self._destino not in paises_adyacentes:
-            client.transmisor.enviar_error_chat(
-                f"{self._destino} no es adyacente a {self._origen}"
-            )
-            return
+            # Validar restricciones de ataque (antes de validar turno)
+            AttackRestrictionValidator.validate_not_first_turns(client.server.game)
 
-        # Verificar que haya al menos 2 unidades en el país de origen
-        # (necesita 1 para atacar)
-        unidades_origen = client.server.mapa.cantidad_unidades(self._origen)
-        if unidades_origen < 2:
-            client.transmisor.enviar_error_chat(
-                f"Necesitas al menos 2 unidades en {self._origen} para atacar"
+            # Validar turno
+            TurnValidator.validate_turn(client, client.server.game)
+
+            # Validar propiedad del país de origen
+            CountryOwnershipValidator.validate_ownership(
+                client, client.server.mapa, self._origen
             )
+
+            # Validar que el destino NO sea del mismo jugador
+            CountryOwnershipValidator.validate_not_own_country(
+                client, client.server.mapa, self._destino
+            )
+
+            # Validar adyacencia
+            AdjacencyValidator.validate_adjacent(
+                client.server.mapa, self._origen, self._destino
+            )
+
+            # Validar unidades mínimas para atacar
+            UnitValidator.validate_min_units(
+                client.server.mapa,
+                self._origen,
+                MIN_UNITS_FOR_ATTACK,
+                f"Necesitas al menos {MIN_UNITS_FOR_ATTACK} unidades en "
+                f"{self._origen} para atacar",
+            )
+
+        except ValidationError as e:
+            client.transmisor.enviar_error_chat(e.mensaje)
             return
 
         # Logging del estado antes del ataque
+        unidades_origen = client.server.mapa.cantidad_unidades(self._origen)
         unidades_destino = client.server.mapa.cantidad_unidades(self._destino)
         LOGGER.info("=== INICIO ATAQUE ===")
         LOGGER.info(
@@ -452,6 +545,9 @@ class ServerTaskAtacar(IServerTask):
             cantidad_texto,
         )
 
+        # Enviar mapa actualizado a todos los clientes
+        client.server.enviar_mapa()
+
         # Enviar resultado de la batalla a todos los clientes
         batalla_data = {
             "origen": self._origen,
@@ -476,9 +572,6 @@ class ServerTaskAtacar(IServerTask):
             )
             # Marcar al jugador como elegible para reclamar tarjeta
             client.server.game.marcar_jugador_puede_reclamar(client)
-
-        # Notificar a todos los clientes sobre el cambio en el mapa
-        client.server.enviar_mapa()
         # (esto se podría implementar más adelante)
 
 
@@ -496,14 +589,10 @@ class ServerTaskFinalizarTurno(IServerTask):
         self._action_name = "finalizar_turno"
 
     def _execute(self, client: Any) -> None:
-        # Verificar que sea el turno del cliente actual
-        if not hasattr(client.server, "game") or client.server.game is None:
-            client.transmisor.enviar_error_chat("El juego no ha comenzado")
-            return
-
-        turno_actual = client.server.game.turno_actual()
-        if turno_actual.jugador_actual() != client:
-            client.transmisor.enviar_error_chat("No es tu turno")
+        try:
+            TurnValidator.validate_turn(client, client.server.game)
+        except ValidationError as e:
+            client.transmisor.enviar_error_chat(e.mensaje)
             return
 
         # Limpiar elegibilidad para reclamar tarjetas del turno anterior
@@ -632,27 +721,43 @@ class ServerTaskCanjeEspecial(IServerTask):
         tarjeta_encontrada.desasignar()
         tarjeta_encontrada.desusar()
 
-        # 2. Agregar 2 unidades al país
-        mapa.agregar_una_unidad(self._pais)
-        mapa.agregar_una_unidad(self._pais)
+        # 2. Agregar unidades al país
+        for _ in range(SPECIAL_EXCHANGE_UNITS):
+            mapa.agregar_una_unidad(self._pais)
 
         # 3. Notificar a todos los clientes sobre el cambio en el mapa
         client.server.enviar_mapa()
 
         # 4. Enviar notificación específica del canje especial
-        client.transmisor.enviar_canje_especial(self._pais, 2)
+        client.transmisor.enviar_canje_especial(self._pais, SPECIAL_EXCHANGE_UNITS)
 
         # 5. Actualizar tarjetas del jugador
         client.server.enviar_tarjetas_jugador(client)
 
         # 6. Notificar éxito
         client.transmisor.enviar_sistema(
-            f"Canje especial realizado: +2 unidades en {self._pais}"
+            f"Canje especial realizado: +{SPECIAL_EXCHANGE_UNITS} "
+            f"unidades en {self._pais}"
         )
 
 
 class ServerTaskCanjearMisil(IServerTask):
-    """Tarea para canjear 6 unidades por un misil."""
+    """Tarea para canjear unidades por un misil."""
+
+    def _validate_field_not_none(self, field_value: Any, field_name: str) -> None:
+        """Valida que un campo no sea None.
+
+        Args:
+            field_value: Valor del campo a validar.
+            field_name: Nombre del campo para el mensaje de error.
+
+        Raises:
+            ValidationError: Si el campo es None.
+
+        """
+        if field_value is None:
+            error_msg = f"{field_name} no especificado"
+            raise ValidationError(error_msg)
 
     def __init__(self, data: dict[str, Any]) -> None:
         """Inicializa la tarea de canjear misil.
@@ -662,44 +767,62 @@ class ServerTaskCanjearMisil(IServerTask):
 
         """
         super().__init__(data)
-        self._pais = data.get("pais")
+        self._pais: str | None = data.get("pais")
         self._action_name = "canjear_misil"
 
+    def _validate_missiles_enabled(self, server: Any) -> None:
+        """Valida que los misiles estén habilitados.
+
+        Args:
+            server: Instancia del servidor.
+
+        Raises:
+            ValidationError: Si los misiles no están habilitados.
+
+        """
+        if not server.misiles_habilitados():
+            msg = "Los misiles no están habilitados en esta partida"
+            raise ValidationError(msg)
+
     def _execute(self, client: Any) -> None:
-        # 1. Verificar que los misiles estén habilitados
-        if not client.server.misiles_habilitados():
-            client.transmisor.enviar_error_chat(
-                "Los misiles no están habilitados en esta partida"
+        try:
+            # 1. Verificar que los misiles estén habilitados
+            self._validate_missiles_enabled(client.server)
+
+            # 2. Validar que el país esté especificado
+            self._validate_field_not_none(self._pais, "País")
+
+            # Type narrowing: después de la validación, este valor no es None
+            if self._pais is None:
+                return  # No debería llegar aquí, pero ayuda a MyPy
+
+            # 3. Validar turno y estado del juego
+            TurnValidator.validate_turn(client, client.server.game)
+            GameStateValidator.validate_game_started(client.server.game)
+
+            # 4. Validar propiedad del país
+            CountryOwnershipValidator.validate_ownership(
+                client, client.server.mapa, self._pais
             )
-            return
 
-        # 2. Verificar que el juego haya comenzado
-        if not hasattr(client.server, "game") or client.server.game is None:
-            client.transmisor.enviar_error_chat("El juego no ha comenzado")
-            return
-
-        # 3. Verificar que sea el turno del cliente
-        turno_actual = client.server.game.turno_actual()
-        if turno_actual.jugador_actual() != client:
-            client.transmisor.enviar_error_chat("No es tu turno")
-            return
-
-        # 4. Verificar que el cliente sea dueño del país
-        if client.server.mapa.ocupado_por(self._pais) != client:
-            client.transmisor.enviar_error_chat(f"No eres dueño de {self._pais}")
-            return
-
-        # 5. Verificar que el país tenga al menos 6 unidades
-        unidades = client.server.mapa.cantidad_unidades(self._pais)
-        if unidades < 6:
-            client.transmisor.enviar_error_chat(
-                f"Se requieren al menos 6 unidades para canjear un misil. "
-                f"{self._pais} tiene {unidades} unidades."
+            # 5. Validar unidades mínimas para canjear misil
+            UnitValidator.validate_min_units(
+                client.server.mapa,
+                self._pais,
+                MISSILE_UNIT_COST,
+                (
+                    f"Se requieren al menos {MISSILE_UNIT_COST} unidades "
+                    f"para canjear un misil. {self._pais} tiene "
+                    f"{client.server.mapa.cantidad_unidades(self._pais)} unidades."
+                ),
             )
+
+        except ValidationError as e:
+            client.transmisor.enviar_error_chat(e.mensaje)
             return
 
-        # 6. Restar las 6 unidades del país
-        for _ in range(6):
+        # 5. Restar las unidades del país
+        for _ in range(MISSILE_UNIT_COST):
             client.server.mapa.restar_una_unidad(self._pais)
 
         # 7. Agregar misil al país
@@ -713,7 +836,7 @@ class ServerTaskCanjearMisil(IServerTask):
 
         # 10. Notificar éxito al jugador
         client.transmisor.enviar_sistema(
-            f"Misil canjeado en {self._pais}: -6 unidades, +1 misil. "
+            f"Misil canjeado en {self._pais}: -{MISSILE_UNIT_COST} unidades, +1 misil. "
             f"Total: {cantidad_misiles} misiles"
         )
 
@@ -826,10 +949,10 @@ class ServerTaskLanzarMisil(IServerTask):
         if distancia == -1:
             return f"No hay camino entre {self._pais_origen} y {self._pais_destino}"
 
-        if distancia > 3:
+        if distancia > MISSILE_MAX_DISTANCE:
             return (
                 f"El objetivo está demasiado lejos (distancia: {distancia}). "
-                "Máximo: 3 saltos"
+                f"Máximo: {MISSILE_MAX_DISTANCE} saltos"
             )
 
         dano = client.server.mapa.calcular_dano_misil(distancia)
@@ -837,8 +960,8 @@ class ServerTaskLanzarMisil(IServerTask):
         if unidades_destino <= dano:
             return (
                 f"El ataque dejaría a {self._pais_destino} sin unidades. "
-                f"El país debe conservar al menos 1 unidad. "
-                f"Unidades actuales: {unidades_destino}, Daño: {dano}"
+                f"El país debe conservar al menos {MIN_UNITS_TO_LEAVE} "
+                f"unidad. Unidades actuales: {unidades_destino}, Daño: {dano}"
             )
 
         return None

@@ -12,6 +12,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from src.config import DEFAULT_TURN_SECONDS, DEFAULT_VICTORY_COUNTRIES
 from src.i18n import translate as _
 
 
@@ -21,12 +22,26 @@ class ConfiguracionDialog(QDialog):
     def __init__(
         self,
         parent: QWidget | None = None,
-        segundos_por_turno: int = 20,
-        paises_para_victoria: int = 30,
+        segundos_por_turno: int | None = None,
+        paises_para_victoria: int | None = None,
         *,
         objetivos_secretos: bool = False,
         misiles_habilitados: bool = False,
     ) -> None:
+        """Inicializa el diálogo de configuración.
+
+        Args:
+            parent: Widget padre.
+            segundos_por_turno: Segundos por turno.
+            paises_para_victoria: Países necesarios para ganar.
+            objetivos_secretos: Si los objetivos secretos están activados.
+            misiles_habilitados: Si los misiles están habilitados.
+
+        """
+        if segundos_por_turno is None:
+            segundos_por_turno = DEFAULT_TURN_SECONDS
+        if paises_para_victoria is None:
+            paises_para_victoria = DEFAULT_VICTORY_COUNTRIES
         """Inicializa el diálogo de configuración.
 
         Args:

@@ -9,18 +9,20 @@ from typing import TYPE_CHECKING, Any
 from src.build_mapa import build_mapa
 from src.mazo import Mazo
 from src.objetivos_secretos import ObjetivosSecretos
+from src.server_client_registry import ServerClientRegistry
 from src.server_color import ServerColor
 from src.server_estado import Estado
-from src.server_game import Game
+from src.server_game_coordinator import ServerGameCoordinator
 from src.server_mapa import Mapa
+from src.server_message_broadcaster import ServerMessageBroadcaster
 from src.server_registrar_jugadores import registrar_jugadores
 from src.toml_reader import TomlReader
-from src.turno_timer import TurnoTimer
 from src.utils import get_resource_path
 from src.version import NAME, VERSION
 
 if TYPE_CHECKING:
     from src.server_client import Client
+    from src.server_game import Game
 
 
 class Server:
@@ -32,10 +34,11 @@ class Server:
 
     def __init__(self) -> None:
         """Inicializa el servidor con mapa, mazo y configuración inicial."""
-        self._clients: dict[int, Client] = {}
+        self._client_registry = ServerClientRegistry()
         self.color = ServerColor()
         self.estado = Estado()
-        self.game: Game | None = None
+        # Inicializar broadcaster de mensajes
+        self._broadcaster = ServerMessageBroadcaster(self.dame_clientes)
 
         # Inicializar el mapa
         self.mapa = Mapa(build_mapa)
@@ -63,64 +66,71 @@ class Server:
         )
         self.objetivos_secretos = ObjetivosSecretos(toml_reader)
 
-        # Timer de turnos (se inicializa en None y se arranca al empezar la partida)
-        self._turno_timer: TurnoTimer | None = None
-        # Configuración: segundos por turno (puede ser seteado por el admin)
-        self._segundos_por_turno = 20
-        # Configuración: países necesarios para ganar (puede ser seteado por el admin)
-        # 0 = todos los países (modo clásico), >0 = objetivo específico
-        self._paises_para_victoria = 0
-        # Configuración: objetivos secretos activados
-        self._objetivos_secretos = False
-        # Configuración: misiles habilitados
-        self._misiles_habilitados = False
+        # Inicializar coordinador de partidas
+        self._game_coordinator = ServerGameCoordinator(
+            self.mapa,
+            self.mazo,
+            self.objetivos_secretos,
+            self.estado,
+            self.dame_clientes,
+            self._broadcaster,
+            self.color,
+        )
+
+    @property
+    def game(self) -> Game | None:
+        """Obtiene la instancia del juego actual.
+
+        Returns:
+            Instancia del juego o None si no ha comenzado.
+
+        """
+        return self._game_coordinator.game()
 
     def set_segundos_por_turno(self, segundos: int) -> None:
         """Configura la cantidad de segundos por turno.
 
         Args:
-            segundos (int): segundos por turno (> 0)
+            segundos: Segundos por turno (> 0).
 
         """
-        if isinstance(segundos, int) and segundos > 0:
-            self._segundos_por_turno = segundos
+        self._game_coordinator.set_segundos_por_turno(segundos)
 
     def set_paises_para_victoria(self, paises: int) -> None:
         """Configura la cantidad de países necesarios para ganar.
 
         Args:
-            paises (int): países necesarios para victoria (> 0)
+            paises: Países necesarios para victoria (> 0).
 
         """
-        if isinstance(paises, int) and paises > 0:
-            self._paises_para_victoria = paises
+        self._game_coordinator.set_paises_para_victoria(paises)
 
     def set_objetivos_secretos(self, *, activados: bool) -> None:
         """Configura si los objetivos secretos están activados.
 
         Args:
-            activados (bool): True si los objetivos secretos están activados
+            activados: True si los objetivos secretos están activados.
 
         """
-        self._objetivos_secretos = activados
+        self._game_coordinator.set_objetivos_secretos(activados=activados)
 
     def set_misiles_habilitados(self, *, activados: bool) -> None:
         """Configura si los misiles están habilitados.
 
         Args:
-            activados (bool): True si los misiles están habilitados
+            activados: True si los misiles están habilitados.
 
         """
-        self._misiles_habilitados = activados
+        self._game_coordinator.set_misiles_habilitados(activados=activados)
 
     def misiles_habilitados(self) -> bool:
         """Retorna si los misiles están habilitados en esta partida.
 
         Returns:
-            bool: True si los misiles están habilitados
+            True si los misiles están habilitados.
 
         """
-        return self._misiles_habilitados
+        return self._game_coordinator.misiles_habilitados()
 
     def cant_clients(self) -> int:
         """Obtiene la cantidad de clientes conectados.
@@ -129,7 +139,7 @@ class Server:
             Cantidad de clientes conectados.
 
         """
-        return len(self._clients)
+        return self._client_registry.cantidad()
 
     def quitarme(self, user_id: int) -> None:
         """Desconecta un cliente del servidor.
@@ -139,7 +149,7 @@ class Server:
 
         """
         print(f"Quitando {user_id}")
-        self._clients.pop(user_id, None)
+        self._client_registry.desconectar_cliente(user_id)
         # Notificar a todos los clientes restantes sobre la desconexión
         self.enviar_username()
 
@@ -151,8 +161,9 @@ class Server:
             client: Objeto cliente a registrar.
 
         """
+        # Asignar color antes de registrar
         self.color.asignar_color_aleatorio(client)
-        self._clients[user_id] = client
+        self._client_registry.registrar_cliente(user_id, client)
 
     def dame_lista_jugadores(self) -> list[int]:
         """Obtiene la lista de IDs de jugadores conectados.
@@ -161,7 +172,7 @@ class Server:
             Lista de IDs de jugadores.
 
         """
-        return list(self._clients.keys())
+        return self._client_registry.obtener_ids()
 
     def dame_clientes(self) -> list[Client]:
         """Obtiene la lista de clientes conectados.
@@ -170,7 +181,7 @@ class Server:
             Lista de clientes.
 
         """
-        return list(self._clients.values())
+        return self._client_registry.obtener_todos()
 
     def enviar_colores_asignados(self) -> None:
         """Envía los colores asignados a todos los clientes.
@@ -235,8 +246,7 @@ class Server:
 
     def enviar_estado(self) -> None:
         """Envía el estado actual del juego a todos los clientes."""
-        for client in self.dame_clientes():
-            client.transmisor.enviar_estado(self.estado.estado_actual())
+        self._broadcaster.enviar_estado(self.estado.estado_actual())
 
     def enviar_turno_actual(self) -> None:
         """Envía el número de turno y ronda actuales a todos los clientes."""
@@ -294,79 +304,22 @@ class Server:
             msg: Mensaje de chat.
 
         """
-        for client in self.dame_clientes():
-            client.transmisor.enviar_chat(f"{username}: {msg}")
+        self._broadcaster.enviar_chat(username, msg)
 
     def enviar_userid(self) -> None:
         """Envía los IDs de usuario a todos los clientes."""
-        for client in self.dame_clientes():
-            # Primero enviar el ID del cliente actual (su propio ID)
-            client.transmisor.enviar_userid(client.userid())
-
-            # Luego enviar los IDs de los otros clientes
-            for otro_client in self.dame_clientes():
-                if otro_client.userid() != client.userid():
-                    client.transmisor.enviar_userid(otro_client.userid())
+        self._broadcaster.enviar_userid()
 
     def enviar_username(self) -> None:
         """Envía los nombres de usuario a todos los clientes."""
-        for client in self.dame_clientes():
-            for otro_client in self.dame_clientes():
-                client.transmisor.enviar_username(
-                    otro_client.userid(), otro_client.username()
-                )
+        self._broadcaster.enviar_username()
 
     def empezar_partida(self) -> None:
         """Inicia la partida.
 
         Asigna colores a los jugadores y notifica a todos los clientes.
         """
-        print("Iniciando partida...")
-
-        # Obtener la lista de jugadores
-        jugadores = self.dame_clientes()
-        print(f"Jugadores conectados: {[j.userid() for j in jugadores]}")
-
-        # Crear e iniciar el juego, pasando la referencia al servidor
-        self.game = Game(
-            self.mapa, self.mazo, jugadores, self, self._paises_para_victoria
-        )
-        self.game.empezar()
-
-        # Enviar información de los jugadores y sus colores a todos los clientes
-        print("Enviando colores asignados a los jugadores...")
-        self.enviar_colores_asignados()
-
-        # Enviar el mapa con los países y sus propietarios
-        print("Enviando mapa a los jugadores...")
-        self.enviar_mapa()
-
-        # Notificar a los clientes que la partida ha comenzado
-        print("Notificando a los clientes que la partida ha comenzado...")
-        # Cambiar el estado a EmpezarPartida
-        self.estado.empezar_partida()
-        self.enviar_estado()
-
-        # Enviar el número de turno inicial a todos los clientes
-        print("Enviando número de turno inicial a los clientes...")
-        self.enviar_turno_actual()
-
-        # Enviar la configuración de la partida a todos los clientes
-        print("Enviando configuración de la partida a los clientes...")
-        self.enviar_configuracion_partida()
-
-        # Asignar y enviar objetivos secretos si están activados
-        if self._objetivos_secretos:
-            print("Asignando objetivos secretos a los jugadores...")
-            self.objetivos_secretos.asignar_objetivos_aleatorios(jugadores)
-            self.enviar_objetivos_secretos()
-
-        # Iniciar el temporizador de turnos
-        print("Iniciando temporizador de turnos...")
-        self._turno_timer = TurnoTimer(
-            self, segundos_por_turno=self._segundos_por_turno
-        )
-        self._turno_timer.start()
+        self._game_coordinator.empezar_partida(self)
 
     def enviar_unidades_disponibles(self) -> None:
         """Envía las unidades disponibles al jugador del turno actual."""
@@ -424,23 +377,15 @@ class Server:
 
     def enviar_mapa(self) -> None:
         """Envía el estado actual del mapa a todos los clientes conectados."""
-        for client in self.dame_clientes():
-            client.transmisor.enviar_mapa(self.mapa, self.game)
+        self._broadcaster.enviar_mapa(self.mapa, self.game)
 
     def enviar_victoria(self, ganador_id: str, ganador_nombre: str) -> None:
         """Envía el mensaje de victoria a todos los clientes conectados."""
-        for client in self.dame_clientes():
-            client.transmisor.enviar_victoria(ganador_id, ganador_nombre)
+        self._broadcaster.enviar_victoria(ganador_id, ganador_nombre)
 
     def enviar_configuracion_partida(self) -> None:
         """Envía la configuración de la partida a todos los clientes conectados."""
-        for client in self.dame_clientes():
-            client.transmisor.enviar_configuracion_partida(
-                self._segundos_por_turno,
-                self._paises_para_victoria,
-                objetivos_secretos=self._objetivos_secretos,
-                misiles_habilitados=self._misiles_habilitados,
-            )
+        self._game_coordinator.enviar_configuracion_partida()
 
     def enviar_resultado_misil(self, resultado_data: dict[str, Any]) -> None:
         """Envía el resultado del lanzamiento de un misil a todos los clientes.
@@ -449,8 +394,7 @@ class Server:
             resultado_data (dict): Datos del resultado del misil
 
         """
-        for client in self.dame_clientes():
-            client.transmisor.enviar_resultado_misil(resultado_data)
+        self._broadcaster.enviar_resultado_misil(resultado_data)
 
     def enviar_misil_agregado(self, pais: str, cantidad_misiles: int) -> None:
         """Envía notificación de que se agregó un misil a un país.
@@ -460,8 +404,7 @@ class Server:
             cantidad_misiles (int): Cantidad total de misiles en el país
 
         """
-        for client in self.dame_clientes():
-            client.transmisor.enviar_misil_agregado(pais, cantidad_misiles)
+        self._broadcaster.enviar_misil_agregado(pais, cantidad_misiles)
 
     def enviar_tarjetas_jugador(self, client: Client) -> None:
         """Envía las tarjetas del jugador específico al cliente."""
@@ -474,27 +417,14 @@ class Server:
             f"Enviando {len(tarjetas_data)} tarjetas a {client.username()}: "
             f"{tarjetas_data}"
         )
-        client.transmisor.enviar_tarjetas_jugador(tarjetas_data)
+        self._broadcaster.enviar_tarjetas_jugador(client, tarjetas_data)
 
     def enviar_objetivos_secretos(self) -> None:
         """Envía el objetivo secreto asignado a cada jugador."""
         print("=== ENVIANDO OBJETIVOS SECRETOS ===")
-        for client in self.dame_clientes():
-            user_id = client.userid()
-            print(f"Procesando cliente {client.username()} (ID: {user_id})")
-            objetivo = self.objetivos_secretos.get_objetivo_jugador(str(user_id))
-            if objetivo:
-                print(
-                    f"Enviando objetivo a {client.username()}: "
-                    f"{objetivo['descripcion']}"
-                )
-                client.transmisor.enviar_objetivo_secreto(
-                    objetivo["id"], objetivo["descripcion"]
-                )
-            else:
-                print(
-                    f"No hay objetivo asignado para {client.username()} (ID: {user_id})"
-                )
+        self._broadcaster.enviar_objetivos_secretos(
+            self.objetivos_secretos.get_objetivo_jugador
+        )
         print("=== FIN ENVÍO OBJETIVOS SECRETOS ===")
 
 

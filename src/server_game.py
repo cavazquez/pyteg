@@ -6,6 +6,12 @@ import secrets
 from typing import TYPE_CHECKING, Any
 
 from src.batalla import Batalla
+from src.config import (
+    DEFAULT_VICTORY_COUNTRIES,
+    EXCHANGE_MULTIPLIER,
+    EXCHANGE_UNITS,
+    MAX_CARDS_BEFORE_FORCE_EXCHANGE,
+)
 from src.turnos import PrimerTurno, SegundoTurno, SiguientesTurnos
 
 if TYPE_CHECKING:
@@ -27,7 +33,7 @@ class Game:
         mazo: Mazo,
         jugadores: list[Client],
         server: Server,
-        paises_para_victoria: int = 30,
+        paises_para_victoria: int | None = None,
     ) -> None:
         """Inicializa el juego.
 
@@ -39,6 +45,8 @@ class Game:
             paises_para_victoria: Cantidad de países necesarios para ganar.
 
         """
+        if paises_para_victoria is None:
+            paises_para_victoria = DEFAULT_VICTORY_COUNTRIES
         self._mapa = mapa
         self._start = False
         self._turnos: list[TurnoType] = [PrimerTurno("NUllJugador")]
@@ -91,7 +99,7 @@ class Game:
 
         """
         cant_tarjetas_asignadas = self.mazo().cant_tarjetas_asignadas(jugador)
-        if cant_tarjetas_asignadas == 5:
+        if cant_tarjetas_asignadas == MAX_CARDS_BEFORE_FORCE_EXCHANGE:
             lista_3_tarjetas = self.mazo().dame_3_tarjetas_para_canje(jugador)
             self.canjear(jugador, lista_3_tarjetas)
         self.mazo().asignar_tarjeta(jugador)
@@ -157,13 +165,9 @@ class Game:
         """
         cant_canjes = self.cant_canjes(jugador)
         turno = self._turnos[self._num_turno]
-        cantidad_a_agregar = 0
-        if cant_canjes == 0:
-            cantidad_a_agregar = 4
-        if cant_canjes == 1:
-            cantidad_a_agregar = 7
-        if cant_canjes >= 2:
-            cantidad_a_agregar = 5 * cant_canjes
+        cantidad_a_agregar = EXCHANGE_UNITS.get(
+            cant_canjes, EXCHANGE_MULTIPLIER * cant_canjes
+        )
 
         turno.agregar_unidades_generales(cantidad_a_agregar)
         self._mazo.desasignar_tarjetas(tarjetas)

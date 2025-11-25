@@ -2,6 +2,7 @@
 
 from typing import ClassVar
 
+from src.config import COUNTRIES_DIVISOR, MIN_GENERAL_UNITS
 from src.server_mapa import Mapa
 
 
@@ -18,20 +19,16 @@ class Calculos:
         "Norteamerica": 5,
     }
 
-    # Constantes para cálculo de unidades generales
-    UNIDADES_MINIMAS = 3
-    DIVISOR_PAISES = 2
-
     @staticmethod
     def calcular_unidades_generales(mapa: Mapa, jugador: str) -> int:
-        """Calcula unidades generales: 1 por cada 2 países, mínimo 3.
+        """Calcula unidades generales: 1 por cada N países, mínimo M.
 
         Returns:
             Número de unidades generales calculadas.
 
         """
         paises = mapa.cantidad_de_paises_del_jugador(jugador)
-        return max(paises // Calculos.DIVISOR_PAISES, Calculos.UNIDADES_MINIMAS)
+        return max(paises // COUNTRIES_DIVISOR, MIN_GENERAL_UNITS)
 
     @staticmethod
     def calcular_unidades_continente(mapa: Mapa, jugador: str, continente: str) -> int:

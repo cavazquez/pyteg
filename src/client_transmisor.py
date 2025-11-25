@@ -151,7 +151,7 @@ class IClientTransmisor(ABC):
 
     @abstractmethod
     def canjear_misil(self, pais: str) -> None:
-        """Canjea 6 unidades por 1 misil en un país.
+        """Canjea unidades por 1 misil en un país.
 
         Args:
             pais (str): Nombre del país donde se canjeará el misil
@@ -446,7 +446,7 @@ class ClientTransmisor(IClientTransmisor):
         self._conn.send_data(msg.to_json())
 
     def canjear_misil(self, pais: str) -> None:
-        """Canjea 6 unidades por 1 misil en un país.
+        """Canjea unidades por 1 misil en un país.
 
         Args:
             pais (str): Nombre del país donde se canjeará el misil
