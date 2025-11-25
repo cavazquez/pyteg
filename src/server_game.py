@@ -1,3 +1,5 @@
+"""Módulo para manejar la lógica del juego en el servidor."""
+
 from __future__ import annotations
 
 import secrets
@@ -17,6 +19,8 @@ TurnoType = PrimerTurno | SegundoTurno | SiguientesTurnos
 
 
 class Game:
+    """Maneja la lógica principal del juego."""
+
     def __init__(
         self,
         mapa: Mapa,
@@ -25,6 +29,16 @@ class Game:
         server: Server,
         paises_para_victoria: int = 30,
     ) -> None:
+        """Inicializa el juego.
+
+        Args:
+            mapa: Mapa del juego.
+            mazo: Mazo de tarjetas.
+            jugadores: Lista de jugadores.
+            server: Referencia al servidor.
+            paises_para_victoria: Cantidad de países necesarios para ganar.
+
+        """
         self._mapa = mapa
         self._start = False
         self._turnos: list[TurnoType] = [PrimerTurno("NUllJugador")]
@@ -40,6 +54,7 @@ class Game:
         )  # Jugadores elegibles para reclamar tarjetas
 
     def empezar(self) -> None:
+        """Inicia el juego asignando países y creando los primeros turnos."""
         jugadores = self.lista_jugadores()
         # Manejar tanto objetos Client como strings (para tests)
         jugadores_nombres = [
@@ -51,12 +66,30 @@ class Game:
         self._start = True
 
     def empezo(self) -> bool:
+        """Verifica si el juego ha comenzado.
+
+        Returns:
+            True si el juego ha comenzado, False en caso contrario.
+
+        """
         return self._start
 
     def mazo(self) -> Mazo:
+        """Obtiene el mazo de tarjetas.
+
+        Returns:
+            El mazo de tarjetas.
+
+        """
         return self._mazo
 
     def dame_una_tarjeta(self, jugador: Client) -> None:
+        """Asigna una tarjeta a un jugador. Si tiene 5, fuerza un canje.
+
+        Args:
+            jugador: Jugador al que asignar la tarjeta.
+
+        """
         cant_tarjetas_asignadas = self.mazo().cant_tarjetas_asignadas(jugador)
         if cant_tarjetas_asignadas == 5:
             lista_3_tarjetas = self.mazo().dame_3_tarjetas_para_canje(jugador)
@@ -64,24 +97,64 @@ class Game:
         self.mazo().asignar_tarjeta(jugador)
 
     def turnos(self) -> list[TurnoType]:
+        """Obtiene la lista de turnos.
+
+        Returns:
+            Lista de turnos.
+
+        """
         return self._turnos
 
     def turno_actual(self) -> TurnoType:
+        """Obtiene el turno actual.
+
+        Returns:
+            El turno actual.
+
+        """
         if self._num_turno >= len(self._turnos):
             return self.turnos()[-1]
         return self.turnos()[self.id_turno_actual()]
 
     def id_turno_actual(self) -> int:
+        """Obtiene el índice del turno actual.
+
+        Returns:
+            Índice del turno actual.
+
+        """
         return self._num_turno
 
     def num_ronda(self) -> int:
+        """Obtiene el número de ronda actual.
+
+        Returns:
+            Número de ronda.
+
+        """
         return self._num_ronda
 
     def cant_canjes(self, jugador: Client | str) -> int:
+        """Obtiene la cantidad de canjes realizados por un jugador.
+
+        Args:
+            jugador: Jugador o nombre del jugador.
+
+        Returns:
+            Cantidad de canjes realizados.
+
+        """
         username = jugador.username() if hasattr(jugador, "username") else str(jugador)
         return self._cant_canjes.get(username, 0)
 
     def canjear(self, jugador: Client | str, tarjetas: list[TarjetaDePais]) -> None:
+        """Realiza un canje de tarjetas por unidades.
+
+        Args:
+            jugador: Jugador o nombre del jugador.
+            tarjetas: Lista de tarjetas a canjear.
+
+        """
         cant_canjes = self.cant_canjes(jugador)
         turno = self._turnos[self._num_turno]
         cantidad_a_agregar = 0
@@ -98,12 +171,25 @@ class Game:
         self._cant_canjes[username] = self._cant_canjes.get(username, 0) + 1
 
     def cant_jugadores(self) -> int:
+        """Obtiene la cantidad de jugadores.
+
+        Returns:
+            Cantidad de jugadores.
+
+        """
         return len(self.lista_jugadores())
 
     def mapa(self) -> Mapa:
+        """Obtiene el mapa del juego.
+
+        Returns:
+            El mapa del juego.
+
+        """
         return self._mapa
 
     def finalizar_turno(self) -> None:
+        """Finaliza el turno actual y avanza al siguiente."""
         self._num_turno += 1
         num = self._num_turno
         cant_jugadores = self.cant_jugadores()
@@ -142,14 +228,30 @@ class Game:
             self._server.enviar_colores_asignados()
 
     def jugadores(self) -> list[Client]:
+        """Obtiene la lista de jugadores.
+
+        Returns:
+            Lista de jugadores.
+
+        """
         return self._jugadores
 
     def lista_jugadores(self) -> list[Client]:
+        """Obtiene la lista de jugadores.
+
+        Returns:
+            Lista de jugadores.
+
+        """
         return self.jugadores()
 
     def lista_jugadores_orden_turno(self) -> list[str]:
-        """Devuelve la lista de jugadores en el orden actual de los turnos."""
+        """Devuelve la lista de jugadores en el orden actual de los turnos.
 
+        Returns:
+            Lista de nombres de jugadores en el orden de los turnos.
+
+        """
         # Obtener los jugadores en el orden de los turnos actuales
         jugadores_orden: list[str] = []
         for turno in self._turnos:
@@ -170,8 +272,10 @@ class Game:
         pais_defensor: str,
         cantidad_unidades: int | None = None,
     ) -> dict[str, Any]:
-        """
-        Realiza un ataque entre dos países.
+        """Realiza un ataque entre dos países.
+
+        Returns:
+            Diccionario con el resultado del ataque.
 
         Args:
             pais_atacante (str): País que inicia el ataque
@@ -179,6 +283,7 @@ class Game:
             cantidad_unidades (int, optional): Cantidad de unidades con las que
                                               atacar (1-3). Si es None, se usa el
                                               máximo posible.
+
         """
         # Obtener las unidades de cada país
         unidades_atacante = self.mapa().cantidad_unidades(pais_atacante)
@@ -274,12 +379,14 @@ class Game:
         }
 
     def _verificar_condicion_victoria(self) -> Client | None:
-        """
-        Verifica si algún jugador ha ganado la partida controlando
-        el número objetivo de países o cumpliendo su objetivo secreto.
+        """Verifica si algún jugador ha ganado la partida.
+
+        Verifica si algún jugador ha ganado controlando el número objetivo
+        de países o cumpliendo su objetivo secreto.
 
         Returns:
-            Client: El jugador ganador si existe, None en caso contrario
+            El jugador ganador si existe, None en caso contrario.
+
         """
         total_paises = len(self._mapa.paises())
 
@@ -340,15 +447,33 @@ class Game:
         return None
 
     def marcar_jugador_puede_reclamar(self, jugador: Client) -> None:
-        """Marca a un jugador como elegible para reclamar tarjeta."""
+        """Marca a un jugador como elegible para reclamar tarjeta.
+
+        Args:
+            jugador: Jugador a marcar como elegible.
+
+        """
         self._jugadores_pueden_reclamar.add(jugador)
 
     def puede_reclamar_tarjeta(self, jugador: Client) -> bool:
-        """Verifica si un jugador puede reclamar tarjeta."""
+        """Verifica si un jugador puede reclamar tarjeta.
+
+        Args:
+            jugador: Jugador a verificar.
+
+        Returns:
+            True si el jugador puede reclamar tarjeta, False en caso contrario.
+
+        """
         return jugador in self._jugadores_pueden_reclamar
 
     def reclamar_tarjeta_jugador(self, jugador: Client) -> None:
-        """Remueve al jugador de la lista de elegibles tras reclamar."""
+        """Remueve al jugador de la lista de elegibles tras reclamar.
+
+        Args:
+            jugador: Jugador que reclamó la tarjeta.
+
+        """
         self._jugadores_pueden_reclamar.discard(jugador)
 
     def limpiar_elegibilidad_reclamar(self) -> None:

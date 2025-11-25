@@ -11,12 +11,22 @@ BASE_DIR = Path(__file__).parent.parent
 
 
 def get_resource_path(relative_path: str) -> Path:
-    """Obtiene la ruta absoluta a un recurso del proyecto."""
+    """Obtiene la ruta absoluta a un recurso del proyecto.
+
+    Returns:
+        Ruta absoluta al recurso.
+
+    """
     return BASE_DIR / relative_path
 
 
 def build_mapa(path: Path | str) -> dict[str, list[object]]:  # noqa: ARG001
-    """Construye un mapa compatible con las expectativas del servidor."""
+    """Construye un mapa compatible con las expectativas del servidor.
+
+    Returns:
+        Diccionario con la estructura del mapa.
+
+    """
     paises_path = get_resource_path("themes/classic/paises.toml")
     cartas_path = get_resource_path("themes/classic/cartas.toml")
     adyacencias_path = get_resource_path("themes/classic/adyacencias.toml")

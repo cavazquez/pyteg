@@ -1,5 +1,4 @@
-"""
-Información de versión del proyecto PyTeg.
+"""Información de versión del proyecto PyTeg.
 
 Este módulo proporciona acceso a la versión del proyecto tanto desde
 el archivo pyproject.toml como desde variables de entorno en tiempo
@@ -28,8 +27,7 @@ _toml_loader = _get_toml_loader()
 
 
 def get_version() -> str:
-    """
-    Obtiene la versión del proyecto.
+    """Obtiene la versión del proyecto.
 
     Intenta obtener la versión desde:
     1. Variable de entorno PYTEG_VERSION (para binarios compilados)
@@ -38,6 +36,7 @@ def get_version() -> str:
 
     Returns:
         str: Versión del proyecto (ej: "0.0.6")
+
     """
     # Primero intentar desde variable de entorno (para binarios)
     version = os.getenv("PYTEG_VERSION")
@@ -64,11 +63,11 @@ def get_version() -> str:
 
 
 def get_version_info() -> dict[str, str]:
-    """
-    Obtiene información completa de versión.
+    """Obtiene información completa de versión.
 
     Returns:
         dict: Diccionario con información de versión
+
     """
     version = get_version()
     return {

@@ -1,11 +1,8 @@
 #!/usr/bin/env python3
-"""
-Script para gestionar las traducciones de PyTeg.
+"""Script para gestionar las traducciones de PyTeg.
 
-Este script permite:
-- Compilar archivos .po a .mo
-- Extraer strings para traducir del código fuente
-- Validar archivos de traducción
+Este script permite compilar archivos .po a .mo, extraer strings para traducir
+del código fuente y validar archivos de traducción.
 """
 
 import re
@@ -61,7 +58,12 @@ def compile_translations() -> None:
 
 
 def _parse_po_file(po_file: Path) -> dict[str, str]:
-    """Parsea un archivo .po y retorna un diccionario de traducciones."""
+    """Parsea un archivo .po y retorna un diccionario de traducciones.
+
+    Returns:
+        Diccionario con las traducciones (msgid -> msgstr).
+
+    """
     translations: dict[str, str] = {}
     current_msgid: str | None = None
     current_msgstr: str | None = None
@@ -117,7 +119,12 @@ def compile_translations_manual() -> None:
 
 
 def extract_strings() -> set[str]:
-    """Extrae strings marcados con _() del código fuente."""
+    """Extrae strings marcados con _() del código fuente.
+
+    Returns:
+        Conjunto de strings únicos encontrados en el código.
+
+    """
     print("Extrayendo strings para traducir...")
 
     pattern = re.compile(r'_\("([^"]+)"\)|_\(\'([^\']+)\'\)')

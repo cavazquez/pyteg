@@ -1,3 +1,5 @@
+"""Módulo para el widget de chat del juego."""
+
 from __future__ import annotations
 
 from typing import Any
@@ -14,13 +16,22 @@ from PySide6.QtWidgets import (
 
 
 class Chat(QWidget):
+    """Widget de chat para comunicación entre jugadores."""
+
     def __init__(self, main_window: Any) -> None:
+        """Inicializa el widget de chat.
+
+        Args:
+            main_window: Ventana principal de la aplicación.
+
+        """
         super().__init__()
         self.main_window = main_window
         self.setup_ui()
         self.setup_styles()
 
     def setup_ui(self) -> None:
+        """Configura la interfaz de usuario del chat."""
         # Layout principal
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(5, 5, 5, 5)
@@ -69,6 +80,7 @@ class Chat(QWidget):
         self.setLayout(main_layout)
 
     def setup_styles(self) -> None:
+        """Configura los estilos CSS del widget de chat."""
         # Estilos generales para la ventana
         self.setStyleSheet("""
             QWidget {
@@ -167,6 +179,7 @@ class Chat(QWidget):
         """)
 
     def send_message(self) -> None:
+        """Envía el mensaje escrito en el campo de entrada."""
         text = self.input_field.text().strip()
         if text:
             # Enviar el mensaje
@@ -179,6 +192,13 @@ class Chat(QWidget):
             self.input_field.setFocus()
 
     def append(self, text: str, msg_type: str = "normal") -> None:
+        """Agrega un mensaje al área de chat.
+
+        Args:
+            text: Texto del mensaje.
+            msg_type: Tipo de mensaje ("normal", "error", "system").
+
+        """
         # Determinar el color y estilo según el tipo de mensaje
         if msg_type == "error":
             # Mensajes de error en rojo
@@ -217,7 +237,12 @@ class Chat(QWidget):
         )
 
     def _format_user_message(self, text: str) -> str:
-        """Formatea un mensaje de usuario aplicando el color del jugador al nombre."""
+        """Formatea un mensaje de usuario aplicando el color del jugador al nombre.
+
+        Returns:
+            Mensaje formateado con el color aplicado.
+
+        """
         # Extraer el nombre de usuario del mensaje (formato: "username: mensaje")
         if ":" in text:
             username, message = text.split(":", 1)
@@ -257,7 +282,12 @@ class Chat(QWidget):
         return formatted_text
 
     def _get_user_color(self, username: str) -> str | None:
-        """Obtiene el color hexadecimal del usuario."""
+        """Obtiene el color hexadecimal del usuario.
+
+        Returns:
+            Color hexadecimal del usuario o None si no se encuentra.
+
+        """
         try:
             # Acceder a los colores asignados desde la ventana principal
             colores_asignados = self.main_window.colores.colores_asignados()

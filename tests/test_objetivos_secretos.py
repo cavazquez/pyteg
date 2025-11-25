@@ -1,3 +1,5 @@
+"""Tests para el módulo de objetivos secretos."""
+
 import unittest
 from typing import cast
 from unittest.mock import Mock, patch
@@ -6,6 +8,8 @@ from src.objetivos_secretos import ObjetivosSecretos
 
 
 class TestObjetivosSecretos(unittest.TestCase):
+    """Tests para la clase ObjetivosSecretos."""
+
     def setUp(self) -> None:
         """Configuración inicial para los tests."""
         # Mock del TomlReader con objetivos de prueba

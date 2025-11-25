@@ -1,3 +1,5 @@
+"""Módulo principal del servidor del juego."""
+
 from __future__ import annotations
 
 import argparse
@@ -22,10 +24,14 @@ if TYPE_CHECKING:
 
 
 class Server:
-    """Tiene la responsabilidad de todo lo relacionado
-    con los clientes y sus conexiones"""
+    """Gestiona clientes y sus conexiones.
+
+    Tiene la responsabilidad de todo lo relacionado con los clientes
+    y sus conexiones.
+    """
 
     def __init__(self) -> None:
+        """Inicializa el servidor con mapa, mazo y configuración inicial."""
         self._clients: dict[int, Client] = {}
         self.color = ServerColor()
         self.estado = Estado()
@@ -74,6 +80,7 @@ class Server:
 
         Args:
             segundos (int): segundos por turno (> 0)
+
         """
         if isinstance(segundos, int) and segundos > 0:
             self._segundos_por_turno = segundos
@@ -83,6 +90,7 @@ class Server:
 
         Args:
             paises (int): países necesarios para victoria (> 0)
+
         """
         if isinstance(paises, int) and paises > 0:
             self._paises_para_victoria = paises
@@ -92,6 +100,7 @@ class Server:
 
         Args:
             activados (bool): True si los objetivos secretos están activados
+
         """
         self._objetivos_secretos = activados
 
@@ -100,6 +109,7 @@ class Server:
 
         Args:
             activados (bool): True si los misiles están habilitados
+
         """
         self._misiles_habilitados = activados
 
@@ -108,29 +118,65 @@ class Server:
 
         Returns:
             bool: True si los misiles están habilitados
+
         """
         return self._misiles_habilitados
 
     def cant_clients(self) -> int:
+        """Obtiene la cantidad de clientes conectados.
+
+        Returns:
+            Cantidad de clientes conectados.
+
+        """
         return len(self._clients)
 
     def quitarme(self, user_id: int) -> None:
+        """Desconecta un cliente del servidor.
+
+        Args:
+            user_id: ID del cliente a desconectar.
+
+        """
         print(f"Quitando {user_id}")
         self._clients.pop(user_id, None)
         # Notificar a todos los clientes restantes sobre la desconexión
         self.enviar_username()
 
     def registrar_cliente(self, user_id: int, client: Client) -> None:
+        """Registra un nuevo cliente en el servidor.
+
+        Args:
+            user_id: ID único del cliente.
+            client: Objeto cliente a registrar.
+
+        """
         self.color.asignar_color_aleatorio(client)
         self._clients[user_id] = client
 
     def dame_lista_jugadores(self) -> list[int]:
+        """Obtiene la lista de IDs de jugadores conectados.
+
+        Returns:
+            Lista de IDs de jugadores.
+
+        """
         return list(self._clients.keys())
 
     def dame_clientes(self) -> list[Client]:
+        """Obtiene la lista de clientes conectados.
+
+        Returns:
+            Lista de clientes.
+
+        """
         return list(self._clients.values())
 
     def enviar_colores_asignados(self) -> None:
+        """Envía los colores asignados a todos los clientes.
+
+        Los envía en el orden de los turnos.
+        """
         # Obtener la lista de clientes en el orden de los turnos
         # si el juego ha comenzado
         if hasattr(self, "game") and self.game is not None:
@@ -165,8 +211,9 @@ class Server:
             self.actualizar_lista_jugadores_ui()
 
     def actualizar_lista_jugadores_ui(self) -> None:
-        """
-        Actualiza la lista de jugadores en la interfaz de usuario de todos los clientes.
+        """Actualiza la lista de jugadores en la interfaz de usuario.
+
+        Actualiza la lista para todos los clientes.
         """
         if not hasattr(self, "game") or self.game is None:
             return
@@ -187,6 +234,7 @@ class Server:
             client.transmisor.actualizar_lista_jugadores(jugadores_con_colores)
 
     def enviar_estado(self) -> None:
+        """Envía el estado actual del juego a todos los clientes."""
         for client in self.dame_clientes():
             client.transmisor.enviar_estado(self.estado.estado_actual())
 
@@ -239,10 +287,18 @@ class Server:
         self.enviar_mapa()
 
     def enviar_chat(self, username: str, msg: str) -> None:
+        """Envía un mensaje de chat a todos los clientes.
+
+        Args:
+            username: Nombre de usuario del remitente.
+            msg: Mensaje de chat.
+
+        """
         for client in self.dame_clientes():
             client.transmisor.enviar_chat(f"{username}: {msg}")
 
     def enviar_userid(self) -> None:
+        """Envía los IDs de usuario a todos los clientes."""
         for client in self.dame_clientes():
             # Primero enviar el ID del cliente actual (su propio ID)
             client.transmisor.enviar_userid(client.userid())
@@ -253,6 +309,7 @@ class Server:
                     client.transmisor.enviar_userid(otro_client.userid())
 
     def enviar_username(self) -> None:
+        """Envía los nombres de usuario a todos los clientes."""
         for client in self.dame_clientes():
             for otro_client in self.dame_clientes():
                 client.transmisor.enviar_username(
@@ -260,9 +317,9 @@ class Server:
                 )
 
     def empezar_partida(self) -> None:
-        """
-        Inicia la partida,
-        asigna colores a los jugadores y notifica a todos los clientes.
+        """Inicia la partida.
+
+        Asigna colores a los jugadores y notifica a todos los clientes.
         """
         print("Iniciando partida...")
 
@@ -390,6 +447,7 @@ class Server:
 
         Args:
             resultado_data (dict): Datos del resultado del misil
+
         """
         for client in self.dame_clientes():
             client.transmisor.enviar_resultado_misil(resultado_data)
@@ -400,6 +458,7 @@ class Server:
         Args:
             pais (str): Nombre del país donde se agregó el misil
             cantidad_misiles (int): Cantidad total de misiles en el país
+
         """
         for client in self.dame_clientes():
             client.transmisor.enviar_misil_agregado(pais, cantidad_misiles)
@@ -440,11 +499,11 @@ class Server:
 
 
 def parse_arguments() -> argparse.Namespace:
-    """
-    Parsea los argumentos de línea de comandos.
+    """Parsea los argumentos de línea de comandos.
 
     Returns:
         argparse.Namespace: Objeto con los argumentos parseados
+
     """
     parser = argparse.ArgumentParser(description="Servidor del juego de estrategia.")
 
@@ -472,9 +531,7 @@ def parse_arguments() -> argparse.Namespace:
 
 
 def main() -> None:
-    """
-    Función principal del servidor.
-    """
+    """Función principal del servidor."""
     args = parse_arguments()
 
     print(f"{NAME} v{VERSION}")

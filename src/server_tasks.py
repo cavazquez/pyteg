@@ -1,3 +1,5 @@
+"""Módulo para manejar las tareas del servidor basadas en mensajes del cliente."""
+
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
@@ -16,6 +18,12 @@ class IServerTask(ABC):
     """Clase base para todas las tareas del servidor."""
 
     def __init__(self, data: dict[str, Any]) -> None:
+        """Inicializa la tarea del servidor.
+
+        Args:
+            data: Datos del mensaje recibido del cliente.
+
+        """
         self._data = data
         self._action_name: str | None = None  # Nombre de la acción para validación
         self._validator = ServerStateValidator()
@@ -35,7 +43,15 @@ class IServerTask(ABC):
 
 
 class ServerTaskNull(IServerTask):
+    """Tarea nula para mensajes no reconocidos."""
+
     def __init__(self, data: dict[str, Any]) -> None:
+        """Inicializa la tarea nula.
+
+        Args:
+            data: Datos del mensaje recibido.
+
+        """
         super().__init__(data)
         # No necesita validación de estado
 
@@ -45,7 +61,15 @@ class ServerTaskNull(IServerTask):
 
 
 class ServerTaskChat(IServerTask):
+    """Tarea para procesar mensajes de chat."""
+
     def __init__(self, data: dict[str, Any]) -> None:
+        """Inicializa la tarea de chat.
+
+        Args:
+            data: Datos del mensaje de chat.
+
+        """
         super().__init__(data)
         self._msg = data.get("msg")
         self._action_name = "chat"
@@ -55,7 +79,15 @@ class ServerTaskChat(IServerTask):
 
 
 class ServerTaskEmpezar(IServerTask):
+    """Tarea para configurar e iniciar la partida."""
+
     def __init__(self, data: dict[str, Any]) -> None:
+        """Inicializa la tarea de empezar partida.
+
+        Args:
+            data: Datos de configuración de la partida.
+
+        """
         super().__init__(data)
         self._segundos = data.get("segundos")
         self._paises_para_victoria = data.get("paises_para_victoria")
@@ -100,7 +132,15 @@ class ServerTaskEmpezar(IServerTask):
 
 
 class ServerTaskSeleccionarColor(IServerTask):
+    """Tarea para seleccionar el color de un jugador."""
+
     def __init__(self, data: dict[str, Any]) -> None:
+        """Inicializa la tarea de seleccionar color.
+
+        Args:
+            data: Datos con el color seleccionado.
+
+        """
         super().__init__(data)
         self._color = data.get("color")
         self._action_name = "seleccionar_color"
@@ -111,7 +151,15 @@ class ServerTaskSeleccionarColor(IServerTask):
 
 
 class ServerTaskEmpezarPartida(IServerTask):
+    """Tarea para iniciar la partida después de la configuración."""
+
     def __init__(self, data: dict[str, Any]) -> None:
+        """Inicializa la tarea de empezar partida.
+
+        Args:
+            data: Datos del mensaje (vacío para esta tarea).
+
+        """
         super().__init__(data)
         self._action_name = "empezar_partida"
 
@@ -127,7 +175,15 @@ class ServerTaskEmpezarPartida(IServerTask):
 
 
 class ServerTaskSetUsername(IServerTask):
+    """Tarea para establecer el nombre de usuario de un cliente."""
+
     def __init__(self, data: dict[str, Any]) -> None:
+        """Inicializa la tarea de establecer username.
+
+        Args:
+            data: Datos con el nombre de usuario.
+
+        """
         super().__init__(data)
         self._username = data.get("username")
         self._action_name = "set_username"
@@ -165,7 +221,15 @@ class ServerTaskSetUsername(IServerTask):
 
 
 class ServerTaskAgregarUnidad(IServerTask):
+    """Tarea para agregar unidades a un país."""
+
     def __init__(self, data: dict[str, Any]) -> None:
+        """Inicializa la tarea de agregar unidad.
+
+        Args:
+            data: Datos con país, tipo de unidad y cantidad.
+
+        """
         super().__init__(data)
         self._pais = data.get("pais")
         self._tipo_unidad = data.get("tipo_unidad")
@@ -228,7 +292,15 @@ class ServerTaskAgregarUnidad(IServerTask):
 
 
 class ServerTaskMoverUnidad(IServerTask):
+    """Tarea para mover unidades entre países."""
+
     def __init__(self, data: dict[str, Any]) -> None:
+        """Inicializa la tarea de mover unidad.
+
+        Args:
+            data: Datos con país de origen, destino y cantidad.
+
+        """
         super().__init__(data)
         self._origen = data.get("origen")
         self._destino = data.get("destino")
@@ -277,7 +349,15 @@ class ServerTaskMoverUnidad(IServerTask):
 
 
 class ServerTaskAtacar(IServerTask):
+    """Tarea para procesar ataques entre países."""
+
     def __init__(self, data: dict[str, Any]) -> None:
+        """Inicializa la tarea de atacar.
+
+        Args:
+            data: Datos con país de origen, destino y cantidad de unidades.
+
+        """
         super().__init__(data)
         self._origen = data.get("origen")
         self._destino = data.get("destino")
@@ -403,7 +483,15 @@ class ServerTaskAtacar(IServerTask):
 
 
 class ServerTaskFinalizarTurno(IServerTask):
+    """Tarea para finalizar el turno de un jugador."""
+
     def __init__(self, data: dict[str, Any]) -> None:
+        """Inicializa la tarea de finalizar turno.
+
+        Args:
+            data: Datos del mensaje (vacío para esta tarea).
+
+        """
         super().__init__(data)
         self._action_name = "finalizar_turno"
 
@@ -430,7 +518,15 @@ class ServerTaskFinalizarTurno(IServerTask):
 
 
 class ServerTaskSolicitarTarjetas(IServerTask):
+    """Tarea para solicitar las tarjetas del jugador."""
+
     def __init__(self, data: dict[str, Any]) -> None:
+        """Inicializa la tarea de solicitar tarjetas.
+
+        Args:
+            data: Datos del mensaje (vacío para esta tarea).
+
+        """
         super().__init__(data)
         # No necesita validación de estado específica
 
@@ -440,7 +536,15 @@ class ServerTaskSolicitarTarjetas(IServerTask):
 
 
 class ServerTaskReclamarTarjeta(IServerTask):
+    """Tarea para reclamar una tarjeta después de conquistar un país."""
+
     def __init__(self, data: dict[str, Any]) -> None:
+        """Inicializa la tarea de reclamar tarjeta.
+
+        Args:
+            data: Datos del mensaje (vacío para esta tarea).
+
+        """
         super().__init__(data)
         self._action_name = "reclamar_tarjeta"
 
@@ -479,7 +583,15 @@ class ServerTaskReclamarTarjeta(IServerTask):
 
 
 class ServerTaskCanjeEspecial(IServerTask):
+    """Tarea para realizar un canje especial (país + tarjeta por 2 unidades)."""
+
     def __init__(self, data: dict[str, Any]) -> None:
+        """Inicializa la tarea de canje especial.
+
+        Args:
+            data: Datos con el país para el canje.
+
+        """
         super().__init__(data)
         self._pais = data.get("pais")
         self._action_name = "canje_especial"
@@ -540,7 +652,15 @@ class ServerTaskCanjeEspecial(IServerTask):
 
 
 class ServerTaskCanjearMisil(IServerTask):
+    """Tarea para canjear 6 unidades por un misil."""
+
     def __init__(self, data: dict[str, Any]) -> None:
+        """Inicializa la tarea de canjear misil.
+
+        Args:
+            data: Datos con el país donde canjear el misil.
+
+        """
         super().__init__(data)
         self._pais = data.get("pais")
         self._action_name = "canjear_misil"
@@ -599,7 +719,15 @@ class ServerTaskCanjearMisil(IServerTask):
 
 
 class ServerTaskLanzarMisil(IServerTask):
+    """Tarea para lanzar un misil desde un país hacia otro."""
+
     def __init__(self, data: dict[str, Any]) -> None:
+        """Inicializa la tarea de lanzar misil.
+
+        Args:
+            data: Datos con país de origen y destino del misil.
+
+        """
         super().__init__(data)
         self._pais_origen = data.get("pais_origen")
         self._pais_destino = data.get("pais_destino")
@@ -632,6 +760,7 @@ class ServerTaskLanzarMisil(IServerTask):
         Returns:
             str | None: Mensaje de error si hay alguna validación fallida,
             None si todo es válido.
+
         """
         # Validar configuración y estado del juego
         error = self._validar_estado_juego(client)
@@ -647,7 +776,12 @@ class ServerTaskLanzarMisil(IServerTask):
         return self._validar_distancia_dano(client)
 
     def _validar_estado_juego(self, client: Any) -> str | None:
-        """Valida que el juego esté en estado correcto."""
+        """Valida que el juego esté en estado correcto.
+
+        Returns:
+            Mensaje de error si la validación falla, None si es válido.
+
+        """
         if not client.server.misiles_habilitados():
             return "Los misiles no están habilitados en esta partida"
 
@@ -661,7 +795,12 @@ class ServerTaskLanzarMisil(IServerTask):
         return None
 
     def _validar_posesion_misil(self, client: Any) -> str | None:
-        """Valida posesión de países y disponibilidad de misiles."""
+        """Valida posesión de países y disponibilidad de misiles.
+
+        Returns:
+            Mensaje de error si la validación falla, None si es válido.
+
+        """
         if client.server.mapa.ocupado_por(self._pais_origen) != client:
             return f"No eres dueño de {self._pais_origen}"
 
@@ -674,7 +813,12 @@ class ServerTaskLanzarMisil(IServerTask):
         return None
 
     def _validar_distancia_dano(self, client: Any) -> str | None:
-        """Valida distancia y daño del misil."""
+        """Valida distancia y daño del misil.
+
+        Returns:
+            Mensaje de error si la validación falla, None si es válido.
+
+        """
         distancia = client.server.mapa.calcular_distancia(
             self._pais_origen, self._pais_destino
         )

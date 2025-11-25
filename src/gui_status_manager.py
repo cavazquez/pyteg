@@ -1,5 +1,4 @@
-"""
-Módulo para gestión de la barra de estado en la interfaz gráfica.
+"""Módulo para gestión de la barra de estado en la interfaz gráfica.
 
 Este módulo contiene la clase StatusManager que maneja toda la lógica
 relacionada con la actualización y gestión de la barra de estado
@@ -16,19 +15,18 @@ from src.debug_logger import debug_logger
 
 
 class StatusManager:
-    """
-    Gestiona la barra de estado y la información del jugador actual.
+    """Gestiona la barra de estado y la información del jugador actual.
 
     Esta clase se encarga de actualizar mensajes en la barra de estado,
     gestionar el estado del juego y mantener la información del jugador actual.
     """
 
     def __init__(self, main_window: Any):
-        """
-        Inicializa el gestor de estado.
+        """Inicializa el gestor de estado.
 
         Args:
             main_window: Referencia a la ventana principal (Gui)
+
         """
         self.main_window = main_window
 
@@ -38,6 +36,7 @@ class StatusManager:
         Args:
             text (str): The message to display in the status bar
             color (str, optional): Color for the text (e.g., 'green', 'red', '#ff0000')
+
         """
         # Apply color styling if provided
         if color:
@@ -73,6 +72,7 @@ class StatusManager:
 
         Args:
             estado (str): The current game state
+
         """
         # Traducir estados técnicos a nombres más amigables
         estados_amigables = {

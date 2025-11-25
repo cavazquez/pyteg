@@ -1,5 +1,4 @@
-"""
-Módulo para gestión de unidades en la interfaz gráfica.
+"""Módulo para gestión de unidades en la interfaz gráfica.
 
 Este módulo contiene la clase UnitsManager que maneja toda la lógica
 relacionada con la visualización y actualización de las unidades disponibles
@@ -14,19 +13,18 @@ from PySide6.QtCore import QTimer
 
 
 class UnitsManager:
-    """
-    Gestiona la visualización y actualización de unidades disponibles.
+    """Gestiona la visualización y actualización de unidades disponibles.
 
     Esta clase se encarga de actualizar el panel de unidades, aplicar estilos
     visuales y gestionar los efectos de cambio (flash) cuando las unidades cambian.
     """
 
     def __init__(self, main_window: Any) -> None:
-        """
-        Inicializa el gestor de unidades.
+        """Inicializa el gestor de unidades.
 
         Args:
             main_window: Referencia a la ventana principal (Gui)
+
         """
         self.main_window = main_window
 
@@ -36,6 +34,7 @@ class UnitsManager:
         Args:
             unidades (dict): Diccionario con el tipo de unidad y la cantidad disponible.
                 Ejemplo: {"infanteria": 5, "misiles": 2, "Africa": 3}
+
         """
         # Mapeo de nombres de continentes del servidor a los de la GUI
         continent_mapping = {

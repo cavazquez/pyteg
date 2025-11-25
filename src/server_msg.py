@@ -1,3 +1,5 @@
+"""Módulo para definir los mensajes que el servidor envía a los clientes."""
+
 from __future__ import annotations
 
 import json
@@ -6,28 +8,59 @@ from typing import Any
 
 
 class IMsg(ABC):
+    """Interfaz base para todos los mensajes del servidor."""
+
     @abstractmethod
     def to_json(self) -> str:
-        pass
+        """Convierte el mensaje a formato JSON.
+
+        Returns:
+            Representación JSON del mensaje.
+
+        """
 
 
 class MsgSosAdmin(IMsg):
+    """Mensaje para notificar que el cliente es administrador."""
+
     def __init__(self) -> None:
+        """Inicializa el mensaje de administrador."""
         self._tipo = "sosadmin"
 
     def to_json(self) -> str:
+        """Convierte el mensaje a formato JSON.
+
+        Returns:
+            Representación JSON del mensaje como cadena.
+
+        """
         data = {"mensaje": self._tipo}
         return json.dumps(data)
 
 
 class MsgColorAsignado(IMsg):
+    """Mensaje para notificar que se asignó un color a un jugador."""
+
     def __init__(self, id_user: int, rgb_json: str) -> None:
+        """Inicializa el mensaje de color asignado.
+
+        Args:
+            id_user: ID del usuario al que se asignó el color.
+            rgb_json: Representación JSON del color RGB.
+
+        """
         self._tipo = "color_asignado"
         self._id_user = id_user
         self._rgb_json = rgb_json
         print(rgb_json)
 
     def to_json(self) -> str:
+        """Convierte el mensaje a formato JSON.
+
+        Returns:
+            Representación JSON del mensaje como cadena.
+
+        """
         data = {
             "mensaje": self._tipo,
             "id": self._id_user,
@@ -37,11 +70,25 @@ class MsgColorAsignado(IMsg):
 
 
 class MsgColor(IMsg):
+    """Mensaje para enviar un color disponible a los clientes."""
+
     def __init__(self, color: Any) -> None:
+        """Inicializa el mensaje de color.
+
+        Args:
+            color: Objeto Color a enviar.
+
+        """
         self._tipo = "color"
         self._color = color
 
     def to_json(self) -> str:
+        """Convierte el mensaje a formato JSON.
+
+        Returns:
+            Representación JSON del mensaje como cadena.
+
+        """
         color_json = json.loads(self._color.to_json())
         data = {
             "mensaje": self._tipo,
@@ -50,12 +97,27 @@ class MsgColor(IMsg):
 
 
 class MsgChat(IMsg):
+    """Mensaje de chat del servidor."""
+
     def __init__(self, msg: str, msg_type: str = "normal") -> None:
+        """Inicializa el mensaje de chat.
+
+        Args:
+            msg: Contenido del mensaje.
+            msg_type: Tipo de mensaje ("normal", "error", "system").
+
+        """
         self._tipo = "chat"
         self._msg = msg
         self._msg_type = msg_type  # "normal", "error", "system"
 
     def to_json(self) -> str:
+        """Convierte el mensaje a formato JSON.
+
+        Returns:
+            Representación JSON del mensaje como cadena.
+
+        """
         data = {
             "mensaje": self._tipo,
             "msg": self._msg,
@@ -65,22 +127,51 @@ class MsgChat(IMsg):
 
 
 class MsgUserId(IMsg):
+    """Mensaje para asignar un ID de usuario a un cliente."""
+
     def __init__(self, user_id: int) -> None:
+        """Inicializa el mensaje de ID de usuario.
+
+        Args:
+            user_id: ID de usuario a asignar.
+
+        """
         self._tipo = "user_id"
         self._user_id = user_id
 
     def to_json(self) -> str:
+        """Convierte el mensaje a formato JSON.
+
+        Returns:
+            Representación JSON del mensaje como cadena.
+
+        """
         data = {"mensaje": self._tipo, "user_id": self._user_id}
         return json.dumps(data)
 
 
 class MsgUsername(IMsg):
+    """Mensaje para actualizar el nombre de usuario de un jugador."""
+
     def __init__(self, userid: int, username: str) -> None:
+        """Inicializa el mensaje de nombre de usuario.
+
+        Args:
+            userid: ID del usuario.
+            username: Nombre de usuario.
+
+        """
         self._tipo = "username"
         self._userid = userid
         self._username = username
 
     def to_json(self) -> str:
+        """Convierte el mensaje a formato JSON.
+
+        Returns:
+            Representación JSON del mensaje como cadena.
+
+        """
         data = {
             "mensaje": self._tipo,
             "username": self._username,
@@ -90,22 +181,51 @@ class MsgUsername(IMsg):
 
 
 class MsgEstado(IMsg):
+    """Mensaje para actualizar el estado del juego."""
+
     def __init__(self, estado: str) -> None:
+        """Inicializa el mensaje de estado.
+
+        Args:
+            estado: Nuevo estado del juego.
+
+        """
         self._tipo = "estado"
         self._estado = estado
 
     def to_json(self) -> str:
+        """Convierte el mensaje a formato JSON.
+
+        Returns:
+            Representación JSON del mensaje como cadena.
+
+        """
         data = {"mensaje": self._tipo, "estado": self._estado}
         return json.dumps(data)
 
 
 class MsgTiempo(IMsg):
+    """Mensaje para actualizar el tiempo restante del turno."""
+
     def __init__(self, userid_turno: int, tiempo_restante: int) -> None:
+        """Inicializa el mensaje de tiempo.
+
+        Args:
+            userid_turno: ID del usuario en turno.
+            tiempo_restante: Tiempo restante en segundos.
+
+        """
         self._tipo = "tiempo"
         self._userid_turno = userid_turno
         self._tiempo_restante = tiempo_restante
 
     def to_json(self) -> str:
+        """Convierte el mensaje a formato JSON.
+
+        Returns:
+            Representación JSON del mensaje como cadena.
+
+        """
         data = {
             "mensaje": self._tipo,
             "user_id": self._userid_turno,
@@ -115,6 +235,8 @@ class MsgTiempo(IMsg):
 
 
 class MsgTurno(IMsg):
+    """Mensaje para actualizar el turno actual del juego."""
+
     def __init__(
         self,
         num_turno: int,
@@ -123,6 +245,16 @@ class MsgTurno(IMsg):
         jugador_actual_nombre: str | None = None,
         jugador_actual_color: str | None = None,
     ) -> None:
+        """Inicializa el mensaje de turno.
+
+        Args:
+            num_turno: Número del turno actual.
+            num_ronda: Número de la ronda actual.
+            jugador_actual_id: ID del jugador en turno.
+            jugador_actual_nombre: Nombre del jugador en turno.
+            jugador_actual_color: Color del jugador en turno.
+
+        """
         self._tipo = "turno"
         self._num_turno = num_turno
         self._num_ronda = num_ronda
@@ -131,6 +263,12 @@ class MsgTurno(IMsg):
         self._jugador_actual_color = jugador_actual_color
 
     def to_json(self) -> str:
+        """Convierte el mensaje a formato JSON.
+
+        Returns:
+            Representación JSON del mensaje como cadena.
+
+        """
         data = {
             "mensaje": self._tipo,
             "num_turno": self._num_turno,
@@ -149,13 +287,29 @@ class MsgTurno(IMsg):
 
 
 class MsgPais(IMsg):
+    """Mensaje para asignar un país a un jugador."""
+
     def __init__(self, pais: str, userid: int, unidades: int) -> None:
+        """Inicializa el mensaje de país.
+
+        Args:
+            pais: Nombre del país.
+            userid: ID del usuario propietario.
+            unidades: Cantidad de unidades en el país.
+
+        """
         self._tipo = "pais"
         self._pais = pais
         self._userid = userid
         self._unidades = unidades
 
     def to_json(self) -> str:
+        """Convierte el mensaje a formato JSON.
+
+        Returns:
+            Representación JSON del mensaje como cadena.
+
+        """
         data = {
             "mensaje": self._tipo,
             "pais": self._pais,
@@ -166,13 +320,29 @@ class MsgPais(IMsg):
 
 
 class MsgAgregarUnidad(IMsg):
+    """Mensaje para agregar unidades a un país."""
+
     def __init__(self, pais: str, tipo_unidad: str, cantidad: int) -> None:
+        """Inicializa el mensaje de agregar unidad.
+
+        Args:
+            pais: Nombre del país.
+            tipo_unidad: Tipo de unidad a agregar.
+            cantidad: Cantidad de unidades a agregar.
+
+        """
         self._tipo = "agregar_unidad"
         self._pais = pais
         self._tipo_unidad = tipo_unidad
         self._cantidad = cantidad
 
     def to_json(self) -> str:
+        """Convierte el mensaje a formato JSON.
+
+        Returns:
+            Representación JSON del mensaje como cadena.
+
+        """
         data = {
             "mensaje": self._tipo,
             "pais": self._pais,
@@ -183,13 +353,27 @@ class MsgAgregarUnidad(IMsg):
 
 
 class MsgUnidadesDisponibles(IMsg):
+    """Mensaje para enviar las unidades disponibles del jugador."""
+
     def __init__(self, unidades: dict[str, int]) -> None:
+        """Inicializa el mensaje de unidades disponibles.
+
+        Args:
+            unidades: Diccionario con el tipo de unidad y la cantidad disponible.
+
+        """
         self._tipo = "unidades_disponibles"
         self._unidades = (
             unidades  # Diccionario con el tipo de unidad y la cantidad disponible
         )
 
     def to_json(self) -> str:
+        """Convierte el mensaje a formato JSON.
+
+        Returns:
+            Representación JSON del mensaje como cadena.
+
+        """
         data = {
             "mensaje": self._tipo,
             "unidades": self._unidades,
@@ -198,13 +382,29 @@ class MsgUnidadesDisponibles(IMsg):
 
 
 class MsgMoverUnidad(IMsg):
+    """Mensaje para mover unidades entre países."""
+
     def __init__(self, origen: str, destino: str, cantidad: int) -> None:
+        """Inicializa el mensaje de mover unidad.
+
+        Args:
+            origen: País de origen.
+            destino: País de destino.
+            cantidad: Cantidad de unidades a mover.
+
+        """
         self._tipo = "mover_unidad"
         self._origen = origen
         self._destino = destino
         self._cantidad = cantidad
 
     def to_json(self) -> str:
+        """Convierte el mensaje a formato JSON.
+
+        Returns:
+            Representación JSON del mensaje como cadena.
+
+        """
         data = {
             "mensaje": self._tipo,
             "origen": self._origen,
@@ -215,18 +415,26 @@ class MsgMoverUnidad(IMsg):
 
 
 class MsgActualizarListaJugadores(IMsg):
+    """Mensaje para actualizar la lista de jugadores en el cliente."""
+
     def __init__(self, jugadores: list[tuple[int, dict[str, int]]]) -> None:
-        """
-        Inicializa un mensaje para actualizar la lista de jugadores en el cliente.
+        """Inicializa un mensaje para actualizar la lista de jugadores en el cliente.
 
         Args:
             jugadores (list): Lista de tuplas (userid, color) donde color es un
                 diccionario con las claves 'r', 'g', 'b'
+
         """
         self._tipo = "actualizar_lista_jugadores"
         self._jugadores = jugadores
 
     def to_json(self) -> str:
+        """Convierte el mensaje a formato JSON.
+
+        Returns:
+            Representación JSON del mensaje como cadena.
+
+        """
         # Convertir la lista de jugadores a un formato serializable
         jugadores_serializados = []
         for userid, color in self._jugadores:
@@ -244,9 +452,10 @@ class MsgActualizarListaJugadores(IMsg):
 
 
 class MsgResultadoBatalla(IMsg):
+    """Mensaje para enviar el resultado de una batalla."""
+
     def __init__(self, batalla_data: dict[str, Any]) -> None:
-        """
-        Inicializa un mensaje con el resultado de una batalla.
+        """Inicializa un mensaje con el resultado de una batalla.
 
         Args:
             batalla_data (dict): Diccionario con todos los datos de la batalla:
@@ -258,6 +467,7 @@ class MsgResultadoBatalla(IMsg):
                 - dados_defensor (list): Lista de dados del defensor
                 - resultado (dict): Resultado de la batalla con pérdidas
                 - conquistado (bool): Si el país fue conquistado
+
         """
         self._tipo = "resultado_batalla"
         self._origen = batalla_data["origen"]
@@ -270,6 +480,12 @@ class MsgResultadoBatalla(IMsg):
         self._conquistado = batalla_data.get("conquistado", False)
 
     def to_json(self) -> str:
+        """Convierte el mensaje a formato JSON.
+
+        Returns:
+            Representación JSON del mensaje como cadena.
+
+        """
         data = {
             "mensaje": self._tipo,
             "origen": self._origen,
@@ -285,19 +501,27 @@ class MsgResultadoBatalla(IMsg):
 
 
 class MsgError(IMsg):
+    """Mensaje para enviar errores del servidor a los clientes."""
+
     def __init__(self, error_type: str, message: str) -> None:
-        """
-        Inicializa un mensaje de error del servidor.
+        """Inicializa un mensaje de error del servidor.
 
         Args:
             error_type (str): Tipo de error (ej: "duplicate_username")
             message (str): Mensaje descriptivo del error
+
         """
         self._tipo = "error"
         self._error_type = error_type
         self._message = message
 
     def to_json(self) -> str:
+        """Convierte el mensaje a formato JSON.
+
+        Returns:
+            Representación JSON del mensaje como cadena.
+
+        """
         data = {
             "mensaje": self._tipo,
             "error_type": self._error_type,
@@ -307,19 +531,27 @@ class MsgError(IMsg):
 
 
 class MsgVictoria(IMsg):
+    """Mensaje para notificar la victoria de un jugador."""
+
     def __init__(self, ganador_id: str, ganador_nombre: str) -> None:
-        """
-        Inicializa un mensaje de victoria.
+        """Inicializa un mensaje de victoria.
 
         Args:
             ganador_id (str): ID del jugador ganador
             ganador_nombre (str): Nombre del jugador ganador
+
         """
         self._tipo = "victoria"
         self._ganador_id = ganador_id
         self._ganador_nombre = ganador_nombre
 
     def to_json(self) -> str:
+        """Convierte el mensaje a formato JSON.
+
+        Returns:
+            Representación JSON del mensaje como cadena.
+
+        """
         data = {
             "mensaje": self._tipo,
             "ganador_id": self._ganador_id,
@@ -329,6 +561,8 @@ class MsgVictoria(IMsg):
 
 
 class MsgConfiguracionPartida(IMsg):
+    """Mensaje para enviar la configuración de la partida."""
+
     def __init__(
         self,
         segundos_por_turno: int,
@@ -337,14 +571,14 @@ class MsgConfiguracionPartida(IMsg):
         objetivos_secretos: bool = False,
         misiles_habilitados: bool = False,
     ) -> None:
-        """
-        Inicializa un mensaje con la configuración de la partida.
+        """Inicializa un mensaje con la configuración de la partida.
 
         Args:
             segundos_por_turno (int): Duración de cada turno en segundos
             paises_para_victoria (int): Número de países necesarios para ganar
             objetivos_secretos (bool): Si los objetivos secretos están activados
             misiles_habilitados (bool): Si el sistema de misiles está habilitado
+
         """
         self._tipo = "configuracion_partida"
         self._segundos_por_turno = segundos_por_turno
@@ -353,6 +587,12 @@ class MsgConfiguracionPartida(IMsg):
         self._misiles_habilitados = misiles_habilitados
 
     def to_json(self) -> str:
+        """Convierte el mensaje a formato JSON.
+
+        Returns:
+            Representación JSON del mensaje como cadena.
+
+        """
         data = {
             "mensaje": self._tipo,
             "segundos_por_turno": self._segundos_por_turno,
@@ -364,19 +604,27 @@ class MsgConfiguracionPartida(IMsg):
 
 
 class MsgObjetivoSecreto(IMsg):
+    """Mensaje para enviar el objetivo secreto asignado a un jugador."""
+
     def __init__(self, objetivo_id: str, descripcion: str) -> None:
-        """
-        Inicializa un mensaje con el objetivo secreto asignado al jugador.
+        """Inicializa un mensaje con el objetivo secreto asignado al jugador.
 
         Args:
             objetivo_id (str): ID del objetivo secreto
             descripcion (str): Descripción del objetivo secreto
+
         """
         self._tipo = "objetivo_secreto"
         self._objetivo_id = objetivo_id
         self._descripcion = descripcion
 
     def to_json(self) -> str:
+        """Convierte el mensaje a formato JSON.
+
+        Returns:
+            Representación JSON del mensaje como cadena.
+
+        """
         data = {
             "mensaje": self._tipo,
             "objetivo_id": self._objetivo_id,
@@ -386,18 +634,26 @@ class MsgObjetivoSecreto(IMsg):
 
 
 class MsgTarjetasJugador(IMsg):
+    """Mensaje para enviar las tarjetas de un jugador."""
+
     def __init__(self, tarjetas: list[dict[str, str]]) -> None:
-        """
-        Inicializa un mensaje con las tarjetas del jugador.
+        """Inicializa un mensaje con las tarjetas del jugador.
 
         Args:
             tarjetas (list): Lista de tarjetas con formato
                 [{"pais": str, "simbolo": str}, ...]
+
         """
         self._tipo = "tarjetas_jugador"
         self._tarjetas = tarjetas
 
     def to_json(self) -> str:
+        """Convierte el mensaje a formato JSON.
+
+        Returns:
+            Representación JSON del mensaje como cadena.
+
+        """
         data = {
             "mensaje": self._tipo,
             "tarjetas": self._tarjetas,
@@ -406,32 +662,63 @@ class MsgTarjetasJugador(IMsg):
 
 
 class MsgSolicitarTarjetas(IMsg):
+    """Mensaje para solicitar las tarjetas del jugador al servidor."""
+
     def __init__(self) -> None:
-        """Mensaje para solicitar las tarjetas del jugador al servidor."""
+        """Inicializa el mensaje de solicitar tarjetas."""
         self._tipo = "solicitar_tarjetas"
 
     def to_json(self) -> str:
+        """Convierte el mensaje a formato JSON.
+
+        Returns:
+            Representación JSON del mensaje como cadena.
+
+        """
         data = {"mensaje": self._tipo}
         return json.dumps(data)
 
 
 class MsgReclamarTarjeta(IMsg):
+    """Mensaje para reclamar una tarjeta después de conquistar un país."""
+
     def __init__(self) -> None:
-        """Mensaje para reclamar una tarjeta después de conquistar un país."""
+        """Inicializa el mensaje de reclamar tarjeta."""
         self._tipo = "reclamar_tarjeta"
 
     def to_json(self) -> str:
+        """Convierte el mensaje a formato JSON.
+
+        Returns:
+            Representación JSON del mensaje como cadena.
+
+        """
         data = {"mensaje": self._tipo}
         return json.dumps(data)
 
 
 class MsgCanjeEspecial(IMsg):
+    """Mensaje para notificar un canje especial de país + tarjeta."""
+
     def __init__(self, pais: str, unidades_agregadas: int) -> None:
+        """Inicializa el mensaje de canje especial.
+
+        Args:
+            pais: País donde se agregaron las unidades.
+            unidades_agregadas: Cantidad de unidades agregadas.
+
+        """
         self._tipo = "canje_especial"
         self._pais = pais
         self._unidades_agregadas = unidades_agregadas
 
     def to_json(self) -> str:
+        """Convierte el mensaje a formato JSON.
+
+        Returns:
+            Representación JSON del mensaje como cadena.
+
+        """
         data = {
             "mensaje": self._tipo,
             "pais": self._pais,
@@ -441,9 +728,10 @@ class MsgCanjeEspecial(IMsg):
 
 
 class MsgResultadoMisil(IMsg):
+    """Mensaje para enviar el resultado del lanzamiento de un misil."""
+
     def __init__(self, resultado_data: dict[str, Any]) -> None:
-        """
-        Inicializa un mensaje con el resultado del lanzamiento de un misil.
+        """Inicializa un mensaje con el resultado del lanzamiento de un misil.
 
         Args:
             resultado_data (dict): Diccionario con todos los datos del misil:
@@ -453,6 +741,7 @@ class MsgResultadoMisil(IMsg):
                 - distancia (int): Distancia entre países
                 - dano (int): Daño causado (unidades perdidas)
                 - unidades_restantes (int): Unidades que quedan en destino
+
         """
         self._tipo = "resultado_misil"
         self._jugador = resultado_data["jugador"]
@@ -463,6 +752,12 @@ class MsgResultadoMisil(IMsg):
         self._unidades_restantes = resultado_data["unidades_restantes"]
 
     def to_json(self) -> str:
+        """Convierte el mensaje a formato JSON.
+
+        Returns:
+            Representación JSON del mensaje como cadena.
+
+        """
         data = {
             "mensaje": self._tipo,
             "jugador": self._jugador,
@@ -476,19 +771,27 @@ class MsgResultadoMisil(IMsg):
 
 
 class MsgMisilAgregado(IMsg):
+    """Mensaje para notificar que se agregó un misil a un país."""
+
     def __init__(self, pais: str, cantidad_misiles: int) -> None:
-        """
-        Inicializa un mensaje para notificar que se agregó un misil a un país.
+        """Inicializa un mensaje para notificar que se agregó un misil a un país.
 
         Args:
             pais (str): Nombre del país donde se agregó el misil
             cantidad_misiles (int): Cantidad total de misiles en el país
+
         """
         self._tipo = "misil_agregado"
         self._pais = pais
         self._cantidad_misiles = cantidad_misiles
 
     def to_json(self) -> str:
+        """Convierte el mensaje a formato JSON.
+
+        Returns:
+            Representación JSON del mensaje como cadena.
+
+        """
         data = {
             "mensaje": self._tipo,
             "pais": self._pais,

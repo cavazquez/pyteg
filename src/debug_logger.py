@@ -1,3 +1,5 @@
+"""Módulo para logging de debug del proyecto."""
+
 from __future__ import annotations
 
 import datetime
@@ -7,7 +9,16 @@ from pathlib import Path
 
 
 class DebugLogger:
+    """Logger para mensajes de debug con escritura a archivo."""
+
     def __init__(self, log_file: str | None = None) -> None:
+        """Inicializa el logger de debug.
+
+        Args:
+            log_file: Ruta del archivo de log (opcional). Si no se proporciona,
+                se determina automáticamente según el tipo de proceso.
+
+        """
         self.pid = os.getpid()
         self.process_type = "UNKNOWN"
 
@@ -44,6 +55,12 @@ class DebugLogger:
             f.write(f"=== PROCESO: {self.process_type} PID: {self.pid} ===\n\n")
 
     def log(self, message: str) -> None:
+        """Registra un mensaje de debug en el archivo de log.
+
+        Args:
+            message: Mensaje a registrar.
+
+        """
         timestamp = datetime.datetime.now().astimezone().strftime("%H:%M:%S.%f")[:-3]
         full_message = f"[{self.process_type}:{self.pid}] {message}"
 

@@ -1,3 +1,5 @@
+"""Módulo para el cliente del servidor."""
+
 from __future__ import annotations
 
 import json
@@ -13,11 +15,12 @@ if TYPE_CHECKING:
 
 
 class Client:
+    """Representa un cliente conectado al servidor."""
+
     def __init__(
         self, user_id: int, conn: Any, server: Any, username: str, *, soy_admin: bool
     ) -> None:
-        """
-        Inicializa un nuevo cliente.
+        """Inicializa un nuevo cliente.
 
         :param user_id: ID del usuario
         :param conn: Conexión del cliente
@@ -35,74 +38,75 @@ class Client:
         self._logger = get_logger(f"server.client.{user_id}")
 
     def asignar_color(self, color: IColor | None) -> None:
-        """
-        Asigna un color al cliente.
+        """Asigna un color al cliente.
 
         :param color: Color a asignar
         """
         self._color = color
 
     def es_admin(self) -> bool:
-        """
-        Verifica si el cliente es administrador.
+        """Verifica si el cliente es administrador.
 
-        :return: True si es administrador, False en caso contrario
+        Returns:
+            True si es administrador, False en caso contrario.
+
         """
         return self._soy_admin
 
     def cambiar_color(self, color: str) -> None:
-        """
-        Cambia el color del cliente.
+        """Cambia el color del cliente.
 
         :param color: Nuevo color a asignar
         """
         self.server.color.asignar_color(self, color)
 
     def set_username(self, username: str) -> None:
-        """
-        Establece el nombre de usuario del cliente.
+        """Establece el nombre de usuario del cliente.
 
         :param username: Nuevo nombre de usuario
         """
         self._username = username
 
     def color_actual(self) -> IColor | None:
-        """
-        Obtiene el color actual del cliente.
+        """Obtiene el color actual del cliente.
 
-        :return: Color actual del cliente
+        Returns:
+            Color actual del cliente.
+
         """
         return self._color
 
     def userid(self) -> int:
-        """
-        Obtiene el ID de usuario del cliente.
+        """Obtiene el ID de usuario del cliente.
 
-        :return: ID de usuario del cliente
+        Returns:
+            ID de usuario del cliente.
+
         """
         return self._user_id
 
     def username(self) -> str:
-        """
-        Obtiene el nombre de usuario del cliente.
+        """Obtiene el nombre de usuario del cliente.
 
-        :return: Nombre de usuario del cliente
+        Returns:
+            Nombre de usuario del cliente.
+
         """
         return self._username
 
     def enviar(self, data: bytes) -> None:
-        """
-        Envía datos al cliente.
+        """Envía datos al cliente.
 
         :param data: Datos a enviar
         """
         self._conn.send(data)
 
     def recibir(self) -> list[str]:
-        """
-        Recibe datos del cliente.
+        """Recibe datos del cliente.
 
-        :return: Datos recibidos
+        Returns:
+            Lista de datos recibidos.
+
         """
         result = self._conn.receiver()
         if isinstance(result, list):
@@ -110,15 +114,13 @@ class Client:
         return []
 
     def cerrar(self) -> None:
-        """
-        Cierra la conexión del cliente.
-        """
+        """Cierra la conexión del cliente."""
         self._conn.close()
 
     def run(self) -> None:
-        """
-        Ejecuta el ciclo principal del cliente, manejando la recepción de datos
-        y la ejecución de tareas.
+        """Ejecuta el ciclo principal del cliente.
+
+        Maneja la recepción de datos y la ejecución de tareas.
         """
         vivo = True
 
@@ -153,8 +155,7 @@ class Client:
         self.server.quitarme(self._user_id)
 
     def ejecutar_mensaje(self, data: dict[str, Any]) -> None:
-        """
-        Ejecuta una tarea basada en el mensaje recibido.
+        """Ejecuta una tarea basada en el mensaje recibido.
 
         :param data: Datos del mensaje en formato JSON
         """

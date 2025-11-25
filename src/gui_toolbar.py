@@ -1,3 +1,5 @@
+"""Módulo para la barra de herramientas de la interfaz gráfica."""
+
 from __future__ import annotations
 
 from functools import partial
@@ -20,7 +22,16 @@ from src.utils import get_resource_path
 
 
 class ToolBar(QToolBar):
+    """Barra de herramientas principal de la aplicación."""
+
     def __init__(self, texto: str, main_window: Any) -> None:
+        """Inicializa la barra de herramientas.
+
+        Args:
+            texto: Texto de la barra de herramientas.
+            main_window: Ventana principal de la aplicación.
+
+        """
         super().__init__(texto)
         self.setMovable(False)
         self.setFloatable(False)
@@ -134,8 +145,12 @@ class ToolBar(QToolBar):
     def _validar_icono(self, ruta_icono: str, contexto: str = "") -> QIcon:
         """Valida que un archivo de icono existe y se puede cargar.
 
+        Returns:
+            QIcon con el icono cargado.
+
         Raises:
             ImagenNoEncontradaError: Si el archivo de icono no existe.
+
         """
         ruta_completa = get_resource_path(ruta_icono)
         if not ruta_completa.exists():
@@ -146,7 +161,7 @@ class ToolBar(QToolBar):
         return QIcon(str(ruta_completa))
 
     def _setup_spacers_right(self) -> None:
-        """Añade un expansor a la derecha para empujar elementos finales"""
+        """Añade un expansor a la derecha para empujar elementos finales."""
         right_spacer = QWidget(self)
         right_spacer.setSizePolicy(
             QSizePolicy.Policy.Expanding,
@@ -155,7 +170,7 @@ class ToolBar(QToolBar):
         self.addWidget(right_spacer)
 
     def _setup_action_buttons(self) -> None:  # noqa: PLR0915
-        """Configura los botones de acción en la barra de herramientas"""
+        """Configura los botones de acción en la barra de herramientas."""
         # Grupo: Conexión
         icono_conectar = self._validar_icono("icons/conectar.png", "conectar")
         self.button_conectar = QAction(icono_conectar, _("Conectar"), self)
@@ -237,7 +252,7 @@ class ToolBar(QToolBar):
         # Grupo: Administración (removido)
 
     def _setup_size_menu(self) -> None:
-        """Configura el menú de tamaño y su botón"""
+        """Configura el menú de tamaño y su botón."""
         # Crear y configurar el menú
         self.size_menu = self._create_size_menu()
 
@@ -263,7 +278,12 @@ class ToolBar(QToolBar):
         self.addWidget(size_button)
 
     def _create_size_menu(self) -> QMenu:
-        """Crea el menú de tamaño con todas sus opciones"""
+        """Crea el menú de tamaño con todas sus opciones.
+
+        Returns:
+            Menú de tamaño creado.
+
+        """
         menu = QMenu(self)
         menu.setStyleSheet("""
             QMenu {
@@ -342,7 +362,12 @@ class ToolBar(QToolBar):
         return menu
 
     def _create_size_button(self) -> QToolButton:
-        """Crea el botón de tamaño con su estilo"""
+        """Crea el botón de tamaño con su estilo.
+
+        Returns:
+            Botón de tamaño creado.
+
+        """
         size_button = QToolButton(self)
         icono_resize = self._validar_icono("icons/resize.png", "botón de redimensionar")
         size_button.setIcon(icono_resize)
@@ -374,7 +399,7 @@ class ToolBar(QToolBar):
         return size_button
 
     def resize_window(self, width: int, height: int) -> None:
-        """Cambia el tamaño de la ventana principal"""
+        """Cambia el tamaño de la ventana principal."""
         if width == 0 or height == 0:  # Pantalla completa
             self.main_window.showFullScreen()
             if self.button_fullscreen:
@@ -389,7 +414,7 @@ class ToolBar(QToolBar):
                 self.button_fullscreen.setChecked(False)
 
     def fit_to_screen(self) -> None:
-        """Ajusta la ventana al tamaño de la pantalla con un margen"""
+        """Ajusta la ventana al tamaño de la pantalla con un margen."""
         # Obtener el tamaño disponible de la pantalla
         screen = QApplication.primaryScreen().availableGeometry()
         # Calcular un tamaño que sea el 90% del tamaño disponible
@@ -401,7 +426,7 @@ class ToolBar(QToolBar):
         self.center_window()
 
     def center_window(self) -> None:
-        """Centra la ventana en la pantalla"""
+        """Centra la ventana en la pantalla."""
         frame_geometry = self.main_window.frameGeometry()
         screen_center = QApplication.primaryScreen().availableGeometry().center()
         frame_geometry.moveCenter(screen_center)
@@ -410,7 +435,7 @@ class ToolBar(QToolBar):
     def actualizar_botones_seleccion(
         self, *, hay_dos_paises_seleccionados: bool
     ) -> None:
-        """Actualiza el estado de los botones de atacar y mover según la selección"""
+        """Actualiza el estado de los botones de atacar y mover según la selección."""
         # Solo actualizar si está conectado
         if self._esta_conectado():
             if self.button_atacar:
@@ -419,14 +444,19 @@ class ToolBar(QToolBar):
                 self.button_mover.setEnabled(hay_dos_paises_seleccionados)
 
     def actualizar_estado_conexion(self, *, conectado: bool) -> None:
-        """Actualiza el estado de todos los botones según el estado de conexión"""
+        """Actualiza el estado de todos los botones según el estado de conexión."""
         if conectado:
             self._habilitar_botones_conectado()
         else:
             self._habilitar_solo_conectar()
 
     def _esta_conectado(self) -> bool:
-        """Verifica si el cliente está conectado al servidor"""
+        """Verifica si el cliente está conectado al servidor.
+
+        Returns:
+            True si está conectado, False en caso contrario.
+
+        """
         if not hasattr(self.main_window, "transmisor"):
             return False
         if self.main_window.transmisor is None:
@@ -440,7 +470,7 @@ class ToolBar(QToolBar):
         return bool(not transmisor_type_name.endswith("NullTransmisor"))
 
     def _habilitar_solo_conectar(self) -> None:
-        """Deshabilita todos los botones excepto el de conectar"""
+        """Deshabilita todos los botones excepto el de conectar."""
         if self.button_conectar:
             self.button_conectar.setEnabled(True)
         if self.button_atacar:
@@ -451,7 +481,7 @@ class ToolBar(QToolBar):
         # Botón admin removido
 
     def _habilitar_botones_conectado(self) -> None:
-        """Habilita los botones apropiados cuando está conectado"""
+        """Habilita los botones apropiados cuando está conectado."""
         # Deshabilitar botón conectar
         if self.button_conectar:
             self.button_conectar.setEnabled(False)
@@ -467,7 +497,7 @@ class ToolBar(QToolBar):
         # El botón finalizar turno permanece siempre habilitado
 
     def _atacar_paises_seleccionados(self) -> None:
-        """Ejecuta ataque entre los países seleccionados"""
+        """Ejecuta ataque entre los países seleccionados."""
         if hasattr(self.main_window, "scene") and self.main_window.scene:
             selection_manager = self.main_window.scene.selection_manager
             origen = selection_manager.get_pais_origen()
@@ -484,7 +514,7 @@ class ToolBar(QToolBar):
                 selection_manager.cancelar_seleccion()
 
     def _mover_paises_seleccionados(self) -> None:
-        """Ejecuta movimiento entre los países seleccionados"""
+        """Ejecuta movimiento entre los países seleccionados."""
         if hasattr(self.main_window, "scene") and self.main_window.scene:
             selection_manager = self.main_window.scene.selection_manager
             origen = selection_manager.get_pais_origen()
@@ -513,7 +543,7 @@ class ToolBar(QToolBar):
                 self.button_fullscreen.setChecked(True)
 
     def _reset_map_zoom(self) -> None:
-        """Resetea el zoom del mapa para ajustarlo a la ventana"""
+        """Resetea el zoom del mapa para ajustarlo a la ventana."""
         if hasattr(self.main_window, "w") and self.main_window.w:
             # Acceder a la vista del mapa y resetear el zoom
             view = self.main_window.w

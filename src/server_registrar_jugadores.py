@@ -15,16 +15,25 @@ if TYPE_CHECKING:
 
 
 class ServerLike(Protocol):
+    """Protocolo que define la interfaz mínima requerida del servidor."""
+
     estado: Estado
 
-    def registrar_cliente(self, user_id: Any, client: Any) -> None: ...
+    def registrar_cliente(self, user_id: Any, client: Any) -> None:
+        """Registra un cliente en el servidor.
+
+        Args:
+            user_id: ID del usuario.
+            client: Cliente a registrar.
+
+        """
+        ...
 
 
 def registrar_jugadores(
     server: ServerLike, host: str = "127.0.0.1", port: int = 65432
 ) -> None:
     """Inicia el servidor para aceptar conexiones de jugadores."""
-
     logger = get_logger("server.registrar_jugadores")
     logger.info("Iniciando servidor de jugadores en %s:%s", host, port)
 

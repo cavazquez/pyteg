@@ -1,3 +1,5 @@
+"""Módulo para el menú contextual de países."""
+
 from __future__ import annotations
 
 from typing import Any
@@ -9,6 +11,8 @@ from src.gui_attack_dialog import AttackDialog
 
 
 class Menu(QMenu):
+    """Menú contextual que se muestra al hacer clic derecho en un país."""
+
     # Variable de clase para rastrear el país de origen para mover unidades
     pais_origen: str | None = None
 
@@ -17,7 +21,15 @@ class Menu(QMenu):
         pais: str,
         main_window: Any,
         parent: QWidget | None = None,
-    ):
+    ) -> None:
+        """Inicializa el menú contextual para un país.
+
+        Args:
+            pais: Nombre del país.
+            main_window: Ventana principal de la aplicación.
+            parent: Widget padre (opcional). En Wayland se usa main_window.
+
+        """
         # En Wayland, el menú necesita tener la ventana principal como padre
         # para evitar errores de "grabbing popup"
         super().__init__(parent or main_window)
@@ -73,6 +85,7 @@ class Menu(QMenu):
         self.actualizar_menu()
 
     def actualizar_menu(self) -> None:
+        """Actualiza las opciones del menú según el estado actual de selección."""
         # Limpiar el menú
         self.clear()
 
@@ -139,22 +152,24 @@ class Menu(QMenu):
             self.addAction(self.action_cancelar_seleccion)
 
     def agregar_infanteria(self) -> None:
+        """Agrega una unidad de infantería al país."""
         if self.transmisor is not None:
             self.transmisor.agregar_unidad(pais=self.pais, tipo_unidad="infanteria")
 
     def agregar_misil(self) -> None:
+        """Agrega un misil al país."""
         if self.transmisor is not None:
             self.transmisor.agregar_unidad(pais=self.pais, tipo_unidad="misil")
 
     def iniciar_movimiento(self) -> None:
-        """Inicia el proceso de movimiento de unidades desde este país"""
+        """Inicia el proceso de movimiento de unidades desde este país."""
         Menu.pais_origen = self.pais
         # Actualizar el menú en la ventana principal
         if hasattr(self.main_window, "actualizar_menus_contextuales"):
             self.main_window.actualizar_menus_contextuales()
 
     def completar_movimiento(self, cantidad: int) -> None:
-        """Completa el movimiento de unidades desde el país de origen al país actual"""
+        """Completa el movimiento de unidades desde el país de origen al país actual."""
         if Menu.pais_origen is None or self.transmisor is None:
             return
 
@@ -169,13 +184,13 @@ class Menu(QMenu):
             self.main_window.actualizar_menus_contextuales()
 
     def cancelar_movimiento(self) -> None:
-        """Cancela el proceso de movimiento de unidades"""
+        """Cancela el proceso de movimiento de unidades."""
         Menu.pais_origen = None
         if hasattr(self.main_window, "actualizar_menus_contextuales"):
             self.main_window.actualizar_menus_contextuales()
 
     def atacar(self) -> None:
-        """Ataca del país origen al país destino"""
+        """Ataca del país origen al país destino."""
         scene = getattr(self.main_window, "scene", None)
         selection_manager = getattr(scene, "selection_manager", None)
         if selection_manager:
@@ -217,7 +232,7 @@ class Menu(QMenu):
             selection_manager.cancelar_seleccion()
 
     def mover(self) -> None:
-        """Mueve unidades del país origen al país destino"""
+        """Mueve unidades del país origen al país destino."""
         scene = getattr(self.main_window, "scene", None)
         selection_manager = getattr(scene, "selection_manager", None)
         if selection_manager:
@@ -240,13 +255,13 @@ class Menu(QMenu):
             selection_manager.cancelar_seleccion()
 
     def cancelar_seleccion_menu(self) -> None:
-        """Cancela la selección actual desde el menú contextual"""
+        """Cancela la selección actual desde el menú contextual."""
         scene = getattr(self.main_window, "scene", None)
         selection_manager = getattr(scene, "selection_manager", None)
         if selection_manager:
             selection_manager.cancelar_seleccion()
 
     def canjear_misil(self) -> None:
-        """Canjea 6 unidades por 1 misil en el país actual"""
+        """Canjea 6 unidades por 1 misil en el país actual."""
         if hasattr(self.main_window, "canjear_misil"):
             self.main_window.canjear_misil(self.pais)

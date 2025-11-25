@@ -1,5 +1,5 @@
-"""
-Gestor de temas para la interfaz gráfica principal de PyTeg.
+"""Gestor de temas para la interfaz gráfica principal de PyTeg.
+
 Maneja la aplicación y gestión de temas claro/oscuro en toda la aplicación.
 """
 
@@ -18,6 +18,7 @@ class ThemeManager:
 
         Args:
             main_window: Instancia de la ventana principal (Gui)
+
         """
         self.main_window = main_window
 

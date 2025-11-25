@@ -9,7 +9,15 @@ if TYPE_CHECKING:
 
 
 class MensajeNoValidoError(Exception):
+    """Excepción cuando se recibe un mensaje no válido."""
+
     def __init__(self, msg: str) -> None:
+        """Inicializa la excepción con un mensaje.
+
+        Args:
+            msg: Mensaje de error.
+
+        """
         self._msg = f"MensajeNoValidoError: {msg}"
         super().__init__(self._msg)
 
@@ -20,6 +28,14 @@ class EstadoInvalidoError(Exception):
     def __init__(
         self, accion: str, estado_actual: str, estados_validos: Sequence[str]
     ) -> None:
+        """Inicializa la excepción con información del estado inválido.
+
+        Args:
+            accion: Acción que se intentó ejecutar.
+            estado_actual: Estado actual del sistema.
+            estados_validos: Secuencia de estados válidos para la acción.
+
+        """
         self.accion = accion
         self.estado_actual = estado_actual
         self.estados_validos = list(estados_validos)
@@ -35,6 +51,13 @@ class ImagenNoEncontradaError(Exception):
     """Excepción cuando no se puede cargar una imagen requerida."""
 
     def __init__(self, ruta_imagen: str, contexto: str = "") -> None:
+        """Inicializa la excepción con la ruta de la imagen.
+
+        Args:
+            ruta_imagen: Ruta de la imagen que no se pudo cargar.
+            contexto: Contexto adicional sobre dónde se intentó cargar la imagen.
+
+        """
         self.ruta_imagen = ruta_imagen
         self.contexto = contexto
         msg = f"No se pudo cargar la imagen: '{ruta_imagen}'"

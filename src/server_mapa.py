@@ -1,3 +1,5 @@
+"""Módulo para manejar el mapa del juego en el servidor."""
+
 import json
 from collections import deque
 from collections.abc import Callable
@@ -6,6 +8,8 @@ from typing import Any
 
 
 class Mapa:
+    """Representa el mapa del juego con países, continentes y jugadores."""
+
     # Constantes para índices de la estructura de datos del mapa
     _UNIDADES = 0
     _CONTINENTE = 1
@@ -13,7 +17,13 @@ class Mapa:
     _ADYACENTES = 3
     _MISILES = 4
 
-    def __init__(self, build_mapa: Callable[[], dict[str, list[Any]]]):
+    def __init__(self, build_mapa: Callable[[], dict[str, list[Any]]]) -> None:
+        """Inicializa el mapa del juego.
+
+        Args:
+            build_mapa: Función que construye y retorna el diccionario del mapa.
+
+        """
         self._mapa = (
             build_mapa()
         )  # Ahora build_mapa ya devuelve el diccionario completo
@@ -35,33 +45,99 @@ class Mapa:
                     )
 
     def agregar_una_unidad(self, pais: str) -> None:
+        """Agrega una unidad al país especificado.
+
+        Args:
+            pais: Nombre del país.
+
+        """
         self._mapa[pais][self._UNIDADES] += 1
 
     def restar_una_unidad(self, pais: str) -> None:
+        """Resta una unidad del país especificado.
+
+        Args:
+            pais: Nombre del país.
+
+        """
         self._mapa[pais][self._UNIDADES] -= 1
 
     def cantidad_unidades(self, pais: str) -> int:
+        """Obtiene la cantidad de unidades en un país.
+
+        Args:
+            pais: Nombre del país.
+
+        Returns:
+            Cantidad de unidades en el país.
+
+        """
         return int(self._mapa[pais][self._UNIDADES])
 
     def set_unidades(self, pais: str, cant: int) -> None:
+        """Establece la cantidad de unidades en un país.
+
+        Args:
+            pais: Nombre del país.
+            cant: Cantidad de unidades a establecer.
+
+        """
         self._mapa[pais][self._UNIDADES] = cant
 
     def mover(self, desde: str, hacia: str, cantidad: int) -> None:
+        """Mueve unidades entre dos países.
+
+        Args:
+            desde: País de origen.
+            hacia: País de destino.
+            cantidad: Cantidad de unidades a mover.
+
+        """
         self._mapa[desde][self._UNIDADES] -= cantidad
         self._mapa[hacia][self._UNIDADES] += cantidad
 
     def continente(self, pais: str) -> str:
+        """Obtiene el continente al que pertenece un país.
+
+        Args:
+            pais: Nombre del país.
+
+        Returns:
+            Nombre del continente.
+
+        """
         return str(self._mapa[pais][self._CONTINENTE])
 
     def ocupado_por(self, pais: str) -> str:
+        """Obtiene el jugador que ocupa un país.
+
+        Args:
+            pais: Nombre del país.
+
+        Returns:
+            ID del jugador que ocupa el país.
+
+        """
         return str(self._mapa[pais][self._JUGADOR])
 
     def paises(self) -> list[str]:
+        """Obtiene la lista de todos los países del mapa.
+
+        Returns:
+            Lista de nombres de países.
+
+        """
         if self._mapa:
             return list(self._mapa.keys())
         return []
 
     def asignar_paises(self, jugadores: list[str]) -> None:
+        """Asigna países aleatoriamente a los jugadores.
+
+        Args:
+            jugadores: Lista de IDs de jugadores.
+
+        """
         paises = self.paises()
         num_jugadores = len(jugadores)
         num_paises = len(paises)
@@ -93,6 +169,12 @@ class Mapa:
                     indice += 1
 
     def aplicar_resultado_batalla(self, resultado: dict[str, Any]) -> None:
+        """Aplica el resultado de una batalla al mapa.
+
+        Args:
+            resultado: Diccionario con información del resultado de la batalla.
+
+        """
         for res in resultado["restar"]:
             self.restar_una_unidad(res)
 
@@ -104,25 +186,65 @@ class Mapa:
             self.asignar_pais(atacante, pais_defensor)
 
     def cantidad_de_paises_por_continente(self, continente: str) -> int:
+        """Obtiene la cantidad de países en un continente.
+
+        Args:
+            continente: Nombre del continente.
+
+        Returns:
+            Cantidad de países en el continente.
+
+        """
         return len(
             [pais for pais in self.paises() if self.continente(pais) == continente],
         )
 
     def asignar_pais(self, jugador: str, pais: str) -> None:
+        """Asigna un país a un jugador.
+
+        Args:
+            jugador: ID del jugador.
+            pais: Nombre del país.
+
+        """
         self._mapa[pais][self._JUGADOR] = jugador
 
     def cantidad_de_paises_del_jugador(self, jugador: str) -> int:
+        """Obtiene la cantidad de países que posee un jugador.
+
+        Args:
+            jugador: ID del jugador.
+
+        Returns:
+            Cantidad de países del jugador.
+
+        """
         return len(
             [pais for pais in self.paises() if self.ocupado_por(pais) == jugador],
         )
 
     def jugador_posee_pais(self, jugador: str, pais: str) -> bool:
-        """Verifica si un jugador específico posee un país determinado."""
+        """Verifica si un jugador específico posee un país determinado.
+
+        Returns:
+            True si el jugador posee el país, False en caso contrario.
+
+        """
         return self.ocupado_por(pais) == jugador
 
     def cantidad_de_paises_del_jugador_por_continente(
         self, jugador: str, continente: str
     ) -> int:
+        """Obtiene la cantidad de países de un jugador en un continente.
+
+        Args:
+            jugador: ID del jugador.
+            continente: Nombre del continente.
+
+        Returns:
+            Cantidad de países del jugador en el continente.
+
+        """
         return len(
             [
                 pais
@@ -141,35 +263,95 @@ class Mapa:
 
         Returns:
             bool: True si el jugador controla todo el continente
+
         """
         return self.cantidad_de_paises_del_jugador_por_continente(
             jugador, continente
         ) == self.cantidad_de_paises_por_continente(continente)
 
     def tiene_toda_europa(self, jugador: str) -> bool:
+        """Verifica si un jugador controla toda Europa.
+
+        Args:
+            jugador: ID del jugador.
+
+        Returns:
+            True si el jugador controla toda Europa.
+
+        """
         return self.jugador_controla_continente(jugador, "Europa")
 
     def tiene_toda_asia(self, jugador: str) -> bool:
+        """Verifica si un jugador controla toda Asia.
+
+        Args:
+            jugador: ID del jugador.
+
+        Returns:
+            True si el jugador controla toda Asia.
+
+        """
         return self.jugador_controla_continente(jugador, "Asia")
 
     def tiene_toda_oceania(self, jugador: str) -> bool:
+        """Verifica si un jugador controla toda Oceanía.
+
+        Args:
+            jugador: ID del jugador.
+
+        Returns:
+            True si el jugador controla toda Oceanía.
+
+        """
         return self.jugador_controla_continente(jugador, "Oceania")
 
     def tiene_toda_africa(self, jugador: str) -> bool:
+        """Verifica si un jugador controla toda África.
+
+        Args:
+            jugador: ID del jugador.
+
+        Returns:
+            True si el jugador controla toda África.
+
+        """
         return self.jugador_controla_continente(jugador, "Africa")
 
     def tiene_toda_america_del_sur(self, jugador: str) -> bool:
+        """Verifica si un jugador controla toda Sudamérica.
+
+        Args:
+            jugador: ID del jugador.
+
+        Returns:
+            True si el jugador controla toda Sudamérica.
+
+        """
         return self.jugador_controla_continente(jugador, "Sudamerica")
 
     def tiene_toda_america_del_norte(self, jugador: str) -> bool:
+        """Verifica si un jugador controla toda Norteamérica.
+
+        Args:
+            jugador: ID del jugador.
+
+        Returns:
+            True si el jugador controla toda Norteamérica.
+
+        """
         return self.jugador_controla_continente(jugador, "Norteamerica")
 
     def __str__(self) -> str:
+        """Retorna representación en JSON del mapa.
+
+        Returns:
+            String JSON del mapa.
+
+        """
         return json.dumps(self._mapa)
 
     def obtener_paises_adyacentes(self, pais: str) -> list[str]:
-        """
-        Devuelve la lista de países adyacentes al país especificado.
+        """Devuelve la lista de países adyacentes al país especificado.
 
         Args:
             pais (str): Nombre del país del que se quieren obtener los adyacentes
@@ -177,6 +359,7 @@ class Mapa:
         Returns:
             list: Lista de nombres de países adyacentes,
             o lista vacía si no hay adyacentes definidos
+
         """
         if pais in self._mapa:
             adyacentes = self._mapa[pais][self._ADYACENTES]
@@ -191,6 +374,7 @@ class Mapa:
 
         Args:
             pais (str): Nombre del país donde se agregará el misil
+
         """
         if pais in self._mapa:
             self._mapa[pais][self._MISILES] += 1
@@ -203,6 +387,7 @@ class Mapa:
 
         Returns:
             int: Cantidad de misiles en el país
+
         """
         if pais in self._mapa:
             return int(self._mapa[pais][self._MISILES])
@@ -213,6 +398,7 @@ class Mapa:
 
         Args:
             pais (str): Nombre del país desde donde se lanzará el misil
+
         """
         if pais in self._mapa and self._mapa[pais][self._MISILES] > 0:
             self._mapa[pais][self._MISILES] -= 1
@@ -227,6 +413,7 @@ class Mapa:
         Returns:
             int: Distancia mínima en saltos entre países,
             o -1 si no hay camino
+
         """
         if pais_origen not in self._mapa or pais_destino not in self._mapa:
             return -1
@@ -259,6 +446,7 @@ class Mapa:
 
         Returns:
             int: Cantidad de unidades de daño (3, 2, 1, o 0 si fuera de rango)
+
         """
         if distancia == 1:
             return 3

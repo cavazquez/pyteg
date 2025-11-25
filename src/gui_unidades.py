@@ -1,3 +1,5 @@
+"""Módulo para el widget gráfico que muestra la cantidad de unidades."""
+
 from __future__ import annotations
 
 from PySide6.QtCore import QRectF, Qt
@@ -6,7 +8,15 @@ from PySide6.QtWidgets import QGraphicsDropShadowEffect, QGraphicsTextItem
 
 
 class Unidades(QGraphicsTextItem):
-    def __init__(self, circulo_rect: QRectF):
+    """Widget gráfico que muestra la cantidad de unidades en un círculo."""
+
+    def __init__(self, circulo_rect: QRectF) -> None:
+        """Inicializa el widget de unidades centrado en el rectángulo del círculo.
+
+        Args:
+            circulo_rect: Rectángulo del círculo donde se centrará el texto.
+
+        """
         super().__init__("0")
         font = QFont("Helvetica [Cronyx]", 8, QFont.Weight.Bold)
         self.setFont(font)
@@ -29,10 +39,21 @@ class Unidades(QGraphicsTextItem):
         )
 
     def set_unidades(self, text: str) -> None:
+        """Establece el texto que muestra la cantidad de unidades.
+
+        Args:
+            text: Texto a mostrar (normalmente un número como string).
+
+        """
         self.setPlainText(text)
 
     def get_unidades(self) -> int:
-        """Retorna la cantidad de unidades como entero."""
+        """Retorna la cantidad de unidades como entero.
+
+        Returns:
+            Cantidad de unidades como entero.
+
+        """
         try:
             return int(self.toPlainText())
         except ValueError:

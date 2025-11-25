@@ -1,3 +1,5 @@
+"""Módulo para construir la estructura del mapa del juego."""
+
 from __future__ import annotations
 
 from typing import Any
@@ -7,6 +9,13 @@ from src.utils import get_resource_path
 
 
 def build_mapa() -> dict[str, list[Any]]:
+    """Construye la estructura del mapa del juego desde archivos TOML.
+
+    Returns:
+        Diccionario con la estructura del mapa, donde cada clave es un país
+        y el valor es una lista con [unidades, continente, dueño, [adyacentes]].
+
+    """
     # Crear el lector TOML con archivos separados
     paises_path = get_resource_path("themes/classic/paises.toml")
     cartas_path = get_resource_path("themes/classic/cartas.toml")

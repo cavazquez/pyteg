@@ -1,3 +1,5 @@
+"""Módulo para manejar las tareas del cliente recibidas del servidor."""
+
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
@@ -15,48 +17,97 @@ from src.logger import get_logger
 
 
 class IClientTask(ABC):
+    """Interfaz base para todas las tareas del cliente."""
+
     def __init__(self, data: dict[str, Any]) -> None:
+        """Inicializa la tarea con los datos recibidos.
+
+        Args:
+            data: Diccionario con los datos de la tarea.
+
+        """
         self._raw_data = data
 
     @abstractmethod
     def run(self, main_window: Any) -> None:
-        pass
+        """Ejecuta la tarea.
+
+        Args:
+            main_window: Ventana principal de la aplicación.
+
+        """
 
 
 class ClientTaskNull(IClientTask):
+    """Tarea para manejar mensajes desconocidos."""
+
     def __init__(self, data: dict[str, Any]) -> None:
+        """Inicializa la tarea con un mensaje desconocido.
+
+        Args:
+            data: Diccionario con los datos de la tarea.
+
+        """
         super().__init__(data)
         self._msg = data.get("mensaje")
 
     def run(self, _: Any) -> None:
+        """Ejecuta la tarea mostrando un mensaje de error."""
         print(f"mensaje {self._msg} desconocido")
 
 
 class ClientTaskChat(IClientTask):
+    """Tarea para mostrar mensajes de chat."""
+
     def __init__(self, data: dict[str, Any]) -> None:
+        """Inicializa la tarea de chat.
+
+        Args:
+            data: Diccionario con el mensaje y tipo de mensaje.
+
+        """
         super().__init__(data)
         self._msg = data.get("msg")
         self._msg_type = data.get("msg_type", "normal")
 
     def run(self, main_window: Any) -> None:
+        """Ejecuta la tarea agregando el mensaje al chat."""
         main_window.chat.append(self._msg, self._msg_type)
 
 
 class ClientTaskSerAdmin(IClientTask):
+    """Tarea para convertir al cliente en administrador."""
+
     def __init__(self, data: dict[str, Any]) -> None:
+        """Inicializa la tarea de administrador.
+
+        Args:
+            data: Diccionario con los datos de la tarea.
+
+        """
         super().__init__(data)
 
     def run(self, main_window: Any) -> None:
+        """Ejecuta la tarea convirtiendo al cliente en administrador."""
         main_window.client.ahora_es_admin()
         main_window.ventana_admin()
 
 
 class ClientTaskEstado(IClientTask):
+    """Tarea para actualizar el estado del juego."""
+
     def __init__(self, data: dict[str, Any]) -> None:
+        """Inicializa la tarea de estado.
+
+        Args:
+            data: Diccionario con el nuevo estado del juego.
+
+        """
         super().__init__(data)
         self._msg = data.get("estado")
 
     def run(self, main_window: Any) -> None:
+        """Ejecuta la tarea actualizando el estado del juego."""
         print(f"Recibido cambio de estado: {self._msg}")
 
         # Actualizar el estado en la interfaz gráfica
@@ -92,9 +143,7 @@ class ClientTaskEstado(IClientTask):
                 main_window.update()
 
     def actualizar_lista_jugadores(self, main_window: Any) -> None:
-        """
-        Actualiza la lista de jugadores en la interfaz de usuario.
-        """
+        """Actualiza la lista de jugadores en la interfaz de usuario."""
         # Obtener la lista de jugadores con sus colores
         jugadores: list[tuple[str, Any]] = []
         for user_id, color in main_window.colores.colores_asignados().items():
@@ -108,11 +157,20 @@ class ClientTaskEstado(IClientTask):
 
 
 class ClientTaskColorAsignado(IClientTask):
+    """Tarea para asignar un color a un jugador."""
+
     def __init__(self, data: dict[str, Any]) -> None:
+        """Inicializa la tarea de asignación de color.
+
+        Args:
+            data: Diccionario con el ID del usuario y los componentes RGB del color.
+
+        """
         super().__init__(data)
         self._msg = data
 
     def run(self, main_window: Any) -> None:
+        """Ejecuta la tarea asignando el color al jugador."""
         try:
             # Extraer el ID de usuario y el color del mensaje
             id_user = self._msg.get("id")
@@ -169,9 +227,7 @@ class ClientTaskColorAsignado(IClientTask):
             print(f"Error en ClientTaskColorAsignado: {e}")
 
     def actualizar_lista_jugadores(self, main_window: Any) -> None:
-        """
-        Actualiza la lista de jugadores en la interfaz de usuario.
-        """
+        """Actualiza la lista de jugadores en la interfaz de usuario."""
         try:
             # Obtener la lista de jugadores con sus colores
             jugadores: list[tuple[str, Any]] = []
@@ -190,21 +246,39 @@ class ClientTaskColorAsignado(IClientTask):
 
 
 class ClientTaskColor(IClientTask):
+    """Tarea para agregar un color disponible."""
+
     def __init__(self, data: dict[str, Any]) -> None:
+        """Inicializa la tarea de color.
+
+        Args:
+            data: Diccionario con los componentes RGB del color.
+
+        """
         super().__init__(data)
         self._msg = data
 
     def run(self, main_window: Any) -> None:
+        """Ejecuta la tarea agregando el color a la lista de colores disponibles."""
         self._msg.pop("mensaje")
         main_window.colores.agregar_color(Color(**self._msg))
 
 
 class ClientTaskUserId(IClientTask):
+    """Tarea para asignar un ID de usuario al cliente."""
+
     def __init__(self, data: dict[str, Any]) -> None:
+        """Inicializa la tarea de ID de usuario.
+
+        Args:
+            data: Diccionario con el ID de usuario.
+
+        """
         super().__init__(data)
         self._msg = data
 
     def run(self, main_window: Any) -> None:
+        """Ejecuta la tarea asignando el ID de usuario al cliente."""
         user_id_raw = self._msg.get("user_id")
         if user_id_raw is None:
             return
@@ -234,11 +308,20 @@ class ClientTaskUserId(IClientTask):
 
 
 class ClientTaskTurno(IClientTask):
+    """Tarea para actualizar el turno actual del juego."""
+
     def __init__(self, data: dict[str, Any]) -> None:
+        """Inicializa la tarea de turno.
+
+        Args:
+            data: Diccionario con información del turno.
+
+        """
         super().__init__(data)
         self._msg = data
 
     def run(self, main_window: Any) -> None:
+        """Ejecuta la tarea actualizando el turno en la interfaz."""
         num_turno = int(self._msg.get("num_turno", 0))
         num_ronda = int(
             self._msg.get("num_ronda", 1)
@@ -270,11 +353,20 @@ class ClientTaskTurno(IClientTask):
 
 
 class ClientTaskTiempo(IClientTask):
+    """Tarea para actualizar el tiempo restante del turno."""
+
     def __init__(self, data: dict[str, Any]) -> None:
+        """Inicializa la tarea de tiempo.
+
+        Args:
+            data: Diccionario con el tiempo restante.
+
+        """
         super().__init__(data)
         self._msg = data
 
     def run(self, main_window: Any) -> None:
+        """Ejecuta la tarea actualizando el display del tiempo."""
         tiempo = int(self._msg.get("tiempo", 0))
         # Mostrar el tiempo restante en el widget dedicado del lado derecho
         if tiempo > 0:
@@ -292,11 +384,20 @@ class ClientTaskTiempo(IClientTask):
 
 
 class ClientTaskUsername(IClientTask):
+    """Tarea para actualizar el nombre de usuario de un jugador."""
+
     def __init__(self, data: dict[str, Any]) -> None:
+        """Inicializa la tarea de nombre de usuario.
+
+        Args:
+            data: Diccionario con el ID y nombre de usuario.
+
+        """
         super().__init__(data)
         self._msg = data
 
     def run(self, main_window: Any) -> None:
+        """Ejecuta la tarea actualizando el nombre de usuario."""
         username = self._msg.get("username")
         userid = self._msg.get("user_id")
 
@@ -323,9 +424,7 @@ class ClientTaskUsername(IClientTask):
             main_window.w.cargar_colores_asignados()
 
     def actualizar_lista_jugadores(self, main_window: Any) -> None:
-        """
-        Actualiza la lista de jugadores en la interfaz de usuario.
-        """
+        """Actualiza la lista de jugadores en la interfaz de usuario."""
         # Obtener la lista de jugadores con sus colores
         jugadores: list[tuple[str, Any]] = []
         for user_id, color in main_window.colores.colores_asignados().items():
@@ -339,11 +438,20 @@ class ClientTaskUsername(IClientTask):
 
 
 class ClientTaskAsignarPais(IClientTask):
+    """Tarea para asignar un país a un jugador."""
+
     def __init__(self, data: dict[str, Any]) -> None:
+        """Inicializa la tarea de asignación de país.
+
+        Args:
+            data: Diccionario con el país, ID de usuario y unidades.
+
+        """
         super().__init__(data)
         self._msg = data
 
     def run(self, main_window: Any) -> None:
+        """Ejecuta la tarea asignando el país al jugador."""
         try:
             nombre_pais = self._msg.get("pais")
             userid = self._msg.get("userid")
@@ -377,28 +485,47 @@ class ClientTaskAsignarPais(IClientTask):
 
 
 class ClientTaskUnidadesDisponibles(IClientTask):
+    """Tarea para actualizar las unidades disponibles del jugador."""
+
     def __init__(self, data: dict[str, Any]) -> None:
+        """Inicializa la tarea de unidades disponibles.
+
+        Args:
+            data: Diccionario con las unidades disponibles por tipo.
+
+        """
         super().__init__(data)
         self._unidades = data.get("unidades", {})
 
     def run(self, main_window: Any) -> None:
+        """Ejecuta la tarea actualizando las unidades disponibles."""
         print(f"Recibidas unidades disponibles: {self._unidades}")
         if hasattr(main_window, "update_unidades_disponibles"):
             main_window.update_unidades_disponibles(self._unidades)
 
 
 class ClientTaskActualizarListaJugadores(IClientTask):
+    """Tarea para actualizar la lista de jugadores con el orden actualizado."""
+
     def __init__(self, data: dict[str, Any]) -> None:
+        """Inicializa la tarea de actualización de lista de jugadores.
+
+        Args:
+            data: Diccionario con la lista de jugadores.
+
+        """
         super().__init__(data)
         self._jugadores = data.get("jugadores", [])
 
     def run(self, main_window: Any) -> None:
-        """
+        """Actualiza la lista de jugadores en la interfaz de usuario.
+
         Actualiza la lista de jugadores en la interfaz de usuario con el
         orden actualizado.
 
         Args:
             main_window: La ventana principal de la aplicación
+
         """
         try:
             # Crear una lista de tuplas (nombre, color) para actualizar la interfaz
@@ -438,13 +565,22 @@ class ClientTaskActualizarListaJugadores(IClientTask):
 
 
 class ClientTaskError(IClientTask):
+    """Tarea para manejar errores enviados por el servidor."""
+
     def __init__(self, data: dict[str, Any]) -> None:
+        """Inicializa la tarea de error.
+
+        Args:
+            data: Diccionario con el tipo y mensaje de error.
+
+        """
         super().__init__(data)
         self._error_type = data.get("error_type")
         self._message = data.get("message")
 
     def run(self, main_window: Any) -> None:
-        """
+        """Maneja errores enviados por el servidor.
+
         Maneja errores enviados por el servidor mostrando un diálogo
         de error al usuario.
         """
@@ -482,7 +618,15 @@ class ClientTaskError(IClientTask):
 
 
 class ClientTaskResultadoBatalla(IClientTask):
+    """Tarea para mostrar el resultado de una batalla."""
+
     def __init__(self, data: dict[str, Any]) -> None:
+        """Inicializa la tarea de resultado de batalla.
+
+        Args:
+            data: Diccionario con los datos de la batalla.
+
+        """
         super().__init__(data)
         self._origen = data.get("origen")
         self._destino = data.get("destino")
@@ -494,10 +638,11 @@ class ClientTaskResultadoBatalla(IClientTask):
         self._conquistado = data.get("conquistado", False)
 
     def run(self, main_window: Any) -> None:
-        """
+        """Muestra el resultado de una batalla.
+
         Muestra el resultado de una batalla con comportamiento diferenciado:
         - Atacante: Ve animación completa de dados
-        - Espectadores: Ven efectos visuales (titilación + pérdidas flotantes)
+        - Espectadores: Ven efectos visuales (titilación + pérdidas flotantes).
         """
         try:
             # Obtener nombre del jugador actual
@@ -538,7 +683,6 @@ class ClientTaskResultadoBatalla(IClientTask):
 
     def _mostrar_animacion_completa(self, main_window: Any) -> None:
         """Muestra la animación completa de dados para el atacante."""
-
         # Preparar datos de la batalla para el diálogo
         batalla_data = {
             "origen": self._origen,
@@ -673,15 +817,21 @@ class ClientTaskResultadoBatalla(IClientTask):
 
 
 class ClientTaskVictoria(IClientTask):
+    """Tarea para mostrar el mensaje de victoria."""
+
     def __init__(self, data: dict[str, Any]) -> None:
+        """Inicializa la tarea de victoria.
+
+        Args:
+            data: Diccionario con el ID y nombre del ganador.
+
+        """
         super().__init__(data)
         self._ganador_id = data.get("ganador_id")
         self._ganador_nombre = data.get("ganador_nombre")
 
     def run(self, main_window: Any) -> None:
-        """
-        Muestra un mensaje de victoria cuando alguien gana la partida.
-        """
+        """Muestra un mensaje de victoria cuando alguien gana la partida."""
         try:
             # Reproducir sonido de victoria
             if hasattr(main_window, "sound_manager"):
@@ -717,7 +867,15 @@ class ClientTaskVictoria(IClientTask):
 
 
 class ClientTaskConfiguracionPartida(IClientTask):
+    """Tarea para procesar la configuración de la partida."""
+
     def __init__(self, data: dict[str, Any]) -> None:
+        """Inicializa la tarea de configuración de partida.
+
+        Args:
+            data: Diccionario con la configuración de la partida.
+
+        """
         super().__init__(data)
         self._segundos_por_turno = data.get("segundos_por_turno", 20)
         self._paises_para_victoria = data.get("paises_para_victoria", 30)
@@ -725,8 +883,9 @@ class ClientTaskConfiguracionPartida(IClientTask):
         self._misiles_habilitados = data.get("misiles_habilitados", False)
 
     def run(self, main_window: Any) -> None:
-        """
-        Procesa la configuración de la partida y la almacena en la ventana principal.
+        """Procesa la configuración de la partida.
+
+        Almacena la configuración en la ventana principal.
         """
         try:
             # Almacenar la configuración en la ventana principal
@@ -754,14 +913,23 @@ class ClientTaskConfiguracionPartida(IClientTask):
 
 
 class ClientTaskObjetivoSecreto(IClientTask):
+    """Tarea para procesar el objetivo secreto asignado."""
+
     def __init__(self, data: dict[str, Any]) -> None:
+        """Inicializa la tarea de objetivo secreto.
+
+        Args:
+            data: Diccionario con el ID y descripción del objetivo secreto.
+
+        """
         super().__init__(data)
         self._objetivo_id = data.get("objetivo_id", "")
         self._descripcion = data.get("descripcion", "")
 
     def run(self, main_window: Any) -> None:
-        """
-        Procesa el objetivo secreto asignado y lo almacena en la ventana principal.
+        """Procesa el objetivo secreto asignado.
+
+        Lo almacena en la ventana principal.
         """
         try:
             print(
@@ -791,16 +959,24 @@ class ClientTaskObjetivoSecreto(IClientTask):
 
 
 class ClientTaskTarjetasJugador(IClientTask):
+    """Tarea para actualizar las tarjetas del jugador."""
+
     def __init__(self, data: dict[str, Any]) -> None:
+        """Inicializa la tarea de tarjetas del jugador.
+
+        Args:
+            data: Diccionario con la lista de tarjetas del jugador.
+
+        """
         super().__init__(data)
         self._tarjetas = data.get("tarjetas", [])
 
     def run(self, main_window: Any) -> None:
-        """
-        Actualiza las tarjetas del jugador en la GUI.
+        """Actualiza las tarjetas del jugador en la GUI.
 
         Args:
             main_window: Ventana principal de la GUI
+
         """
         try:
             # Almacenar las tarjetas en la GUI para uso posterior
@@ -830,7 +1006,15 @@ class ClientTaskTarjetasJugador(IClientTask):
 
 
 class ClientTaskResultadoMisil(IClientTask):
+    """Tarea para procesar el resultado del lanzamiento de un misil."""
+
     def __init__(self, data: dict[str, Any]) -> None:
+        """Inicializa la tarea de resultado de misil.
+
+        Args:
+            data: Diccionario con los datos del lanzamiento del misil.
+
+        """
         super().__init__(data)
         self._jugador = data.get("jugador")
         self._pais_origen = data.get("pais_origen")
@@ -864,13 +1048,21 @@ class ClientTaskResultadoMisil(IClientTask):
 
 
 class ClientTaskMisilAgregado(IClientTask):
+    """Tarea para notificar que se agregó un misil a un país."""
+
     def __init__(self, data: dict[str, Any]) -> None:
+        """Inicializa la tarea de misil agregado.
+
+        Args:
+            data: Diccionario con el país y cantidad de misiles.
+
+        """
         super().__init__(data)
         self._pais = data.get("pais")
         self._cantidad_misiles = data.get("cantidad_misiles")
 
     def run(self, main_window: Any) -> None:
-        """Actualiza la cantidad de misiles de un país en la interfaz."""
+        """Ejecuta la tarea actualizando la cantidad de misiles en la interfaz."""
         try:
             # Actualizar visualmente el país en el mapa
             # (Esto se implementará en la GUI cuando agregue el indicador visual)
