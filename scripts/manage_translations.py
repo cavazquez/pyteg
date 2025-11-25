@@ -27,7 +27,7 @@ SRC_DIR = BASE_DIR / "src"
 DOMAIN = "pyteg"
 
 
-def compile_translations():
+def compile_translations() -> None:
     """Compila archivos .po a .mo usando Python puro."""
     if polib is None:
         print("polib no está disponible, usando fallback")
@@ -60,11 +60,11 @@ def compile_translations():
                     )
 
 
-def _parse_po_file(po_file):
+def _parse_po_file(po_file: Path) -> dict[str, str]:
     """Parsea un archivo .po y retorna un diccionario de traducciones."""
-    translations = {}
-    current_msgid = None
-    current_msgstr = None
+    translations: dict[str, str] = {}
+    current_msgid: str | None = None
+    current_msgstr: str | None = None
 
     with po_file.open(encoding="utf-8") as f:
         for original_line in f:
@@ -79,14 +79,14 @@ def _parse_po_file(po_file):
     return translations
 
 
-def _create_basic_mo_file(mo_file):
+def _create_basic_mo_file(mo_file: Path) -> None:
     """Crea un archivo .mo básico."""
     mo_file.parent.mkdir(parents=True, exist_ok=True)
     # Por ahora, solo crear un archivo vacío para que no falle la carga
     mo_file.write_bytes(b"")
 
 
-def compile_translations_manual():
+def compile_translations_manual() -> None:
     """Compilación manual usando msgfmt."""
     for lang_dir in LOCALES_DIR.iterdir():
         if not lang_dir.is_dir():
@@ -116,12 +116,12 @@ def compile_translations_manual():
                 print(f"❌ Error compilando {po_file}: {e}")
 
 
-def extract_strings():
+def extract_strings() -> set[str]:
     """Extrae strings marcados con _() del código fuente."""
     print("Extrayendo strings para traducir...")
 
     pattern = re.compile(r'_\("([^"]+)"\)|_\(\'([^\']+)\'\)')
-    strings = set()
+    strings: set[str] = set()
 
     for py_file in SRC_DIR.glob("**/*.py"):
         try:
@@ -142,7 +142,7 @@ def extract_strings():
     return strings
 
 
-def validate_translations():
+def validate_translations() -> None:
     """Valida que los archivos de traducción estén correctos."""
     print("Validando archivos de traducción...")
 
@@ -157,7 +157,7 @@ def validate_translations():
             print(f"✓ {po_file} parece válido")
 
 
-def create_language_selector():
+def create_language_selector() -> None:
     """Crea un widget selector de idioma para la GUI."""
     selector_code = '''
 from PySide6.QtWidgets import QComboBox, QLabel, QHBoxLayout, QWidget
@@ -225,7 +225,7 @@ class LanguageSelector(QWidget):
     print(f"✓ Creado selector de idioma: {selector_file}")
 
 
-def main():
+def main() -> None:
     """Función principal."""
     if len(sys.argv) < 2:
         print("Uso: python manage_translations.py <comando>")

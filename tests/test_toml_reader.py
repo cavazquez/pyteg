@@ -5,7 +5,7 @@ from src.toml_reader import TomlReader
 
 
 class TestTomlReader(unittest.TestCase):
-    def test_init(self):
+    def test_init(self) -> None:
         paises_string = Path("themes/classic/paises.toml").read_text(encoding="utf-8")
         cartas_string = Path("themes/classic/cartas.toml").read_text(encoding="utf-8")
         adyacencias_string = Path("themes/classic/adyacencias.toml").read_text(
@@ -13,7 +13,7 @@ class TestTomlReader(unittest.TestCase):
         )
         self.assertTrue(TomlReader(paises_string, cartas_string, adyacencias_string))
 
-    def test_continente(self):
+    def test_continente(self) -> None:
         toml_string = """
         [Cartas]
         jocker = "test.png"
@@ -26,7 +26,7 @@ class TestTomlReader(unittest.TestCase):
         """
         self.assertEqual(TomlReader(toml_string).continente("Argentina"), "Pangea")
 
-    def test_continente_sin_pais(self):
+    def test_continente_sin_pais(self) -> None:
         toml_string = """
         [Cartas]
         jocker = "test.png"
@@ -39,7 +39,7 @@ class TestTomlReader(unittest.TestCase):
         """
         self.assertEqual(TomlReader(toml_string).continente("Brasil"), None)
 
-    def test_todos_los_paises(self):
+    def test_todos_los_paises(self) -> None:
         toml_string = """
         [Cartas]
         jocker = "test.png"
@@ -63,7 +63,7 @@ class TestTomlReader(unittest.TestCase):
             ["Argentina", "Brasil", "Francia"],
         )
 
-    def test_get_paises(self):
+    def test_get_paises(self) -> None:
         toml_string = """
         [Cartas]
         jocker = "test.png"
@@ -91,7 +91,7 @@ class TestTomlReader(unittest.TestCase):
             {"Francia": {}},
         )
 
-    def test_get_continentes(self):
+    def test_get_continentes(self) -> None:
         toml_string = """
         [Cartas]
         jocker = "test.png"
@@ -115,7 +115,7 @@ class TestTomlReader(unittest.TestCase):
             ["Pangea", "Africa"],
         )
 
-    def test_coordenadas_continente(self):
+    def test_coordenadas_continente(self) -> None:
         toml_string = """
         [Cartas]
         jocker = "test.png"
@@ -129,7 +129,7 @@ class TestTomlReader(unittest.TestCase):
             (20, 30),
         )
 
-    def test_coordenadas(self):
+    def test_coordenadas(self) -> None:
         toml_string = """
         [Cartas]
         jocker = "test.png"
@@ -149,7 +149,7 @@ class TestTomlReader(unittest.TestCase):
             (100, 120, 200, 300),
         )
 
-    def test_get_cartas(self):
+    def test_get_cartas(self) -> None:
         toml_string = """
         [Cartas]
         ballon = 'ballon.png'
@@ -159,7 +159,7 @@ class TestTomlReader(unittest.TestCase):
             {"ballon": "ballon.png"},
         )
 
-    def test_img_path(self):
+    def test_img_path(self) -> None:
         toml_string = """
         [Cartas]
         jocker = "test.png"

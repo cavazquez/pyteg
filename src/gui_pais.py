@@ -19,7 +19,9 @@ from src.gui_circulo import Circulo
 
 
 class Pais(QGraphicsPixmapItem):
-    def __init__(self, path, pais, pos):
+    def __init__(
+        self, path: str, pais: tuple[str, str], pos: tuple[float, float, float, float]
+    ) -> None:
         # Validar que el archivo de imagen existe
         if not pathlib.Path(path).exists():
             raise ImagenNoEncontradaError(
@@ -63,24 +65,24 @@ class Pais(QGraphicsPixmapItem):
         self._circle = Circulo(pos_x_abs, pos_y_abs)
         self._circle.setParentItem(self)
 
-    def nombre(self):
+    def nombre(self) -> str:
         return self._nombre
 
-    def set_color(self, color):
+    def set_color(self, color: QColor | str | None) -> None:
         if color and self._circle:
             self._circle.set_color(color)
 
-    def set_unidades(self, cant):
+    def set_unidades(self, cant: int | str) -> None:
         if self._circle:
             self._circle.set_unidades(cant)
 
-    def get_unidades(self):
+    def get_unidades(self) -> int:
         """Retorna la cantidad de unidades como entero."""
         if self._circle:
             return self._circle.get_unidades()
         return 0
 
-    def actualizar_misiles(self, cantidad):
+    def actualizar_misiles(self, cantidad: int) -> None:
         """Actualiza el indicador visual de misiles en el país.
 
         Args:
@@ -136,7 +138,7 @@ class Pais(QGraphicsPixmapItem):
             # Otros clics (como clic derecho) se manejan normalmente
             super().mousePressEvent(event)
 
-    def set_seleccion_visual(self, tipo):
+    def set_seleccion_visual(self, tipo: str) -> None:
         """Establece el indicador visual de selección usando oscurecimiento"""
         # Limpiar efecto anterior si existe
         self.limpiar_seleccion_visual()
@@ -153,12 +155,12 @@ class Pais(QGraphicsPixmapItem):
             effect.setOpacity(0.5)
             self.setGraphicsEffect(effect)
 
-    def limpiar_seleccion_visual(self):
+    def limpiar_seleccion_visual(self) -> None:
         """Elimina el indicador visual de selección"""
         if self.graphicsEffect():
             self.setGraphicsEffect(cast("QGraphicsEffect", None))
 
-    def iniciar_titilacion_batalla(self):
+    def iniciar_titilacion_batalla(self) -> None:
         """Inicia el efecto de titilación durante una batalla."""
         try:
             # Detener titilación previa si existe
@@ -182,7 +184,7 @@ class Pais(QGraphicsPixmapItem):
         except (AttributeError, RuntimeError) as e:
             print(f"Error iniciando titilación en {self._nombre}: {e}")
 
-    def _alternar_titilacion(self):
+    def _alternar_titilacion(self) -> None:
         """Alterna la intensidad de la titilación."""
         try:
             if self._titilacion_effect:
@@ -201,7 +203,7 @@ class Pais(QGraphicsPixmapItem):
         except (AttributeError, RuntimeError) as e:
             print(f"Error en titilación de {self._nombre}: {e}")
 
-    def detener_titilacion_batalla(self):
+    def detener_titilacion_batalla(self) -> None:
         """Detiene el efecto de titilación."""
         try:
             if self._titilacion_timer:
@@ -215,7 +217,7 @@ class Pais(QGraphicsPixmapItem):
         except (AttributeError, RuntimeError) as e:
             print(f"Error deteniendo titilación en {self._nombre}: {e}")
 
-    def mostrar_perdida_flotante(self, perdidas):
+    def mostrar_perdida_flotante(self, perdidas: int) -> None:
         """Muestra una animación de pérdidas flotantes en rojo."""
         try:
             # Limpiar pérdida flotante anterior si existe
@@ -245,7 +247,7 @@ class Pais(QGraphicsPixmapItem):
         except (AttributeError, RuntimeError) as e:
             print(f"Error mostrando pérdida flotante en {self._nombre}: {e}")
 
-    def _animar_perdida_flotante(self):
+    def _animar_perdida_flotante(self) -> None:
         """Anima la pérdida flotante (movimiento hacia arriba y desvanecimiento)."""
         try:
             if not self._perdida_flotante:
@@ -279,7 +281,7 @@ class Pais(QGraphicsPixmapItem):
         except (AttributeError, RuntimeError) as e:
             print(f"Error animando pérdida flotante en {self._nombre}: {e}")
 
-    def _mover_perdida_arriba(self):
+    def _mover_perdida_arriba(self) -> None:
         """Mueve la pérdida flotante hacia arriba gradualmente."""
         try:
             if self._perdida_flotante:
@@ -291,7 +293,7 @@ class Pais(QGraphicsPixmapItem):
         except (AttributeError, RuntimeError) as e:
             print(f"Error moviendo pérdida flotante: {e}")
 
-    def _detener_movimiento(self):
+    def _detener_movimiento(self) -> None:
         """Detiene el timer de movimiento."""
         try:
             if hasattr(self, "_movimiento_timer") and self._movimiento_timer:
@@ -300,7 +302,7 @@ class Pais(QGraphicsPixmapItem):
         except (AttributeError, RuntimeError) as e:
             print(f"Error deteniendo movimiento: {e}")
 
-    def _limpiar_perdida_flotante(self):
+    def _limpiar_perdida_flotante(self) -> None:
         """Limpia la pérdida flotante después de la animación."""
         try:
             if self._perdida_flotante:

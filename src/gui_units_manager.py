@@ -6,6 +6,10 @@ relacionada con la visualización y actualización de las unidades disponibles
 en la interfaz gráfica principal.
 """
 
+from __future__ import annotations
+
+from typing import Any
+
 from PySide6.QtCore import QTimer
 
 
@@ -17,7 +21,7 @@ class UnitsManager:
     visuales y gestionar los efectos de cambio (flash) cuando las unidades cambian.
     """
 
-    def __init__(self, main_window):
+    def __init__(self, main_window: Any) -> None:
         """
         Inicializa el gestor de unidades.
 
@@ -26,7 +30,7 @@ class UnitsManager:
         """
         self.main_window = main_window
 
-    def update_unidades_disponibles(self, unidades):  # noqa: PLR0912
+    def update_unidades_disponibles(self, unidades: dict[str, int]) -> None:  # noqa: PLR0912
         """Actualiza el panel derecho con las unidades disponibles.
 
         Args:
@@ -129,7 +133,7 @@ class UnitsManager:
             self.main_window._row_widgets["Misiles"].setVisible(False)  # noqa: SLF001
             self.main_window._last_units["Misiles"] = 0  # noqa: SLF001
 
-    def _flash_row(self, key: str):
+    def _flash_row(self, key: str) -> None:
         """Aplica un efecto de flash a una fila de unidades cuando cambia el valor."""
         if key in self.main_window._row_widgets:  # noqa: SLF001
             widget = self.main_window._row_widgets[key]  # noqa: SLF001

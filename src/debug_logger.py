@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import datetime
 import os
 import sys
@@ -5,7 +7,7 @@ from pathlib import Path
 
 
 class DebugLogger:
-    def __init__(self, log_file=None):
+    def __init__(self, log_file: str | None = None) -> None:
         self.pid = os.getpid()
         self.process_type = "UNKNOWN"
 
@@ -41,7 +43,7 @@ class DebugLogger:
             f.write(f"=== DEBUG SESSION {datetime.datetime.now().astimezone()} ===\n")
             f.write(f"=== PROCESO: {self.process_type} PID: {self.pid} ===\n\n")
 
-    def log(self, message):
+    def log(self, message: str) -> None:
         timestamp = datetime.datetime.now().astimezone().strftime("%H:%M:%S.%f")[:-3]
         full_message = f"[{self.process_type}:{self.pid}] {message}"
 

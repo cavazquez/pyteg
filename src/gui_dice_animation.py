@@ -7,8 +7,8 @@ from __future__ import annotations
 import secrets
 from typing import Any
 
-from PySide6.QtCore import Qt, QTimer, Signal
-from PySide6.QtGui import QBrush, QColor, QFont, QPainter, QPen
+from PySide6.QtCore import QRect, Qt, QTimer, Signal
+from PySide6.QtGui import QBrush, QColor, QFont, QPainter, QPaintEvent, QPen, QShowEvent
 from PySide6.QtWidgets import (
     QDialog,
     QFrame,
@@ -53,7 +53,7 @@ class DiceWidget(QWidget):
         self._current_value = self._final_value
         self.update()
 
-    def paintEvent(self, event):  # noqa: N802
+    def paintEvent(self, event: QPaintEvent) -> None:  # noqa: N802
         """Dibuja el dado con su valor actual."""
         del event  # Unused parameter
         painter = QPainter(self)
@@ -68,7 +68,7 @@ class DiceWidget(QWidget):
         # Dibujar puntos según el valor
         self._draw_dice_dots(painter, rect, self._current_value)
 
-    def _draw_dice_dots(self, painter: QPainter, rect, value: int) -> None:
+    def _draw_dice_dots(self, painter: QPainter, rect: QRect, value: int) -> None:
         """Dibuja los puntos del dado según su valor."""
         painter.setBrush(QBrush(QColor(0, 0, 0)))
         painter.setPen(Qt.PenStyle.NoPen)
@@ -348,7 +348,7 @@ class BattleResultDialog(QDialog):
         # Emitir señal de animación terminada
         self.animation_finished.emit()
 
-    def showEvent(self, event):  # noqa: N802
+    def showEvent(self, event: QShowEvent) -> None:  # noqa: N802
         """Se ejecuta cuando se muestra el diálogo."""
         super().showEvent(event)
         # Auto-iniciar la animación después de un breve delay

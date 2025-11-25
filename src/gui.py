@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import contextlib
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from PySide6.QtCore import QSize, Qt
 from PySide6.QtWidgets import (
@@ -33,6 +33,11 @@ from src.i18n import translate as _
 from src.sound_manager import SoundManager
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from PySide6.QtGui import QCloseEvent, QColor, QKeyEvent
+
+    from src.client import Client
     from src.gui_chat import Chat
     from src.gui_scene import QCustomGraphicsScene
     from src.gui_toolbar import ToolBar
@@ -40,15 +45,15 @@ if TYPE_CHECKING:
 
 
 class Gui(QMainWindow):
-    def __init__(self, client):  # noqa: PLR0915
+    def __init__(self, client: Client) -> None:  # noqa: PLR0915
         super().__init__()
         self._vivo = True
         self.client = client
         # Inicializar tema lo antes posible para uso en setup inicial
         self._theme = "light"
-        self.client_by_id = {}
+        self.client_by_id: dict[int, Any] = {}
         self.transmisor = ClientNullTransmisor()
-        self.conexion = None
+        self.conexion: Any = None
         self.w: QWidget | None = None
         self.ventana_conectar: VentanaConectar | None = None
         self.scene: QCustomGraphicsScene | None = None
@@ -72,9 +77,9 @@ class Gui(QMainWindow):
 
         # Initialize turn number and current player info
         self._turno_actual = 0
-        self._jugador_actual_id = None
-        self._jugador_actual_nombre = None
-        self._jugador_actual_color = None
+        self._jugador_actual_id: int | None = None
+        self._jugador_actual_nombre: str | None = None
+        self._jugador_actual_color: str | None = None
 
         # Initialize game configuration
         self._segundos_por_turno = 20
@@ -83,8 +88,8 @@ class Gui(QMainWindow):
         self.misiles_habilitados = False
 
         # Initialize secret objective variables
-        self._objetivo_secreto_id = None
-        self._objetivo_secreto_descripcion = None
+        self._objetivo_secreto_id: str | None = None
+        self._objetivo_secreto_descripcion: str | None = None
 
         self.colores = Colores()
 
@@ -213,17 +218,17 @@ class Gui(QMainWindow):
 
         self.show()  # IMPORTANT!!!!! Windows are hidden by default.
 
-    def vivo(self):
+    def vivo(self) -> bool:
         return self._vivo
 
-    def update_player_list(self, players):
+    def update_player_list(self, players: Sequence[tuple[str, QColor]]) -> None:
         """
         Only shows players that are actually playing.
         :param players: List of tuples (name, color) where color is a QColor.
         """
         self.players_manager.update_player_list(players)
 
-    def abrir_ventana_conectar(self):
+    def abrir_ventana_conectar(self) -> None:
         # Cancelar selección al abrir ventana de conexión
         if self.scene and hasattr(self.scene, "selection_manager"):
             self.scene.selection_manager.cancelar_seleccion()
@@ -234,19 +239,19 @@ class Gui(QMainWindow):
 
         self.ventana_conectar.show()
 
-    def ventana_admin(self):
+    def ventana_admin(self) -> None:
         self.w = None
         self.w = VentanaAdmin(self)
         if self.w is not None:
             self.w.show()
 
-    def ventana_esperar_jugadores(self):
+    def ventana_esperar_jugadores(self) -> None:
         print("=== Iniciando ventana_esperar_jugadores ===")
         print("Creando nueva ventana de espera...")
         self.w = VentanaEsperarJugadores(self)
 
         # Conectar la señal de cierre para limpiar la referencia
-        def limpiar_ventana():
+        def limpiar_ventana() -> None:
             print("Limpiando referencia a la ventana de espera")
             if hasattr(self, "w") and self.w is not None:
                 with contextlib.suppress(Exception):
@@ -264,12 +269,12 @@ class Gui(QMainWindow):
 
     def update_turno(
         self,
-        num_turno,
-        num_ronda,
-        jugador_actual_id=None,
-        jugador_actual_nombre=None,
-        jugador_actual_color=None,
-    ):
+        num_turno: int,
+        num_ronda: int,
+        jugador_actual_id: int | None = None,
+        jugador_actual_nombre: str | None = None,
+        jugador_actual_color: str | None = None,
+    ) -> None:
         """Update the turn and round number display.
 
         Args:
@@ -291,7 +296,7 @@ class Gui(QMainWindow):
         if jugador_actual_nombre:
             self.players_manager.set_current_player(jugador_actual_nombre)
 
-    def update_status_bar(self, text, color=None):
+    def update_status_bar(self, text: str, color: str | None = None) -> None:
         """Update the status bar with the given text.
 
         Args:
@@ -300,7 +305,7 @@ class Gui(QMainWindow):
         """
         self.status_manager.update_status_bar(text, color)
 
-    def update_timer_display(self, text, color=None):
+    def update_timer_display(self, text: str, color: str | None = None) -> None:
         """Update the timer display in the status bar.
 
         Args:
@@ -315,11 +320,11 @@ class Gui(QMainWindow):
             self.timer_label.setStyleSheet("font-weight: bold; padding: 2px 8px;")
         self.timer_label.setText(text)
 
-    def clear_status_bar(self):
+    def clear_status_bar(self) -> None:
         """Clear the status bar message, but keep the turn number."""
         self.status_manager.clear_status_bar()
 
-    def update_game_state(self, estado):
+    def update_game_state(self, estado: str) -> None:
         """Update the game state display in the status bar.
 
         Args:
@@ -327,14 +332,14 @@ class Gui(QMainWindow):
         """
         self.status_manager.update_game_state(estado)
 
-    def update_mi_jugador_info(self):
+    def update_mi_jugador_info(self) -> None:
         """Actualiza la información del usuario actual (mi jugador).
 
         Actualiza la información en la barra de estado.
         """
         self.status_manager.update_mi_jugador_info()
 
-    def update_unidades_disponibles(self, unidades):
+    def update_unidades_disponibles(self, unidades: dict[str, int]) -> None:
         """Actualiza el panel derecho con las unidades disponibles.
 
         Args:
@@ -343,7 +348,7 @@ class Gui(QMainWindow):
         """
         self.units_manager.update_unidades_disponibles(unidades)
 
-    def keyPressEvent(self, event):  # noqa: N802
+    def keyPressEvent(self, event: QKeyEvent) -> None:  # noqa: N802
         if event.key() in {Qt.Key.Key_Enter, Qt.Key.Key_Return} and self.chat:
             self.chat.send_message()
         elif (
@@ -354,20 +359,20 @@ class Gui(QMainWindow):
             # Cancelar selección con tecla Escape usando selection_manager
             self.scene.selection_manager.cancelar_seleccion()
 
-    def closeEvent(self, _):  # noqa: N802
+    def closeEvent(self, _: QCloseEvent) -> None:  # noqa: N802
         self._vivo = False
         # Limpiar recursos del gestor de sonidos
         self.sound_manager.cleanup()
 
-    def finalizar_turno(self):
+    def finalizar_turno(self) -> None:
         """Método llamado cuando se hace clic en el botón Finalizar Turno."""
         self.game_actions_manager.finalizar_turno()
 
-    def atacar(self):
+    def atacar(self) -> None:
         """Método llamado cuando se hace clic en el botón Atacar de la toolbar."""
         self.game_actions_manager.atacar()
 
-    def get_max_attack_units(self, pais):
+    def get_max_attack_units(self, pais: str) -> int:
         """
         Obtiene el máximo número de unidades disponibles para atacar desde un país.
 
@@ -379,7 +384,7 @@ class Gui(QMainWindow):
         """
         return self.game_actions_manager.get_max_attack_units(pais)
 
-    def canjear_misil(self, pais):
+    def canjear_misil(self, pais: str) -> None:
         """Canjea 6 unidades por 1 misil en el país especificado.
 
         Args:
@@ -389,7 +394,7 @@ class Gui(QMainWindow):
             self.transmisor.canjear_misil(pais)
             self.status_bar.showMessage(f"Canjeando misil en {pais}...", 3000)
 
-    def lanzar_misil(self, pais_origen, pais_destino):
+    def lanzar_misil(self, pais_origen: str, pais_destino: str) -> None:
         """Lanza un misil desde un país hacia otro.
 
         Args:
@@ -405,12 +410,12 @@ class Gui(QMainWindow):
 
     def set_configuracion_partida(
         self,
-        segundos_por_turno,
-        paises_para_victoria,
+        segundos_por_turno: int,
+        paises_para_victoria: int,
         *,
-        objetivos_secretos=False,
-        misiles_habilitados=False,
-    ):
+        objetivos_secretos: bool = False,
+        misiles_habilitados: bool = False,
+    ) -> None:
         """
         Establece la configuración de la partida.
 
@@ -429,7 +434,7 @@ class Gui(QMainWindow):
         self._objetivo_secreto_id = None
         self._objetivo_secreto_descripcion = None
 
-    def mostrar_configuracion_partida(self):
+    def mostrar_configuracion_partida(self) -> None:
         """
         Muestra la ventana de configuración de la partida.
         """
@@ -442,7 +447,7 @@ class Gui(QMainWindow):
         )
         dialog.exec()
 
-    def on_language_changed(self, lang_code):
+    def on_language_changed(self, lang_code: str) -> None:
         """
         Maneja el cambio de idioma actualizando todos los componentes de la GUI.
 
@@ -479,7 +484,9 @@ class Gui(QMainWindow):
 
         print(f"GUI actualizada al idioma: {lang_code}")
 
-    def set_objetivo_secreto(self, objetivo_id, descripcion):
+    def set_objetivo_secreto(
+        self, objetivo_id: str | None, descripcion: str | None
+    ) -> None:
         """
         Establece el objetivo secreto del jugador.
 
@@ -497,7 +504,7 @@ class Gui(QMainWindow):
             if widget.isVisible():
                 widget.set_objetivo_secreto(objetivo_id, descripcion)
 
-    def mostrar_tarjetas(self):
+    def mostrar_tarjetas(self) -> None:
         """Muestra la ventana de tarjetas del jugador."""
         # Solicitar tarjetas actualizadas al servidor
         self.transmisor.solicitar_tarjetas()

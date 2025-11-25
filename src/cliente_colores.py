@@ -1,9 +1,11 @@
+from __future__ import annotations
+
 from PySide6.QtGui import QColor
 
 
 class Colores:
-    def __init__(self):
-        self._colores = [
+    def __init__(self) -> None:
+        self._colores: list[QColor] = [
             QColor(255, 0, 0),  # Rojo
             QColor(0, 255, 0),  # Verde
             QColor(0, 0, 255),  # Azul
@@ -13,12 +15,12 @@ class Colores:
             QColor(0, 0, 0),  # Negro
             QColor(255, 255, 255),  # Blanco
         ]
-        self._asignacion = {}
+        self._asignacion: dict[str, QColor] = {}
 
-    def agregar_color(self, color):
+    def agregar_color(self, color: QColor) -> None:
         self._colores.append(color)
 
-    def asignar(self, cliente, color):
+    def asignar(self, cliente: str, color: QColor | dict[str, int]) -> None:
         if isinstance(color, dict):
             # Si el color es un diccionario, extraer los valores r, g, b
             r = color.get("r", 0)
@@ -31,13 +33,13 @@ class Colores:
 
         self._asignacion[cliente] = color_qcolor
 
-    def colores(self):
+    def colores(self) -> list[QColor]:
         return self._colores
 
-    def colores_asignados(self):
+    def colores_asignados(self) -> dict[str, QColor]:
         return self._asignacion
 
-    def color_asignado(self, cliente):
+    def color_asignado(self, cliente: str) -> QColor:
         """
         Obtiene el color asignado al cliente.
 
@@ -46,7 +48,7 @@ class Colores:
         """
         return self._asignacion.get(cliente, QColor(128, 128, 128))
 
-    def __str__(self):
+    def __str__(self) -> str:
         colores = ", ".join(str(color.getRgb()) for color in self._colores)
         asignacion = "\n".join(
             f"{clave}: {valor.getRgb()}" for clave, valor in self._asignacion.items()

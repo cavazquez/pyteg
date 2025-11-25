@@ -89,7 +89,7 @@ class TomlReader:
         self._validar_estructura_basica()
 
         # Inicializar estructuras de datos
-        self.continentes: dict[str, tuple] = {}
+        self.continentes: dict[str, tuple[int, int]] = {}
         self.paises: dict[str, dict[str, Any]] = {}
         self._pais_a_continente: dict[str, str] = {}  # Índice inverso para performance
 
@@ -375,7 +375,7 @@ class TomlReader:
         Returns:
             Diccionario con nombres y archivos de cartas
         """
-        return self.cartas
+        return dict(self.cartas)
 
     def img_path(self, pais: str) -> str:
         """Obtiene ruta del archivo de imagen de un país.
@@ -393,7 +393,11 @@ class TomlReader:
         if continente is None:
             msg = f"País '{pais}' no encontrado"
             raise KeyError(msg)
-        return self.paises[continente][pais]["file"]
+        file_path = self.paises[continente][pais].get("file")
+        if not isinstance(file_path, str):
+            msg = f"Ruta de archivo inválida para país '{pais}'"
+            raise KeyError(msg)
+        return file_path
 
     def continente(self, pais: str) -> str | None:
         """Obtiene el continente al que pertenece un país.

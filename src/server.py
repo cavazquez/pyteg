@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 import argparse
 import sys
+from typing import TYPE_CHECKING, Any
 
 from src.build_mapa import build_mapa
 from src.mazo import Mazo
@@ -14,16 +17,19 @@ from src.turno_timer import TurnoTimer
 from src.utils import get_resource_path
 from src.version import NAME, VERSION
 
+if TYPE_CHECKING:
+    from src.server_client import Client
+
 
 class Server:
     """Tiene la responsabilidad de todo lo relacionado
     con los clientes y sus conexiones"""
 
-    def __init__(self):
-        self._clients = {}
+    def __init__(self) -> None:
+        self._clients: dict[int, Client] = {}
         self.color = ServerColor()
         self.estado = Estado()
-        self.game = None
+        self.game: Game | None = None
 
         # Inicializar el mapa
         self.mapa = Mapa(build_mapa)
@@ -52,7 +58,7 @@ class Server:
         self.objetivos_secretos = ObjetivosSecretos(toml_reader)
 
         # Timer de turnos (se inicializa en None y se arranca al empezar la partida)
-        self._turno_timer = None
+        self._turno_timer: TurnoTimer | None = None
         # Configuración: segundos por turno (puede ser seteado por el admin)
         self._segundos_por_turno = 20
         # Configuración: países necesarios para ganar (puede ser seteado por el admin)
@@ -105,31 +111,38 @@ class Server:
         """
         return self._misiles_habilitados
 
-    def cant_clients(self):
+    def cant_clients(self) -> int:
         return len(self._clients)
 
-    def quitarme(self, user_id):
+    def quitarme(self, user_id: int) -> None:
         print(f"Quitando {user_id}")
         self._clients.pop(user_id, None)
         # Notificar a todos los clientes restantes sobre la desconexión
         self.enviar_username()
 
-    def registrar_cliente(self, user_id, client):
+    def registrar_cliente(self, user_id: int, client: Client) -> None:
         self.color.asignar_color_aleatorio(client)
         self._clients[user_id] = client
 
-    def dame_lista_jugadores(self):
+    def dame_lista_jugadores(self) -> list[int]:
         return list(self._clients.keys())
 
-    def dame_clientes(self):
+    def dame_clientes(self) -> list[Client]:
         return list(self._clients.values())
 
-    def enviar_colores_asignados(self):
+    def enviar_colores_asignados(self) -> None:
         # Obtener la lista de clientes en el orden de los turnos
         # si el juego ha comenzado
         if hasattr(self, "game") and self.game is not None:
-            # Usar el orden de los turnos del juego
-            clientes_ordenados = self.game.lista_jugadores_orden_turno()
+            # Usar el orden de los turnos del juego (devuelve nombres de jugadores)
+            jugadores_orden_nombres = self.game.lista_jugadores_orden_turno()
+            # Convertir nombres a objetos Client
+            clientes_ordenados: list[Client] = []
+            for nombre in jugadores_orden_nombres:
+                for client in self.dame_clientes():
+                    if client.username() == nombre:
+                        clientes_ordenados.append(client)
+                        break
             # Asegurarse de que todos los clientes estén incluidos,
             # incluso si no están en los turnos
             clientes_restantes = [
@@ -143,15 +156,15 @@ class Server:
         # Enviar los colores asignados a todos los clientes
         for client in self.dame_clientes():
             for otro_client in clientes_ordenados:
-                client.transmisor.color_asignado(
-                    otro_client.userid(), otro_client.color_actual()
-                )
+                color = otro_client.color_actual()
+                if color is not None:
+                    client.transmisor.color_asignado(otro_client.userid(), color)
 
         # Actualizar la lista de jugadores en la interfaz de usuario
         if hasattr(self, "game") and self.game is not None:
             self.actualizar_lista_jugadores_ui()
 
-    def actualizar_lista_jugadores_ui(self):
+    def actualizar_lista_jugadores_ui(self) -> None:
         """
         Actualiza la lista de jugadores en la interfaz de usuario de todos los clientes.
         """
@@ -173,11 +186,11 @@ class Server:
             # Enviar la lista de jugadores al cliente
             client.transmisor.actualizar_lista_jugadores(jugadores_con_colores)
 
-    def enviar_estado(self):
+    def enviar_estado(self) -> None:
         for client in self.dame_clientes():
             client.transmisor.enviar_estado(self.estado.estado_actual())
 
-    def enviar_turno_actual(self):
+    def enviar_turno_actual(self) -> None:
         """Envía el número de turno y ronda actuales a todos los clientes."""
         if not self.game:
             return
@@ -193,13 +206,19 @@ class Server:
         try:
             turno_obj = self.game.turno_actual()
             if turno_obj and hasattr(turno_obj, "jugador_actual"):
-                jugador = turno_obj.jugador_actual()
+                jugador_nombre = turno_obj.jugador_actual()
 
-                if jugador:
-                    jugador_actual_id = jugador.userid()
-                    jugador_actual_nombre = jugador.username()
-                    color_obj = jugador.color_actual()
-                    jugador_actual_color = color_obj.to_hex() if color_obj else None
+                if jugador_nombre:
+                    # Buscar el cliente correspondiente al nombre
+                    for client in self.dame_clientes():
+                        if client.username() == jugador_nombre:
+                            jugador_actual_id = client.userid()
+                            jugador_actual_nombre = client.username()
+                            color_obj = client.color_actual()
+                            jugador_actual_color = (
+                                color_obj.to_hex() if color_obj else None
+                            )
+                            break
 
         except (AttributeError, KeyError) as e:
             print(f"Error obteniendo información del jugador actual: {e}")
@@ -219,11 +238,11 @@ class Server:
         # Enviar el mapa actualizado para actualizar las unidades disponibles
         self.enviar_mapa()
 
-    def enviar_chat(self, username, msg):
+    def enviar_chat(self, username: str, msg: str) -> None:
         for client in self.dame_clientes():
             client.transmisor.enviar_chat(f"{username}: {msg}")
 
-    def enviar_userid(self):
+    def enviar_userid(self) -> None:
         for client in self.dame_clientes():
             # Primero enviar el ID del cliente actual (su propio ID)
             client.transmisor.enviar_userid(client.userid())
@@ -233,14 +252,14 @@ class Server:
                 if otro_client.userid() != client.userid():
                     client.transmisor.enviar_userid(otro_client.userid())
 
-    def enviar_username(self):
+    def enviar_username(self) -> None:
         for client in self.dame_clientes():
             for otro_client in self.dame_clientes():
                 client.transmisor.enviar_username(
                     otro_client.userid(), otro_client.username()
                 )
 
-    def empezar_partida(self):
+    def empezar_partida(self) -> None:
         """
         Inicia la partida,
         asigna colores a los jugadores y notifica a todos los clientes.
@@ -292,7 +311,7 @@ class Server:
         )
         self._turno_timer.start()
 
-    def enviar_unidades_disponibles(self):
+    def enviar_unidades_disponibles(self) -> None:
         """Envía las unidades disponibles al jugador del turno actual."""
         if not self.game:
             return
@@ -339,22 +358,24 @@ class Server:
             unidades["Oceanía"] = turno_actual.cant_unidades_oceania()
 
         # Enviar solo al jugador del turno actual
+        # jugador_actual es un string (nombre),
+        # necesitamos encontrar el Client correspondiente
         for client in self.dame_clientes():
-            if client.userid() == jugador_actual.userid():
+            if client.username() == jugador_actual:
                 client.transmisor.enviar_unidades_disponibles(unidades)
                 break
 
-    def enviar_mapa(self):
+    def enviar_mapa(self) -> None:
         """Envía el estado actual del mapa a todos los clientes conectados."""
         for client in self.dame_clientes():
             client.transmisor.enviar_mapa(self.mapa, self.game)
 
-    def enviar_victoria(self, ganador_id, ganador_nombre):
+    def enviar_victoria(self, ganador_id: str, ganador_nombre: str) -> None:
         """Envía el mensaje de victoria a todos los clientes conectados."""
         for client in self.dame_clientes():
             client.transmisor.enviar_victoria(ganador_id, ganador_nombre)
 
-    def enviar_configuracion_partida(self):
+    def enviar_configuracion_partida(self) -> None:
         """Envía la configuración de la partida a todos los clientes conectados."""
         for client in self.dame_clientes():
             client.transmisor.enviar_configuracion_partida(
@@ -364,7 +385,7 @@ class Server:
                 misiles_habilitados=self._misiles_habilitados,
             )
 
-    def enviar_resultado_misil(self, resultado_data):
+    def enviar_resultado_misil(self, resultado_data: dict[str, Any]) -> None:
         """Envía el resultado del lanzamiento de un misil a todos los clientes.
 
         Args:
@@ -373,7 +394,7 @@ class Server:
         for client in self.dame_clientes():
             client.transmisor.enviar_resultado_misil(resultado_data)
 
-    def enviar_misil_agregado(self, pais, cantidad_misiles):
+    def enviar_misil_agregado(self, pais: str, cantidad_misiles: int) -> None:
         """Envía notificación de que se agregó un misil a un país.
 
         Args:
@@ -383,7 +404,7 @@ class Server:
         for client in self.dame_clientes():
             client.transmisor.enviar_misil_agregado(pais, cantidad_misiles)
 
-    def enviar_tarjetas_jugador(self, client):
+    def enviar_tarjetas_jugador(self, client: Client) -> None:
         """Envía las tarjetas del jugador específico al cliente."""
         tarjetas_jugador = self.mazo.tarjetas_asignadas(client)
         tarjetas_data = [
@@ -396,13 +417,13 @@ class Server:
         )
         client.transmisor.enviar_tarjetas_jugador(tarjetas_data)
 
-    def enviar_objetivos_secretos(self):
+    def enviar_objetivos_secretos(self) -> None:
         """Envía el objetivo secreto asignado a cada jugador."""
         print("=== ENVIANDO OBJETIVOS SECRETOS ===")
         for client in self.dame_clientes():
             user_id = client.userid()
             print(f"Procesando cliente {client.username()} (ID: {user_id})")
-            objetivo = self.objetivos_secretos.get_objetivo_jugador(user_id)
+            objetivo = self.objetivos_secretos.get_objetivo_jugador(str(user_id))
             if objetivo:
                 print(
                     f"Enviando objetivo a {client.username()}: "
@@ -450,7 +471,7 @@ def parse_arguments() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def main():
+def main() -> None:
     """
     Función principal del servidor.
     """

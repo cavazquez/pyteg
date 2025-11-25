@@ -41,7 +41,7 @@ class Mapa:
         self._mapa[pais][self._UNIDADES] -= 1
 
     def cantidad_unidades(self, pais: str) -> int:
-        return self._mapa[pais][self._UNIDADES]
+        return int(self._mapa[pais][self._UNIDADES])
 
     def set_unidades(self, pais: str, cant: int) -> None:
         self._mapa[pais][self._UNIDADES] = cant
@@ -51,10 +51,10 @@ class Mapa:
         self._mapa[hacia][self._UNIDADES] += cantidad
 
     def continente(self, pais: str) -> str:
-        return self._mapa[pais][self._CONTINENTE]
+        return str(self._mapa[pais][self._CONTINENTE])
 
     def ocupado_por(self, pais: str) -> str:
-        return self._mapa[pais][self._JUGADOR]
+        return str(self._mapa[pais][self._JUGADOR])
 
     def paises(self) -> list[str]:
         if self._mapa:
@@ -179,7 +179,9 @@ class Mapa:
             o lista vacía si no hay adyacentes definidos
         """
         if pais in self._mapa:
-            return self._mapa[pais][self._ADYACENTES]
+            adyacentes = self._mapa[pais][self._ADYACENTES]
+            if isinstance(adyacentes, list):
+                return [str(p) for p in adyacentes]
         return []
 
     # ========== Métodos para el sistema de misiles ==========
@@ -203,7 +205,7 @@ class Mapa:
             int: Cantidad de misiles en el país
         """
         if pais in self._mapa:
-            return self._mapa[pais][self._MISILES]
+            return int(self._mapa[pais][self._MISILES])
         return 0
 
     def usar_misil(self, pais: str) -> None:

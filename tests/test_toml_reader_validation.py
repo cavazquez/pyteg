@@ -7,7 +7,7 @@ from src.toml_reader import TomlReader, TomlReaderError
 class TestTomlReaderValidation(unittest.TestCase):
     """Tests específicos para validación de errores en TomlReader."""
 
-    def test_toml_syntax_error(self):
+    def test_toml_syntax_error(self) -> None:
         """Test que TOML con sintaxis inválida lance TomlReaderError."""
         toml_invalido = """
         [Cartas
@@ -17,14 +17,14 @@ class TestTomlReaderValidation(unittest.TestCase):
             TomlReader(toml_invalido)
         self.assertIn("Error al parsear TOML", str(context.exception))
 
-    def test_toml_no_es_diccionario(self):
+    def test_toml_no_es_diccionario(self) -> None:
         """Test que TOML que no sea diccionario lance error."""
         toml_invalido = "string_simple"
         with self.assertRaises(TomlReaderError) as context:
             TomlReader(toml_invalido)
         self.assertIn("Error al parsear TOML", str(context.exception))
 
-    def test_seccion_cartas_faltante(self):
+    def test_seccion_cartas_faltante(self) -> None:
         """Test que TOML sin sección Cartas lance error."""
         toml_sin_cartas = """
         [Continente]
@@ -35,7 +35,7 @@ class TestTomlReaderValidation(unittest.TestCase):
             TomlReader(toml_sin_cartas)
         self.assertIn("Cartas", str(context.exception))
 
-    def test_cartas_no_es_diccionario(self):
+    def test_cartas_no_es_diccionario(self) -> None:
         """Test que sección Cartas que no sea diccionario lance error."""
         toml_cartas_invalidas = """
         Cartas = "string_instead_of_dict"
@@ -44,7 +44,7 @@ class TestTomlReaderValidation(unittest.TestCase):
             TomlReader(toml_cartas_invalidas)
         self.assertIn("debe ser un diccionario", str(context.exception))
 
-    def test_carta_no_es_string(self):
+    def test_carta_no_es_string(self) -> None:
         """Test que carta que no sea string lance error."""
         toml_carta_invalida = """
         [Cartas]
@@ -54,7 +54,7 @@ class TestTomlReaderValidation(unittest.TestCase):
             TomlReader(toml_carta_invalida)
         self.assertIn("debe ser una cadena", str(context.exception))
 
-    def test_continente_sin_coordenadas(self):
+    def test_continente_sin_coordenadas(self) -> None:
         """Test que continente sin pos_x o pos_y lance error."""
         toml_continente_sin_coords = """
         [Cartas]
@@ -71,7 +71,7 @@ class TestTomlReaderValidation(unittest.TestCase):
             TomlReader(toml_continente_sin_coords)
         self.assertIn("debe tener pos_x y pos_y", str(context.exception))
 
-    def test_coordenadas_continente_no_enteras(self):
+    def test_coordenadas_continente_no_enteras(self) -> None:
         """Test que coordenadas de continente no enteras lancen error."""
         toml_coords_invalidas = """
         [Cartas]
@@ -85,7 +85,7 @@ class TestTomlReaderValidation(unittest.TestCase):
             TomlReader(toml_coords_invalidas)
         self.assertIn("deben ser enteros", str(context.exception))
 
-    def test_pais_continente_inconsistente(self):
+    def test_pais_continente_inconsistente(self) -> None:
         """Test que país con continente inconsistente lance error."""
         toml_continente_inconsistente = """
         [Cartas]
@@ -107,7 +107,7 @@ class TestTomlReaderValidation(unittest.TestCase):
             TomlReader(toml_continente_inconsistente)
         self.assertIn("declara continente", str(context.exception))
 
-    def test_pais_file_no_string(self):
+    def test_pais_file_no_string(self) -> None:
         """Test que campo file de país no string lance error."""
         toml_file_invalido = """
         [Cartas]
@@ -129,7 +129,7 @@ class TestTomlReaderValidation(unittest.TestCase):
             TomlReader(toml_file_invalido)
         self.assertIn("debe ser string", str(context.exception))
 
-    def test_pais_coordenadas_no_enteras(self):
+    def test_pais_coordenadas_no_enteras(self) -> None:
         """Test que coordenadas de país no enteras lancen error."""
         toml_coords_pais_invalidas = """
         [Cartas]
@@ -151,7 +151,7 @@ class TestTomlReaderValidation(unittest.TestCase):
             TomlReader(toml_coords_pais_invalidas)
         self.assertIn("debe ser entero", str(context.exception))
 
-    def test_adyacencias_no_diccionario(self):
+    def test_adyacencias_no_diccionario(self) -> None:
         """Test que sección Adyacencias que no sea diccionario lance error."""
         # Crear un TOML donde Adyacencias no sea diccionario requiere
         # manipulación directa porque tomllib parsea "Adyacencias = string"
@@ -172,7 +172,7 @@ class TestTomlReaderValidation(unittest.TestCase):
             reader._validar_adyacencias()  # noqa: SLF001
         self.assertIn("debe ser un diccionario", str(context.exception))
 
-    def test_adyacencias_pais_no_lista(self):
+    def test_adyacencias_pais_no_lista(self) -> None:
         """Test que adyacencias de país que no sea lista lance error."""
         toml_adyacencias_no_lista = """
         [Cartas]
@@ -197,7 +197,7 @@ class TestTomlReaderValidation(unittest.TestCase):
             TomlReader(toml_adyacencias_no_lista)
         self.assertIn("deben ser una lista", str(context.exception))
 
-    def test_adyacente_no_string(self):
+    def test_adyacente_no_string(self) -> None:
         """Test que país adyacente que no sea string lance error."""
         toml_adyacente_no_string = """
         [Cartas]
@@ -222,7 +222,7 @@ class TestTomlReaderValidation(unittest.TestCase):
             TomlReader(toml_adyacente_no_string)
         self.assertIn("debe ser string", str(context.exception))
 
-    def test_pais_en_adyacencias_no_existe(self):
+    def test_pais_en_adyacencias_no_existe(self) -> None:
         """Test que país en adyacencias que no existe lance error."""
         toml_pais_inexistente = """
         [Cartas]
@@ -247,7 +247,7 @@ class TestTomlReaderValidation(unittest.TestCase):
             TomlReader(toml_pais_inexistente)
         self.assertIn("no existe en el mapa", str(context.exception))
 
-    def test_pais_adyacente_no_existe(self):
+    def test_pais_adyacente_no_existe(self) -> None:
         """Test que país adyacente que no existe lance error."""
         toml_adyacente_inexistente = """
         [Cartas]
@@ -272,7 +272,7 @@ class TestTomlReaderValidation(unittest.TestCase):
             TomlReader(toml_adyacente_inexistente)
         self.assertIn("no existe en el mapa", str(context.exception))
 
-    def test_toml_valido_completo(self):
+    def test_toml_valido_completo(self) -> None:
         """Test que TOML válido completo no lance errores."""
         toml_valido = """
         [Cartas]

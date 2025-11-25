@@ -1,13 +1,21 @@
+from __future__ import annotations
+
 import json
+from typing import TYPE_CHECKING, Any
 
 from src.exception import EstadoInvalidoError, MensajeNoValidoError
 from src.logger import get_logger
 from src.server_tasks_manager import ServerTaskManager
 from src.server_transmisor import ServerTransmisor
 
+if TYPE_CHECKING:
+    from src.colores import IColor
+
 
 class Client:
-    def __init__(self, user_id, conn, server, username, soy_admin):
+    def __init__(
+        self, user_id: int, conn: Any, server: Any, username: str, *, soy_admin: bool
+    ) -> None:
         """
         Inicializa un nuevo cliente.
 
@@ -19,14 +27,14 @@ class Client:
         """
         self._user_id = user_id
         self._conn = conn
-        self.server = server
+        self.server: Any = server
         self._username = username
         self._soy_admin = soy_admin
-        self._color = None
+        self._color: IColor | None = None
         self.transmisor = ServerTransmisor(self._conn)
         self._logger = get_logger(f"server.client.{user_id}")
 
-    def asignar_color(self, color):
+    def asignar_color(self, color: IColor | None) -> None:
         """
         Asigna un color al cliente.
 
@@ -34,7 +42,7 @@ class Client:
         """
         self._color = color
 
-    def es_admin(self):
+    def es_admin(self) -> bool:
         """
         Verifica si el cliente es administrador.
 
@@ -42,7 +50,7 @@ class Client:
         """
         return self._soy_admin
 
-    def cambiar_color(self, color):
+    def cambiar_color(self, color: str) -> None:
         """
         Cambia el color del cliente.
 
@@ -50,7 +58,7 @@ class Client:
         """
         self.server.color.asignar_color(self, color)
 
-    def set_username(self, username):
+    def set_username(self, username: str) -> None:
         """
         Establece el nombre de usuario del cliente.
 
@@ -58,7 +66,7 @@ class Client:
         """
         self._username = username
 
-    def color_actual(self):
+    def color_actual(self) -> IColor | None:
         """
         Obtiene el color actual del cliente.
 
@@ -66,7 +74,7 @@ class Client:
         """
         return self._color
 
-    def userid(self):
+    def userid(self) -> int:
         """
         Obtiene el ID de usuario del cliente.
 
@@ -74,7 +82,7 @@ class Client:
         """
         return self._user_id
 
-    def username(self):
+    def username(self) -> str:
         """
         Obtiene el nombre de usuario del cliente.
 
@@ -82,7 +90,7 @@ class Client:
         """
         return self._username
 
-    def enviar(self, data):
+    def enviar(self, data: bytes) -> None:
         """
         Envía datos al cliente.
 
@@ -90,21 +98,24 @@ class Client:
         """
         self._conn.send(data)
 
-    def recibir(self):
+    def recibir(self) -> list[str]:
         """
         Recibe datos del cliente.
 
         :return: Datos recibidos
         """
-        return self._conn.receiver()
+        result = self._conn.receiver()
+        if isinstance(result, list):
+            return [str(item) for item in result]
+        return []
 
-    def cerrar(self):
+    def cerrar(self) -> None:
         """
         Cierra la conexión del cliente.
         """
         self._conn.close()
 
-    def run(self):
+    def run(self) -> None:
         """
         Ejecuta el ciclo principal del cliente, manejando la recepción de datos
         y la ejecución de tareas.
@@ -141,7 +152,7 @@ class Client:
         )
         self.server.quitarme(self._user_id)
 
-    def ejecutar_mensaje(self, data):
+    def ejecutar_mensaje(self, data: dict[str, Any]) -> None:
         """
         Ejecuta una tarea basada en el mensaje recibido.
 

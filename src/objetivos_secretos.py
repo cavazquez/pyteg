@@ -1,5 +1,5 @@
 import random
-from typing import Any
+from typing import Any, cast
 
 from src.logger import get_logger
 
@@ -71,7 +71,9 @@ class ObjetivosSecretos:
         """
         objetivo_id = self.objetivos_asignados.get(client_id)
         if objetivo_id:
-            return self.toml_reader.get_objetivo_secreto(objetivo_id)
+            objetivo = self.toml_reader.get_objetivo_secreto(objetivo_id)
+            if objetivo is not None:
+                return cast("dict[str, Any]", objetivo)
         return None
 
     def verificar_condicion_victoria(
@@ -153,10 +155,11 @@ class ObjetivosSecretos:
             mi_color = None
 
         if not jugador_objetivo_existe or mi_color == color_objetivo:
-            return self._contar_paises_jugador(client_id, mapa) >= paises_alternativos
+            paises_count = self._contar_paises_jugador(client_id, mapa)
+            return bool(paises_count >= paises_alternativos)
 
         # Si existe y fue eliminado, objetivo cumplido
-        return jugador_objetivo_eliminado
+        return bool(jugador_objetivo_eliminado)
 
     def _verificar_conquistar_continentes(
         self, client_id: str, objetivo: dict[str, Any], mapa: Any
@@ -175,7 +178,8 @@ class ObjetivosSecretos:
     ) -> bool:
         """Verifica si se ha conquistado la cantidad de países requerida."""
         cantidad_objetivo = objetivo.get("cantidad_paises", 24)
-        return self._contar_paises_jugador(client_id, mapa) >= cantidad_objetivo
+        paises_count = self._contar_paises_jugador(client_id, mapa)
+        return bool(paises_count >= cantidad_objetivo)
 
     def _verificar_conquistar_paises_con_tropas(
         self, client_id: str, objetivo: dict[str, Any], mapa: Any
@@ -189,10 +193,16 @@ class ObjetivosSecretos:
         for pais_data in mapa.values():
             # Estructura: [unidades, continente, jugador, adyacentes, misiles]
             unidades, _, dueno, *_ = pais_data
-            if dueno and dueno.userid() == client_id and unidades >= tropas_minimas:
+            if (
+                dueno
+                and hasattr(dueno, "userid")
+                and dueno.userid() == client_id
+                and isinstance(unidades, (int, float))
+                and unidades >= tropas_minimas
+            ):
                 paises_con_tropas_suficientes += 1
 
-        return paises_con_tropas_suficientes >= cantidad_paises
+        return bool(paises_con_tropas_suficientes >= cantidad_paises)
 
     def _contar_paises_jugador(self, client_id: str, mapa: Any) -> int:
         """Cuenta la cantidad de países que controla un jugador."""

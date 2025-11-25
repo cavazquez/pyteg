@@ -1,30 +1,33 @@
+from __future__ import annotations
+
 import json
 from abc import ABC, abstractmethod
+from typing import Any
 
 
 class IMsg(ABC):
     @abstractmethod
-    def to_json(self):
+    def to_json(self) -> str:
         pass
 
 
 class MsgSosAdmin(IMsg):
-    def __init__(self):
+    def __init__(self) -> None:
         self._tipo = "sosadmin"
 
-    def to_json(self):
+    def to_json(self) -> str:
         data = {"mensaje": self._tipo}
         return json.dumps(data)
 
 
 class MsgColorAsignado(IMsg):
-    def __init__(self, id_user, rgb_json):
+    def __init__(self, id_user: int, rgb_json: str) -> None:
         self._tipo = "color_asignado"
         self._id_user = id_user
         self._rgb_json = rgb_json
         print(rgb_json)
 
-    def to_json(self):
+    def to_json(self) -> str:
         data = {
             "mensaje": self._tipo,
             "id": self._id_user,
@@ -34,11 +37,11 @@ class MsgColorAsignado(IMsg):
 
 
 class MsgColor(IMsg):
-    def __init__(self, color):
+    def __init__(self, color: Any) -> None:
         self._tipo = "color"
         self._color = color
 
-    def to_json(self):
+    def to_json(self) -> str:
         color_json = json.loads(self._color.to_json())
         data = {
             "mensaje": self._tipo,
@@ -47,12 +50,12 @@ class MsgColor(IMsg):
 
 
 class MsgChat(IMsg):
-    def __init__(self, msg, msg_type="normal"):
+    def __init__(self, msg: str, msg_type: str = "normal") -> None:
         self._tipo = "chat"
         self._msg = msg
         self._msg_type = msg_type  # "normal", "error", "system"
 
-    def to_json(self):
+    def to_json(self) -> str:
         data = {
             "mensaje": self._tipo,
             "msg": self._msg,
@@ -62,22 +65,22 @@ class MsgChat(IMsg):
 
 
 class MsgUserId(IMsg):
-    def __init__(self, user_id):
+    def __init__(self, user_id: int) -> None:
         self._tipo = "user_id"
         self._user_id = user_id
 
-    def to_json(self):
+    def to_json(self) -> str:
         data = {"mensaje": self._tipo, "user_id": self._user_id}
         return json.dumps(data)
 
 
 class MsgUsername(IMsg):
-    def __init__(self, userid, username):
+    def __init__(self, userid: int, username: str) -> None:
         self._tipo = "username"
         self._userid = userid
         self._username = username
 
-    def to_json(self):
+    def to_json(self) -> str:
         data = {
             "mensaje": self._tipo,
             "username": self._username,
@@ -87,22 +90,22 @@ class MsgUsername(IMsg):
 
 
 class MsgEstado(IMsg):
-    def __init__(self, estado):
+    def __init__(self, estado: str) -> None:
         self._tipo = "estado"
         self._estado = estado
 
-    def to_json(self):
+    def to_json(self) -> str:
         data = {"mensaje": self._tipo, "estado": self._estado}
         return json.dumps(data)
 
 
 class MsgTiempo(IMsg):
-    def __init__(self, userid_turno, tiempo_restante):
+    def __init__(self, userid_turno: int, tiempo_restante: int) -> None:
         self._tipo = "tiempo"
         self._userid_turno = userid_turno
         self._tiempo_restante = tiempo_restante
 
-    def to_json(self):
+    def to_json(self) -> str:
         data = {
             "mensaje": self._tipo,
             "user_id": self._userid_turno,
@@ -114,12 +117,12 @@ class MsgTiempo(IMsg):
 class MsgTurno(IMsg):
     def __init__(
         self,
-        num_turno,
-        num_ronda,
-        jugador_actual_id=None,
-        jugador_actual_nombre=None,
-        jugador_actual_color=None,
-    ):
+        num_turno: int,
+        num_ronda: int,
+        jugador_actual_id: int | None = None,
+        jugador_actual_nombre: str | None = None,
+        jugador_actual_color: str | None = None,
+    ) -> None:
         self._tipo = "turno"
         self._num_turno = num_turno
         self._num_ronda = num_ronda
@@ -127,7 +130,7 @@ class MsgTurno(IMsg):
         self._jugador_actual_nombre = jugador_actual_nombre
         self._jugador_actual_color = jugador_actual_color
 
-    def to_json(self):
+    def to_json(self) -> str:
         data = {
             "mensaje": self._tipo,
             "num_turno": self._num_turno,
@@ -146,13 +149,13 @@ class MsgTurno(IMsg):
 
 
 class MsgPais(IMsg):
-    def __init__(self, pais, userid, unidades):
+    def __init__(self, pais: str, userid: int, unidades: int) -> None:
         self._tipo = "pais"
         self._pais = pais
         self._userid = userid
         self._unidades = unidades
 
-    def to_json(self):
+    def to_json(self) -> str:
         data = {
             "mensaje": self._tipo,
             "pais": self._pais,
@@ -163,13 +166,13 @@ class MsgPais(IMsg):
 
 
 class MsgAgregarUnidad(IMsg):
-    def __init__(self, pais, tipo_unidad, cantidad):
+    def __init__(self, pais: str, tipo_unidad: str, cantidad: int) -> None:
         self._tipo = "agregar_unidad"
         self._pais = pais
         self._tipo_unidad = tipo_unidad
         self._cantidad = cantidad
 
-    def to_json(self):
+    def to_json(self) -> str:
         data = {
             "mensaje": self._tipo,
             "pais": self._pais,
@@ -180,13 +183,13 @@ class MsgAgregarUnidad(IMsg):
 
 
 class MsgUnidadesDisponibles(IMsg):
-    def __init__(self, unidades):
+    def __init__(self, unidades: dict[str, int]) -> None:
         self._tipo = "unidades_disponibles"
         self._unidades = (
             unidades  # Diccionario con el tipo de unidad y la cantidad disponible
         )
 
-    def to_json(self):
+    def to_json(self) -> str:
         data = {
             "mensaje": self._tipo,
             "unidades": self._unidades,
@@ -195,13 +198,13 @@ class MsgUnidadesDisponibles(IMsg):
 
 
 class MsgMoverUnidad(IMsg):
-    def __init__(self, origen, destino, cantidad):
+    def __init__(self, origen: str, destino: str, cantidad: int) -> None:
         self._tipo = "mover_unidad"
         self._origen = origen
         self._destino = destino
         self._cantidad = cantidad
 
-    def to_json(self):
+    def to_json(self) -> str:
         data = {
             "mensaje": self._tipo,
             "origen": self._origen,
@@ -212,7 +215,7 @@ class MsgMoverUnidad(IMsg):
 
 
 class MsgActualizarListaJugadores(IMsg):
-    def __init__(self, jugadores):
+    def __init__(self, jugadores: list[tuple[int, dict[str, int]]]) -> None:
         """
         Inicializa un mensaje para actualizar la lista de jugadores en el cliente.
 
@@ -223,7 +226,7 @@ class MsgActualizarListaJugadores(IMsg):
         self._tipo = "actualizar_lista_jugadores"
         self._jugadores = jugadores
 
-    def to_json(self):
+    def to_json(self) -> str:
         # Convertir la lista de jugadores a un formato serializable
         jugadores_serializados = []
         for userid, color in self._jugadores:
@@ -241,7 +244,7 @@ class MsgActualizarListaJugadores(IMsg):
 
 
 class MsgResultadoBatalla(IMsg):
-    def __init__(self, batalla_data):
+    def __init__(self, batalla_data: dict[str, Any]) -> None:
         """
         Inicializa un mensaje con el resultado de una batalla.
 
@@ -266,7 +269,7 @@ class MsgResultadoBatalla(IMsg):
         self._resultado = batalla_data["resultado"]
         self._conquistado = batalla_data.get("conquistado", False)
 
-    def to_json(self):
+    def to_json(self) -> str:
         data = {
             "mensaje": self._tipo,
             "origen": self._origen,
@@ -282,7 +285,7 @@ class MsgResultadoBatalla(IMsg):
 
 
 class MsgError(IMsg):
-    def __init__(self, error_type, message):
+    def __init__(self, error_type: str, message: str) -> None:
         """
         Inicializa un mensaje de error del servidor.
 
@@ -294,7 +297,7 @@ class MsgError(IMsg):
         self._error_type = error_type
         self._message = message
 
-    def to_json(self):
+    def to_json(self) -> str:
         data = {
             "mensaje": self._tipo,
             "error_type": self._error_type,
@@ -304,7 +307,7 @@ class MsgError(IMsg):
 
 
 class MsgVictoria(IMsg):
-    def __init__(self, ganador_id, ganador_nombre):
+    def __init__(self, ganador_id: str, ganador_nombre: str) -> None:
         """
         Inicializa un mensaje de victoria.
 
@@ -316,7 +319,7 @@ class MsgVictoria(IMsg):
         self._ganador_id = ganador_id
         self._ganador_nombre = ganador_nombre
 
-    def to_json(self):
+    def to_json(self) -> str:
         data = {
             "mensaje": self._tipo,
             "ganador_id": self._ganador_id,
@@ -328,12 +331,12 @@ class MsgVictoria(IMsg):
 class MsgConfiguracionPartida(IMsg):
     def __init__(
         self,
-        segundos_por_turno,
-        paises_para_victoria,
+        segundos_por_turno: int,
+        paises_para_victoria: int,
         *,
-        objetivos_secretos=False,
-        misiles_habilitados=False,
-    ):
+        objetivos_secretos: bool = False,
+        misiles_habilitados: bool = False,
+    ) -> None:
         """
         Inicializa un mensaje con la configuración de la partida.
 
@@ -349,7 +352,7 @@ class MsgConfiguracionPartida(IMsg):
         self._objetivos_secretos = objetivos_secretos
         self._misiles_habilitados = misiles_habilitados
 
-    def to_json(self):
+    def to_json(self) -> str:
         data = {
             "mensaje": self._tipo,
             "segundos_por_turno": self._segundos_por_turno,
@@ -361,7 +364,7 @@ class MsgConfiguracionPartida(IMsg):
 
 
 class MsgObjetivoSecreto(IMsg):
-    def __init__(self, objetivo_id, descripcion):
+    def __init__(self, objetivo_id: str, descripcion: str) -> None:
         """
         Inicializa un mensaje con el objetivo secreto asignado al jugador.
 
@@ -373,7 +376,7 @@ class MsgObjetivoSecreto(IMsg):
         self._objetivo_id = objetivo_id
         self._descripcion = descripcion
 
-    def to_json(self):
+    def to_json(self) -> str:
         data = {
             "mensaje": self._tipo,
             "objetivo_id": self._objetivo_id,
@@ -383,7 +386,7 @@ class MsgObjetivoSecreto(IMsg):
 
 
 class MsgTarjetasJugador(IMsg):
-    def __init__(self, tarjetas):
+    def __init__(self, tarjetas: list[dict[str, str]]) -> None:
         """
         Inicializa un mensaje con las tarjetas del jugador.
 
@@ -394,7 +397,7 @@ class MsgTarjetasJugador(IMsg):
         self._tipo = "tarjetas_jugador"
         self._tarjetas = tarjetas
 
-    def to_json(self):
+    def to_json(self) -> str:
         data = {
             "mensaje": self._tipo,
             "tarjetas": self._tarjetas,
@@ -403,32 +406,32 @@ class MsgTarjetasJugador(IMsg):
 
 
 class MsgSolicitarTarjetas(IMsg):
-    def __init__(self):
+    def __init__(self) -> None:
         """Mensaje para solicitar las tarjetas del jugador al servidor."""
         self._tipo = "solicitar_tarjetas"
 
-    def to_json(self):
+    def to_json(self) -> str:
         data = {"mensaje": self._tipo}
         return json.dumps(data)
 
 
 class MsgReclamarTarjeta(IMsg):
-    def __init__(self):
+    def __init__(self) -> None:
         """Mensaje para reclamar una tarjeta después de conquistar un país."""
         self._tipo = "reclamar_tarjeta"
 
-    def to_json(self):
+    def to_json(self) -> str:
         data = {"mensaje": self._tipo}
         return json.dumps(data)
 
 
 class MsgCanjeEspecial(IMsg):
-    def __init__(self, pais, unidades_agregadas):
+    def __init__(self, pais: str, unidades_agregadas: int) -> None:
         self._tipo = "canje_especial"
         self._pais = pais
         self._unidades_agregadas = unidades_agregadas
 
-    def to_json(self):
+    def to_json(self) -> str:
         data = {
             "mensaje": self._tipo,
             "pais": self._pais,
@@ -438,7 +441,7 @@ class MsgCanjeEspecial(IMsg):
 
 
 class MsgResultadoMisil(IMsg):
-    def __init__(self, resultado_data):
+    def __init__(self, resultado_data: dict[str, Any]) -> None:
         """
         Inicializa un mensaje con el resultado del lanzamiento de un misil.
 
@@ -459,7 +462,7 @@ class MsgResultadoMisil(IMsg):
         self._dano = resultado_data["dano"]
         self._unidades_restantes = resultado_data["unidades_restantes"]
 
-    def to_json(self):
+    def to_json(self) -> str:
         data = {
             "mensaje": self._tipo,
             "jugador": self._jugador,
@@ -473,7 +476,7 @@ class MsgResultadoMisil(IMsg):
 
 
 class MsgMisilAgregado(IMsg):
-    def __init__(self, pais, cantidad_misiles):
+    def __init__(self, pais: str, cantidad_misiles: int) -> None:
         """
         Inicializa un mensaje para notificar que se agregó un misil a un país.
 
@@ -485,7 +488,7 @@ class MsgMisilAgregado(IMsg):
         self._pais = pais
         self._cantidad_misiles = cantidad_misiles
 
-    def to_json(self):
+    def to_json(self) -> str:
         data = {
             "mensaje": self._tipo,
             "pais": self._pais,

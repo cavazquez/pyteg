@@ -31,7 +31,7 @@ class TarjetaWidget(QWidget):
         "Comodin": "themes/classic/tar_comodin.png",
     }
 
-    def __init__(self, pais, simbolo, index=0):
+    def __init__(self, pais: str, simbolo: str, index: int = 0) -> None:
         super().__init__()
         self.pais = pais
         self.simbolo = simbolo
@@ -100,7 +100,7 @@ class TarjetaWidget(QWidget):
         # Hacer el widget clickeable
         self.setCursor(Qt.CursorShape.PointingHandCursor)
 
-    def _actualizar_estilo(self):
+    def _actualizar_estilo(self) -> None:
         """Actualiza el estilo según el estado de selección."""
         if self._seleccionada:
             self.setStyleSheet("""
@@ -135,19 +135,19 @@ class TarjetaWidget(QWidget):
             self.toggle_seleccion()
         super().mousePressEvent(event)
 
-    def toggle_seleccion(self):
+    def toggle_seleccion(self) -> None:
         """Alterna el estado de selección de la tarjeta."""
         self._seleccionada = not self._seleccionada
         self._actualizar_estilo()
         self.seleccionada.emit(self)
 
-    def set_seleccionada(self, seleccionada):
+    def set_seleccionada(self, *, seleccionada: bool) -> None:
         """Establece el estado de selección de la tarjeta."""
         if self._seleccionada != seleccionada:
             self._seleccionada = seleccionada
             self._actualizar_estilo()
 
-    def is_seleccionada(self):
+    def is_seleccionada(self) -> bool:
         """Retorna True si la tarjeta está seleccionada."""
         return self._seleccionada
 
@@ -155,7 +155,7 @@ class TarjetaWidget(QWidget):
 class TarjetasDialog(QDialog):
     """Diálogo para mostrar las tarjetas asignadas al jugador."""
 
-    def __init__(self, parent=None):
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.setWindowTitle(_("Mis Tarjetas"))
         self.setModal(True)
@@ -173,8 +173,8 @@ class TarjetasDialog(QDialog):
         self.tarjetas_seleccionadas: list[TarjetaWidget] = []
 
         # Objetivo secreto asignado
-        self.objetivo_secreto_id = None
-        self.objetivo_secreto_descripcion = None
+        self.objetivo_secreto_id: str | None = None
+        self.objetivo_secreto_descripcion: str | None = None
 
         self._setup_ui()
 
@@ -451,19 +451,19 @@ class TarjetasDialog(QDialog):
         widget.setLayout(layout)
         return widget
 
-    def _on_tarjeta_seleccionada(self, _tarjeta_widget):
+    def _on_tarjeta_seleccionada(self, _tarjeta_widget: TarjetaWidget) -> None:
         """Maneja la selección/deselección de una tarjeta."""
         self._actualizar_lista_seleccionadas()
         self._actualizar_info_seleccion()
         self._actualizar_estado_botones()
 
-    def _actualizar_lista_seleccionadas(self):
+    def _actualizar_lista_seleccionadas(self) -> None:
         """Actualiza la lista de tarjetas seleccionadas."""
         self.tarjetas_seleccionadas = [
             widget for widget in self.tarjetas_widgets if widget.is_seleccionada()
         ]
 
-    def _actualizar_info_seleccion(self):
+    def _actualizar_info_seleccion(self) -> None:
         """Actualiza la información mostrada sobre la selección."""
         cantidad = len(self.tarjetas_seleccionadas)
         self.label_info_seleccion.setText(_("Seleccionadas: %s") % cantidad)
@@ -488,7 +488,7 @@ class TarjetasDialog(QDialog):
             }}
         """)
 
-    def _actualizar_estado_botones(self):
+    def _actualizar_estado_botones(self) -> None:
         """Actualiza el estado habilitado/deshabilitado de los botones."""
         cantidad_seleccionadas = len(self.tarjetas_seleccionadas)
 
@@ -502,7 +502,7 @@ class TarjetasDialog(QDialog):
         )
         self.button_deseleccionar_todas.setEnabled(cantidad_seleccionadas > 0)
 
-    def _puede_realizar_canje(self):
+    def _puede_realizar_canje(self) -> bool:
         """Determina si se puede realizar un canje con las tarjetas seleccionadas."""
         cantidad = len(self.tarjetas_seleccionadas)
 
@@ -517,31 +517,31 @@ class TarjetasDialog(QDialog):
 
         return False
 
-    def _puede_realizar_canje_especial(self):
+    def _puede_realizar_canje_especial(self) -> bool:
         """Verifica si se puede realizar un canje especial (país + tarjeta)."""
         # La validación real de posesión del país se hace en el servidor
         # Aquí solo verificamos que hay exactamente una tarjeta seleccionada
         return len(self.tarjetas_seleccionadas) == 1
 
-    def seleccionar_todas(self):
+    def seleccionar_todas(self) -> None:
         """Selecciona todas las tarjetas disponibles."""
         for widget in self.tarjetas_widgets:
-            widget.set_seleccionada(True)
+            widget.set_seleccionada(seleccionada=True)
 
         self._actualizar_lista_seleccionadas()
         self._actualizar_info_seleccion()
         self._actualizar_estado_botones()
 
-    def deseleccionar_todas(self):
+    def deseleccionar_todas(self) -> None:
         """Deselecciona todas las tarjetas."""
         for widget in self.tarjetas_widgets:
-            widget.set_seleccionada(False)
+            widget.set_seleccionada(seleccionada=False)
 
         self._actualizar_lista_seleccionadas()
         self._actualizar_info_seleccion()
         self._actualizar_estado_botones()
 
-    def realizar_canje(self):
+    def realizar_canje(self) -> None:
         """Realiza el canje de las tarjetas seleccionadas."""
         if not self._puede_realizar_canje():
             return
@@ -570,7 +570,7 @@ class TarjetasDialog(QDialog):
         except (AttributeError, RuntimeError) as e:
             print(f"Error al realizar canje: {e}")
 
-    def reclamar_tarjeta(self):
+    def reclamar_tarjeta(self) -> None:
         """Reclama una tarjeta del servidor."""
         transmisor = self._get_transmisor()
         if transmisor is None:
@@ -583,13 +583,16 @@ class TarjetasDialog(QDialog):
         except (AttributeError, RuntimeError) as e:
             print(f"Error al reclamar tarjeta: {e}")
 
-    def set_objetivo_secreto(self, objetivo_id, descripcion):
+    def set_objetivo_secreto(
+        self, objetivo_id: str | None, descripcion: str | None
+    ) -> None:
         """Establece el objetivo secreto del jugador."""
         self.objetivo_secreto_id = objetivo_id
         self.objetivo_secreto_descripcion = descripcion
-        self.label_objetivo.setText(descripcion)
+        if descripcion:
+            self.label_objetivo.setText(descripcion)
 
-    def get_objetivo_secreto(self):
+    def get_objetivo_secreto(self) -> dict[str, str | None]:
         """Obtiene el objetivo secreto asignado."""
         return {
             "id": self.objetivo_secreto_id,

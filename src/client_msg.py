@@ -1,20 +1,23 @@
+from __future__ import annotations
+
 import json
 from abc import ABC, abstractmethod
+from typing import Any
 
 
 class IMsg(ABC):
     @abstractmethod
-    def to_json(self):
+    def to_json(self) -> str:
         pass
 
 
 class MsgSeleccionarColor(IMsg):
-    def __init__(self, color):
+    def __init__(self, color: Any) -> None:
         print("MsgSeleccionarColor")
         self._tipo = "seleccionar_color"
         self._color = color
 
-    def to_json(self):
+    def to_json(self) -> str:
         data = {"mensaje": self._tipo, "color": self._color.name()}
         print(f"{data=}")
         return json.dumps(data)
@@ -35,7 +38,7 @@ class MsgEmpezar(IMsg):
         self._objetivos_secretos = objetivos_secretos
         self._misiles_habilitados = misiles_habilitados
 
-    def to_json(self):
+    def to_json(self) -> str:
         data: dict[str, object] = {"mensaje": self._tipo}
         if self._segundos is not None:
             data["segundos"] = self._segundos
@@ -47,11 +50,11 @@ class MsgEmpezar(IMsg):
 
 
 class MsgChat(IMsg):
-    def __init__(self, msg):
+    def __init__(self, msg: str) -> None:
         self._tipo = "chat"
         self._msg = msg
 
-    def to_json(self):
+    def to_json(self) -> str:
         data = {
             "mensaje": self._tipo,
             "msg": self._msg,
@@ -60,20 +63,20 @@ class MsgChat(IMsg):
 
 
 class MsgSetUsername(IMsg):
-    def __init__(self, username):
+    def __init__(self, username: str) -> None:
         self._tipo = "set_username"
         self._username = username
 
-    def to_json(self):
+    def to_json(self) -> str:
         data = {"mensaje": self._tipo, "username": self._username}
         return json.dumps(data)
 
 
 class MsgEmpezarPartida(IMsg):
-    def __init__(self):
+    def __init__(self) -> None:
         self._tipo = "empezar_partida"
 
-    def to_json(self):
+    def to_json(self) -> str:
         data = {
             "mensaje": self._tipo,
         }
@@ -81,7 +84,7 @@ class MsgEmpezarPartida(IMsg):
 
 
 class MsgAgregarUnidad(IMsg):
-    def __init__(self, pais, tipo_unidad, cantidad=1):
+    def __init__(self, pais: str, tipo_unidad: str, cantidad: int = 1) -> None:
         """
         Crea un mensaje para agregar unidades en un país específico.
 
@@ -95,7 +98,7 @@ class MsgAgregarUnidad(IMsg):
         self._tipo_unidad = tipo_unidad
         self._cantidad = cantidad
 
-    def to_json(self):
+    def to_json(self) -> str:
         data = {
             "mensaje": self._tipo,
             "pais": self._pais,
@@ -106,7 +109,7 @@ class MsgAgregarUnidad(IMsg):
 
 
 class MsgMoverUnidad(IMsg):
-    def __init__(self, origen, destino, cantidad=1):
+    def __init__(self, origen: str, destino: str, cantidad: int = 1) -> None:
         """
         Crea un mensaje para mover unidades entre países.
 
@@ -120,7 +123,7 @@ class MsgMoverUnidad(IMsg):
         self._destino = destino
         self._cantidad = cantidad
 
-    def to_json(self):
+    def to_json(self) -> str:
         data = {
             "mensaje": self._tipo,
             "origen": self._origen,
@@ -131,7 +134,9 @@ class MsgMoverUnidad(IMsg):
 
 
 class MsgAtacar(IMsg):
-    def __init__(self, origen, destino, cantidad_unidades=None):
+    def __init__(
+        self, origen: str, destino: str, cantidad_unidades: int | None = None
+    ) -> None:
         """
         Crea un mensaje para atacar de un país a otro.
 
@@ -147,8 +152,8 @@ class MsgAtacar(IMsg):
         self._destino = destino
         self._cantidad_unidades = cantidad_unidades
 
-    def to_json(self):
-        data = {
+    def to_json(self) -> str:
+        data: dict[str, object] = {
             "mensaje": self._tipo,
             "origen": self._origen,
             "destino": self._destino,
@@ -159,48 +164,48 @@ class MsgAtacar(IMsg):
 
 
 class MsgFinalizarTurno(IMsg):
-    def __init__(self):
+    def __init__(self) -> None:
         """Crea un mensaje para finalizar el turno actual."""
         self._tipo = "finalizar_turno"
 
-    def to_json(self):
+    def to_json(self) -> str:
         data = {"mensaje": self._tipo}
         return json.dumps(data)
 
 
 class MsgSolicitarTarjetas(IMsg):
-    def __init__(self):
+    def __init__(self) -> None:
         """Crea un mensaje para solicitar las tarjetas del jugador."""
         self._tipo = "solicitar_tarjetas"
 
-    def to_json(self):
+    def to_json(self) -> str:
         data = {"mensaje": self._tipo}
         return json.dumps(data)
 
 
 class MsgReclamarTarjeta(IMsg):
-    def __init__(self):
+    def __init__(self) -> None:
         """Crea un mensaje para reclamar una tarjeta."""
         self._tipo = "reclamar_tarjeta"
 
-    def to_json(self):
+    def to_json(self) -> str:
         data = {"mensaje": self._tipo}
         return json.dumps(data)
 
 
 class MsgCanjeEspecial(IMsg):
-    def __init__(self, pais):
+    def __init__(self, pais: str) -> None:
         """Crea un mensaje para canje especial de país + tarjeta."""
         self._tipo = "canje_especial"
         self._pais = pais
 
-    def to_json(self):
+    def to_json(self) -> str:
         data = {"mensaje": self._tipo, "pais": self._pais}
         return json.dumps(data)
 
 
 class MsgCanjearMisil(IMsg):
-    def __init__(self, pais):
+    def __init__(self, pais: str) -> None:
         """
         Crea un mensaje para canjear 6 unidades por 1 misil en un país.
 
@@ -210,13 +215,13 @@ class MsgCanjearMisil(IMsg):
         self._tipo = "canjear_misil"
         self._pais = pais
 
-    def to_json(self):
+    def to_json(self) -> str:
         data = {"mensaje": self._tipo, "pais": self._pais}
         return json.dumps(data)
 
 
 class MsgLanzarMisil(IMsg):
-    def __init__(self, pais_origen, pais_destino):
+    def __init__(self, pais_origen: str, pais_destino: str) -> None:
         """
         Crea un mensaje para lanzar un misil desde un país hacia otro.
 
@@ -228,7 +233,7 @@ class MsgLanzarMisil(IMsg):
         self._pais_origen = pais_origen
         self._pais_destino = pais_destino
 
-    def to_json(self):
+    def to_json(self) -> str:
         data = {
             "mensaje": self._tipo,
             "pais_origen": self._pais_origen,

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import sys
 
 from PySide6.QtWidgets import QApplication
@@ -7,7 +9,7 @@ from src.gui import Gui
 from src.version import NAME, VERSION
 
 
-def main():
+def main() -> None:
     print(f"{NAME} v{VERSION}")
     client = Client()
     app = QApplication(sys.argv)

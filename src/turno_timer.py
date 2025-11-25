@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 import threading
 import time
+from typing import Any
 
 
 class TurnoTimer(threading.Thread):
@@ -11,16 +14,16 @@ class TurnoTimer(threading.Thread):
     al siguiente turno mediante ``server.game.finalizar_turno()``.
     """
 
-    def __init__(self, server, segundos_por_turno: int = 120):
+    def __init__(self, server: Any, segundos_por_turno: int = 120) -> None:
         super().__init__(daemon=True)
-        self._server = server
+        self._server: Any = server
         self._segundos_por_turno = segundos_por_turno
         self._stop_event = threading.Event()
 
     # ---------------------------------------------------------------------
     # API pública
     # ---------------------------------------------------------------------
-    def detener(self):
+    def detener(self) -> None:
         """Detiene el hilo de forma segura."""
         self._stop_event.set()
 
@@ -42,7 +45,7 @@ class TurnoTimer(threading.Thread):
     # ------------------------------------------------------------------
     # Thread run
     # ------------------------------------------------------------------
-    def run(self):
+    def run(self) -> None:
         while not self._stop_event.is_set():
             # Esperar a que exista una partida iniciada
             if not self._server.game or not self._server.game.empezo():

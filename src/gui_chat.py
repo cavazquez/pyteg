@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import Any
+
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QHBoxLayout,
@@ -10,13 +14,13 @@ from PySide6.QtWidgets import (
 
 
 class Chat(QWidget):
-    def __init__(self, main_window):
+    def __init__(self, main_window: Any) -> None:
         super().__init__()
         self.main_window = main_window
         self.setup_ui()
         self.setup_styles()
 
-    def setup_ui(self):
+    def setup_ui(self) -> None:
         # Layout principal
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(5, 5, 5, 5)
@@ -64,7 +68,7 @@ class Chat(QWidget):
         # Establecer el layout principal
         self.setLayout(main_layout)
 
-    def setup_styles(self):
+    def setup_styles(self) -> None:
         # Estilos generales para la ventana
         self.setStyleSheet("""
             QWidget {
@@ -162,7 +166,7 @@ class Chat(QWidget):
             }
         """)
 
-    def send_message(self):
+    def send_message(self) -> None:
         text = self.input_field.text().strip()
         if text:
             # Enviar el mensaje
@@ -174,7 +178,7 @@ class Chat(QWidget):
             # Dar foco nuevamente al campo de entrada para seguir escribiendo
             self.input_field.setFocus()
 
-    def append(self, text, msg_type="normal"):
+    def append(self, text: str, msg_type: str = "normal") -> None:
         # Determinar el color y estilo según el tipo de mensaje
         if msg_type == "error":
             # Mensajes de error en rojo
@@ -212,7 +216,7 @@ class Chat(QWidget):
             self.text_field.verticalScrollBar().maximum()
         )
 
-    def _format_user_message(self, text):
+    def _format_user_message(self, text: str) -> str:
         """Formatea un mensaje de usuario aplicando el color del jugador al nombre."""
         # Extraer el nombre de usuario del mensaje (formato: "username: mensaje")
         if ":" in text:
@@ -252,7 +256,7 @@ class Chat(QWidget):
 
         return formatted_text
 
-    def _get_user_color(self, username):
+    def _get_user_color(self, username: str) -> str | None:
         """Obtiene el color hexadecimal del usuario."""
         try:
             # Acceder a los colores asignados desde la ventana principal
@@ -271,7 +275,9 @@ class Chat(QWidget):
 
                 # Convertir QColor a hexadecimal
                 if hasattr(selected_color, "name"):
-                    return selected_color.name()  # Método de QColor para obtener hex
+                    name_result = selected_color.name()
+                    if isinstance(name_result, str):
+                        return name_result  # Método de QColor para obtener hex
                 if hasattr(selected_color, "red"):
                     # Fallback: convertir RGB a hex manualmente
                     r = int(selected_color.red() * 255)

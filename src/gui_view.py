@@ -28,11 +28,11 @@ class QCustomGraphicsView(QGraphicsView):
             Qt.AspectRatioMode.KeepAspectRatio,
         )
 
-    def mouseMoveEvent(self, event: QMouseEvent):  # noqa: N802
+    def mouseMoveEvent(self, event: QMouseEvent) -> None:  # noqa: N802
         super().mouseMoveEvent(event)
         # Aquí no hacemos nada porque el evento será manejado por la escena
 
-    def reset_zoom(self):
+    def reset_zoom(self) -> None:
         """Resetear el zoom para ajustar toda la escena en la vista"""
         if self.scene():
             self.fitInView(
@@ -40,7 +40,7 @@ class QCustomGraphicsView(QGraphicsView):
                 Qt.AspectRatioMode.KeepAspectRatio,
             )
 
-    def resizeEvent(self, event: QResizeEvent):  # noqa: N802
+    def resizeEvent(self, event: QResizeEvent) -> None:  # noqa: N802
         """Manejar el redimensionamiento de la vista para escalar el mapa."""
         super().resizeEvent(event)
         if self.scene():
@@ -50,7 +50,7 @@ class QCustomGraphicsView(QGraphicsView):
                 Qt.AspectRatioMode.KeepAspectRatio,
             )
 
-    def wheelEvent(self, event: QWheelEvent):  # noqa: N802
+    def wheelEvent(self, event: QWheelEvent) -> None:  # noqa: N802
         """Permitir zoom con la rueda del mouse"""
         # Factor de zoom
         zoom_factor = 1.15
@@ -62,7 +62,7 @@ class QCustomGraphicsView(QGraphicsView):
             # Zoom out
             self.scale(1 / zoom_factor, 1 / zoom_factor)
 
-    def leaveEvent(self, event: QMouseEvent | QEvent):  # noqa: N802
+    def leaveEvent(self, event: QMouseEvent | QEvent) -> None:  # noqa: N802
         # Limpiar la barra de estado cuando el mouse salga de la vista
         self.main_window.clear_status_bar()
         super().leaveEvent(event)

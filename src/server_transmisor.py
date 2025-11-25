@@ -1,4 +1,9 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
+
 from src.server_msg import (
+    IMsg,
     MsgActualizarListaJugadores,
     MsgCanjeEspecial,
     MsgChat,
@@ -22,62 +27,69 @@ from src.server_msg import (
     MsgVictoria,
 )
 
+if TYPE_CHECKING:
+    from src.colores import IColor
+
 
 class ServerTransmisor:
-    def __init__(self, conn):
+    def __init__(self, conn: Any) -> None:
         self._conn = conn
 
-    def _send_message(self, msg):
+    def _send_message(self, msg: IMsg) -> None:
         try:
-            self._conn.send(msg.to_json())
+            json_str = msg.to_json()
+            if isinstance(json_str, str):
+                self._conn.send(json_str.encode())
+            else:
+                self._conn.send(json_str)
         except (ConnectionError, OSError, BrokenPipeError) as e:
             print(f"Error sending message: {e}")
 
-    def enviar_chat(self, msg):
-        msg = MsgChat(msg)
-        self._send_message(msg)
+    def enviar_chat(self, msg: str) -> None:
+        msg_obj = MsgChat(msg)
+        self._send_message(msg_obj)
 
-    def enviar_error_chat(self, msg):
+    def enviar_error_chat(self, msg: str) -> None:
         """Envía un mensaje de error al chat del cliente."""
-        msg = MsgChat(msg, msg_type="error")
-        self._send_message(msg)
+        msg_obj = MsgChat(msg, msg_type="error")
+        self._send_message(msg_obj)
 
-    def enviar_sistema(self, msg):
+    def enviar_sistema(self, msg: str) -> None:
         """Envía un mensaje del sistema al chat del cliente."""
-        msg = MsgChat(msg, msg_type="system")
-        self._send_message(msg)
+        msg_obj = MsgChat(msg, msg_type="system")
+        self._send_message(msg_obj)
 
-    def sos_admin(self):
+    def sos_admin(self) -> None:
         msg = MsgSosAdmin()
         self._send_message(msg)
 
-    def color_asignado(self, id_user, color):
+    def color_asignado(self, id_user: int, color: IColor) -> None:
         msg = MsgColorAsignado(id_user, color.to_json())
         self._send_message(msg)
 
-    def enviar_userid(self, user_id):
+    def enviar_userid(self, user_id: int) -> None:
         msg = MsgUserId(user_id)
         self._send_message(msg)
 
-    def enviar_username(self, userid, username):
+    def enviar_username(self, userid: int, username: str) -> None:
         print(f"enviar_username, {userid=} , {username=}")
         msg = MsgUsername(userid, username)
         self._send_message(msg)
 
-    def enviar_colores(self, colores):
+    def enviar_colores(self, colores: list[IColor]) -> None:
         for color in colores:
             msg = MsgColor(color)
             self._send_message(msg)
 
-    def enviar_estado(self, estado):
+    def enviar_estado(self, estado: str) -> None:
         msg = MsgEstado(estado)
         self._send_message(msg)
 
-    def enviar_tiempo(self, userid_turno, tiempo_restante):
+    def enviar_tiempo(self, userid_turno: int, tiempo_restante: int) -> None:
         msg = MsgTiempo(userid_turno, tiempo_restante)
         self._send_message(msg)
 
-    def enviar_unidades_disponibles(self, unidades):
+    def enviar_unidades_disponibles(self, unidades: dict[str, int]) -> None:
         """Envía la cantidad de unidades disponibles para colocar al jugador.
 
         Args:
@@ -87,18 +99,18 @@ class ServerTransmisor:
         msg = MsgUnidadesDisponibles(unidades)
         self._send_message(msg)
 
-    def enviar_pais(self, pais, userid, unidades):
+    def enviar_pais(self, pais: str, userid: int, unidades: int) -> None:
         msg = MsgPais(pais, userid, unidades)
         self._send_message(msg)
 
     def enviar_turno(
         self,
-        num_turno,
-        num_ronda,
-        jugador_actual_id=None,
-        jugador_actual_nombre=None,
-        jugador_actual_color=None,
-    ):
+        num_turno: int,
+        num_ronda: int,
+        jugador_actual_id: int | None = None,
+        jugador_actual_nombre: str | None = None,
+        jugador_actual_color: str | None = None,
+    ) -> None:
         """Envía el número de turno y ronda actuales a los clientes.
 
         Args:
@@ -117,7 +129,9 @@ class ServerTransmisor:
         )
         self._send_message(msg)
 
-    def actualizar_lista_jugadores(self, jugadores):
+    def actualizar_lista_jugadores(
+        self, jugadores: list[tuple[int, dict[str, int]]]
+    ) -> None:
         """Envía la lista actualizada de jugadores al cliente.
 
         Args:
@@ -127,7 +141,7 @@ class ServerTransmisor:
         msg = MsgActualizarListaJugadores(jugadores)
         self._send_message(msg)
 
-    def enviar_mapa(self, mapa, game):
+    def enviar_mapa(self, mapa: Any, game: Any) -> None:
         """Envía el estado actual del mapa al cliente.
 
         Args:
@@ -162,7 +176,7 @@ class ServerTransmisor:
                 }
                 self.enviar_unidades_disponibles(unidades_disponibles)
 
-    def enviar_resultado_batalla(self, batalla_data):
+    def enviar_resultado_batalla(self, batalla_data: dict[str, Any]) -> None:
         """
         Envía el resultado de una batalla al cliente.
 
@@ -180,7 +194,7 @@ class ServerTransmisor:
         msg = MsgResultadoBatalla(batalla_data)
         self._send_message(msg)
 
-    def enviar_error(self, error_type, message):
+    def enviar_error(self, error_type: str, message: str) -> None:
         """
         Envía un mensaje de error al cliente.
 
@@ -191,7 +205,7 @@ class ServerTransmisor:
         msg = MsgError(error_type, message)
         self._send_message(msg)
 
-    def enviar_victoria(self, ganador_id, ganador_nombre):
+    def enviar_victoria(self, ganador_id: str, ganador_nombre: str) -> None:
         """
         Envía un mensaje de victoria al cliente.
 
@@ -204,12 +218,12 @@ class ServerTransmisor:
 
     def enviar_configuracion_partida(
         self,
-        segundos_por_turno,
-        paises_para_victoria,
+        segundos_por_turno: int,
+        paises_para_victoria: int,
         *,
-        objetivos_secretos=False,
-        misiles_habilitados=False,
-    ):
+        objetivos_secretos: bool = False,
+        misiles_habilitados: bool = False,
+    ) -> None:
         """
         Envía la configuración de la partida al cliente.
 
@@ -227,7 +241,7 @@ class ServerTransmisor:
         )
         self._send_message(msg)
 
-    def enviar_tarjetas_jugador(self, tarjetas):
+    def enviar_tarjetas_jugador(self, tarjetas: list[dict[str, str]]) -> None:
         """
         Envía las tarjetas del jugador al cliente.
 
@@ -238,7 +252,7 @@ class ServerTransmisor:
         msg = MsgTarjetasJugador(tarjetas)
         self._send_message(msg)
 
-    def enviar_objetivo_secreto(self, objetivo_id, descripcion):
+    def enviar_objetivo_secreto(self, objetivo_id: str, descripcion: str) -> None:
         """
         Envía el objetivo secreto asignado al jugador.
 
@@ -253,7 +267,7 @@ class ServerTransmisor:
         msg = MsgObjetivoSecreto(objetivo_id, descripcion)
         self._send_message(msg)
 
-    def enviar_canje_especial(self, pais, unidades_agregadas):
+    def enviar_canje_especial(self, pais: str, unidades_agregadas: int) -> None:
         """
         Envía notificación de canje especial al cliente.
 
@@ -264,7 +278,7 @@ class ServerTransmisor:
         msg = MsgCanjeEspecial(pais, unidades_agregadas)
         self._send_message(msg)
 
-    def enviar_resultado_misil(self, resultado_data):
+    def enviar_resultado_misil(self, resultado_data: dict[str, Any]) -> None:
         """
         Envía el resultado del lanzamiento de un misil al cliente.
 
@@ -280,7 +294,7 @@ class ServerTransmisor:
         msg = MsgResultadoMisil(resultado_data)
         self._send_message(msg)
 
-    def enviar_misil_agregado(self, pais, cantidad_misiles):
+    def enviar_misil_agregado(self, pais: str, cantidad_misiles: int) -> None:
         """
         Envía notificación de que se agregó un misil a un país.
 

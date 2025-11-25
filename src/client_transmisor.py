@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
+from typing import Any
 
 from src.client_msg import (
     MsgAgregarUnidad,
@@ -20,11 +23,11 @@ from src.client_msg import (
 
 class IClientTransmisor(ABC):
     @abstractmethod
-    def __init__(self):
+    def __init__(self) -> None:
         pass
 
     @abstractmethod
-    def enviar_chat(self, msg):
+    def enviar_chat(self, msg: str) -> None:
         pass
 
     @abstractmethod
@@ -35,23 +38,23 @@ class IClientTransmisor(ABC):
         *,
         objetivos_secretos: bool = False,
         misiles_habilitados: bool = False,
-    ):
+    ) -> None:
         pass
 
     @abstractmethod
-    def seleccionar_color(self, color):
+    def seleccionar_color(self, color: Any) -> None:
         pass
 
     @abstractmethod
-    def empezar_partida(self):
+    def empezar_partida(self) -> None:
         pass
 
     @abstractmethod
-    def set_username(self, username):
+    def set_username(self, username: str) -> None:
         pass
 
     @abstractmethod
-    def agregar_unidad(self, pais, tipo_unidad, cantidad=1):
+    def agregar_unidad(self, pais: str, tipo_unidad: str, cantidad: int = 1) -> None:
         """
         Envía un mensaje al servidor para agregar unidades en un país específico.
 
@@ -62,7 +65,7 @@ class IClientTransmisor(ABC):
         """
 
     @abstractmethod
-    def mover_unidad(self, origen, destino, cantidad=1):
+    def mover_unidad(self, origen: str, destino: str, cantidad: int = 1) -> None:
         """
         Envía un mensaje al servidor para mover unidades entre países.
 
@@ -73,7 +76,9 @@ class IClientTransmisor(ABC):
         """
 
     @abstractmethod
-    def atacar(self, origen, destino, cantidad_unidades=None):
+    def atacar(
+        self, origen: str, destino: str, cantidad_unidades: int | None = None
+    ) -> None:
         """
         Envía un mensaje al servidor para atacar de un país a otro.
 
@@ -86,7 +91,7 @@ class IClientTransmisor(ABC):
         """
 
     @abstractmethod
-    def actualizar_lista_jugadores(self, jugadores):
+    def actualizar_lista_jugadores(self, jugadores: list[dict[str, Any]]) -> None:
         """
         Actualiza la lista de jugadores en la interfaz de usuario.
 
@@ -97,25 +102,25 @@ class IClientTransmisor(ABC):
         """
 
     @abstractmethod
-    def finalizar_turno(self):
+    def finalizar_turno(self) -> None:
         """
         Envía un mensaje al servidor para finalizar el turno actual.
         """
 
     @abstractmethod
-    def solicitar_tarjetas(self):
+    def solicitar_tarjetas(self) -> None:
         """
         Solicita al servidor las tarjetas del jugador.
         """
 
     @abstractmethod
-    def reclamar_tarjeta(self):
+    def reclamar_tarjeta(self) -> None:
         """
         Reclama una tarjeta después de conquistar un país.
         """
 
     @abstractmethod
-    def canje_especial(self, pais):
+    def canje_especial(self, pais: str) -> None:
         """
         Realiza un canje especial de país + tarjeta por 2 unidades.
 
@@ -124,7 +129,7 @@ class IClientTransmisor(ABC):
         """
 
     @abstractmethod
-    def canjear_misil(self, pais):
+    def canjear_misil(self, pais: str) -> None:
         """
         Canjea 6 unidades por 1 misil en un país.
 
@@ -133,7 +138,7 @@ class IClientTransmisor(ABC):
         """
 
     @abstractmethod
-    def lanzar_misil(self, pais_origen, pais_destino):
+    def lanzar_misil(self, pais_origen: str, pais_destino: str) -> None:
         """
         Lanza un misil desde un país hacia otro.
 
@@ -144,10 +149,10 @@ class IClientTransmisor(ABC):
 
 
 class ClientNullTransmisor(IClientTransmisor):
-    def __init__(self):
+    def __init__(self) -> None:
         pass
 
-    def enviar_chat(self, _):
+    def enviar_chat(self, _: str) -> None:
         print("No estas conectado")
 
     def empezar(
@@ -157,62 +162,62 @@ class ClientNullTransmisor(IClientTransmisor):
         *,
         objetivos_secretos: bool = False,
         misiles_habilitados: bool = False,
-    ):
+    ) -> None:
         """No-op para el transmisor nulo."""
 
-    def seleccionar_color(self, _color):
+    def seleccionar_color(self, _color: Any) -> None:
         print("No estas conectado")
 
-    def empezar_partida(self):
+    def empezar_partida(self) -> None:
         print("No estas conectado")
 
-    def set_username(self, _):
+    def set_username(self, _: str) -> None:
         print("No estas conectado")
 
-    def agregar_unidad(self, _pais, _tipo_unidad, _cantidad=1):
+    def agregar_unidad(self, _pais: str, _tipo_unidad: str, _cantidad: int = 1) -> None:
         print("No estas conectado")
 
-    def mover_unidad(self, _origen, _destino, _cantidad=1):
+    def mover_unidad(self, _origen: str, _destino: str, _cantidad: int = 1) -> None:
         print("No puedes mover unidades. No estas conectado.")
 
-    def atacar(self, _, __, cantidad_unidades=None):  # noqa: ARG002
+    def atacar(self, _: str, __: str, cantidad_unidades: int | None = None) -> None:  # noqa: ARG002
         print("No puedes atacar. No estas conectado.")
 
-    def actualizar_lista_jugadores(self, _):
+    def actualizar_lista_jugadores(self, _: list[dict[str, Any]]) -> None:
         pass
 
-    def finalizar_turno(self):
+    def finalizar_turno(self) -> None:
         print("No puedes finalizar el turno. No estás conectado.")
 
-    def solicitar_tarjetas(self):
+    def solicitar_tarjetas(self) -> None:
         print("No puedes ver tarjetas. No estás conectado.")
 
-    def reclamar_tarjeta(self):
+    def reclamar_tarjeta(self) -> None:
         print("No puedes reclamar tarjetas. No estás conectado.")
 
-    def canje_especial(self, pais):
+    def canje_especial(self, pais: str) -> None:
         """Realiza un canje especial cuando no está conectado."""
         _ = pais  # Evitar warning de argumento no usado
         print("No puedes realizar canje especial. No estás conectado.")
 
-    def canjear_misil(self, pais):
+    def canjear_misil(self, pais: str) -> None:
         """Canjea un misil cuando no está conectado."""
         _ = pais  # Evitar warning de argumento no usado
         print("No puedes canjear misiles. No estás conectado.")
 
-    def lanzar_misil(self, pais_origen, pais_destino):
+    def lanzar_misil(self, pais_origen: str, pais_destino: str) -> None:
         """Lanza un misil cuando no está conectado."""
         _, _ = pais_origen, pais_destino  # Evitar warning de argumentos no usados
         print("No puedes lanzar misiles. No estás conectado.")
 
 
 class ClientTransmisor(IClientTransmisor):
-    def __init__(self, conn):
+    def __init__(self, conn: Any) -> None:
         self._conn = conn
 
-    def enviar_chat(self, msg):
-        msg = MsgChat(msg)
-        self._conn.send_data(msg.to_json())
+    def enviar_chat(self, msg: str) -> None:
+        msg_obj = MsgChat(msg)
+        self._conn.send_data(msg_obj.to_json())
 
     def empezar(
         self,
@@ -221,7 +226,7 @@ class ClientTransmisor(IClientTransmisor):
         *,
         objetivos_secretos: bool = False,
         misiles_habilitados: bool = False,
-    ):
+    ) -> None:
         print("Transmisor empezar()")
         msg = MsgEmpezar(
             segundos,
@@ -231,21 +236,21 @@ class ClientTransmisor(IClientTransmisor):
         )
         self._conn.send_data(msg.to_json())
 
-    def seleccionar_color(self, color):
+    def seleccionar_color(self, color: Any) -> None:
         print("Selecciono color")
         msg = MsgSeleccionarColor(color)
         self._conn.send_data(msg.to_json())
 
-    def empezar_partida(self):
+    def empezar_partida(self) -> None:
         print("empezar_partida")
         msg = MsgEmpezarPartida()
         self._conn.send_data(msg.to_json())
 
-    def set_username(self, username):
+    def set_username(self, username: str) -> None:
         msg = MsgSetUsername(username)
         self._conn.send_data(msg.to_json())
 
-    def agregar_unidad(self, pais, tipo_unidad, cantidad=1):
+    def agregar_unidad(self, pais: str, tipo_unidad: str, cantidad: int = 1) -> None:
         """
         Envía un mensaje al servidor para agregar unidades en un país específico.
 
@@ -258,7 +263,7 @@ class ClientTransmisor(IClientTransmisor):
         msg = MsgAgregarUnidad(pais, tipo_unidad, cantidad)
         self._conn.send_data(msg.to_json())
 
-    def mover_unidad(self, origen, destino, cantidad=1):
+    def mover_unidad(self, origen: str, destino: str, cantidad: int = 1) -> None:
         """
         Envía un mensaje al servidor para mover unidades entre países.
 
@@ -277,7 +282,9 @@ class ClientTransmisor(IClientTransmisor):
         msg = MsgMoverUnidad(origen, destino, cantidad)
         self._conn.send_data(msg.to_json())
 
-    def atacar(self, origen, destino, cantidad_unidades=None):
+    def atacar(
+        self, origen: str, destino: str, cantidad_unidades: int | None = None
+    ) -> None:
         """
         Envía un mensaje de ataque al servidor.
 
@@ -291,7 +298,7 @@ class ClientTransmisor(IClientTransmisor):
         msg = MsgAtacar(origen, destino, cantidad_unidades)
         self._conn.send_data(msg.to_json())
 
-    def actualizar_lista_jugadores(self, jugadores):
+    def actualizar_lista_jugadores(self, jugadores: list[dict[str, Any]]) -> None:
         """
         Actualiza la lista de jugadores en la interfaz de usuario.
 
@@ -303,28 +310,28 @@ class ClientTransmisor(IClientTransmisor):
         # Este método no necesita hacer nada aquí, ya que el cliente
         # procesará el mensaje a través de la cola de tareas
 
-    def finalizar_turno(self):
+    def finalizar_turno(self) -> None:
         """
         Envía un mensaje al servidor para finalizar el turno actual.
         """
         msg = MsgFinalizarTurno()
         self._conn.send_data(msg.to_json())
 
-    def solicitar_tarjetas(self):
+    def solicitar_tarjetas(self) -> None:
         """
         Solicita al servidor las tarjetas del jugador.
         """
         msg = MsgSolicitarTarjetas()
         self._conn.send_data(msg.to_json())
 
-    def reclamar_tarjeta(self):
+    def reclamar_tarjeta(self) -> None:
         """
         Reclama una tarjeta después de conquistar un país.
         """
         msg = MsgReclamarTarjeta()
         self._conn.send_data(msg.to_json())
 
-    def canje_especial(self, pais):
+    def canje_especial(self, pais: str) -> None:
         """
         Realiza un canje especial de país + tarjeta por 2 unidades.
 
@@ -334,7 +341,7 @@ class ClientTransmisor(IClientTransmisor):
         msg = MsgCanjeEspecial(pais)
         self._conn.send_data(msg.to_json())
 
-    def canjear_misil(self, pais):
+    def canjear_misil(self, pais: str) -> None:
         """
         Canjea 6 unidades por 1 misil en un país.
 
@@ -345,7 +352,7 @@ class ClientTransmisor(IClientTransmisor):
         msg = MsgCanjearMisil(pais)
         self._conn.send_data(msg.to_json())
 
-    def lanzar_misil(self, pais_origen, pais_destino):
+    def lanzar_misil(self, pais_origen: str, pais_destino: str) -> None:
         """
         Lanza un misil desde un país hacia otro.
 

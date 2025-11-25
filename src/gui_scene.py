@@ -11,6 +11,7 @@ from PySide6.QtWidgets import (
     QGraphicsScene,
     QGraphicsSceneContextMenuEvent,
     QGraphicsSceneMouseEvent,
+    QWidget,
 )
 
 from src.gui_menu import Menu
@@ -127,11 +128,13 @@ class CountrySelectionManager:
             toolbars = self.main_window.findChildren(ToolBar)
             for toolbar in toolbars:
                 if hasattr(toolbar, "actualizar_botones_seleccion"):
-                    toolbar.actualizar_botones_seleccion(hay_dos_paises)
+                    toolbar.actualizar_botones_seleccion(
+                        hay_dos_paises_seleccionados=hay_dos_paises
+                    )
 
 
 class QCustomGraphicsScene(QGraphicsScene):
-    def __init__(self, main_window: Any, parent=None):
+    def __init__(self, main_window: Any, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.main_window = main_window
         self.paises: dict[str, Pais] = {}
@@ -141,7 +144,7 @@ class QCustomGraphicsScene(QGraphicsScene):
         self.selection_manager = CountrySelectionManager(main_window, self)
         self.load_map_data()
 
-    def mouseMoveEvent(self, event: QGraphicsSceneMouseEvent):  # noqa: N802
+    def mouseMoveEvent(self, event: QGraphicsSceneMouseEvent) -> None:  # noqa: N802
         # Obtener las coordenadas del mouse en la escena
         # Mostrar las coordenadas en el Status Bar
         scene_pos = event.scenePos()
@@ -175,7 +178,7 @@ class QCustomGraphicsScene(QGraphicsScene):
                 menu = Menu(pais, self.main_window, parent=self.main_window)
                 menu.exec_(event.screenPos())
 
-    def load_map_data(self):
+    def load_map_data(self) -> None:
         folder = "themes/"
 
         paises_content = get_resource_path("themes/classic/paises.toml").read_text(
@@ -207,7 +210,7 @@ class QCustomGraphicsScene(QGraphicsScene):
                 self.paises[pais] = pixmap_item
                 self.addItem(pixmap_item)
 
-    def obtener_pais(self, nombre_pais):
+    def obtener_pais(self, nombre_pais: str) -> Pais | None:
         """Retorna el widget del país especificado.
 
         Args:

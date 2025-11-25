@@ -1,8 +1,12 @@
+from __future__ import annotations
+
+from typing import Any
+
 from src.toml_reader import TomlReader
 from src.utils import get_resource_path
 
 
-def build_mapa():
+def build_mapa() -> dict[str, list[Any]]:
     # Crear el lector TOML con archivos separados
     paises_path = get_resource_path("themes/classic/paises.toml")
     cartas_path = get_resource_path("themes/classic/cartas.toml")
@@ -20,7 +24,7 @@ def build_mapa():
 
     # Construir el diccionario del mapa
     # Ahora cada país tendrá: [unidades, continente, dueño, [paises_adyacentes]]
-    mapa: dict[str, list[object]] = {}
+    mapa: dict[str, list[Any]] = {}
     paises = reader.todos_los_paises()
 
     # Primero creamos todos los países con su información básica
