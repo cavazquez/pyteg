@@ -1,4 +1,6 @@
 from abc import ABC, abstractmethod
+from collections.abc import Callable
+from typing import Any
 
 from src.exception import MensajeNoValidoError
 from src.logger import get_logger
@@ -13,7 +15,7 @@ class IServerTask(ABC):
 
     def __init__(self, data):
         self._data = data
-        self._action_name = None  # Nombre de la acción para validación de estado
+        self._action_name: str | None = None  # Nombre de la acción para validación
         self._validator = ServerStateValidator()
 
     @abstractmethod
@@ -22,8 +24,9 @@ class IServerTask(ABC):
 
     def run(self, client):
         """Ejecuta la tarea validando primero el estado del servidor."""
-        # Validar estado usando TaskValidator
-        self._validator.validar_accion(self._action_name, client.server)
+        # Validar estado usando TaskValidator cuando corresponda
+        if self._action_name is not None:
+            self._validator.validar_accion(self._action_name, client.server)
 
         # Ejecutar la tarea si la validación pasa
         return self._execute(client)
@@ -714,7 +717,10 @@ class ServerTaskLanzarMisil(IServerTask):
         client.server.enviar_misil_agregado(self._pais_origen, cantidad_misiles_origen)
 
 
-dict_task = {
+TaskFactory = Callable[[dict[str, Any]], IServerTask]
+
+
+dict_task: dict[str, TaskFactory] = {
     "chat": ServerTaskChat,
     "empezar": ServerTaskEmpezar,
     "empezar_partida": ServerTaskEmpezarPartida,

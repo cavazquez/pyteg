@@ -69,6 +69,26 @@ check_untyped_defs = false
 explicit_package_bases = true
 files = ["src", "tests", "scripts"]
 
+[[tool.mypy.overrides]]
+module = [
+  "src.server",
+  "src.server_tasks",
+  "src.server_game",
+  "src.server_mapa",
+  "src.server_msg",
+  "src.server_client",
+  "src.server_client_connection",
+  "src.server_color",
+  "src.server_transmisor",
+  "src.server_tasks_manager",
+  "src.server_build_client",
+  "src.server_registrar_jugadores",
+  "src.server_state_validator",
+  "src.server_player",
+  "src.server_estado",
+]
+check_untyped_defs = true
+
 [build-system]
 requires = ["hatchling>=1.18", "hatch-nuitka"]
 build-backend = "hatchling.build"
