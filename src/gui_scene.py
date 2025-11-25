@@ -2,11 +2,11 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import (
     QBrush,
     QColor,
-    QMouseEvent,
 )
 from PySide6.QtWidgets import (
     QGraphicsPixmapItem,
     QGraphicsScene,
+    QGraphicsSceneMouseEvent,
 )
 
 from src.gui_menu import Menu
@@ -137,7 +137,7 @@ class QCustomGraphicsScene(QGraphicsScene):
         self.selection_manager = CountrySelectionManager(main_window, self)
         self.load_map_data()
 
-    def mouseMoveEvent(self, event: QMouseEvent):  # noqa: N802
+    def mouseMoveEvent(self, event: QGraphicsSceneMouseEvent):  # noqa: N802
         # Obtener las coordenadas del mouse en la escena
         # Mostrar las coordenadas en el Status Bar
         scene_pos = event.scenePos()
@@ -146,10 +146,6 @@ class QCustomGraphicsScene(QGraphicsScene):
         )
         # Llamar al evento original
         super().mouseMoveEvent(event)
-
-    def leaveEvent(self, event: QMouseEvent):  # noqa: N802
-        self.main_window.clear_status_bar()
-        super().leaveEvent(event)
 
     def mousePressEvent(self, event):  # noqa: N802
         """Maneja los clics del mouse en la escena"""

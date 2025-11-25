@@ -16,7 +16,7 @@ from pathlib import Path
 try:
     import polib
 except ImportError:
-    polib = None
+    polib = None  # type: ignore[assignment]
 
 # Agregar el directorio src al path para importar módulos
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))

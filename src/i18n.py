@@ -4,21 +4,35 @@ Módulo de internacionalización (i18n) para PyTeg.
 Este módulo proporciona soporte para múltiples idiomas usando gettext.
 """
 
+from __future__ import annotations
+
 import gettext
 import locale
 from pathlib import Path
+from typing import Protocol
 
 # Directorio base del proyecto
 BASE_DIR = Path(__file__).parent.parent
 LOCALES_DIR = BASE_DIR / "locales"
 
 
+class _TranslationsProtocol(Protocol):
+    def gettext(self, message: str) -> str: ...
+
+    def ngettext(self, singular: str, plural: str, n: int) -> str: ...
+
+
+_TranslationType = (
+    gettext.NullTranslations | gettext.GNUTranslations | _TranslationsProtocol
+)
+
+
 class I18nManager:
     """Gestor de internacionalización usando gettext."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.current_language: str | None = None
-        self._translation = None
+        self._translation: _TranslationType | None = None
 
     def set_language(self, language: str) -> bool:
         """Establece el idioma de la aplicación."""
@@ -172,7 +186,7 @@ def ngettext(singular: str, plural: str, n: int) -> str:
 
 
 # Inicializar con el idioma del sistema
-def initialize():
+def initialize() -> None:
     """Inicializa el sistema de i18n con el idioma del sistema."""
     system_lang = get_system_language()
     set_language(system_lang)

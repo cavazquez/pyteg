@@ -1,11 +1,15 @@
 import random
 from typing import Any
 
+from src.logger import get_logger
+
+LOGGER = get_logger("server.objetivos_secretos")
+
 
 class ObjetivosSecretos:
     """Maneja la asignación y verificación de objetivos secretos para los jugadores."""
 
-    def __init__(self, toml_reader):
+    def __init__(self, toml_reader: Any) -> None:
         """
         Inicializa el sistema de objetivos secretos.
 
@@ -35,9 +39,9 @@ class ObjetivosSecretos:
         # Mezclar objetivos para asignación aleatoria
         random.shuffle(objetivos_ids)
 
-        print("=== ASIGNANDO OBJETIVOS SECRETOS ===")
-        print(f"Objetivos disponibles: {objetivos_ids}")
-        print(f"Clientes a asignar: {len(clientes)}")
+        LOGGER.info("=== ASIGNANDO OBJETIVOS SECRETOS ===")
+        LOGGER.info("Objetivos disponibles: %s", objetivos_ids)
+        LOGGER.info("Clientes a asignar: %s", len(clientes))
 
         # Asignar un objetivo a cada cliente
         for i, client in enumerate(clientes):
@@ -45,13 +49,15 @@ class ObjetivosSecretos:
             objetivo_id = objetivos_ids[i % len(objetivos_ids)]
             user_id = client.userid()
             self.objetivos_asignados[user_id] = objetivo_id
-            print(
-                f"Asignado objetivo '{objetivo_id}' a cliente {client.username()} "
-                f"(ID: {user_id})"
+            LOGGER.info(
+                "Asignado objetivo '%s' a cliente %s (ID: %s)",
+                objetivo_id,
+                client.username(),
+                user_id,
             )
 
-        print(f"Objetivos asignados: {self.objetivos_asignados}")
-        print("=== FIN ASIGNACIÓN OBJETIVOS ===")
+        LOGGER.info("Objetivos asignados: %s", self.objetivos_asignados)
+        LOGGER.info("=== FIN ASIGNACIÓN OBJETIVOS ===")
 
     def get_objetivo_jugador(self, client_id: str) -> dict[str, Any] | None:
         """

@@ -116,7 +116,7 @@ class LayoutManager:
         section_layout.setSpacing(6)
 
         title = QLabel("UNIDADES")
-        title.setAlignment(Qt.AlignLeft)
+        title.setAlignment(Qt.AlignmentFlag.AlignLeft)
         title.setObjectName("unitsTitle")
         section_layout.addWidget(title)
 
@@ -193,7 +193,10 @@ class LayoutManager:
 
         # Empujar contenido a la izquierda
         spacer = QWidget()
-        spacer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        spacer.setSizePolicy(
+            QSizePolicy.Policy.Expanding,
+            QSizePolicy.Policy.Preferred,
+        )
         row_layout.addWidget(spacer)
 
         parent_layout.addWidget(row)
@@ -209,7 +212,7 @@ class LayoutManager:
         pm = QPixmap(size, size)
         pm.fill(QColor(0, 0, 0, 0))
         painter = QPainter(pm)
-        painter.setRenderHint(QPainter.Antialiasing)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         painter.setBrush(QColor(color_hex))
         painter.setPen(QColor(color_hex))
         painter.drawEllipse(0, 0, size - 1, size - 1)
@@ -219,7 +222,11 @@ class LayoutManager:
             font.setPointSize(8)
             font.setBold(True)
             painter.setFont(font)
-            painter.drawText(pm.rect(), Qt.AlignCenter, glyph)
+            painter.drawText(
+                pm.rect(),
+                Qt.AlignmentFlag.AlignCenter,
+                glyph,
+            )
         painter.end()
         label = QLabel()
         label.setPixmap(pm)
@@ -229,7 +236,7 @@ class LayoutManager:
         """Agregar título de la sección de jugadores."""
         # Título para la sección de jugadores
         players_title = QLabel("JUGADORES")
-        players_title.setAlignment(Qt.AlignCenter)
+        players_title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         players_title.setStyleSheet("""
             QLabel {
                 color: #333333;

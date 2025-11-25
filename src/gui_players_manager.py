@@ -91,7 +91,7 @@ class PlayersManager:
         pm = QPixmap(size, size)
         pm.fill(QColor(0, 0, 0, 0))
         painter = QPainter(pm)
-        painter.setRenderHint(QPainter.Antialiasing)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         painter.setBrush(QColor(color_hex))
         painter.setPen(QColor(color_hex))
         painter.drawEllipse(0, 0, size - 1, size - 1)
@@ -101,7 +101,11 @@ class PlayersManager:
             font.setPointSize(8)
             font.setBold(True)
             painter.setFont(font)
-            painter.drawText(pm.rect(), Qt.AlignCenter, glyph)
+            painter.drawText(
+                pm.rect(),
+                Qt.AlignmentFlag.AlignCenter,
+                glyph,
+            )
         painter.end()
         label = QLabel()
         label.setPixmap(pm)
