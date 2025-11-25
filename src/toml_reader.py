@@ -1,3 +1,5 @@
+"""Módulo para leer y validar archivos TOML del juego."""
+
 import tomllib
 from typing import Any
 
@@ -7,6 +9,8 @@ class TomlReaderError(Exception):
 
 
 class TomlReader:
+    """Lector y validador de archivos TOML del juego."""
+
     def __init__(  # noqa: PLR0912, PLR0915
         self,
         paises_toml_string: str,
@@ -25,6 +29,7 @@ class TomlReader:
 
         Raises:
             TomlReaderError: Si la estructura TOML no es válida
+
         """
         try:
             self.parsed_toml = tomllib.loads(paises_toml_string)
@@ -107,6 +112,7 @@ class TomlReader:
 
         Raises:
             TomlReaderError: Si la estructura básica no es válida
+
         """
         if not isinstance(self.parsed_toml, dict):
             msg = "El TOML debe ser un diccionario en el nivel raíz"
@@ -131,6 +137,7 @@ class TomlReader:
 
         Raises:
             TomlReaderError: Si la sección Cartas no es válida
+
         """
         if not isinstance(self.cartas, dict):
             msg = "La sección 'Cartas' debe ser un diccionario"
@@ -147,6 +154,7 @@ class TomlReader:
 
         Raises:
             TomlReaderError: Si la estructura de adyacencias no es válida
+
         """
         if not isinstance(self.adyacencias, dict):
             msg = "La sección 'Adyacencias' debe ser un diccionario"
@@ -169,6 +177,7 @@ class TomlReader:
 
         Raises:
             TomlReaderError: Si la estructura de objetivos secretos no es válida
+
         """
         if not isinstance(self.objetivos_secretos, dict):
             msg = "La sección 'Objetivos' debe ser un diccionario"
@@ -215,6 +224,7 @@ class TomlReader:
 
         Raises:
             TomlReaderError: Si hay errores en la estructura de continentes/países
+
         """
         for continente in self.parsed_toml:
             if continente in {"Cartas", "Adyacencias"}:
@@ -265,6 +275,7 @@ class TomlReader:
 
         Raises:
             TomlReaderError: Si la estructura del país no es válida
+
         """
         # Validar continente si está presente
         if "continente" in datos and datos["continente"] != continente:
@@ -293,6 +304,7 @@ class TomlReader:
 
         Raises:
             TomlReaderError: Si hay inconsistencias en los datos
+
         """
         todos_paises = self.todos_los_paises()
 
@@ -313,6 +325,7 @@ class TomlReader:
 
         Returns:
             Lista con nombres de todos los países
+
         """
         res: list[str] = []
         for continente in self.get_continentes():
@@ -328,6 +341,7 @@ class TomlReader:
 
         Returns:
             Diccionario con datos de países del continente
+
         """
         return self.paises[continente]
 
@@ -336,6 +350,7 @@ class TomlReader:
 
         Returns:
             Lista con nombres de todos los continentes
+
         """
         return list(self.continentes)
 
@@ -347,6 +362,7 @@ class TomlReader:
 
         Returns:
             Tupla (pos_x, pos_y) con coordenadas del continente
+
         """
         return self.continentes[continente]
 
@@ -361,6 +377,7 @@ class TomlReader:
 
         Raises:
             KeyError: Si el país no existe
+
         """
         continente = self.continente(pais)
         if continente is None:
@@ -374,6 +391,7 @@ class TomlReader:
 
         Returns:
             Diccionario con nombres y archivos de cartas
+
         """
         return dict(self.cartas)
 
@@ -388,6 +406,7 @@ class TomlReader:
 
         Raises:
             KeyError: Si el país no existe
+
         """
         continente = self.continente(pais)
         if continente is None:
@@ -409,6 +428,7 @@ class TomlReader:
 
         Returns:
             Nombre del continente o None si el país no existe
+
         """
         return self._pais_a_continente.get(pais)
 
@@ -421,6 +441,7 @@ class TomlReader:
         Returns:
             Lista de nombres de países adyacentes,
             o lista vacía si no hay adyacentes definidos
+
         """
         return self.adyacencias.get(pais, [])
 
@@ -429,6 +450,7 @@ class TomlReader:
 
         Returns:
             Diccionario con objetivos secretos y sus datos
+
         """
         return self.objetivos_secretos
 
@@ -440,6 +462,7 @@ class TomlReader:
 
         Returns:
             Diccionario con datos del objetivo o None si no existe
+
         """
         return self.objetivos_secretos.get(objetivo_id)
 
@@ -448,5 +471,6 @@ class TomlReader:
 
         Returns:
             Lista con IDs de objetivos secretos
+
         """
         return list(self.objetivos_secretos.keys())

@@ -1,19 +1,17 @@
 #!/usr/bin/env python3
-"""
-Script para compilar archivos .po a .mo usando Python puro.
-"""
+"""Script para compilar archivos .po a .mo usando Python puro."""
 
 import struct
 from pathlib import Path
 
 
 def compile_po_to_mo(po_file: Path, mo_file: Path) -> None:
-    """
-    Compila un archivo .po a .mo usando Python puro.
+    """Compila un archivo .po a .mo usando Python puro.
 
     Args:
         po_file: Path al archivo .po
         mo_file: Path al archivo .mo de salida
+
     """
     translations: dict[str, str] = {}
 
@@ -74,12 +72,12 @@ def compile_po_to_mo(po_file: Path, mo_file: Path) -> None:
 
 
 def create_mo_file(translations: dict[str, str], mo_file: Path) -> None:
-    """
-    Crea un archivo .mo válido desde un diccionario de traducciones.
+    """Crea un archivo .mo válido desde un diccionario de traducciones.
 
     Args:
         translations: Diccionario {msgid: msgstr}
         mo_file: Path al archivo .mo de salida
+
     """
     # Asegurar que el directorio existe
     mo_file.parent.mkdir(parents=True, exist_ok=True)

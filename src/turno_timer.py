@@ -1,3 +1,5 @@
+"""Módulo para el temporizador de turnos del juego."""
+
 from __future__ import annotations
 
 import threading
@@ -15,6 +17,13 @@ class TurnoTimer(threading.Thread):
     """
 
     def __init__(self, server: Any, segundos_por_turno: int = 120) -> None:
+        """Inicializa el temporizador de turnos.
+
+        Args:
+            server: Instancia del servidor.
+            segundos_por_turno: Duración de cada turno en segundos (por defecto 120).
+
+        """
         super().__init__(daemon=True)
         self._server: Any = server
         self._segundos_por_turno = segundos_por_turno
@@ -46,6 +55,7 @@ class TurnoTimer(threading.Thread):
     # Thread run
     # ------------------------------------------------------------------
     def run(self) -> None:
+        """Ejecuta el hilo del temporizador de turnos."""
         while not self._stop_event.is_set():
             # Esperar a que exista una partida iniciada
             if not self._server.game or not self._server.game.empezo():

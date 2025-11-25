@@ -1,8 +1,11 @@
+"""Tests para el módulo de cliente del servidor."""
+
 import unittest
 
 
 class TestEjecutarMensaje(unittest.TestCase):
-    pass
+    """Tests para ejecutar mensajes del cliente."""
+
     # def test_mensaje_inexistente(self):
     #    data = {"mensaje": "noexiste"}
     #    game = Game(Mapa(lambda: None), None)

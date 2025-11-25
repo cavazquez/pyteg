@@ -1,5 +1,4 @@
-"""
-Gestor de sonidos para PyTeg.
+"""Gestor de sonidos para PyTeg.
 
 Este módulo proporciona una clase para gestionar la reproducción de efectos
 de sonido en el juego, incluyendo control de volumen y mute.
@@ -41,14 +40,14 @@ class SoundManager:
         }
 
     def _get_sound_path(self, sound_name: str) -> Path | None:
-        """
-        Obtiene la ruta completa de un archivo de sonido.
+        """Obtiene la ruta completa de un archivo de sonido.
 
         Args:
             sound_name: Nombre del sonido (sin extensión)
 
         Returns:
             Path al archivo de sonido o None si no existe
+
         """
         if sound_name not in self._sound_files:
             return None
@@ -63,14 +62,14 @@ class SoundManager:
         return sound_path
 
     def _get_or_create_player(self, sound_name: str) -> QMediaPlayer | None:
-        """
-        Obtiene o crea un reproductor para un sonido específico.
+        """Obtiene o crea un reproductor para un sonido específico.
 
         Args:
             sound_name: Nombre del sonido
 
         Returns:
             QMediaPlayer configurado o None si el archivo no existe
+
         """
         # Si ya existe el reproductor, reutilizarlo
         if sound_name in self._players:
@@ -96,11 +95,11 @@ class SoundManager:
         return player
 
     def play(self, sound_name: str) -> None:
-        """
-        Reproduce un efecto de sonido.
+        """Reproduce un efecto de sonido.
 
         Args:
             sound_name: Nombre del sonido a reproducir
+
         """
         if not self._enabled:
             return
@@ -116,11 +115,11 @@ class SoundManager:
         player.play()
 
     def set_volume(self, volume: float) -> None:
-        """
-        Establece el volumen global de los sonidos.
+        """Establece el volumen global de los sonidos.
 
         Args:
             volume: Volumen entre 0.0 (silencio) y 1.0 (máximo)
+
         """
         self._volume = max(0.0, min(1.0, volume))
 
@@ -129,20 +128,20 @@ class SoundManager:
             audio_output.setVolume(self._volume)
 
     def get_volume(self) -> float:
-        """
-        Obtiene el volumen actual.
+        """Obtiene el volumen actual.
 
         Returns:
             Volumen actual (0.0 a 1.0)
+
         """
         return self._volume
 
     def set_enabled(self, enabled: bool) -> None:  # noqa: FBT001
-        """
-        Habilita o deshabilita la reproducción de sonidos.
+        """Habilita o deshabilita la reproducción de sonidos.
 
         Args:
             enabled: True para habilitar, False para deshabilitar
+
         """
         self._enabled = enabled
 
@@ -151,11 +150,11 @@ class SoundManager:
             self.stop_all()
 
     def is_enabled(self) -> bool:
-        """
-        Verifica si los sonidos están habilitados.
+        """Verifica si los sonidos están habilitados.
 
         Returns:
             True si están habilitados, False en caso contrario
+
         """
         return self._enabled
 

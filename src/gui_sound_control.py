@@ -1,5 +1,4 @@
-"""
-Widget de control de sonido para PyTeg.
+"""Widget de control de sonido para PyTeg.
 
 Proporciona controles para ajustar el volumen y activar/desactivar sonidos.
 """
@@ -31,12 +30,12 @@ class SoundControlWidget(QWidget):
         sound_manager: SoundManager,
         parent: QWidget | None = None,
     ):
-        """
-        Inicializa el widget de control de sonido.
+        """Inicializa el widget de control de sonido.
 
         Args:
             sound_manager: Instancia del SoundManager
             parent: Widget padre
+
         """
         super().__init__(parent)
         self.sound_manager = sound_manager
@@ -120,11 +119,11 @@ class SoundControlWidget(QWidget):
         self._update_display()
 
     def _on_volume_changed(self, value: int) -> None:
-        """
-        Maneja cambios en el slider de volumen.
+        """Maneja cambios en el slider de volumen.
 
         Args:
             value: Valor del slider (0-100)
+
         """
         volume = value / 100.0
         self.sound_manager.set_volume(volume)

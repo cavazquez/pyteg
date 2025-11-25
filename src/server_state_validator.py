@@ -9,6 +9,8 @@ from src.server_estado import Estado
 
 
 class HasEstado(Protocol):
+    """Protocolo para objetos que tienen un estado."""
+
     estado: Estado
 
 
@@ -20,6 +22,7 @@ class ServerStateValidator:
 
         Raises:
             EstadoInvalidoError: Si la acción no está permitida en el estado actual.
+
         """
         if not action_name:
             return
@@ -32,7 +35,12 @@ class ServerStateValidator:
             )
 
     def puede_ejecutar(self, action_name: str, server: HasEstado) -> bool:
-        """Verifica si una acción puede ejecutarse sin lanzar excepción."""
+        """Verifica si una acción puede ejecutarse sin lanzar excepción.
+
+        Returns:
+            True si la acción puede ejecutarse, False en caso contrario.
+
+        """
         try:
             self.validar_accion(action_name, server)
         except EstadoInvalidoError:

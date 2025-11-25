@@ -1,9 +1,13 @@
+"""Módulo para cálculos de unidades y bonificaciones del juego."""
+
 from typing import ClassVar
 
 from src.server_mapa import Mapa
 
 
 class Calculos:
+    """Clase estática para realizar cálculos de unidades y bonificaciones."""
+
     # Bonificaciones por control completo de continente
     BONIFICACIONES_CONTINENTE: ClassVar[dict[str, int]] = {
         "Europa": 5,
@@ -20,7 +24,12 @@ class Calculos:
 
     @staticmethod
     def calcular_unidades_generales(mapa: Mapa, jugador: str) -> int:
-        """Calcula unidades generales: 1 por cada 2 países, mínimo 3."""
+        """Calcula unidades generales: 1 por cada 2 países, mínimo 3.
+
+        Returns:
+            Número de unidades generales calculadas.
+
+        """
         paises = mapa.cantidad_de_paises_del_jugador(jugador)
         return max(paises // Calculos.DIVISOR_PAISES, Calculos.UNIDADES_MINIMAS)
 
@@ -34,7 +43,8 @@ class Calculos:
             continente: Nombre del continente
 
         Returns:
-            int: Unidades de bonificación (0 si no controla el continente)
+            Unidades de bonificación (0 si no controla el continente).
+
         """
         if continente not in Calculos.BONIFICACIONES_CONTINENTE:
             return 0
@@ -45,24 +55,60 @@ class Calculos:
 
     @staticmethod
     def calcular_unidades_europa(mapa: Mapa, jugador: str) -> int:
+        """Calcula bonificación por control completo de Europa.
+
+        Returns:
+            Unidades de bonificación por Europa.
+
+        """
         return Calculos.calcular_unidades_continente(mapa, jugador, "Europa")
 
     @staticmethod
     def calcular_unidades_asia(mapa: Mapa, jugador: str) -> int:
+        """Calcula bonificación por control completo de Asia.
+
+        Returns:
+            Unidades de bonificación por Asia.
+
+        """
         return Calculos.calcular_unidades_continente(mapa, jugador, "Asia")
 
     @staticmethod
     def calcular_unidades_africa(mapa: Mapa, jugador: str) -> int:
+        """Calcula bonificación por control completo de África.
+
+        Returns:
+            Unidades de bonificación por África.
+
+        """
         return Calculos.calcular_unidades_continente(mapa, jugador, "Africa")
 
     @staticmethod
     def calcular_unidades_oceania(mapa: Mapa, jugador: str) -> int:
+        """Calcula bonificación por control completo de Oceanía.
+
+        Returns:
+            Unidades de bonificación por Oceanía.
+
+        """
         return Calculos.calcular_unidades_continente(mapa, jugador, "Oceania")
 
     @staticmethod
     def calcular_unidades_america_del_sur(mapa: Mapa, jugador: str) -> int:
+        """Calcula bonificación por control completo de Sudamérica.
+
+        Returns:
+            Unidades de bonificación por Sudamérica.
+
+        """
         return Calculos.calcular_unidades_continente(mapa, jugador, "Sudamerica")
 
     @staticmethod
     def calcular_unidades_america_del_norte(mapa: Mapa, jugador: str) -> int:
+        """Calcula bonificación por control completo de Norteamérica.
+
+        Returns:
+            Unidades de bonificación por Norteamérica.
+
+        """
         return Calculos.calcular_unidades_continente(mapa, jugador, "Norteamerica")

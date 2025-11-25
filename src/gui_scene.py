@@ -1,3 +1,5 @@
+"""Módulo para la escena gráfica del mapa del juego."""
+
 from __future__ import annotations
 
 from typing import Any
@@ -22,9 +24,16 @@ from src.utils import get_resource_path
 
 
 class CountrySelectionManager:
-    """Maneja la selección de países origen y destino"""
+    """Maneja la selección de países origen y destino."""
 
-    def __init__(self, main_window: Any, scene: QCustomGraphicsScene):
+    def __init__(self, main_window: Any, scene: QCustomGraphicsScene) -> None:
+        """Inicializa el gestor de selección de países.
+
+        Args:
+            main_window: Ventana principal de la aplicación.
+            scene: Escena gráfica donde se muestran los países.
+
+        """
         self.main_window = main_window
         self.scene = scene
         self._pais_origen: str | None = None
@@ -33,7 +42,7 @@ class CountrySelectionManager:
         self._pais_destino_widget: Pais | None = None
 
     def seleccionar_pais(self, nombre_pais: str) -> None:
-        """Selecciona un país como origen o destino"""
+        """Selecciona un país como origen o destino."""
         if self._pais_origen is None:
             # Primer clic: seleccionar como origen
             self._pais_origen = nombre_pais
@@ -57,7 +66,7 @@ class CountrySelectionManager:
             self.seleccionar_pais(nombre_pais)
 
     def cancelar_seleccion(self) -> None:
-        """Cancela la selección actual de países"""
+        """Cancela la selección actual de países."""
         if self._pais_origen_widget:
             self._pais_origen_widget.limpiar_seleccion_visual()
         if self._pais_destino_widget:
@@ -70,7 +79,7 @@ class CountrySelectionManager:
         self._actualizar_seleccion_label()
 
     def confirmar_seleccion(self) -> None:
-        """Confirma la selección y ejecuta movimiento (acción por defecto)"""
+        """Confirma la selección y ejecuta movimiento (acción por defecto)."""
         if (
             self._pais_origen
             and self._pais_destino
@@ -90,7 +99,7 @@ class CountrySelectionManager:
             self.cancelar_seleccion()
 
     def _actualizar_seleccion_label(self) -> None:
-        """Actualiza el label de selección en la barra de estado"""
+        """Actualiza el label de selección en la barra de estado."""
         if hasattr(self.main_window, "seleccion_label"):
             if self._pais_origen is None:
                 self.main_window.seleccion_label.setText(
@@ -110,15 +119,25 @@ class CountrySelectionManager:
         self._actualizar_botones_toolbar()
 
     def get_pais_origen(self) -> str | None:
-        """Retorna el país origen seleccionado"""
+        """Retorna el país origen seleccionado.
+
+        Returns:
+            Nombre del país origen o None si no hay selección.
+
+        """
         return self._pais_origen
 
     def get_pais_destino(self) -> str | None:
-        """Retorna el país destino seleccionado"""
+        """Retorna el país destino seleccionado.
+
+        Returns:
+            Nombre del país destino o None si no hay selección.
+
+        """
         return self._pais_destino
 
     def _actualizar_botones_toolbar(self) -> None:
-        """Actualiza el estado de los botones de atacar y mover en la toolbar"""
+        """Actualiza el estado de los botones de atacar y mover en la toolbar."""
         hay_dos_paises = (
             self._pais_origen is not None and self._pais_destino is not None
         )
@@ -134,7 +153,16 @@ class CountrySelectionManager:
 
 
 class QCustomGraphicsScene(QGraphicsScene):
+    """Escena gráfica personalizada para mostrar el mapa del juego."""
+
     def __init__(self, main_window: Any, parent: QWidget | None = None) -> None:
+        """Inicializa la escena gráfica.
+
+        Args:
+            main_window: Ventana principal de la aplicación.
+            parent: Widget padre (opcional).
+
+        """
         super().__init__(parent)
         self.main_window = main_window
         self.paises: dict[str, Pais] = {}
@@ -145,6 +173,12 @@ class QCustomGraphicsScene(QGraphicsScene):
         self.load_map_data()
 
     def mouseMoveEvent(self, event: QGraphicsSceneMouseEvent) -> None:  # noqa: N802
+        """Maneja el movimiento del mouse en la escena.
+
+        Args:
+            event: Evento de movimiento del mouse.
+
+        """
         # Obtener las coordenadas del mouse en la escena
         # Mostrar las coordenadas en el Status Bar
         scene_pos = event.scenePos()
@@ -155,7 +189,12 @@ class QCustomGraphicsScene(QGraphicsScene):
         super().mouseMoveEvent(event)
 
     def mousePressEvent(self, event: QGraphicsSceneMouseEvent) -> None:  # noqa: N802
-        """Maneja los clics del mouse en la escena"""
+        """Maneja los clics del mouse en la escena.
+
+        Args:
+            event: Evento de clic del mouse.
+
+        """
         if event.button() == Qt.MouseButton.LeftButton:
             # Verificar si se hizo clic en un área vacía (sin países)
             items = self.items(event.scenePos())
@@ -169,6 +208,12 @@ class QCustomGraphicsScene(QGraphicsScene):
         super().mousePressEvent(event)
 
     def contextMenuEvent(self, event: QGraphicsSceneContextMenuEvent) -> None:  # noqa: N802
+        """Maneja el menú contextual (clic derecho) en la escena.
+
+        Args:
+            event: Evento de menú contextual.
+
+        """
         # Verificar si se hizo clic derecho sobre el QGraphicsPixmapItem
         items = self.items(event.scenePos())
         for item in items:
@@ -179,6 +224,7 @@ class QCustomGraphicsScene(QGraphicsScene):
                 menu.exec_(event.screenPos())
 
     def load_map_data(self) -> None:
+        """Carga los datos del mapa desde archivos TOML y crea los widgets de países."""
         folder = "themes/"
 
         paises_content = get_resource_path("themes/classic/paises.toml").read_text(
@@ -218,5 +264,6 @@ class QCustomGraphicsScene(QGraphicsScene):
 
         Returns:
             Pais | None: Widget del país o None si no existe
+
         """
         return self.paises.get(nombre_pais)

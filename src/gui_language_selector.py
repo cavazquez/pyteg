@@ -1,3 +1,5 @@
+"""Módulo para el selector de idioma de la interfaz."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -25,11 +27,18 @@ class LanguageSelector(QWidget):
     language_changed = Signal(str)
 
     def __init__(self, parent: QWidget | None = None) -> None:
+        """Inicializa el selector de idioma.
+
+        Args:
+            parent: Widget padre (opcional).
+
+        """
         super().__init__(parent)
         self.combo = QComboBox()
         self.setup_ui()
 
     def setup_ui(self) -> None:
+        """Configura la interfaz de usuario del selector de idioma."""
         layout = QHBoxLayout()
         layout.setContentsMargins(8, 2, 8, 2)  # Márgenes más generosos
         layout.setSpacing(6)  # Espaciado entre elementos

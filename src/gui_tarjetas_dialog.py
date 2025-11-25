@@ -1,3 +1,5 @@
+"""Módulo para el diálogo de tarjetas del juego."""
+
 from __future__ import annotations
 
 from typing import Any, ClassVar, cast
@@ -32,6 +34,14 @@ class TarjetaWidget(QWidget):
     }
 
     def __init__(self, pais: str, simbolo: str, index: int = 0) -> None:
+        """Inicializa el widget de tarjeta.
+
+        Args:
+            pais: Nombre del país de la tarjeta.
+            simbolo: Símbolo de la tarjeta (Galeon, Globo, Canon, Comodin).
+            index: Índice de la tarjeta (por defecto 0).
+
+        """
         super().__init__()
         self.pais = pais
         self.simbolo = simbolo
@@ -148,7 +158,12 @@ class TarjetaWidget(QWidget):
             self._actualizar_estilo()
 
     def is_seleccionada(self) -> bool:
-        """Retorna True si la tarjeta está seleccionada."""
+        """Retorna True si la tarjeta está seleccionada.
+
+        Returns:
+            True si la tarjeta está seleccionada, False en caso contrario.
+
+        """
         return self._seleccionada
 
 
@@ -156,6 +171,12 @@ class TarjetasDialog(QDialog):
     """Diálogo para mostrar las tarjetas asignadas al jugador."""
 
     def __init__(self, parent: QWidget | None = None) -> None:
+        """Inicializa el diálogo de tarjetas.
+
+        Args:
+            parent: Widget padre (opcional).
+
+        """
         super().__init__(parent)
         self.setWindowTitle(_("Mis Tarjetas"))
         self.setModal(True)
@@ -237,7 +258,12 @@ class TarjetasDialog(QDialog):
         self.setLayout(layout)
 
     def _create_tarjetas_area(self) -> QWidget:
-        """Crea el área donde se muestran las tarjetas."""
+        """Crea el área donde se muestran las tarjetas.
+
+        Returns:
+            Widget con el área de tarjetas creada.
+
+        """
         widget = QWidget()
         grid_layout = QGridLayout()
         grid_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -276,7 +302,12 @@ class TarjetasDialog(QDialog):
         return widget
 
     def _create_objetivo_secreto_area(self) -> QWidget:
-        """Crea el área para mostrar el objetivo secreto."""
+        """Crea el área para mostrar el objetivo secreto.
+
+        Returns:
+            Widget con el área de objetivo secreto creada.
+
+        """
         container = QWidget()
         layout = QVBoxLayout()
 
@@ -317,7 +348,12 @@ class TarjetasDialog(QDialog):
         return container
 
     def _create_buttons_layout(self) -> QHBoxLayout:
-        """Crea el layout con los botones de acción."""
+        """Crea el layout con los botones de acción.
+
+        Returns:
+            Layout horizontal con los botones creados.
+
+        """
         layout = QHBoxLayout()
         layout.addStretch()
 
@@ -414,6 +450,7 @@ class TarjetasDialog(QDialog):
 
         Args:
             nuevas_tarjetas: Lista de diccionarios con 'pais' y 'simbolo'
+
         """
         self.tarjetas = nuevas_tarjetas[:4]  # Máximo 4 tarjetas
 
@@ -429,7 +466,12 @@ class TarjetasDialog(QDialog):
         layout_vbox.insertWidget(1, self.tarjetas_widget)
 
     def _create_info_seleccion(self) -> QWidget:
-        """Crea el área de información sobre la selección actual."""
+        """Crea el área de información sobre la selección actual.
+
+        Returns:
+            Widget con el área de información creada.
+
+        """
         widget = QWidget()
         layout = QHBoxLayout()
         layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -503,7 +545,12 @@ class TarjetasDialog(QDialog):
         self.button_deseleccionar_todas.setEnabled(cantidad_seleccionadas > 0)
 
     def _puede_realizar_canje(self) -> bool:
-        """Determina si se puede realizar un canje con las tarjetas seleccionadas."""
+        """Determina si se puede realizar un canje con las tarjetas seleccionadas.
+
+        Returns:
+            True si se puede realizar el canje, False en caso contrario.
+
+        """
         cantidad = len(self.tarjetas_seleccionadas)
 
         # Reglas básicas de canje (pueden ajustarse según las reglas del juego)
@@ -518,7 +565,12 @@ class TarjetasDialog(QDialog):
         return False
 
     def _puede_realizar_canje_especial(self) -> bool:
-        """Verifica si se puede realizar un canje especial (país + tarjeta)."""
+        """Verifica si se puede realizar un canje especial (país + tarjeta).
+
+        Returns:
+            True si se puede realizar el canje especial, False en caso contrario.
+
+        """
         # La validación real de posesión del país se hace en el servidor
         # Aquí solo verificamos que hay exactamente una tarjeta seleccionada
         return len(self.tarjetas_seleccionadas) == 1
@@ -593,14 +645,24 @@ class TarjetasDialog(QDialog):
             self.label_objetivo.setText(descripcion)
 
     def get_objetivo_secreto(self) -> dict[str, str | None]:
-        """Obtiene el objetivo secreto asignado."""
+        """Obtiene el objetivo secreto asignado.
+
+        Returns:
+            Diccionario con el ID y descripción del objetivo secreto.
+
+        """
         return {
             "id": self.objetivo_secreto_id,
             "descripcion": self.objetivo_secreto_descripcion,
         }
 
     def _get_transmisor(self) -> Any | None:
-        """Obtiene el transmisor desde la ventana padre si existe."""
+        """Obtiene el transmisor desde la ventana padre si existe.
+
+        Returns:
+            El transmisor si existe, None en caso contrario.
+
+        """
         parent = self.parent()
         if parent is None:
             return None

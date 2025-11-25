@@ -1,3 +1,5 @@
+"""Módulo para el diálogo de configuración de la partida."""
+
 from __future__ import annotations
 
 from PySide6.QtCore import Qt
@@ -14,6 +16,8 @@ from src.i18n import translate as _
 
 
 class ConfiguracionDialog(QDialog):
+    """Diálogo para mostrar la configuración de la partida."""
+
     def __init__(
         self,
         parent: QWidget | None = None,
@@ -23,6 +27,16 @@ class ConfiguracionDialog(QDialog):
         objetivos_secretos: bool = False,
         misiles_habilitados: bool = False,
     ) -> None:
+        """Inicializa el diálogo de configuración.
+
+        Args:
+            parent: Widget padre (opcional).
+            segundos_por_turno: Duración de cada turno en segundos.
+            paises_para_victoria: Cantidad de países necesarios para ganar.
+            objetivos_secretos: Si los objetivos secretos están activados.
+            misiles_habilitados: Si los misiles están habilitados.
+
+        """
         super().__init__(parent)
         self.paises_para_victoria = paises_para_victoria
         self.objetivos_secretos = objetivos_secretos

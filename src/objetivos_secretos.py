@@ -1,3 +1,5 @@
+"""Módulo para gestionar objetivos secretos del juego."""
+
 import random
 from typing import Any, cast
 
@@ -10,22 +12,22 @@ class ObjetivosSecretos:
     """Maneja la asignación y verificación de objetivos secretos para los jugadores."""
 
     def __init__(self, toml_reader: Any) -> None:
-        """
-        Inicializa el sistema de objetivos secretos.
+        """Inicializa el sistema de objetivos secretos.
 
         Args:
             toml_reader: Instancia de TomlReader con objetivos secretos cargados
+
         """
         self.toml_reader = toml_reader
         self.objetivos_disponibles = toml_reader.get_objetivos_secretos()
         self.objetivos_asignados: dict[str, str] = {}  # client_id -> objetivo_id
 
     def asignar_objetivos_aleatorios(self, clientes: list[Any]) -> None:
-        """
-        Asigna objetivos secretos aleatorios a una lista de clientes.
+        """Asigna objetivos secretos aleatorios a una lista de clientes.
 
         Args:
             clientes: Lista de objetos cliente con atributo user_id
+
         """
         if not clientes:
             return
@@ -60,14 +62,14 @@ class ObjetivosSecretos:
         LOGGER.info("=== FIN ASIGNACIÓN OBJETIVOS ===")
 
     def get_objetivo_jugador(self, client_id: str) -> dict[str, Any] | None:
-        """
-        Obtiene el objetivo secreto asignado a un jugador.
+        """Obtiene el objetivo secreto asignado a un jugador.
 
         Args:
             client_id: ID del cliente
 
         Returns:
             Diccionario con datos del objetivo o None si no tiene asignado
+
         """
         objetivo_id = self.objetivos_asignados.get(client_id)
         if objetivo_id:
@@ -79,8 +81,7 @@ class ObjetivosSecretos:
     def verificar_condicion_victoria(
         self, client_id: str, mapa: Any, colores: Any
     ) -> bool:
-        """
-        Verifica si un jugador ha cumplido su objetivo secreto.
+        """Verifica si un jugador ha cumplido su objetivo secreto.
 
         Args:
             client_id: ID del cliente
@@ -89,6 +90,7 @@ class ObjetivosSecretos:
 
         Returns:
             True si el jugador ha cumplido su objetivo secreto
+
         """
         objetivo = self.get_objetivo_jugador(client_id)
         if not objetivo:
@@ -112,7 +114,12 @@ class ObjetivosSecretos:
     def _verificar_destruir_jugador(
         self, client_id: str, objetivo: dict[str, Any], mapa: Any, colores: Any
     ) -> bool:
-        """Verifica si se ha destruido completamente al jugador objetivo."""
+        """Verifica si se ha destruido completamente al jugador objetivo.
+
+        Returns:
+            True si el jugador objetivo ha sido destruido, False en caso contrario.
+
+        """
         color_objetivo = objetivo.get("color_objetivo")
         paises_alternativos = objetivo.get("paises_alternativos", 24)
 
@@ -164,7 +171,13 @@ class ObjetivosSecretos:
     def _verificar_conquistar_continentes(
         self, client_id: str, objetivo: dict[str, Any], mapa: Any
     ) -> bool:
-        """Verifica si se han conquistado los continentes requeridos."""
+        """Verifica si se han conquistado los continentes requeridos.
+
+        Returns:
+            True si se han conquistado los continentes requeridos,
+            False en caso contrario.
+
+        """
         continentes_objetivo = objetivo.get("continentes", [])
 
         for continente in continentes_objetivo:
@@ -176,7 +189,12 @@ class ObjetivosSecretos:
     def _verificar_conquistar_paises(
         self, client_id: str, objetivo: dict[str, Any], mapa: Any
     ) -> bool:
-        """Verifica si se ha conquistado la cantidad de países requerida."""
+        """Verifica si se ha conquistado la cantidad de países requerida.
+
+        Returns:
+            True si se ha conquistado la cantidad requerida, False en caso contrario.
+
+        """
         cantidad_objetivo = objetivo.get("cantidad_paises", 24)
         paises_count = self._contar_paises_jugador(client_id, mapa)
         return bool(paises_count >= cantidad_objetivo)
@@ -184,7 +202,12 @@ class ObjetivosSecretos:
     def _verificar_conquistar_paises_con_tropas(
         self, client_id: str, objetivo: dict[str, Any], mapa: Any
     ) -> bool:
-        """Verifica si se han conquistado países con tropas mínimas."""
+        """Verifica si se han conquistado países con tropas mínimas.
+
+        Returns:
+            True si se han conquistado los países requeridos, False en caso contrario.
+
+        """
         cantidad_paises = objetivo.get("cantidad_paises", 18)
         tropas_minimas = objetivo.get("tropas_minimas", 2)
 
@@ -205,7 +228,12 @@ class ObjetivosSecretos:
         return bool(paises_con_tropas_suficientes >= cantidad_paises)
 
     def _contar_paises_jugador(self, client_id: str, mapa: Any) -> int:
-        """Cuenta la cantidad de países que controla un jugador."""
+        """Cuenta la cantidad de países que controla un jugador.
+
+        Returns:
+            Cantidad de países controlados por el jugador.
+
+        """
         contador = 0
         for pais_data in mapa.values():
             # Estructura: [unidades, continente, jugador, adyacentes, misiles]
@@ -217,7 +245,13 @@ class ObjetivosSecretos:
     def _controla_continente_completo(
         self, client_id: str, continente: str, mapa: Any
     ) -> bool:
-        """Verifica si un jugador controla completamente un continente."""
+        """Verifica si un jugador controla completamente un continente.
+
+        Returns:
+            True si el jugador controla completamente el continente,
+            False en caso contrario.
+
+        """
         paises_continente = self.toml_reader.get_paises(continente)
 
         for pais in paises_continente:

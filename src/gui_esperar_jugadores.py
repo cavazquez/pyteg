@@ -1,3 +1,5 @@
+"""Módulo para la ventana de espera de jugadores."""
+
 from __future__ import annotations
 
 from typing import Any
@@ -15,7 +17,15 @@ from src.gui_radio_color import GuiRadioButtonColor
 
 
 class VentanaEsperarJugadores(QWidget):
-    def __init__(self, main_window: Any):
+    """Ventana para esperar a que los jugadores se conecten y seleccionen colores."""
+
+    def __init__(self, main_window: Any) -> None:
+        """Inicializa la ventana de espera de jugadores.
+
+        Args:
+            main_window: Ventana principal de la aplicación.
+
+        """
         super().__init__()
         self._main_window = main_window
         self._main_layout: QVBoxLayout | None = None
@@ -29,6 +39,7 @@ class VentanaEsperarJugadores(QWidget):
         self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
 
     def inicializar_ui(self) -> None:
+        """Inicializa la interfaz de usuario de la ventana."""
         self.setWindowTitle("Esperando jugadores")
         self.setFixedSize(QSize(500, 400))
 
@@ -63,11 +74,13 @@ class VentanaEsperarJugadores(QWidget):
             self._main_layout.addLayout(button_layout)
 
     def empezar_juego(self) -> None:
+        """Inicia el juego enviando el mensaje al servidor."""
         transmisor = getattr(self._main_window, "transmisor", None)
         if transmisor is not None:
             transmisor.empezar_partida()
 
     def cargar_colores_asignados(self) -> None:
+        """Carga y muestra los colores asignados a los jugadores."""
         if not self._initialized:
             return
 
@@ -96,6 +109,7 @@ class VentanaEsperarJugadores(QWidget):
                 radio.seleccionar(f"{client.username()}")
 
     def actualizar_botones_colores(self) -> None:
+        """Actualiza los botones de radio para cada color disponible."""
         print("=== Actualizando botones de colores ===")
 
         # Verificar si ya hay widgets en el layout
@@ -164,5 +178,6 @@ class VentanaEsperarJugadores(QWidget):
         print(f"  - Total de botones creados: {len(self.radio_por_colores)}")
 
     def limpiar(self) -> None:
+        """Limpia todos los botones de radio de colores."""
         for radio in self.radio_por_colores.values():
             radio.limpiar()

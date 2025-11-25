@@ -1,3 +1,5 @@
+"""Tests para el módulo de lectura de archivos TOML."""
+
 import unittest
 from pathlib import Path
 
@@ -5,7 +7,10 @@ from src.toml_reader import TomlReader
 
 
 class TestTomlReader(unittest.TestCase):
+    """Tests para la clase TomlReader."""
+
     def test_init(self) -> None:
+        """Prueba inicializar TomlReader con archivos reales."""
         paises_string = Path("themes/classic/paises.toml").read_text(encoding="utf-8")
         cartas_string = Path("themes/classic/cartas.toml").read_text(encoding="utf-8")
         adyacencias_string = Path("themes/classic/adyacencias.toml").read_text(
@@ -14,6 +19,7 @@ class TestTomlReader(unittest.TestCase):
         self.assertTrue(TomlReader(paises_string, cartas_string, adyacencias_string))
 
     def test_continente(self) -> None:
+        """Prueba obtener el continente de un país."""
         toml_string = """
         [Cartas]
         jocker = "test.png"
@@ -27,6 +33,7 @@ class TestTomlReader(unittest.TestCase):
         self.assertEqual(TomlReader(toml_string).continente("Argentina"), "Pangea")
 
     def test_continente_sin_pais(self) -> None:
+        """Prueba obtener continente cuando el país no existe."""
         toml_string = """
         [Cartas]
         jocker = "test.png"
@@ -40,6 +47,7 @@ class TestTomlReader(unittest.TestCase):
         self.assertEqual(TomlReader(toml_string).continente("Brasil"), None)
 
     def test_todos_los_paises(self) -> None:
+        """Prueba obtener todos los países del mapa."""
         toml_string = """
         [Cartas]
         jocker = "test.png"
@@ -64,6 +72,7 @@ class TestTomlReader(unittest.TestCase):
         )
 
     def test_get_paises(self) -> None:
+        """Prueba obtener países de un continente específico."""
         toml_string = """
         [Cartas]
         jocker = "test.png"
@@ -92,6 +101,7 @@ class TestTomlReader(unittest.TestCase):
         )
 
     def test_get_continentes(self) -> None:
+        """Prueba obtener la lista de continentes."""
         toml_string = """
         [Cartas]
         jocker = "test.png"
@@ -116,6 +126,7 @@ class TestTomlReader(unittest.TestCase):
         )
 
     def test_coordenadas_continente(self) -> None:
+        """Prueba obtener coordenadas de un continente."""
         toml_string = """
         [Cartas]
         jocker = "test.png"
@@ -130,6 +141,7 @@ class TestTomlReader(unittest.TestCase):
         )
 
     def test_coordenadas(self) -> None:
+        """Prueba obtener coordenadas de un país."""
         toml_string = """
         [Cartas]
         jocker = "test.png"
@@ -150,6 +162,7 @@ class TestTomlReader(unittest.TestCase):
         )
 
     def test_get_cartas(self) -> None:
+        """Prueba obtener las cartas del mapa."""
         toml_string = """
         [Cartas]
         ballon = 'ballon.png'
@@ -160,6 +173,7 @@ class TestTomlReader(unittest.TestCase):
         )
 
     def test_img_path(self) -> None:
+        """Prueba obtener la ruta de imagen de un país."""
         toml_string = """
         [Cartas]
         jocker = "test.png"

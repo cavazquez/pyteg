@@ -1,3 +1,5 @@
+"""Tests para validación de errores en TomlReader."""
+
 import unittest
 from typing import cast
 

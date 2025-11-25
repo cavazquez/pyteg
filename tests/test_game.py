@@ -1,3 +1,5 @@
+"""Tests para el módulo de juego del servidor."""
+
 import unittest
 
 from src.mazo import Mazo
@@ -8,6 +10,8 @@ from src.turnos import PrimerTurno, SegundoTurno, SiguientesTurnos
 
 
 class TestGame(unittest.TestCase):
+    """Tests para la clase Game."""
+
     def setUp(self) -> None:
         """Set up test fixtures."""
         self.server = Server()
@@ -20,36 +24,43 @@ class TestGame(unittest.TestCase):
         self.default_jugadores = ["Fulano", "Mengano"]
 
     def test_create_instance(self) -> None:
+        """Prueba crear una instancia de Game."""
         game = Game(self.mapa, None, None, self.server)  # type: ignore[arg-type]
         self.assertTrue(game)
         self.assertFalse(game.empezo())
         self.assertIsInstance(game.turnos()[0], PrimerTurno)
 
     def test_cant_jugadores(self) -> None:
+        """Prueba contar jugadores."""
         game = Game(self.mapa, None, ["Fulano"], self.server)  # type: ignore[arg-type,list-item]
         self.assertEqual(game.cant_jugadores(), 1)
 
     def test_agregar_jugador(self) -> None:
+        """Prueba agregar un jugador al juego."""
         game = Game(self.mapa, None, ["Fulano"], self.server)  # type: ignore[arg-type,list-item]
         self.assertEqual(game.jugadores(), ["Fulano"])
 
     def test_lista_jugadores(self) -> None:
+        """Prueba obtener la lista de jugadores."""
         game = Game(self.mapa, None, ["Fulano"], self.server)  # type: ignore[arg-type,list-item]
         self.assertListEqual(game.lista_jugadores(), ["Fulano"])
 
     def test_empezar(self) -> None:
+        """Prueba empezar el juego."""
         game = Game(self.mapa, None, self.default_jugadores, self.server)  # type: ignore[arg-type]
         game.empezar()
         self.assertIsInstance(game.turnos()[0], PrimerTurno)
         self.assertIsInstance(game.turnos()[1], PrimerTurno)
 
     def test_finalizar_turno(self) -> None:
+        """Prueba finalizar un turno."""
         game = Game(self.mapa, None, self.default_jugadores, self.server)  # type: ignore[arg-type]
         game.empezar()
         game.finalizar_turno()
         self.assertEqual(game.id_turno_actual(), 1)
 
     def test_finalizar_turno_y_primer_ronda(self) -> None:
+        """Prueba finalizar turnos y llegar a la primera ronda."""
         game = Game(self.mapa, None, self.default_jugadores, self.server)  # type: ignore[arg-type]
         game.empezar()
         game.finalizar_turno()
@@ -59,6 +70,7 @@ class TestGame(unittest.TestCase):
         self.assertIsInstance(game.turnos()[1], SegundoTurno)
 
     def test_finalizar_turno_y_segunda_ronda(self) -> None:
+        """Prueba finalizar turnos y llegar a la segunda ronda."""
         game = Game(self.mapa, None, self.default_jugadores, self.server)  # type: ignore[arg-type]
         game.empezar()
         game.finalizar_turno()
@@ -70,6 +82,7 @@ class TestGame(unittest.TestCase):
         self.assertIsInstance(game.turnos()[1], SiguientesTurnos)
 
     def test_finalizar_turno_y_tercer_ronda(self) -> None:
+        """Prueba finalizar turnos y llegar a la tercera ronda."""
         game = Game(self.mapa, None, self.default_jugadores, self.server)  # type: ignore[arg-type]
         game.empezar()
         game.finalizar_turno()
@@ -85,6 +98,8 @@ class TestGame(unittest.TestCase):
         self.assertNotEqual(game.turnos()[1], turno2)
 
     def test_canje_tarjeta(self) -> None:
+        """Prueba canjear tarjetas por primera vez."""
+
         def build_mapa() -> dict[str, list[int | str | list[str] | None]]:
             return {
                 "Argentina": [4, "Africa", None],
@@ -109,6 +124,8 @@ class TestGame(unittest.TestCase):
         self.assertEqual(mazo.cant_tarjetas_asignadas("Mengano"), 0)
 
     def test_segundo_canje(self) -> None:
+        """Prueba canjear tarjetas por segunda vez."""
+
         def build_mapa() -> dict[str, list[int | str | list[str] | None]]:
             return {
                 "Argentina": [4, "Africa", None],
@@ -138,6 +155,8 @@ class TestGame(unittest.TestCase):
         self.assertEqual(mazo.cant_tarjetas_asignadas("Mengano"), 0)
 
     def test_tercer_canje(self) -> None:
+        """Prueba canjear tarjetas por tercera vez."""
+
         def build_mapa() -> dict[str, list[int | str | list[str] | None]]:
             return {
                 "Argentina": [4, "Africa", None],
@@ -171,6 +190,8 @@ class TestGame(unittest.TestCase):
         self.assertEqual(mazo.cant_tarjetas_asignadas("Mengano"), 0)
 
     def test_obtener_una_tarjeta(self) -> None:
+        """Prueba obtener una tarjeta del mazo."""
+
         def build_mapa() -> dict[str, list[int | str | list[str] | None]]:
             return {
                 "Argentina": [4, "Africa", None],
@@ -187,6 +208,8 @@ class TestGame(unittest.TestCase):
         self.assertEqual(mazo.cant_tarjetas_asignadas("Mengano"), 1)
 
     def test_canje_defensivo_mismo_simbolo(self) -> None:
+        """Prueba canje defensivo automático con mismo símbolo."""
+
         def build_mapa() -> dict[str, list[int | str | list[str] | None]]:
             return {
                 "Argentina": [4, "Africa", None],
@@ -214,6 +237,8 @@ class TestGame(unittest.TestCase):
         self.assertEqual(turno_actual.cant_unidades(), cant_unidades + 4)
 
     def test_canje_defensivo_distinto_simbolo(self) -> None:
+        """Prueba canje defensivo automático con distintos símbolos."""
+
         def build_mapa() -> dict[str, list[int | str | list[str] | None]]:
             return {
                 "Argentina": [4, "Africa", None],

@@ -1,3 +1,5 @@
+"""Módulo para manejar la conexión del cliente al servidor."""
+
 from __future__ import annotations
 
 import json
@@ -12,13 +14,24 @@ from src.codecs_utils import Utf8
 
 
 class ConnectionClient(QWidget):
+    """Widget que maneja la conexión TCP del cliente al servidor."""
+
     def __init__(
         self,
         main_window: Any,
         host: str = "127.0.0.1",
         port: int = 65432,
         username: str = "Usuario",
-    ):
+    ) -> None:
+        """Inicializa la conexión del cliente.
+
+        Args:
+            main_window: Ventana principal de la aplicación.
+            host: Dirección IP del servidor.
+            port: Puerto del servidor.
+            username: Nombre de usuario del cliente.
+
+        """
         super().__init__()
         self._host = host
         self._port = port
@@ -31,10 +44,12 @@ class ConnectionClient(QWidget):
         self._socket.connected.connect(self.on_connected)
 
     def conectar(self) -> None:
+        """Establece la conexión con el servidor."""
         self._socket.connectToHost(self._host, self._port)
         print(f"Conectando a {self._host}:{self._port}...")
 
     def on_connected(self) -> None:
+        """Maneja el evento de conexión exitosa al servidor."""
         print(f"Conectado a {self._host}:{self._port}")
         # Reproducir sonido de conexión
         if hasattr(self._main_window, "sound_manager"):
@@ -45,21 +60,39 @@ class ConnectionClient(QWidget):
         self._main_window.transmisor.set_username(self._username)
 
     def esta_conectado(self) -> bool:
+        """Verifica si el cliente está conectado al servidor.
+
+        Returns:
+            True si está conectado, False en caso contrario.
+
+        """
         print("Estoy conectado?")
         print(f"{self._socket.state()}")
         return self._socket.state() == QAbstractSocket.SocketState.ConnectedState
 
     def get_main_window(self) -> Any:
-        """Obtiene la ventana principal."""
+        """Obtiene la ventana principal.
+
+        Returns:
+            La ventana principal del cliente.
+
+        """
         return self._main_window
 
     def send_data(self, data: str) -> None:
+        """Envía datos al servidor.
+
+        Args:
+            data: Datos a enviar como string.
+
+        """
         print(f"Enviando {data}")
         # Agregar separador \0 al final del mensaje
         encode_data = Utf8.encode(data + "\0")
         self._socket.write(encode_data)
 
     def read_data(self) -> None:
+        """Lee datos recibidos del servidor."""
         data_json = ""
         while self._socket.bytesAvailable():
             encode_datas = self._socket.readAll()
@@ -91,6 +124,12 @@ class ConnectionClient(QWidget):
                             )
 
     def on_state_changed(self, state: QAbstractSocket.SocketState) -> None:
+        """Maneja los cambios de estado de la conexión.
+
+        Args:
+            state: Nuevo estado del socket.
+
+        """
         if state == QAbstractSocket.SocketState.HostLookupState:
             print("Resolviendo el nombre del host...")
         elif state == QAbstractSocket.SocketState.ConnectingState:
@@ -121,6 +160,7 @@ class ConnectionClient(QWidget):
             print("Desconectando del servidor...")
 
     def display_error(self) -> None:
+        """Maneja y muestra errores de conexión."""
         if self._socket.errorString() == "Connection refused":
             QMessageBox.warning(self, "Advertencia", "conexión rehusada.")
         print(f"Error: {self._socket.errorString()}")

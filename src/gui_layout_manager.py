@@ -1,5 +1,5 @@
-"""
-Gestor de layout para la interfaz gráfica principal de PyTeg.
+"""Gestor de layout para la interfaz gráfica principal de PyTeg.
+
 Maneja la creación y configuración de todos los elementos de layout.
 """
 
@@ -34,6 +34,7 @@ class LayoutManager:
 
         Args:
             main_window: Instancia de la ventana principal (Gui)
+
         """
         self.main_window = main_window
 
@@ -71,7 +72,12 @@ class LayoutManager:
         )
 
     def _create_vertical_splitter(self) -> QSplitter:
-        """Crear splitter vertical para vista y chat."""
+        """Crear splitter vertical para vista y chat.
+
+        Returns:
+            Splitter vertical creado.
+
+        """
         # Create a splitter to hold the QGraphicsView and Chat
         vertical_splitter = QSplitter()
         vertical_splitter.setOrientation(Qt.Orientation.Vertical)
@@ -82,7 +88,12 @@ class LayoutManager:
         return vertical_splitter
 
     def _create_horizontal_splitter(self, vertical_splitter: QSplitter) -> QSplitter:
-        """Crear splitter horizontal principal."""
+        """Crear splitter horizontal principal.
+
+        Returns:
+            Splitter horizontal creado.
+
+        """
         # Create a horizontal splitter to hold the vertical splitter
         horizontal_splitter = QSplitter()
         horizontal_splitter.setOrientation(Qt.Orientation.Horizontal)
@@ -210,8 +221,12 @@ class LayoutManager:
         row.setToolTip(tooltip)
 
     def _make_circle_icon(self, color_hex: str, glyph: str | None) -> QLabel:
-        """Crea un QLabel con un QPixmap de círculo y opcional glifo."""
+        """Crea un QLabel con un QPixmap de círculo y opcional glifo.
 
+        Returns:
+            QLabel con el icono de círculo creado.
+
+        """
         size = 16
         pm = QPixmap(size, size)
         pm.fill(QColor(0, 0, 0, 0))

@@ -1,5 +1,4 @@
-"""
-Módulo para gestión de acciones de juego en la interfaz gráfica.
+"""Módulo para gestión de acciones de juego en la interfaz gráfica.
 
 Este módulo contiene la clase GameActionsManager que maneja toda la lógica
 relacionada con las acciones del juego como atacar, finalizar turno y
@@ -16,8 +15,7 @@ from src.gui_attack_dialog import AttackDialog
 
 
 class GameActionsManager:
-    """
-    Gestiona las acciones del juego como atacar y finalizar turno.
+    """Gestiona las acciones del juego como atacar y finalizar turno.
 
     Esta clase se encarga de manejar la lógica de las acciones principales
     del juego, incluyendo validaciones, diálogos de confirmación y
@@ -25,11 +23,11 @@ class GameActionsManager:
     """
 
     def __init__(self, main_window: Any):
-        """
-        Inicializa el gestor de acciones de juego.
+        """Inicializa el gestor de acciones de juego.
 
         Args:
             main_window: Referencia a la ventana principal (Gui)
+
         """
         self.main_window = main_window
 
@@ -104,14 +102,14 @@ class GameActionsManager:
             print("No se pudo finalizar el turno: transmisor no disponible")
 
     def get_max_attack_units(self, pais: str) -> int:
-        """
-        Obtiene el máximo número de unidades disponibles para atacar desde un país.
+        """Obtiene el máximo número de unidades disponibles para atacar desde un país.
 
         Args:
             pais (str): Nombre del país atacante
 
         Returns:
             int: Máximo número de unidades disponibles (1-3)
+
         """
         # Buscar el país en la escena para obtener sus unidades
         scene = getattr(self.main_window, "scene", None)

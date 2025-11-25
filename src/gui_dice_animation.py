@@ -1,6 +1,4 @@
-"""
-Diálogo de animación de dados para mostrar los resultados de batalla.
-"""
+"""Diálogo de animación de dados para mostrar los resultados de batalla."""
 
 from __future__ import annotations
 
@@ -23,7 +21,14 @@ from PySide6.QtWidgets import (
 class DiceWidget(QWidget):
     """Widget que representa un dado con animación."""
 
-    def __init__(self, final_value: int = 1, parent: QWidget | None = None):
+    def __init__(self, final_value: int = 1, parent: QWidget | None = None) -> None:
+        """Inicializa el widget de dado.
+
+        Args:
+            final_value: Valor final que mostrará el dado (1-6).
+            parent: Widget padre (opcional).
+
+        """
         super().__init__(parent)
         self.setFixedSize(60, 60)
         self._current_value = 1
@@ -129,7 +134,14 @@ class BattleResultDialog(QDialog):
         self,
         batalla_data: dict[str, Any],
         parent: QWidget | None = None,
-    ):
+    ) -> None:
+        """Inicializa el diálogo de resultado de batalla.
+
+        Args:
+            batalla_data: Diccionario con los datos de la batalla.
+            parent: Widget padre (opcional).
+
+        """
         super().__init__(parent)
         self.batalla_data = batalla_data
         self.setWindowTitle("Resultado de Batalla")

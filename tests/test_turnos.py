@@ -1,3 +1,5 @@
+"""Tests para el módulo de turnos."""
+
 import unittest
 
 from src.server_mapa import Mapa
@@ -5,20 +7,26 @@ from src.turnos import PrimerTurno, SegundoTurno, SiguientesTurnos
 
 
 class TestPrimerTurno(unittest.TestCase):
+    """Tests para PrimerTurno."""
+
     def test_jugador_actual(self) -> None:
+        """Prueba obtener el jugador actual del primer turno."""
         primer_turno = PrimerTurno("Fulano")
         self.assertEqual(primer_turno.jugador_actual(), "Fulano")
 
     def test_cant_unidades(self) -> None:
+        """Prueba obtener la cantidad de unidades del primer turno."""
         primer_turno = PrimerTurno("Fulano")
         self.assertEqual(primer_turno.cant_unidades(), 6)
 
     def test_usar_unidad(self) -> None:
+        """Prueba usar una unidad en el primer turno."""
         primer_turno = PrimerTurno("Fulano")
         primer_turno.usar_unidad()
         self.assertEqual(primer_turno.cant_unidades(), 5)
 
     def test_agregar_unidades_generales(self) -> None:
+        """Prueba agregar unidades generales en el primer turno."""
         primer_turno = PrimerTurno("Fulano")
         cant_unidades = primer_turno.cant_unidades()
         primer_turno.agregar_unidades_generales(10)
@@ -26,20 +34,26 @@ class TestPrimerTurno(unittest.TestCase):
 
 
 class TestSegundoTurno(unittest.TestCase):
+    """Tests para SegundoTurno."""
+
     def test_jugador_actual(self) -> None:
+        """Prueba obtener el jugador actual del segundo turno."""
         segundo_turno = SegundoTurno("Fulano")
         self.assertEqual(segundo_turno.jugador_actual(), "Fulano")
 
     def test_cant_unidades(self) -> None:
+        """Prueba obtener la cantidad de unidades del segundo turno."""
         segundo_turno = SegundoTurno("Fulano")
         self.assertEqual(segundo_turno.cant_unidades(), 3)
 
     def test_usar_unidad(self) -> None:
+        """Prueba usar una unidad en el segundo turno."""
         segundo_turno = SegundoTurno("Fulano")
         segundo_turno.usar_unidad()
         self.assertEqual(segundo_turno.cant_unidades(), 2)
 
     def test_agregar_unidades_generales(self) -> None:
+        """Prueba agregar unidades generales en el segundo turno."""
         turno = SegundoTurno("Fulano")
         cant_unidades = turno.cant_unidades()
         turno.agregar_unidades_generales(10)
@@ -47,7 +61,11 @@ class TestSegundoTurno(unittest.TestCase):
 
 
 class TestSiguientesTurnos(unittest.TestCase):
+    """Tests para SiguientesTurnos."""
+
     def test_jugador_actual(self) -> None:
+        """Prueba obtener el jugador actual de los siguientes turnos."""
+
         def build_mapa() -> dict[str, list[int | str | None]]:
             return {
                 "Argentina": [5, "Africa", "Mengano"],
@@ -60,6 +78,8 @@ class TestSiguientesTurnos(unittest.TestCase):
         self.assertEqual(siguientes_turnos.jugador_actual(), "Fulano")
 
     def test_cant_unidades(self) -> None:
+        """Prueba obtener la cantidad de unidades de los siguientes turnos."""
+
         def build_mapa() -> dict[str, list[int | str | None]]:
             return {
                 "Argentina": [5, "Africa", "Mengano"],
@@ -72,6 +92,8 @@ class TestSiguientesTurnos(unittest.TestCase):
         self.assertEqual(siguientes_turnos.cant_unidades(), 3)
 
     def test_usar_unidad(self) -> None:
+        """Prueba usar una unidad en los siguientes turnos."""
+
         def build_mapa() -> dict[str, list[int | str | None]]:
             return {
                 "Argentina": [5, "Africa", "Mengano"],
@@ -85,6 +107,8 @@ class TestSiguientesTurnos(unittest.TestCase):
         self.assertEqual(siguientes_turnos.cant_unidades(), 2)
 
     def test_agregar_unidades_generales(self) -> None:
+        """Prueba agregar unidades generales en los siguientes turnos."""
+
         def build_mapa() -> dict[str, list[int | str | None]]:
             return {
                 "Argentina": [5, "Africa", "Mengano"],
@@ -99,6 +123,8 @@ class TestSiguientesTurnos(unittest.TestCase):
         self.assertEqual(turno.cant_unidades(), cant_unidades + 10)
 
     def test_usar_unidad_toda_africa_en_africa(self) -> None:
+        """Prueba usar unidad de África cuando se tiene toda África."""
+
         def build_mapa() -> dict[str, list[int | str | None]]:
             return {
                 "Argentina": [5, "Africa", "Fulano"],
@@ -113,6 +139,8 @@ class TestSiguientesTurnos(unittest.TestCase):
         self.assertEqual(siguientes_turnos.cant_unidades_africa(), unidades - 1)
 
     def test_usar_unidad_toda_europa_en_europa(self) -> None:
+        """Prueba usar unidad de Europa cuando se tiene toda Europa."""
+
         def build_mapa() -> dict[str, list[int | str | None]]:
             return {
                 "Argentina": [5, "Europa", "Fulano"],
@@ -127,6 +155,8 @@ class TestSiguientesTurnos(unittest.TestCase):
         self.assertEqual(siguientes_turnos.cant_unidades_europa(), unidades - 1)
 
     def test_usar_unidad_toda_oceania_en_oceania(self) -> None:
+        """Prueba usar unidad de Oceanía cuando se tiene toda Oceanía."""
+
         def build_mapa() -> dict[str, list[int | str | None]]:
             return {
                 "Argentina": [5, "Oceania", "Fulano"],
@@ -141,6 +171,8 @@ class TestSiguientesTurnos(unittest.TestCase):
         self.assertEqual(siguientes_turnos.cant_unidades_oceania(), unidades - 1)
 
     def test_usar_unidad_toda_asia_en_asia(self) -> None:
+        """Prueba usar unidad de Asia cuando se tiene toda Asia."""
+
         def build_mapa() -> dict[str, list[int | str | None]]:
             return {
                 "Argentina": [5, "Asia", "Fulano"],
@@ -155,6 +187,8 @@ class TestSiguientesTurnos(unittest.TestCase):
         self.assertEqual(siguientes_turnos.cant_unidades_asia(), unidades - 1)
 
     def test_usar_unidad_toda_sudamerica_en_sudamerica(self) -> None:
+        """Prueba usar unidad de Sudamérica cuando se tiene toda Sudamérica."""
+
         def build_mapa() -> dict[str, list[int | str | None]]:
             return {
                 "Argentina": [5, "Sudamerica", "Fulano"],
@@ -169,6 +203,8 @@ class TestSiguientesTurnos(unittest.TestCase):
         self.assertEqual(siguientes_turnos.cant_unidades_sudamerica(), unidades - 1)
 
     def test_usar_unidad_toda_norteamerica_en_norteamerica(self) -> None:
+        """Prueba usar unidad de Norteamérica cuando se tiene toda Norteamérica."""
+
         def build_mapa() -> dict[str, list[int | str | None]]:
             return {
                 "Argentina": [5, "Norteamerica", "Fulano"],

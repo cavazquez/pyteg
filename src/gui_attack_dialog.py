@@ -1,3 +1,5 @@
+"""Módulo para el diálogo de selección de unidades para ataque."""
+
 from __future__ import annotations
 
 from PySide6.QtCore import Qt
@@ -25,14 +27,14 @@ class AttackDialog(QDialog):
         max_unidades: int,
         parent: QWidget | None = None,
     ):
-        """
-        Inicializa el diálogo de ataque.
+        """Inicializa el diálogo de ataque.
 
         Args:
             origen (str): Nombre del país atacante
             destino (str): Nombre del país defensor
             max_unidades (int): Máximo número de unidades disponibles para atacar
             parent: Widget padre
+
         """
         super().__init__(parent)
         self.origen = origen
@@ -112,10 +114,10 @@ class AttackDialog(QDialog):
         self.cantidad_seleccionada = self.button_group.id(button)
 
     def get_cantidad_unidades(self) -> int:
-        """
-        Retorna la cantidad de unidades seleccionada.
+        """Retorna la cantidad de unidades seleccionada.
 
         Returns:
             int: Cantidad de unidades seleccionada (1-3)
+
         """
         return self.cantidad_seleccionada or 1

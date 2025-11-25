@@ -1,3 +1,5 @@
+"""Módulo para la ventana de administración del juego."""
+
 from __future__ import annotations
 
 from typing import Any
@@ -15,7 +17,15 @@ from PySide6.QtWidgets import (
 
 
 class VentanaAdmin(QWidget):
-    def __init__(self, main_window: Any):
+    """Ventana de administración para configurar parámetros de la partida."""
+
+    def __init__(self, main_window: Any) -> None:
+        """Inicializa la ventana de administración.
+
+        Args:
+            main_window: Ventana principal de la aplicación.
+
+        """
         super().__init__()
         self.main_window = main_window
         self.setWindowTitle("Admin")
@@ -99,6 +109,7 @@ class VentanaAdmin(QWidget):
         self.countries_label.setEnabled(enabled)
 
     def empezar(self) -> None:
+        """Inicia la partida con la configuración ingresada."""
         # Leer y validar los segundos ingresados
         segundos = None
         if self.seconds_input.text().strip():

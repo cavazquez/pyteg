@@ -1,5 +1,4 @@
-"""
-Sistema de logging profesional para PyTeg.
+"""Sistema de logging profesional para PyTeg.
 
 Este módulo proporciona un sistema de logging unificado para servidor y cliente,
 basado en el módulo logging estándar de Python.
@@ -25,11 +24,10 @@ from pathlib import Path
 
 
 class PyTegLogger:
-    """
-    Logger personalizado para PyTeg que maneja servidor y cliente por separado.
-    """
+    """Logger personalizado para PyTeg que maneja servidor y cliente por separado."""
 
     def __init__(self) -> None:
+        """Inicializa el sistema de logging de PyTeg."""
         self._loggers: dict[str, logging.Logger] = {}
         self._setup_directories()
 
@@ -57,6 +55,7 @@ class PyTegLogger:
 
         Returns:
             dict: max_bytes, backup_count, max_total_mb, max_days, max_client_files
+
         """
 
         def _env_int(name: str, default: int) -> int:
@@ -117,11 +116,11 @@ class PyTegLogger:
             total = sum(self._safe_size(p) for p in files)
 
     def _determine_process_type(self) -> str:
-        """
-        Determina el tipo de proceso basado en los argumentos del script.
+        """Determina el tipo de proceso basado en los argumentos del script.
 
         Returns:
             str: 'server', 'client', o 'unknown'
+
         """
         if len(sys.argv) > 0:
             script_name = Path(sys.argv[0]).name.lower()
@@ -132,14 +131,14 @@ class PyTegLogger:
         return "unknown"
 
     def _create_formatter(self, process_type: str) -> logging.Formatter:
-        """
-        Crea un formateador para los logs.
+        """Crea un formateador para los logs.
 
         Args:
             process_type: Tipo de proceso ('server', 'client', 'unknown')
 
         Returns:
             logging.Formatter: Formateador configurado
+
         """
         pid = os.getpid()
         format_string = (
@@ -152,13 +151,13 @@ class PyTegLogger:
     def _setup_file_handler(
         self, logger: logging.Logger, filename: str, process_type: str
     ) -> None:
-        """
-        Configura el handler de archivo con rotación.
+        """Configura el handler de archivo con rotación.
 
         Args:
             logger: Logger a configurar
             filename: Nombre del archivo de log
             process_type: Tipo de proceso
+
         """
         log_dir = Path(os.getenv("PYTEG_LOG_DIR", "logs"))
         log_dir.mkdir(exist_ok=True)
@@ -178,12 +177,12 @@ class PyTegLogger:
         logger.addHandler(file_handler)
 
     def _setup_console_handler(self, logger: logging.Logger, process_type: str) -> None:
-        """
-        Configura el handler de consola.
+        """Configura el handler de consola.
 
         Args:
             logger: Logger a configurar
             process_type: Tipo de proceso
+
         """
         console_handler = logging.StreamHandler(sys.stdout)
         console_handler.setFormatter(self._create_formatter(process_type))
@@ -193,14 +192,14 @@ class PyTegLogger:
         logger.addHandler(console_handler)
 
     def get_logger(self, name: str | None = None) -> logging.Logger:
-        """
-        Obtiene un logger configurado para el contexto actual.
+        """Obtiene un logger configurado para el contexto actual.
 
         Args:
             name: Nombre del logger (opcional, usa el módulo llamador por defecto)
 
         Returns:
             logging.Logger: Logger configurado
+
         """
         if name is None:
             # Obtener el nombre del módulo llamador
@@ -236,11 +235,11 @@ class PyTegLogger:
         return logger
 
     def set_console_level(self, level: int) -> None:
-        """
-        Cambia el nivel de logging para la consola en todos los loggers.
+        """Cambia el nivel de logging para la consola en todos los loggers.
 
         Args:
             level: Nivel de logging (logging.DEBUG, INFO, WARNING, etc.)
+
         """
         for logger in self._loggers.values():
             for handler in logger.handlers:
@@ -251,11 +250,11 @@ class PyTegLogger:
                     handler.setLevel(level)
 
     def set_file_level(self, level: int) -> None:
-        """
-        Cambia el nivel de logging para archivos en todos los loggers.
+        """Cambia el nivel de logging para archivos en todos los loggers.
 
         Args:
             level: Nivel de logging (logging.DEBUG, INFO, WARNING, etc.)
+
         """
         for logger in self._loggers.values():
             for handler in logger.handlers:
@@ -269,8 +268,7 @@ _pyteg_logger = PyTegLogger()
 
 # Función de conveniencia para obtener un logger
 def get_logger(name: str | None = None) -> logging.Logger:
-    """
-    Obtiene un logger configurado para PyTeg.
+    """Obtiene un logger configurado para PyTeg.
 
     Args:
         name: Nombre del logger (opcional)
@@ -284,6 +282,7 @@ def get_logger(name: str | None = None) -> logging.Logger:
         >>> logger.info("Mensaje de información")
         >>> logger.warning("Mensaje de advertencia")
         >>> logger.error("Mensaje de error")
+
     """
     return _pyteg_logger.get_logger(name)
 
@@ -307,12 +306,12 @@ def set_file_level(level: int) -> None:
 def configure_logging(
     console_level: int = logging.WARNING, file_level: int = logging.INFO
 ) -> None:
-    """
-    Configura los niveles de logging globalmente.
+    """Configura los niveles de logging globalmente.
 
     Args:
         console_level: Nivel para salida de consola
         file_level: Nivel para archivos de log
+
     """
     set_console_level(console_level)
     set_file_level(file_level)

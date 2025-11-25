@@ -1,3 +1,5 @@
+"""Módulo principal de la interfaz gráfica del juego."""
+
 from __future__ import annotations
 
 import contextlib
@@ -45,7 +47,15 @@ if TYPE_CHECKING:
 
 
 class Gui(QMainWindow):
+    """Ventana principal de la interfaz gráfica del juego."""
+
     def __init__(self, client: Client) -> None:  # noqa: PLR0915
+        """Inicializa la ventana principal de la GUI.
+
+        Args:
+            client: Cliente del juego.
+
+        """
         super().__init__()
         self._vivo = True
         self.client = client
@@ -219,16 +229,27 @@ class Gui(QMainWindow):
         self.show()  # IMPORTANT!!!!! Windows are hidden by default.
 
     def vivo(self) -> bool:
+        """Verifica si la ventana está activa.
+
+        Returns:
+            True si la ventana está activa, False en caso contrario.
+
+        """
         return self._vivo
 
     def update_player_list(self, players: Sequence[tuple[str, QColor]]) -> None:
-        """
-        Only shows players that are actually playing.
-        :param players: List of tuples (name, color) where color is a QColor.
+        """Actualiza la lista de jugadores.
+
+        Solo muestra los jugadores que están realmente jugando.
+
+        Args:
+            players: Lista de tuplas (nombre, color) donde color es un QColor.
+
         """
         self.players_manager.update_player_list(players)
 
     def abrir_ventana_conectar(self) -> None:
+        """Abre la ventana de conexión al servidor."""
         # Cancelar selección al abrir ventana de conexión
         if self.scene and hasattr(self.scene, "selection_manager"):
             self.scene.selection_manager.cancelar_seleccion()
@@ -240,12 +261,14 @@ class Gui(QMainWindow):
         self.ventana_conectar.show()
 
     def ventana_admin(self) -> None:
+        """Abre la ventana de administración."""
         self.w = None
         self.w = VentanaAdmin(self)
         if self.w is not None:
             self.w.show()
 
     def ventana_esperar_jugadores(self) -> None:
+        """Abre la ventana de espera de jugadores."""
         print("=== Iniciando ventana_esperar_jugadores ===")
         print("Creando nueva ventana de espera...")
         self.w = VentanaEsperarJugadores(self)
@@ -283,6 +306,7 @@ class Gui(QMainWindow):
             jugador_actual_id (int, optional): ID del jugador actual
             jugador_actual_nombre (str, optional): Nombre del jugador actual
             jugador_actual_color (str, optional): Color del jugador actual
+
         """
         self._turno_actual = num_turno
         self._jugador_actual_id = jugador_actual_id
@@ -302,6 +326,7 @@ class Gui(QMainWindow):
         Args:
             text (str): The message to display in the status bar
             color (str, optional): Color for the text (e.g., 'green', 'red', '#ff0000')
+
         """
         self.status_manager.update_status_bar(text, color)
 
@@ -311,6 +336,7 @@ class Gui(QMainWindow):
         Args:
             text (str): The timer text to display
             color (str, optional): Color for the text
+
         """
         if color:
             self.timer_label.setStyleSheet(
@@ -329,6 +355,7 @@ class Gui(QMainWindow):
 
         Args:
             estado (str): The current game state
+
         """
         self.status_manager.update_game_state(estado)
 
@@ -345,10 +372,17 @@ class Gui(QMainWindow):
         Args:
             unidades (dict): Diccionario con el tipo de unidad y la cantidad disponible.
                 Ejemplo: {"infanteria": 5, "misiles": 2, "Africa": 3}
+
         """
         self.units_manager.update_unidades_disponibles(unidades)
 
     def keyPressEvent(self, event: QKeyEvent) -> None:  # noqa: N802
+        """Maneja eventos de teclado.
+
+        Args:
+            event: Evento de teclado.
+
+        """
         if event.key() in {Qt.Key.Key_Enter, Qt.Key.Key_Return} and self.chat:
             self.chat.send_message()
         elif (
@@ -360,6 +394,12 @@ class Gui(QMainWindow):
             self.scene.selection_manager.cancelar_seleccion()
 
     def closeEvent(self, _: QCloseEvent) -> None:  # noqa: N802
+        """Maneja el evento de cierre de la ventana.
+
+        Args:
+            _: Evento de cierre (no usado).
+
+        """
         self._vivo = False
         # Limpiar recursos del gestor de sonidos
         self.sound_manager.cleanup()
@@ -373,14 +413,14 @@ class Gui(QMainWindow):
         self.game_actions_manager.atacar()
 
     def get_max_attack_units(self, pais: str) -> int:
-        """
-        Obtiene el máximo número de unidades disponibles para atacar desde un país.
+        """Obtiene el máximo número de unidades disponibles para atacar desde un país.
 
         Args:
             pais (str): Nombre del país atacante
 
         Returns:
             int: Máximo número de unidades disponibles (1-3)
+
         """
         return self.game_actions_manager.get_max_attack_units(pais)
 
@@ -389,6 +429,7 @@ class Gui(QMainWindow):
 
         Args:
             pais (str): Nombre del país donde canjear el misil
+
         """
         if self.transmisor:
             self.transmisor.canjear_misil(pais)
@@ -400,6 +441,7 @@ class Gui(QMainWindow):
         Args:
             pais_origen (str): País desde donde se lanza el misil
             pais_destino (str): País objetivo del misil
+
         """
         if self.transmisor:
             self.transmisor.lanzar_misil(pais_origen, pais_destino)
@@ -416,14 +458,14 @@ class Gui(QMainWindow):
         objetivos_secretos: bool = False,
         misiles_habilitados: bool = False,
     ) -> None:
-        """
-        Establece la configuración de la partida.
+        """Establece la configuración de la partida.
 
         Args:
             segundos_por_turno (int): Duración de cada turno en segundos
             paises_para_victoria (int): Número de países necesarios para ganar
             objetivos_secretos (bool): Si los objetivos secretos están activados
             misiles_habilitados (bool): Si el sistema de misiles está habilitado
+
         """
         self._segundos_por_turno = segundos_por_turno
         self._paises_para_victoria = paises_para_victoria
@@ -435,9 +477,7 @@ class Gui(QMainWindow):
         self._objetivo_secreto_descripcion = None
 
     def mostrar_configuracion_partida(self) -> None:
-        """
-        Muestra la ventana de configuración de la partida.
-        """
+        """Muestra la ventana de configuración de la partida."""
         dialog = ConfiguracionDialog(
             self,
             self._segundos_por_turno,
@@ -448,11 +488,11 @@ class Gui(QMainWindow):
         dialog.exec()
 
     def on_language_changed(self, lang_code: str) -> None:
-        """
-        Maneja el cambio de idioma actualizando todos los componentes de la GUI.
+        """Maneja el cambio de idioma actualizando todos los componentes de la GUI.
 
         Args:
             lang_code (str): Código del nuevo idioma (ej: 'es', 'en')
+
         """
         # Actualizar título de la ventana
         self.setWindowTitle(_("PyTeg"))
@@ -487,12 +527,12 @@ class Gui(QMainWindow):
     def set_objetivo_secreto(
         self, objetivo_id: str | None, descripcion: str | None
     ) -> None:
-        """
-        Establece el objetivo secreto del jugador.
+        """Establece el objetivo secreto del jugador.
 
         Args:
             objetivo_id (str): ID del objetivo secreto
             descripcion (str): Descripción del objetivo secreto
+
         """
         self._objetivo_secreto_id = objetivo_id
         self._objetivo_secreto_descripcion = descripcion

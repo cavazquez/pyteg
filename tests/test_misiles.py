@@ -1,3 +1,5 @@
+"""Tests para la funcionalidad de misiles en el mapa."""
+
 import unittest
 
 from src.server_mapa import Mapa
@@ -222,9 +224,9 @@ class TestMisiles(unittest.TestCase):
         self.assertEqual(mapa.calcular_distancia("A", "F"), 3)
 
     def test_transferencia_misiles_con_conquista(self) -> None:
-        """
-        Verifica que los misiles permanecen en el país cuando es conquistado.
-        (Los misiles pasan al nuevo dueño automáticamente ya que son parte del país)
+        """Verifica que los misiles permanecen en el país cuando es conquistado.
+
+        (Los misiles pasan al nuevo dueño automáticamente ya que son parte del país).
         """
 
         def build_mapa() -> dict[str, list[int | str | list[str]]]:
