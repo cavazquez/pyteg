@@ -9,6 +9,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, Protocol
 
 if TYPE_CHECKING:
+    from src.protocols import IGameProtocol, IMapProtocol
     from src.server_game import Game
     from src.server_mapa import Mapa
 
@@ -59,8 +60,8 @@ class GameContext:
 
     def __init__(
         self,
-        mapa: Mapa,
-        game: Game | None,
+        mapa: Mapa | IMapProtocol,
+        game: Game | IGameProtocol | None,
         server: ServerLike,
     ) -> None:
         """Inicializa el contexto del juego.
@@ -76,7 +77,7 @@ class GameContext:
         self._server = server
 
     @property
-    def mapa(self) -> Mapa:
+    def mapa(self) -> Mapa | IMapProtocol:
         """Obtiene el mapa del juego.
 
         Returns:
@@ -86,7 +87,7 @@ class GameContext:
         return self._mapa
 
     @property
-    def game(self) -> Game | None:
+    def game(self) -> Game | IGameProtocol | None:
         """Obtiene el juego actual.
 
         Returns:
