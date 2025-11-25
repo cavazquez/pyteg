@@ -4,6 +4,10 @@ Widget de control de sonido para PyTeg.
 Proporciona controles para ajustar el volumen y activar/desactivar sonidos.
 """
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QHBoxLayout,
@@ -15,11 +19,18 @@ from PySide6.QtWidgets import (
 
 from src.i18n import translate as _
 
+if TYPE_CHECKING:
+    from src.sound_manager import SoundManager
+
 
 class SoundControlWidget(QWidget):
     """Widget para controlar el volumen y estado de los sonidos."""
 
-    def __init__(self, sound_manager, parent=None):
+    def __init__(
+        self,
+        sound_manager: SoundManager,
+        parent: QWidget | None = None,
+    ):
         """
         Inicializa el widget de control de sonido.
 
@@ -62,7 +73,7 @@ class SoundControlWidget(QWidget):
         layout.addWidget(self.volume_label)
 
         # Slider de volumen
-        self.volume_slider = QSlider(Qt.Horizontal)
+        self.volume_slider = QSlider(Qt.Orientation.Horizontal)
         self.volume_slider.setMinimum(0)
         self.volume_slider.setMaximum(100)
         self.volume_slider.setValue(int(sound_manager.get_volume() * 100))
@@ -94,19 +105,21 @@ class SoundControlWidget(QWidget):
         self.percentage_label = QLabel("50%")
         self.percentage_label.setFixedWidth(35)
         self.percentage_label.setStyleSheet("color: #555; font-size: 11px;")
-        self.percentage_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+        self.percentage_label.setAlignment(
+            Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
+        )
         layout.addWidget(self.percentage_label)
 
         # Actualizar estado inicial
         self._update_display()
 
-    def _toggle_mute(self):
+    def _toggle_mute(self) -> None:
         """Alterna entre silenciar y activar sonidos."""
         enabled = self.sound_manager.is_enabled()
         self.sound_manager.set_enabled(not enabled)
         self._update_display()
 
-    def _on_volume_changed(self, value):
+    def _on_volume_changed(self, value: int) -> None:
         """
         Maneja cambios en el slider de volumen.
 
@@ -117,7 +130,7 @@ class SoundControlWidget(QWidget):
         self.sound_manager.set_volume(volume)
         self._update_display()
 
-    def _update_display(self):
+    def _update_display(self) -> None:
         """Actualiza la visualización del estado actual."""
         # Actualizar icono del botón
         if self.sound_manager.is_enabled():

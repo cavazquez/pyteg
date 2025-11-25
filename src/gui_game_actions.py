@@ -6,6 +6,10 @@ relacionada con las acciones del juego como atacar, finalizar turno y
 cálculos de unidades disponibles para ataques.
 """
 
+from __future__ import annotations
+
+from typing import Any
+
 from PySide6.QtWidgets import QDialog
 
 from src.gui_attack_dialog import AttackDialog
@@ -20,7 +24,7 @@ class GameActionsManager:
     comunicación con el servidor.
     """
 
-    def __init__(self, main_window):
+    def __init__(self, main_window: Any):
         """
         Inicializa el gestor de acciones de juego.
 
@@ -29,7 +33,7 @@ class GameActionsManager:
         """
         self.main_window = main_window
 
-    def atacar(self):
+    def atacar(self) -> None:
         """Método llamado cuando se hace clic en el botón Atacar de la toolbar."""
         # Verificar que tenemos un selection_manager
         if not hasattr(self.main_window.scene, "selection_manager"):
@@ -68,7 +72,7 @@ class GameActionsManager:
 
             # Mostrar diálogo para seleccionar cantidad de unidades
             dialog = AttackDialog(origen, destino, max_unidades, self.main_window)
-            if dialog.exec() == QDialog.Accepted:
+            if dialog.exec() == QDialog.DialogCode.Accepted:
                 cantidad_unidades = dialog.get_cantidad_unidades()
                 self.main_window.transmisor.atacar(origen, destino, cantidad_unidades)
                 self.main_window.update_status_bar(
@@ -82,7 +86,7 @@ class GameActionsManager:
             error_msg = "Error: No hay conexión disponible"
             self.main_window.update_status_bar(error_msg, "red")
 
-    def finalizar_turno(self):
+    def finalizar_turno(self) -> None:
         """Método llamado cuando se hace clic en el botón Finalizar Turno."""
         # Aquí puedes agregar la lógica para finalizar el turno actual
         # Por ejemplo, notificar al servidor que el turno ha terminado
@@ -99,7 +103,7 @@ class GameActionsManager:
         else:
             print("No se pudo finalizar el turno: transmisor no disponible")
 
-    def get_max_attack_units(self, pais):
+    def get_max_attack_units(self, pais: str) -> int:
         """
         Obtiene el máximo número de unidades disponibles para atacar desde un país.
 
@@ -110,16 +114,17 @@ class GameActionsManager:
             int: Máximo número de unidades disponibles (1-3)
         """
         # Buscar el país en la escena para obtener sus unidades
-        scene = self.main_window.scene
-        has_paises = hasattr(scene, "paises")
-        pais_exists = pais in scene.paises if has_paises else False
-        if has_paises and pais_exists:
-            pais_widget = self.main_window.scene.paises[pais]
-            unidades_totales = pais_widget.get_unidades()
-            # Se necesita dejar al menos 1 unidad en el país
-            unidades_disponibles = max(0, unidades_totales - 1)
-            # Máximo 3 unidades para atacar
-            return min(unidades_disponibles, 3)
+        scene = getattr(self.main_window, "scene", None)
+        if scene is None or not hasattr(scene, "paises"):
+            return 0
 
-        # Si no se encuentra el país, asumir 0 unidades disponibles
-        return 0
+        paises = scene.paises
+        if pais not in paises:
+            return 0
+
+        pais_widget = paises[pais]
+        unidades_totales = pais_widget.get_unidades()
+        # Se necesita dejar al menos 1 unidad en el país
+        unidades_disponibles = max(0, unidades_totales - 1)
+        # Máximo 3 unidades para atacar
+        return min(unidades_disponibles, 3)
