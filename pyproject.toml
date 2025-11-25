@@ -107,6 +107,7 @@ module = [
   "src.sound_manager",
   "src.turno_timer",
   "src.gui_chat",
+  "src.gui_toolbar",
   "tests.test_batalla",
   "tests.test_calculos",
   "tests.test_codecs_utils",

@@ -1,10 +1,9 @@
+from __future__ import annotations
+
 from functools import partial
 
 from PySide6.QtCore import QSize, Qt
-from PySide6.QtGui import (
-    QAction,
-    QIcon,
-)
+from PySide6.QtGui import QAction, QIcon
 from PySide6.QtWidgets import (
     QApplication,
     QMenu,
@@ -24,22 +23,24 @@ class ToolBar(QToolBar):
         super().__init__(texto)
         self.setMovable(False)
         self.setFloatable(False)
-        self.setAllowedAreas(Qt.TopToolBarArea)
+        self.setAllowedAreas(Qt.ToolBarArea.TopToolBarArea)
         # Mostrar texto al lado del ícono para mejor legibilidad
-        self.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+        self.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
         self.setIconSize(QSize(24, 24))
         self.main_window = main_window
 
         # Referencias a los botones que se activan/desactivan
-        self.button_conectar = None
-        self.button_desconectar = None
-        self.button_atacar = None
-        self.button_mover = None
-        self.button_finalizar_turno = None
-        self.button_tarjetas = None
-        self.button_fullscreen = None
-        self.button_admin = None
-        self.button_reset_zoom = None
+        self.button_conectar: QAction | None = None
+        self.button_desconectar: QAction | None = None
+        self.button_atacar: QAction | None = None
+        self.button_mover: QAction | None = None
+        self.button_finalizar_turno: QAction | None = None
+        self.button_tarjetas: QAction | None = None
+        self.button_fullscreen: QAction | None = None
+        self.button_admin: QAction | None = None
+        self.button_reset_zoom: QAction | None = None
+        self.button_configuracion: QAction | None = None
+        self.size_menu: QMenu | None = None
 
         # Configurar la barra de herramientas
         self._setup_action_buttons()
@@ -53,50 +54,59 @@ class ToolBar(QToolBar):
         # Nota: lang_code se recibe para compatibilidad con la señal Qt
         del lang_code  # Suprimir warning de argumento no usado
         # Actualizar botones principales
-        if hasattr(self, "button_tarjetas"):
+        if self.button_tarjetas:
             self.button_tarjetas.setText(_("Tarjetas"))
-        self.button_conectar.setText(_("Conectar"))
-        self.button_conectar.setToolTip(_("Conectar al servidor"))
-        self.button_conectar.setStatusTip(_("Abrir ventana de conexión"))
+        if self.button_conectar:
+            self.button_conectar.setText(_("Conectar"))
+            self.button_conectar.setToolTip(_("Conectar al servidor"))
+            self.button_conectar.setStatusTip(_("Abrir ventana de conexión"))
 
-        self.button_atacar.setText(_("Atacar"))
-        self.button_atacar.setToolTip(_("Atacar país seleccionado"))
-        self.button_atacar.setStatusTip(_("Ejecutar ataque entre países seleccionados"))
+        if self.button_atacar:
+            self.button_atacar.setText(_("Atacar"))
+            self.button_atacar.setToolTip(_("Atacar país seleccionado"))
+            self.button_atacar.setStatusTip(
+                _("Ejecutar ataque entre países seleccionados")
+            )
 
-        self.button_mover.setText(_("Mover"))
-        self.button_mover.setToolTip(_("Mover unidades entre países"))
-        self.button_mover.setStatusTip(
-            _("Mover 1 unidad entre los países seleccionados")
-        )
+        if self.button_mover:
+            self.button_mover.setText(_("Mover"))
+            self.button_mover.setToolTip(_("Mover unidades entre países"))
+            self.button_mover.setStatusTip(
+                _("Mover 1 unidad entre los países seleccionados")
+            )
 
-        self.button_finalizar_turno.setText(_("Finalizar Turno"))
-        self.button_finalizar_turno.setToolTip(_("Finalizar tu turno actual"))
-        self.button_finalizar_turno.setStatusTip(
-            _("Pasar el turno al siguiente jugador")
-        )
+        if self.button_finalizar_turno:
+            self.button_finalizar_turno.setText(_("Finalizar Turno"))
+            self.button_finalizar_turno.setToolTip(_("Finalizar tu turno actual"))
+            self.button_finalizar_turno.setStatusTip(
+                _("Pasar el turno al siguiente jugador")
+            )
 
-        self.button_configuracion.setText(_("Configuración"))
-        self.button_configuracion.setToolTip(_("Ver configuración de la partida"))
-        self.button_configuracion.setStatusTip(
-            _("Mostrar duración de turno y objetivo de países")
-        )
+        if self.button_configuracion:
+            self.button_configuracion.setText(_("Configuración"))
+            self.button_configuracion.setToolTip(_("Ver configuración de la partida"))
+            self.button_configuracion.setStatusTip(
+                _("Mostrar duración de turno y objetivo de países")
+            )
 
-        self.button_fullscreen.setText(_("Pantalla Completa"))
-        self.button_fullscreen.setToolTip(_("Alternar pantalla completa"))
-        self.button_fullscreen.setStatusTip(_("Entrar/salir de pantalla completa"))
+        if self.button_fullscreen:
+            self.button_fullscreen.setText(_("Pantalla Completa"))
+            self.button_fullscreen.setToolTip(_("Alternar pantalla completa"))
+            self.button_fullscreen.setStatusTip(_("Entrar/salir de pantalla completa"))
 
-        self.button_reset_zoom.setText(_("Ajustar Mapa"))
-        self.button_reset_zoom.setToolTip(_("Ajustar mapa a la ventana"))
-        self.button_reset_zoom.setStatusTip(
-            _("Resetear zoom y ajustar mapa al tamaño de la ventana")
-        )
+        if self.button_reset_zoom:
+            self.button_reset_zoom.setText(_("Ajustar Mapa"))
+            self.button_reset_zoom.setToolTip(_("Ajustar mapa a la ventana"))
+            self.button_reset_zoom.setStatusTip(
+                _("Resetear zoom y ajustar mapa al tamaño de la ventana")
+            )
 
         # Recrear el menú de tamaños con las nuevas traducciones
         self._update_size_menu()
 
     def _update_size_menu(self):
         """Actualiza el menú de tamaños con las traducciones actuales."""
-        if hasattr(self, "size_menu"):
+        if self.size_menu:
             # Limpiar el menú actual
             self.size_menu.clear()
 
@@ -137,7 +147,10 @@ class ToolBar(QToolBar):
     def _setup_spacers_right(self):
         """Añade un expansor a la derecha para empujar elementos finales"""
         right_spacer = QWidget(self)
-        right_spacer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        right_spacer.setSizePolicy(
+            QSizePolicy.Policy.Expanding,
+            QSizePolicy.Policy.Preferred,
+        )
         self.addWidget(right_spacer)
 
     def _setup_action_buttons(self):  # noqa: PLR0915
@@ -333,7 +346,9 @@ class ToolBar(QToolBar):
         icono_resize = self._validar_icono("icons/resize.png", "botón de redimensionar")
         size_button.setIcon(icono_resize)
         size_button.setToolTip("Cambiar tamaño de la ventana")
-        size_button.setPopupMode(QToolButton.InstantPopup)
+        size_button.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
+        if self.size_menu is None:
+            self.size_menu = self._create_size_menu()
         size_button.setMenu(self.size_menu)
         size_button.setIconSize(QSize(24, 24))
 
