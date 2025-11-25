@@ -15,6 +15,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from src.config import DEFAULT_TURN_SECONDS
+
 
 class VentanaAdmin(QWidget):
     """Ventana de administración para configurar parámetros de la partida."""
@@ -39,7 +41,7 @@ class VentanaAdmin(QWidget):
         self.seconds_input.setPlaceholderText("p. ej., 30, 60, 120")
         self.seconds_input.setToolTip("Duración del turno en segundos")
         self.seconds_input.setValidator(QIntValidator(0, 3600, self))
-        self.seconds_input.setText("20")  # valor por defecto
+        self.seconds_input.setText(str(DEFAULT_TURN_SECONDS))  # valor por defecto
 
         self.seconds_layout.addWidget(self.seconds_label)
         self.seconds_layout.addWidget(self.seconds_input)

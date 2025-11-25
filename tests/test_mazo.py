@@ -2,6 +2,7 @@
 
 import unittest
 
+from src.config import MIN_CARDS_SAME_SYMBOL_FOR_EXCHANGE
 from src.mazo import Mazo
 
 
@@ -158,7 +159,10 @@ class TestMazo(unittest.TestCase):
         mazo.asignar_tarjeta(jugador)
         mazo.asignar_tarjeta(jugador)
         mazo.asignar_tarjeta(jugador)
-        self.assertFalse(mazo.simbolo_asignado_almenos_3_tarjetas(jugador)[0][1] >= 3)
+        self.assertFalse(
+            mazo.simbolo_asignado_almenos_3_tarjetas(jugador)[0][1]
+            >= MIN_CARDS_SAME_SYMBOL_FOR_EXCHANGE
+        )
 
     def test_dame_3_tarjetas_mismo_simbolo(self) -> None:
         """Prueba obtener 3 tarjetas del mismo símbolo para canje."""

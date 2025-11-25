@@ -232,9 +232,14 @@ class LanguageSelector(QWidget):
     print(f"✓ Creado selector de idioma: {selector_file}")
 
 
+# Constantes
+MIN_ARGS_REQUIRED = 2
+"""Mínimo de argumentos requeridos (script + comando)."""
+
+
 def main() -> None:
     """Función principal."""
-    if len(sys.argv) < 2:
+    if len(sys.argv) < MIN_ARGS_REQUIRED:
         print("Uso: python manage_translations.py <comando>")
         print("Comandos disponibles:")
         print("  compile    - Compilar archivos .po a .mo")

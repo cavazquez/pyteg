@@ -32,3 +32,4 @@ with contextlib.redirect_stdout(io.StringIO()):
     total = cov.report(show_missing=False)
 print(f"Total coverage: {total:.1f}%")
 PY
+

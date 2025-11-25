@@ -7,6 +7,7 @@ from typing import Any
 from PySide6.QtGui import QAction
 from PySide6.QtWidgets import QDialog, QMenu, QWidget
 
+from src.config import MISSILE_UNIT_COST
 from src.gui_attack_dialog import AttackDialog
 
 
@@ -57,7 +58,9 @@ class Menu(QMenu):
         self.action_cancelar_seleccion = QAction("Cancelar Selección", self)
 
         # Acción para canjear misil
-        self.action_canjear_misil = QAction("Canjear Misil (6 unidades)", self)
+        self.action_canjear_misil = QAction(
+            f"Canjear Misil ({MISSILE_UNIT_COST} unidades)", self
+        )
 
         # Conectar acciones a sus respectivos manejadores
         self.action_agregar_infanteria.triggered.connect(self.agregar_infanteria)
@@ -262,6 +265,6 @@ class Menu(QMenu):
             selection_manager.cancelar_seleccion()
 
     def canjear_misil(self) -> None:
-        """Canjea 6 unidades por 1 misil en el país actual."""
+        """Canjea unidades por 1 misil en el país actual."""
         if hasattr(self.main_window, "canjear_misil"):
             self.main_window.canjear_misil(self.pais)

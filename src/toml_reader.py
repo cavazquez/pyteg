@@ -11,7 +11,7 @@ class TomlReaderError(Exception):
 class TomlReader:
     """Lector y validador de archivos TOML del juego."""
 
-    def __init__(  # noqa: PLR0912, PLR0915
+    def __init__(  # noqa: PLR0912
         self,
         paises_toml_string: str,
         cartas_toml_string: str | None = None,

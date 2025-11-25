@@ -39,7 +39,7 @@ uvx mypy --ignore-missing-imports --explicit-package-bases --no-error-summary \
   --disable-error-code=no-untyped-call src/
 
 # Todo en una pasada
-./run_test.sh
+./run_tests.sh
 ```
 
 ## Política de retención de logs
@@ -98,7 +98,7 @@ Ver diagrama completo en `docs/diagrams/gui_modular_architecture.md`.
 ## Flujo de trabajo
 1. Crear rama desde `main`.
 2. Hacer cambios con commits atómicos y mensajes claros.
-3. Asegurarse de que `./run_test.sh` pase localmente.
+3. Asegurarse de que `./run_tests.sh` pase localmente.
 4. Abrir PR describiendo el cambio y motivación; enlazar issues cuando aplique.
 5. Actualizar `docs/DECISIONS.md` si hay cambios arquitectónicos; `docs/CHANGELOG.md` si es un cambio visible para usuarios.
 

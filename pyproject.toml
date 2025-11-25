@@ -33,12 +33,13 @@ ignore = [
 	"PLR0904", # too-many-public-methods 	
 	#"PLR0911", # too-many-return-statements
 	#"PLR0914", # too-many-locals
-	"PLR2004", # magic-value-comparison
 	"PLR6301", # no-self-use
 	"ERA001",  # commented-out-code
 	"C901",    # complex-structure
 	"D203",   # 
 	"D213",   #
+	"PLR0914", # too-many-locals (revisar caso por caso)
+	"PLR0915", # too-many-statements (revisar caso por caso)
 	]
 
 [dependency-groups]
@@ -52,6 +53,9 @@ dev = [
     "nuitka==2.8.6",
     "hatch==1.15.1",
     "hatch-nuitka==0.0.4",
+    "radon==6.0.1",
+    "pylint==3.3.1",
+    "bandit==1.7.9",
 ]
 
 

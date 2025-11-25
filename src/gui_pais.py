@@ -16,6 +16,7 @@ from PySide6.QtWidgets import (
     QGraphicsTextItem,
 )
 
+from src.config import TITILATION_MAX_INTENSITY
 from src.exception import ImagenNoEncontradaError
 from src.gui_circulo import Circulo
 
@@ -228,11 +229,12 @@ class Pais(QGraphicsPixmapItem):
         """Alterna la intensidad de la titilación."""
         try:
             if self._titilacion_effect:
-                # Cambiar intensidad entre 0.0 y 0.7
-                self._titilacion_intensidad += 0.35 * self._titilacion_direccion
+                # Cambiar intensidad entre 0.0 y máximo
+                step = TITILATION_MAX_INTENSITY / 2
+                self._titilacion_intensidad += step * self._titilacion_direccion
 
-                if self._titilacion_intensidad >= 0.7:
-                    self._titilacion_intensidad = 0.7
+                if self._titilacion_intensidad >= TITILATION_MAX_INTENSITY:
+                    self._titilacion_intensidad = TITILATION_MAX_INTENSITY
                     self._titilacion_direccion = -1
                 elif self._titilacion_intensidad <= 0.0:
                     self._titilacion_intensidad = 0.0

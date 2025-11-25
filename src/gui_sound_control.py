@@ -16,6 +16,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from src.config import VOLUME_MEDIUM_THRESHOLD
 from src.i18n import translate as _
 
 if TYPE_CHECKING:
@@ -136,7 +137,7 @@ class SoundControlWidget(QWidget):
             volume = self.sound_manager.get_volume()
             if volume == 0:
                 self.mute_button.setText("🔇")
-            elif volume < 0.5:
+            elif volume < VOLUME_MEDIUM_THRESHOLD:
                 self.mute_button.setText("🔉")
             else:
                 self.mute_button.setText("🔊")

@@ -345,7 +345,7 @@ class MsgCanjearMisil(IMsg):
     """Mensaje para canjear unidades por un misil."""
 
     def __init__(self, pais: str) -> None:
-        """Crea un mensaje para canjear 6 unidades por 1 misil en un país.
+        """Crea un mensaje para canjear unidades por 1 misil en un país.
 
         Args:
             pais: Nombre del país donde se canjeará el misil.

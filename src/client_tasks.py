@@ -11,6 +11,12 @@ from PySide6.QtWidgets import QMessageBox
 
 from src.client import Client
 from src.client_color import Color
+from src.config import (
+    DEFAULT_TURN_SECONDS,
+    DEFAULT_VICTORY_COUNTRIES,
+    TIMER_COLOR_GREEN_THRESHOLD,
+    TIMER_COLOR_ORANGE_THRESHOLD,
+)
 from src.gui_dice_animation import BattleResultDialog
 from src.gui_tarjetas_dialog import TarjetasDialog
 from src.logger import get_logger
@@ -371,9 +377,9 @@ class ClientTaskTiempo(IClientTask):
         # Mostrar el tiempo restante en el widget dedicado del lado derecho
         if tiempo > 0:
             # Determinar color basado en tiempo restante
-            if tiempo > 20:  # Mucho tiempo - Verde
+            if tiempo > TIMER_COLOR_GREEN_THRESHOLD:
                 color = "green"
-            elif tiempo > 10:  # Poco tiempo - Amarillo/Naranja
+            elif tiempo > TIMER_COLOR_ORANGE_THRESHOLD:
                 color = "orange"
             else:  # Muy poco tiempo - Rojo
                 color = "red"
@@ -877,8 +883,10 @@ class ClientTaskConfiguracionPartida(IClientTask):
 
         """
         super().__init__(data)
-        self._segundos_por_turno = data.get("segundos_por_turno", 20)
-        self._paises_para_victoria = data.get("paises_para_victoria", 30)
+        self._segundos_por_turno = data.get("segundos_por_turno", DEFAULT_TURN_SECONDS)
+        self._paises_para_victoria = data.get(
+            "paises_para_victoria", DEFAULT_VICTORY_COUNTRIES
+        )
         self._objetivos_secretos = data.get("objetivos_secretos", False)
         self._misiles_habilitados = data.get("misiles_habilitados", False)
 

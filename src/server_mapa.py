@@ -6,6 +6,12 @@ from collections.abc import Callable
 from random import shuffle
 from typing import Any
 
+from src.config import (
+    MISSILE_DAMAGE_DISTANCE_1,
+    MISSILE_DAMAGE_DISTANCE_2,
+    MISSILE_DAMAGE_DISTANCE_3,
+)
+
 
 class Mapa:
     """Representa el mapa del juego con países, continentes y jugadores."""
@@ -269,78 +275,6 @@ class Mapa:
             jugador, continente
         ) == self.cantidad_de_paises_por_continente(continente)
 
-    def tiene_toda_europa(self, jugador: str) -> bool:
-        """Verifica si un jugador controla toda Europa.
-
-        Args:
-            jugador: ID del jugador.
-
-        Returns:
-            True si el jugador controla toda Europa.
-
-        """
-        return self.jugador_controla_continente(jugador, "Europa")
-
-    def tiene_toda_asia(self, jugador: str) -> bool:
-        """Verifica si un jugador controla toda Asia.
-
-        Args:
-            jugador: ID del jugador.
-
-        Returns:
-            True si el jugador controla toda Asia.
-
-        """
-        return self.jugador_controla_continente(jugador, "Asia")
-
-    def tiene_toda_oceania(self, jugador: str) -> bool:
-        """Verifica si un jugador controla toda Oceanía.
-
-        Args:
-            jugador: ID del jugador.
-
-        Returns:
-            True si el jugador controla toda Oceanía.
-
-        """
-        return self.jugador_controla_continente(jugador, "Oceania")
-
-    def tiene_toda_africa(self, jugador: str) -> bool:
-        """Verifica si un jugador controla toda África.
-
-        Args:
-            jugador: ID del jugador.
-
-        Returns:
-            True si el jugador controla toda África.
-
-        """
-        return self.jugador_controla_continente(jugador, "Africa")
-
-    def tiene_toda_america_del_sur(self, jugador: str) -> bool:
-        """Verifica si un jugador controla toda Sudamérica.
-
-        Args:
-            jugador: ID del jugador.
-
-        Returns:
-            True si el jugador controla toda Sudamérica.
-
-        """
-        return self.jugador_controla_continente(jugador, "Sudamerica")
-
-    def tiene_toda_america_del_norte(self, jugador: str) -> bool:
-        """Verifica si un jugador controla toda Norteamérica.
-
-        Args:
-            jugador: ID del jugador.
-
-        Returns:
-            True si el jugador controla toda Norteamérica.
-
-        """
-        return self.jugador_controla_continente(jugador, "Norteamerica")
-
     def __str__(self) -> str:
         """Retorna representación en JSON del mapa.
 
@@ -448,10 +382,9 @@ class Mapa:
             int: Cantidad de unidades de daño (3, 2, 1, o 0 si fuera de rango)
 
         """
-        if distancia == 1:
-            return 3
-        if distancia == 2:
-            return 2
-        if distancia == 3:
-            return 1
-        return 0  # Fuera de rango
+        damage_map = {
+            1: MISSILE_DAMAGE_DISTANCE_1,
+            2: MISSILE_DAMAGE_DISTANCE_2,
+            3: MISSILE_DAMAGE_DISTANCE_3,
+        }
+        return damage_map.get(distancia, 0)  # 0 si está fuera de rango

@@ -16,6 +16,10 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from src.config import (
+    CARD_SELECTION_ORANGE_THRESHOLD,
+    CARDS_FOR_EXCHANGE,
+)
 from src.i18n import translate as _
 from src.utils import get_resource_path
 
@@ -513,7 +517,7 @@ class TarjetasDialog(QDialog):
         # Cambiar color según cantidad seleccionada
         if cantidad == 0:
             color = "#95a5a6"  # Gris
-        elif cantidad <= 2:
+        elif cantidad <= CARD_SELECTION_ORANGE_THRESHOLD:
             color = "#f39c12"  # Naranja
         else:
             color = "#27ae60"  # Verde
@@ -554,10 +558,11 @@ class TarjetasDialog(QDialog):
         cantidad = len(self.tarjetas_seleccionadas)
 
         # Reglas básicas de canje (pueden ajustarse según las reglas del juego)
-        if cantidad == 3:
+        if cantidad == CARDS_FOR_EXCHANGE:
             # Verificar si son 3 iguales o 3 diferentes
             simbolos = [tarjeta.simbolo for tarjeta in self.tarjetas_seleccionadas]
-            return len(set(simbolos)) == 1 or len(set(simbolos)) == 3
+            unique_count = len(set(simbolos))
+            return unique_count in {1, CARDS_FOR_EXCHANGE}
         if cantidad == 1:
             # Canje especial: una tarjeta si poseo el país
             return self._puede_realizar_canje_especial()

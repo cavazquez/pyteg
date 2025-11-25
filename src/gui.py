@@ -18,6 +18,7 @@ from PySide6.QtWidgets import (
 
 from src.client_transmisor import ClientNullTransmisor
 from src.cliente_colores import Colores
+from src.config import DEFAULT_TURN_SECONDS, DEFAULT_VICTORY_COUNTRIES
 from src.gui_admin import VentanaAdmin
 from src.gui_conectar import VentanaConectar
 from src.gui_configuracion_dialog import ConfiguracionDialog
@@ -49,7 +50,7 @@ if TYPE_CHECKING:
 class Gui(QMainWindow):
     """Ventana principal de la interfaz gráfica del juego."""
 
-    def __init__(self, client: Client) -> None:  # noqa: PLR0915
+    def __init__(self, client: Client) -> None:
         """Inicializa la ventana principal de la GUI.
 
         Args:
@@ -92,8 +93,8 @@ class Gui(QMainWindow):
         self._jugador_actual_color: str | None = None
 
         # Initialize game configuration
-        self._segundos_por_turno = 20
-        self._paises_para_victoria = 30
+        self._segundos_por_turno = DEFAULT_TURN_SECONDS
+        self._paises_para_victoria = DEFAULT_VICTORY_COUNTRIES
         self._objetivos_secretos = False
         self.misiles_habilitados = False
 
@@ -425,7 +426,7 @@ class Gui(QMainWindow):
         return self.game_actions_manager.get_max_attack_units(pais)
 
     def canjear_misil(self, pais: str) -> None:
-        """Canjea 6 unidades por 1 misil en el país especificado.
+        """Canjea unidades por 1 misil en el país especificado.
 
         Args:
             pais (str): Nombre del país donde canjear el misil

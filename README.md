@@ -142,7 +142,7 @@ uvx coverage run --branch -m unittest
 uvx coverage report -m
 
 # Todo en una pasada
-./run_test.sh
+./run_tests.sh
 ```
 
 ## Logs y retención

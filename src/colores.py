@@ -5,6 +5,8 @@ from __future__ import annotations
 import json
 from abc import ABC, abstractmethod
 
+from src.config import HEX_COLOR_LENGTH, RGB_MAX_VALUE
+
 
 class IColor(ABC):
     """Interfaz abstracta para representar colores RGB."""
@@ -80,8 +82,8 @@ class IColor(ABC):
 
     @staticmethod
     def _validate_rgb(r: int, g: int, b: int) -> None:
-        if not all(isinstance(v, int) and 0 <= v <= 255 for v in (r, g, b)):
-            msg = "Los valores RGB deben ser enteros entre 0 y 255"
+        if not all(isinstance(v, int) and 0 <= v <= RGB_MAX_VALUE for v in (r, g, b)):
+            msg = f"Los valores RGB deben ser enteros entre 0 y {RGB_MAX_VALUE}"
             raise ValueError(msg)
 
     @classmethod
@@ -114,8 +116,8 @@ class IColor(ABC):
 
         """
         hex_value = hex_value.lstrip("#")
-        if len(hex_value) != 6:
-            msg = "El valor hexadecimal debe tener 6 caracteres"
+        if len(hex_value) != HEX_COLOR_LENGTH:
+            msg = f"El valor hexadecimal debe tener {HEX_COLOR_LENGTH} caracteres"
             raise ValueError(msg)
         r, g, b = tuple(int(hex_value[i : i + 2], 16) for i in (0, 2, 4))
         return cls(r, g, b)
