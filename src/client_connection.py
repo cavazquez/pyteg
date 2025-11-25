@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 import json
+from typing import Any
 
 from PySide6.QtNetwork import QAbstractSocket, QTcpSocket
 from PySide6.QtWidgets import QMessageBox, QWidget
@@ -9,7 +12,13 @@ from src.codecs_utils import Utf8
 
 
 class ConnectionClient(QWidget):
-    def __init__(self, main_window, host="127.0.0.1", port=65432, username="Usuario"):
+    def __init__(
+        self,
+        main_window: Any,
+        host: str = "127.0.0.1",
+        port: int = 65432,
+        username: str = "Usuario",
+    ):
         super().__init__()
         self._host = host
         self._port = port
@@ -35,10 +44,10 @@ class ConnectionClient(QWidget):
         # Usar el transmisor de main_window
         self._main_window.transmisor.set_username(self._username)
 
-    def esta_conectado(self):
+    def esta_conectado(self) -> bool:
         print("Estoy conectado?")
         print(f"{self._socket.state()}")
-        return self._socket.state() == QAbstractSocket.ConnectedState
+        return self._socket.state() == QAbstractSocket.SocketState.ConnectedState
 
     def get_main_window(self):
         """Obtiene la ventana principal."""
@@ -81,19 +90,19 @@ class ConnectionClient(QWidget):
                                 self._main_window, "Mensaje del servidor", data
                             )
 
-    def on_state_changed(self, state):
-        if state == QAbstractSocket.HostLookupState:
+    def on_state_changed(self, state: QAbstractSocket.SocketState) -> None:
+        if state == QAbstractSocket.SocketState.HostLookupState:
             print("Resolviendo el nombre del host...")
-        elif state == QAbstractSocket.ConnectingState:
+        elif state == QAbstractSocket.SocketState.ConnectingState:
             print("Conectando...")
-        elif state == QAbstractSocket.ConnectedState:
+        elif state == QAbstractSocket.SocketState.ConnectedState:
             print("Conectado.")
             self._main_window.transmisor = ClientTransmisor(self)
             self._main_window.ventana_conectar.close()
             # Actualizar estado de botones en la toolbar
             if hasattr(self._main_window, "toolbar"):
                 self._main_window.toolbar.actualizar_estado_conexion(conectado=True)
-        elif state == QAbstractSocket.UnconnectedState:
+        elif state == QAbstractSocket.SocketState.UnconnectedState:
             print("Desconectado.")
             # Reproducir sonido de desconexión
             if hasattr(self._main_window, "sound_manager"):
@@ -105,9 +114,9 @@ class ConnectionClient(QWidget):
         else:
             print(f"Estado desconocido: {state}")
 
-    def desconectar(self):
+    def desconectar(self) -> None:
         """Desconecta el cliente del servidor."""
-        if self._socket.state() == QAbstractSocket.ConnectedState:
+        if self._socket.state() == QAbstractSocket.SocketState.ConnectedState:
             self._socket.disconnectFromHost()
             print("Desconectando del servidor...")
 

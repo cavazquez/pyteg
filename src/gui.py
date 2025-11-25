@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 import contextlib
+from typing import TYPE_CHECKING
 
 from PySide6.QtCore import QSize, Qt
 from PySide6.QtWidgets import (
@@ -29,6 +32,12 @@ from src.gui_units_manager import UnitsManager
 from src.i18n import translate as _
 from src.sound_manager import SoundManager
 
+if TYPE_CHECKING:
+    from src.gui_chat import Chat
+    from src.gui_scene import QCustomGraphicsScene
+    from src.gui_toolbar import ToolBar
+    from src.gui_view import QCustomGraphicsView
+
 
 class Gui(QMainWindow):
     def __init__(self, client):  # noqa: PLR0915
@@ -40,8 +49,12 @@ class Gui(QMainWindow):
         self.client_by_id = {}
         self.transmisor = ClientNullTransmisor()
         self.conexion = None
-        self.w = None
-        self.ventana_conectar = None
+        self.w: QWidget | None = None
+        self.ventana_conectar: VentanaConectar | None = None
+        self.scene: QCustomGraphicsScene | None = None
+        self.view: QCustomGraphicsView | None = None
+        self.chat: Chat | None = None
+        self.toolbar: ToolBar | None = None
         self.setWindowTitle(_("PyTeg"))
         # self.setFixedSize(QSize(800, 600))
         self.resize(QSize(1280, 800))
@@ -99,8 +112,8 @@ class Gui(QMainWindow):
 
         # Separator
         sep1 = QFrame()
-        sep1.setFrameShape(QFrame.VLine)
-        sep1.setFrameShadow(QFrame.Sunken)
+        sep1.setFrameShape(QFrame.Shape.VLine)
+        sep1.setFrameShadow(QFrame.Shadow.Sunken)
         self.status_bar.addPermanentWidget(sep1)
 
         # Add a widget for "My Player" info
@@ -133,8 +146,8 @@ class Gui(QMainWindow):
 
         # Separator
         sep2 = QFrame()
-        sep2.setFrameShape(QFrame.VLine)
-        sep2.setFrameShadow(QFrame.Sunken)
+        sep2.setFrameShape(QFrame.Shape.VLine)
+        sep2.setFrameShadow(QFrame.Shadow.Sunken)
         self.status_bar.addPermanentWidget(sep2)
 
         # Add a label for the game state
@@ -145,8 +158,8 @@ class Gui(QMainWindow):
 
         # Separator
         sep3 = QFrame()
-        sep3.setFrameShape(QFrame.VLine)
-        sep3.setFrameShadow(QFrame.Sunken)
+        sep3.setFrameShape(QFrame.Shape.VLine)
+        sep3.setFrameShadow(QFrame.Shadow.Sunken)
         self.status_bar.addPermanentWidget(sep3)
 
         # Add a label for country selection
@@ -156,8 +169,8 @@ class Gui(QMainWindow):
 
         # Separator
         sep4 = QFrame()
-        sep4.setFrameShape(QFrame.VLine)
-        sep4.setFrameShadow(QFrame.Sunken)
+        sep4.setFrameShape(QFrame.Shape.VLine)
+        sep4.setFrameShadow(QFrame.Shadow.Sunken)
         self.status_bar.addPermanentWidget(sep4)
 
         # Add language selector
@@ -168,8 +181,8 @@ class Gui(QMainWindow):
 
         # Separator
         sep5 = QFrame()
-        sep5.setFrameShape(QFrame.VLine)
-        sep5.setFrameShadow(QFrame.Sunken)
+        sep5.setFrameShape(QFrame.Shape.VLine)
+        sep5.setFrameShadow(QFrame.Shadow.Sunken)
         self.status_bar.addPermanentWidget(sep5)
 
         # Add sound control widget
@@ -178,8 +191,8 @@ class Gui(QMainWindow):
 
         # Separator
         sep6 = QFrame()
-        sep6.setFrameShape(QFrame.VLine)
-        sep6.setFrameShadow(QFrame.Sunken)
+        sep6.setFrameShape(QFrame.Shape.VLine)
+        sep6.setFrameShadow(QFrame.Shadow.Sunken)
         self.status_bar.addPermanentWidget(sep6)
 
         # Add timer widget for countdown
@@ -190,7 +203,10 @@ class Gui(QMainWindow):
 
         # Add a stretch to push the status message to the right
         spacer = QWidget()
-        spacer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        spacer.setSizePolicy(
+            QSizePolicy.Policy.Expanding,
+            QSizePolicy.Policy.Preferred,
+        )
         self.status_bar.addPermanentWidget(spacer)
 
         self.setStatusBar(self.status_bar)
@@ -209,7 +225,7 @@ class Gui(QMainWindow):
 
     def abrir_ventana_conectar(self):
         # Cancelar selección al abrir ventana de conexión
-        if hasattr(self.scene, "selection_manager"):
+        if self.scene and hasattr(self.scene, "selection_manager"):
             self.scene.selection_manager.cancelar_seleccion()
 
         # Mantener referencia persistente para conexión al selector de idioma
@@ -221,7 +237,8 @@ class Gui(QMainWindow):
     def ventana_admin(self):
         self.w = None
         self.w = VentanaAdmin(self)
-        self.w.show()
+        if self.w is not None:
+            self.w.show()
 
     def ventana_esperar_jugadores(self):
         print("=== Iniciando ventana_esperar_jugadores ===")
@@ -231,14 +248,15 @@ class Gui(QMainWindow):
         # Conectar la señal de cierre para limpiar la referencia
         def limpiar_ventana():
             print("Limpiando referencia a la ventana de espera")
-            if hasattr(self, "w"):
+            if hasattr(self, "w") and self.w is not None:
                 with contextlib.suppress(Exception):
                     # Desconectar todas las señales para evitar llamadas duplicadas
                     self.w.destroyed.disconnect()
 
                 self.w = None
 
-        self.w.destroyed.connect(limpiar_ventana)
+        if self.w is not None:
+            self.w.destroyed.connect(limpiar_ventana)
 
         # Mostrar la ventana
         self.w.show()
@@ -326,9 +344,13 @@ class Gui(QMainWindow):
         self.units_manager.update_unidades_disponibles(unidades)
 
     def keyPressEvent(self, event):  # noqa: N802
-        if event.key() == Qt.Key_Enter or event.key() == Qt.Key_Return:
+        if event.key() in {Qt.Key.Key_Enter, Qt.Key.Key_Return} and self.chat:
             self.chat.send_message()
-        elif event.key() == Qt.Key_Escape and hasattr(self.scene, "selection_manager"):
+        elif (
+            event.key() == Qt.Key.Key_Escape
+            and self.scene
+            and hasattr(self.scene, "selection_manager")
+        ):
             # Cancelar selección con tecla Escape usando selection_manager
             self.scene.selection_manager.cancelar_seleccion()
 
@@ -434,17 +456,14 @@ class Gui(QMainWindow):
         self.mi_jugador_text.setText(_("Mi jugador:"))
 
         # Actualizar estados si están en valores por defecto
-        if (
-            self.estado_text.text() == "Esperando jugadores"
-            or self.estado_text.text() == "Waiting for players"
-        ):
-            self.estado_text.setText(_("Esperando jugadores"))
+        if self.estado_label.text() in {
+            "Estado: Esperando jugadores",
+            "Estado: Waiting for players",
+        }:
+            self.estado_label.setText(_("Estado: Esperando jugadores"))
 
-        if (
-            self.turno_text.text() == "Esperando turno"
-            or self.turno_text.text() == "Waiting for turn"
-        ):
-            self.turno_text.setText(_("Esperando turno"))
+        if self.turno_label.text() in {"Esperando turno", "Waiting for turn"}:
+            self.turno_label.setText(_("Esperando turno"))
 
         if self.seleccion_label.text().startswith(
             "Selección:"
@@ -452,7 +471,7 @@ class Gui(QMainWindow):
             self.seleccion_label.setText(_("Selección: Ninguna"))
 
         # Actualizar la toolbar
-        if hasattr(self, "toolbar"):
+        if self.toolbar is not None:
             self.toolbar.update_language(lang_code)
 
         # No necesitamos actualizar el selector de idioma porque ya maneja

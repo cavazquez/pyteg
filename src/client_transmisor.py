@@ -39,7 +39,7 @@ class IClientTransmisor(ABC):
         pass
 
     @abstractmethod
-    def seleccionar_color(self):
+    def seleccionar_color(self, color):
         pass
 
     @abstractmethod
@@ -160,7 +160,7 @@ class ClientNullTransmisor(IClientTransmisor):
     ):
         """No-op para el transmisor nulo."""
 
-    def seleccionar_color(self):
+    def seleccionar_color(self, _color):
         print("No estas conectado")
 
     def empezar_partida(self):
@@ -169,10 +169,10 @@ class ClientNullTransmisor(IClientTransmisor):
     def set_username(self, _):
         print("No estas conectado")
 
-    def agregar_unidad(self, **_kwargs):
+    def agregar_unidad(self, _pais, _tipo_unidad, _cantidad=1):
         print("No estas conectado")
 
-    def mover_unidad(self, **_kwargs):
+    def mover_unidad(self, _origen, _destino, _cantidad=1):
         print("No puedes mover unidades. No estas conectado.")
 
     def atacar(self, _, __, cantidad_unidades=None):  # noqa: ARG002
