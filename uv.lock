@@ -700,7 +700,7 @@ dev = [
     { name = "nuitka", specifier = "==2.8.6" },
     { name = "pyside6-stubs", specifier = "==6.7.3.0" },
     { name = "ruff", specifier = "==0.14.6" },
-    { name = "types-polib", specifier = "==1.2.0.20241221" },
+    { name = "types-polib", specifier = "==1.2.0.20250401" },
     { name = "typing-extensions", specifier = "==4.15.0" },
 ]
 
@@ -824,11 +824,11 @@ wheels = [
 
 [[package]]
 name = "types-polib"
-version = "1.2.0.20241221"
+version = "1.2.0.20250401"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/95/53/a3ac5e89a0907bb81a3fff6b8f6a3cb512d3f93481fe0aafadf0c71966cb/types_polib-1.2.0.20241221.tar.gz", hash = "sha256:9c993ad5dc8876738bc21d084023d895b0f33148727f3e8f4777589a00f5a405", size = 8864, upload-time = "2024-12-21T02:40:03.532Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/41/09/a76057d8fd2e361029c283ff1237b53ff82d6c2db43ad762f993bf4e1d87/types_polib-1.2.0.20250401.tar.gz", hash = "sha256:0a7d2cc4918680925c43ccd604c561933d98fb79a8e6dc3f6de433189c9d606d", size = 9204, upload-time = "2025-04-01T03:07:09.39Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/09/5b/d8c1dab084495d4f26b9ba62b2682edd87d8227f2fd63a5b847af399dee8/types_polib-1.2.0.20241221-py3-none-any.whl", hash = "sha256:9a91127b553aa9cbf63b89481417773bd7fa03f954a7047e376007d8ac93c7c1", size = 8481, upload-time = "2024-12-21T02:40:01.323Z" },
+    { url = "https://files.pythonhosted.org/packages/1d/37/9dedecbfec311bb4ca79a885b5d3c49c4a19273065cfadb44d261fd4cf2c/types_polib-1.2.0.20250401-py3-none-any.whl", hash = "sha256:366dc395519cf8f49d343a30e372dbe662b5621440b621cf190e455cd8436b40", size = 8564, upload-time = "2025-04-01T03:07:08.545Z" },
 ]
 
 [[package]]
