@@ -63,7 +63,7 @@ class ConnectionClient(QWidget):
         data_json = ""
         while self._socket.bytesAvailable():
             encode_datas = self._socket.readAll()
-            datas = Utf8.decode(encode_datas)
+            datas = Utf8.decode(bytes(encode_datas))
             print(f"Recibido data: {datas} \n longitud: {len(datas)}")
             for data in datas.split("\0"):
                 print(f"data: {data}")

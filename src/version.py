@@ -6,12 +6,18 @@ el archivo pyproject.toml como desde variables de entorno en tiempo
 de compilación.
 """
 
+from __future__ import annotations
+
 import importlib
 import os
 from pathlib import Path
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from types import ModuleType
 
 
-def _get_toml_loader():
+def _get_toml_loader() -> ModuleType:
     try:
         return importlib.import_module("tomllib")
     except ModuleNotFoundError:

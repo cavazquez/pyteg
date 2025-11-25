@@ -1,3 +1,8 @@
+"""Estados posibles del servidor de juego."""
+
+from __future__ import annotations
+
+
 class Estado:
     """Maneja los estados del servidor de juego."""
 
@@ -7,58 +12,49 @@ class Estado:
     JUGANDO = "JUGANDO"
     FINALIZADO = "Finalizado"
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._estado_actual = self.INICIAL
 
-    def esperar_jugadores(self):
-        """Cambia el estado a esperar jugadores."""
+    def esperar_jugadores(self) -> bool:
+        """Cambiar el estado a "esperar jugadores"."""
         if self._estado_actual == self.INICIAL:
             self._estado_actual = self.ESPERAR_JUGADORES
             return True
         return False
 
-    def empezar_partida(self):
-        """Cambia el estado a jugando."""
+    def empezar_partida(self) -> bool:
+        """Cambiar el estado a "jugando"."""
         if self._estado_actual == self.ESPERAR_JUGADORES:
             self._estado_actual = self.JUGANDO
             return True
         return False
 
-    def finalizar_partida(self):
-        """Cambia el estado a finalizado."""
+    def finalizar_partida(self) -> bool:
+        """Cambiar el estado a "finalizado"."""
         if self._estado_actual == self.JUGANDO:
             self._estado_actual = self.FINALIZADO
             return True
         return False
 
-    def estado_actual(self):
-        """Obtiene el estado actual."""
+    def estado_actual(self) -> str:
+        """Obtener el estado actual."""
         return self._estado_actual
 
-    def es_inicial(self):
-        """Verifica si el estado es inicial."""
+    def es_inicial(self) -> bool:
         return self._estado_actual == self.INICIAL
 
-    def es_esperando_jugadores(self):
-        """Verifica si el estado es esperar jugadores."""
+    def es_esperando_jugadores(self) -> bool:
         return self._estado_actual == self.ESPERAR_JUGADORES
 
-    def es_jugando(self):
-        """Verifica si el estado es jugando."""
+    def es_jugando(self) -> bool:
         return self._estado_actual == self.JUGANDO
 
-    def es_finalizado(self):
-        """Verifica si el estado es finalizado."""
+    def es_finalizado(self) -> bool:
         return self._estado_actual == self.FINALIZADO
 
     @classmethod
-    def get_acciones_validas(cls):
-        """
-        Obtiene el mapeo centralizado de acciones válidas para cada estado.
-
-        Returns:
-            Dict con las acciones válidas para cada estado
-        """
+    def get_acciones_validas(cls) -> dict[str, list[str]]:
+        """Obtener el mapeo centralizado de acciones válidas para cada estado."""
         return {
             "empezar": [cls.INICIAL],
             "empezar_partida": [cls.ESPERAR_JUGADORES],
@@ -76,15 +72,8 @@ class Estado:
             "lanzar_misil": [cls.JUGANDO],
         }
 
-    def puede_ejecutar_accion(self, accion):
-        """Verifica si una acción puede ejecutarse en el estado actual.
-
-        Args:
-            accion: Nombre de la acción a validar
-
-        Returns:
-            bool: True si la acción puede ejecutarse, False en caso contrario
-        """
+    def puede_ejecutar_accion(self, accion: str) -> bool:
+        """Verifica si una acción puede ejecutarse en el estado actual."""
         acciones_validas = self.get_acciones_validas()
         estados_permitidos = acciones_validas.get(accion, [])
         return self._estado_actual in estados_permitidos

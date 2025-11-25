@@ -87,3 +87,12 @@ onefile = true
 standalone = true
 output-dir = "dist"
 
+[[tool.mypy.overrides]]
+module = [
+  "src.version",
+  "src.tarjeta_de_pais",
+  "src.server_estado",
+  "src.client",
+]
+disallow_untyped_defs = true
+
