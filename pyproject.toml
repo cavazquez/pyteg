@@ -89,6 +89,21 @@ module = [
 ]
 check_untyped_defs = true
 
+[[tool.mypy.overrides]]
+module = [
+  "src.batalla",
+  "src.calculos",
+  "src.codecs_utils",
+  "src.colores",
+  "src.country",
+  "src.dados",
+  "src.mazo",
+  "src.turnos",
+  "src.utils",
+  "src.objetivos_secretos",
+]
+check_untyped_defs = true
+
 [build-system]
 requires = ["hatchling>=1.18", "hatch-nuitka"]
 build-backend = "hatchling.build"
