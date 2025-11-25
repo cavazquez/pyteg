@@ -2,7 +2,10 @@
 Diálogo de animación de dados para mostrar los resultados de batalla.
 """
 
+from __future__ import annotations
+
 import secrets
+from typing import Any
 
 from PySide6.QtCore import Qt, QTimer, Signal
 from PySide6.QtGui import QBrush, QColor, QFont, QPainter, QPen
@@ -20,7 +23,7 @@ from PySide6.QtWidgets import (
 class DiceWidget(QWidget):
     """Widget que representa un dado con animación."""
 
-    def __init__(self, final_value=1, parent=None):
+    def __init__(self, final_value: int = 1, parent: QWidget | None = None):
         super().__init__(parent)
         self.setFixedSize(60, 60)
         self._current_value = 1
@@ -29,7 +32,7 @@ class DiceWidget(QWidget):
         self._animation_timer = QTimer()
         self._animation_timer.timeout.connect(self._animate_step)
 
-    def start_animation(self, duration_ms=2000):
+    def start_animation(self, duration_ms: int = 2000) -> None:
         """Inicia la animación del dado."""
         self._is_animating = True
         self._animation_timer.start(100)  # Cambiar valor cada 100ms
@@ -37,13 +40,13 @@ class DiceWidget(QWidget):
         # Detener animación después del tiempo especificado
         QTimer.singleShot(duration_ms, self._stop_animation)
 
-    def _animate_step(self):
+    def _animate_step(self) -> None:
         """Paso de animación - cambia el valor del dado aleatoriamente."""
         if self._is_animating:
             self._current_value = secrets.randbelow(6) + 1
             self.update()
 
-    def _stop_animation(self):
+    def _stop_animation(self) -> None:
         """Detiene la animación y muestra el valor final."""
         self._is_animating = False
         self._animation_timer.stop()
@@ -54,7 +57,7 @@ class DiceWidget(QWidget):
         """Dibuja el dado con su valor actual."""
         del event  # Unused parameter
         painter = QPainter(self)
-        painter.setRenderHint(QPainter.Antialiasing)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
 
         # Dibujar fondo del dado
         rect = self.rect().adjusted(5, 5, -5, -5)
@@ -65,10 +68,10 @@ class DiceWidget(QWidget):
         # Dibujar puntos según el valor
         self._draw_dice_dots(painter, rect, self._current_value)
 
-    def _draw_dice_dots(self, painter, rect, value):
+    def _draw_dice_dots(self, painter: QPainter, rect, value: int) -> None:
         """Dibuja los puntos del dado según su valor."""
         painter.setBrush(QBrush(QColor(0, 0, 0)))
-        painter.setPen(Qt.NoPen)
+        painter.setPen(Qt.PenStyle.NoPen)
 
         dot_size = 6
         center_x = rect.center().x()
@@ -122,7 +125,11 @@ class BattleResultDialog(QDialog):
 
     animation_finished = Signal()
 
-    def __init__(self, batalla_data, parent=None):
+    def __init__(
+        self,
+        batalla_data: dict[str, Any],
+        parent: QWidget | None = None,
+    ):
         super().__init__(parent)
         self.batalla_data = batalla_data
         self.setWindowTitle("Resultado de Batalla")
@@ -139,7 +146,7 @@ class BattleResultDialog(QDialog):
         self._setup_ui()
         self._animation_started = False
 
-    def _setup_ui(self):
+    def _setup_ui(self) -> None:
         """Configura la interfaz del diálogo."""
         layout = QVBoxLayout(self)
         layout.setSpacing(20)
@@ -150,30 +157,30 @@ class BattleResultDialog(QDialog):
         self._setup_result_section(layout)
         self._setup_buttons_section(layout)
 
-    def _setup_title_section(self, layout):
+    def _setup_title_section(self, layout: QVBoxLayout) -> None:
         """Configura la sección de título."""
         # Título de la batalla
         title_label = QLabel(
             f"{self.batalla_data['atacante']} vs {self.batalla_data['defensor']}"
         )
-        title_label.setAlignment(Qt.AlignCenter)
-        title_label.setFont(QFont("Arial", 16, QFont.Bold))
+        title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        title_label.setFont(QFont("Arial", 16, QFont.Weight.Bold))
         layout.addWidget(title_label)
 
         # Información de países
         countries_label = QLabel(
             f"{self.batalla_data['origen']} → {self.batalla_data['destino']}"
         )
-        countries_label.setAlignment(Qt.AlignCenter)
+        countries_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         countries_label.setFont(QFont("Arial", 12))
         countries_label.setStyleSheet("color: #666666;")
         layout.addWidget(countries_label)
 
-    def _setup_dice_section(self, layout):
+    def _setup_dice_section(self, layout: QVBoxLayout) -> None:
         """Configura la sección de dados."""
         # Área de dados
         dice_frame = QFrame()
-        dice_frame.setFrameStyle(QFrame.Box)
+        dice_frame.setFrameStyle(QFrame.Shape.Box)
         dice_frame.setStyleSheet(
             "QFrame { border: 2px solid #cccccc; "
             "border-radius: 10px; background-color: #f9f9f9; }"
@@ -189,16 +196,16 @@ class BattleResultDialog(QDialog):
 
         layout.addWidget(dice_frame)
 
-    def _setup_attacker_dice(self, dice_layout):
+    def _setup_attacker_dice(self, dice_layout: QVBoxLayout) -> None:
         """Configura los dados del atacante."""
         attacker_layout = QHBoxLayout()
         attacker_label = QLabel(f"Atacante ({self.batalla_data['atacante']}):")
-        attacker_label.setFont(QFont("Arial", 10, QFont.Bold))
+        attacker_label.setFont(QFont("Arial", 10, QFont.Weight.Bold))
         attacker_label.setStyleSheet("color: #d32f2f;")
         attacker_layout.addWidget(attacker_label)
         attacker_layout.addStretch()
 
-        self.attacker_dice = []
+        self.attacker_dice: list[DiceWidget] = []
         attacker_dice_layout = QHBoxLayout()
         for value in self.batalla_data["dados_atacante"]:
             dice = DiceWidget(value)
@@ -210,16 +217,16 @@ class BattleResultDialog(QDialog):
         dice_layout.addLayout(attacker_layout)
         dice_layout.addLayout(attacker_dice_layout)
 
-    def _setup_defender_dice(self, dice_layout):
+    def _setup_defender_dice(self, dice_layout: QVBoxLayout) -> None:
         """Configura los dados del defensor."""
         defender_layout = QHBoxLayout()
         defender_label = QLabel(f"Defensor ({self.batalla_data['defensor']}):")
-        defender_label.setFont(QFont("Arial", 10, QFont.Bold))
+        defender_label.setFont(QFont("Arial", 10, QFont.Weight.Bold))
         defender_label.setStyleSheet("color: #1976d2;")
         defender_layout.addWidget(defender_label)
         defender_layout.addStretch()
 
-        self.defender_dice = []
+        self.defender_dice: list[DiceWidget] = []
         defender_dice_layout = QHBoxLayout()
         for value in self.batalla_data["dados_defensor"]:
             dice = DiceWidget(value)
@@ -231,11 +238,11 @@ class BattleResultDialog(QDialog):
         dice_layout.addLayout(defender_layout)
         dice_layout.addLayout(defender_dice_layout)
 
-    def _setup_result_section(self, layout):
+    def _setup_result_section(self, layout: QVBoxLayout) -> None:
         """Configura la sección de resultado."""
         # Área de resultado (inicialmente oculta)
         self.result_frame = QFrame()
-        self.result_frame.setFrameStyle(QFrame.Box)
+        self.result_frame.setFrameStyle(QFrame.Shape.Box)
         self.result_frame.setStyleSheet(
             "QFrame { border: 2px solid #4caf50; border-radius: 10px; "
             "background-color: #e8f5e8; }"
@@ -244,26 +251,26 @@ class BattleResultDialog(QDialog):
 
         # Resultado de la batalla
         self.result_label = QLabel()
-        self.result_label.setAlignment(Qt.AlignCenter)
-        self.result_label.setFont(QFont("Arial", 12, QFont.Bold))
+        self.result_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.result_label.setFont(QFont("Arial", 12, QFont.Weight.Bold))
         result_layout.addWidget(self.result_label)
 
         # Pérdidas
         self.losses_label = QLabel()
-        self.losses_label.setAlignment(Qt.AlignCenter)
+        self.losses_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.losses_label.setFont(QFont("Arial", 10))
         result_layout.addWidget(self.losses_label)
 
         self.result_frame.hide()
         layout.addWidget(self.result_frame)
 
-    def _setup_buttons_section(self, layout):
+    def _setup_buttons_section(self, layout: QVBoxLayout) -> None:
         """Configura la sección de botones."""
         button_layout = QHBoxLayout()
         button_layout.addStretch()
 
         self.start_button = QPushButton("Lanzar Dados")
-        self.start_button.setFont(QFont("Arial", 10, QFont.Bold))
+        self.start_button.setFont(QFont("Arial", 10, QFont.Weight.Bold))
         self.start_button.setStyleSheet(
             "QPushButton { background-color: #4caf50; color: white; "
             "border: none; padding: 10px 20px; border-radius: 5px; }"
@@ -287,7 +294,7 @@ class BattleResultDialog(QDialog):
         button_layout.addStretch()
         layout.addLayout(button_layout)
 
-    def _start_animation(self):
+    def _start_animation(self) -> None:
         """Inicia la animación de los dados."""
         if self._animation_started:
             return
@@ -304,7 +311,7 @@ class BattleResultDialog(QDialog):
         # Mostrar resultado después de la animación
         QTimer.singleShot(2500, self._show_result)
 
-    def _show_result(self):
+    def _show_result(self) -> None:
         """Muestra el resultado de la batalla."""
         # Determinar el resultado
         perdedores = self.batalla_data["resultado"]["restar"]

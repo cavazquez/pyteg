@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 import contextlib
+from typing import Any
 
 from PySide6.QtCore import QSize, Qt
 from PySide6.QtGui import QIntValidator
@@ -19,9 +22,13 @@ from src.i18n import translate as _
 
 
 class VentanaConectar(QDialog):
-    def __init__(self, main_window):
-        super().__init__()
+    def __init__(self, main_window: Any):
+        super().__init__(parent=main_window)
         self._main_window = main_window
+        self.addr: QLineEdit
+        self.port: QLineEdit
+        self.username: QLineEdit
+        self._conexion: ConnectionClient | None = None
 
         # Configurar ventana
         self._setup_window()
@@ -45,19 +52,19 @@ class VentanaConectar(QDialog):
         # Conectar al selector de idioma para cambios dinámicos
         self._connect_to_language_selector()
 
-    def _setup_window(self):
+    def _setup_window(self) -> None:
         """Configura las propiedades básicas de la ventana"""
         self.setWindowTitle(_("Conectar al servidor"))
         self.setFixedSize(QSize(400, 300))
         # Quitar botones de maximizar, minimizar y ayuda, dejando solo el de cerrar
         self.setWindowFlags(
-            Qt.Dialog
-            | Qt.CustomizeWindowHint
-            | Qt.WindowTitleHint
-            | Qt.WindowCloseButtonHint
+            Qt.WindowType.Dialog
+            | Qt.WindowType.CustomizeWindowHint
+            | Qt.WindowType.WindowTitleHint
+            | Qt.WindowType.WindowCloseButtonHint
         )
 
-    def _setup_header(self, parent_layout):
+    def _setup_header(self, parent_layout: QVBoxLayout) -> None:
         """Configura el título y la descripción"""
         # Título
         title_label = QLabel(_("Conectar a Partida"))
@@ -80,13 +87,15 @@ class VentanaConectar(QDialog):
         """)
         parent_layout.addWidget(desc_label)
 
-    def _setup_form(self, parent_layout):
+    def _setup_form(self, parent_layout: QVBoxLayout) -> None:
         """Configura el formulario con los campos de entrada"""
         # Crear layout de formulario
         form_layout = QFormLayout()
         form_layout.setSpacing(15)
-        form_layout.setLabelAlignment(Qt.AlignRight | Qt.AlignVCenter)
-        form_layout.setFormAlignment(Qt.AlignLeft)
+        form_layout.setLabelAlignment(
+            Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
+        )
+        form_layout.setFormAlignment(Qt.AlignmentFlag.AlignLeft)
 
         # Crear campos de entrada
         self._create_input_fields()
@@ -122,7 +131,7 @@ class VentanaConectar(QDialog):
 
         parent_layout.addLayout(form_layout)
 
-    def _create_input_fields(self):
+    def _create_input_fields(self) -> None:
         """Crea y estiliza los campos de entrada"""
         # Campos de entrada
         self.addr = QLineEdit("localhost")
@@ -155,7 +164,7 @@ class VentanaConectar(QDialog):
         self.port.setStyleSheet(input_style)
         self.username.setStyleSheet(input_style)
 
-    def _setup_buttons(self, parent_layout):
+    def _setup_buttons(self, parent_layout: QVBoxLayout) -> None:
         """Configura los botones de acción"""
         # Añadir espacio vertical antes de los botones
         spacer = QLabel()
@@ -190,7 +199,7 @@ class VentanaConectar(QDialog):
         # Botón conectar
         button_conectar = QPushButton(_("Conectar"))
         button_conectar.setDefault(True)
-        button_conectar.clicked.connect(self.connect)
+        button_conectar.clicked.connect(self.connect_to_server)
         button_conectar.setStyleSheet("""
             QPushButton {
                 padding: 8px 15px;
@@ -217,7 +226,7 @@ class VentanaConectar(QDialog):
 
         parent_layout.addLayout(buttons_layout)
 
-    def _apply_general_style(self):
+    def _apply_general_style(self) -> None:
         """Aplica estilos generales al diálogo"""
         self.setStyleSheet("""
             QDialog {
@@ -233,7 +242,7 @@ class VentanaConectar(QDialog):
             }
         """)
 
-    def connect(self):
+    def connect_to_server(self) -> None:
         """Intenta conectarse al servidor con los datos proporcionados"""
         try:
             addr = self.addr.text()
@@ -269,13 +278,13 @@ class VentanaConectar(QDialog):
         except (ConnectionError, OSError, ValueError) as e:
             self._show_error(_("Error al conectar: {}").format(str(e)))
 
-    def _show_error(self, message):
+    def _show_error(self, message: str) -> None:
         """Muestra un mensaje de error con estilo mejorado"""
         error_box = QMessageBox(self)
         error_box.setWindowTitle(_("Error de conexión"))
         error_box.setText(message)
-        error_box.setIcon(QMessageBox.Critical)
-        error_box.setStandardButtons(QMessageBox.Ok)
+        error_box.setIcon(QMessageBox.Icon.Critical)
+        error_box.setStandardButtons(QMessageBox.StandardButton.Ok)
 
         # Estilo para el mensaje de error
         error_box.setStyleSheet("""
@@ -302,7 +311,7 @@ class VentanaConectar(QDialog):
         """)
         error_box.exec()
 
-    def _connect_to_language_selector(self):
+    def _connect_to_language_selector(self) -> None:
         """Conecta al selector de idioma para cambios dinámicos"""
         try:
             # Conectar directamente al selector de idioma de la ventana principal
@@ -323,7 +332,7 @@ class VentanaConectar(QDialog):
         except (AttributeError, TypeError, RuntimeError) as e:
             print(f"DEBUG: Error conectando al selector de idioma: {e}")
 
-    def update_language(self):
+    def update_language(self) -> None:
         """Actualiza todos los textos de la interfaz al cambiar el idioma"""
 
         # Actualizar título de la ventana

@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import Any
+
 from PySide6.QtCore import QSize, Qt
 from PySide6.QtWidgets import (
     QHBoxLayout,
@@ -11,20 +15,20 @@ from src.gui_radio_color import GuiRadioButtonColor
 
 
 class VentanaEsperarJugadores(QWidget):
-    def __init__(self, main_window):
+    def __init__(self, main_window: Any):
         super().__init__()
         self._main_window = main_window
-        self._main_layout = None
-        self.radio_por_colores = {}
+        self._main_layout: QVBoxLayout | None = None
+        self.radio_por_colores: dict[str, GuiRadioButtonColor] = {}
         self._initialized = False
         self.inicializar_ui()
         self._initialized = True
         self.cargar_colores_asignados()
 
         # Configurar para que se elimine al cerrar
-        self.setAttribute(Qt.WA_DeleteOnClose)
+        self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
 
-    def inicializar_ui(self):
+    def inicializar_ui(self) -> None:
         self.setWindowTitle("Esperando jugadores")
         self.setFixedSize(QSize(500, 400))
 
@@ -44,7 +48,8 @@ class VentanaEsperarJugadores(QWidget):
         self.actualizar_botones_colores()
 
         # Añadir botón de "Empezar" si es admin
-        if self._main_window.client.es_admin():
+        client = getattr(self._main_window, "client", None)
+        if client is not None and hasattr(client, "es_admin") and client.es_admin():
             empezar_button = QPushButton("Empezar")
             empezar_button.setFixedSize(100, 50)
             empezar_button.clicked.connect(self.empezar_juego)
@@ -57,16 +62,21 @@ class VentanaEsperarJugadores(QWidget):
 
             self._main_layout.addLayout(button_layout)
 
-    def empezar_juego(self):
-        self._main_window.transmisor.empezar_partida()
+    def empezar_juego(self) -> None:
+        transmisor = getattr(self._main_window, "transmisor", None)
+        if transmisor is not None:
+            transmisor.empezar_partida()
 
-    def cargar_colores_asignados(self):
+    def cargar_colores_asignados(self) -> None:
         if not self._initialized:
             return
 
         print("=== Cargando colores asignados ===")
         self.limpiar()
-        colores_asignados = self._main_window.colores.colores_asignados()
+        colores_manager = getattr(self._main_window, "colores", None)
+        if colores_manager is None:
+            return
+        colores_asignados = colores_manager.colores_asignados()
         print(f"Colores asignados: {colores_asignados}")
 
         for user_id, color in colores_asignados.items():
@@ -79,11 +89,13 @@ class VentanaEsperarJugadores(QWidget):
                     print(f"  - No se encontró cliente para el ID {user_id}")
                     continue
 
-            print(f"  - Asignando usuario {client.username()} al color {color.name()}")
-            if client:
+            if client and radio:
+                print(
+                    f"  - Asignando usuario {client.username()} al color {color.name()}"
+                )
                 radio.seleccionar(f"{client.username()}")
 
-    def actualizar_botones_colores(self):
+    def actualizar_botones_colores(self) -> None:
         print("=== Actualizando botones de colores ===")
 
         # Verificar si ya hay widgets en el layout
@@ -110,10 +122,11 @@ class VentanaEsperarJugadores(QWidget):
         self.radio_por_colores.clear()
 
         # Obtener colores únicos
+        colores_manager = getattr(self._main_window, "colores", None)
+        if colores_manager is None:
+            return
         colores = list(
-            {
-                color.name(): color for color in self._main_window.colores.colores()
-            }.values()
+            {color.name(): color for color in colores_manager.colores()}.values()
         )
         print(f"  - Creando {len(colores)} botones de colores")
 
@@ -150,7 +163,6 @@ class VentanaEsperarJugadores(QWidget):
 
         print(f"  - Total de botones creados: {len(self.radio_por_colores)}")
 
-    def limpiar(self):
+    def limpiar(self) -> None:
         for radio in self.radio_por_colores.values():
-            if hasattr(radio, "limpiar"):
-                radio.limpiar()
+            radio.limpiar()
