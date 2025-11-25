@@ -26,9 +26,11 @@ class Chat(QWidget):
         self.text_field = QTextEdit()
         self.text_field.setReadOnly(True)
         self.text_field.setMinimumHeight(150)
-        self.text_field.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
-        self.text_field.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.text_field.setLineWrapMode(QTextEdit.WidgetWidth)
+        self.text_field.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
+        self.text_field.setHorizontalScrollBarPolicy(
+            Qt.ScrollBarPolicy.ScrollBarAlwaysOff
+        )
+        self.text_field.setLineWrapMode(QTextEdit.LineWrapMode.WidgetWidth)
         self.text_field.setAcceptRichText(True)
 
         # Contenedor para el input y el botón
