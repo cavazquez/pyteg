@@ -25,6 +25,9 @@ class TestServerColor(unittest.TestCase):
     def test_obtener_color_de_hexrgb(self):
         server_color = ServerColor()
         un_color = server_color.obtener_color_de_hexrgb("#ffff00")
+        self.assertIsNotNone(un_color)
+        if un_color is None:
+            self.fail("No se encontró el color esperado")
         self.assertEqual(Amarillo().to_hex(), un_color.to_hex())
         un_color = server_color.obtener_color_de_hexrgb("#123")
         self.assertIsNone(un_color)

@@ -1,3 +1,7 @@
+"""Utilidades generales del proyecto PyTeg."""
+
+from __future__ import annotations
+
 from pathlib import Path
 
 from src.toml_reader import TomlReader
@@ -7,27 +11,12 @@ BASE_DIR = Path(__file__).parent.parent
 
 
 def get_resource_path(relative_path: str) -> Path:
-    """
-    Obtiene la ruta absoluta a un recurso del proyecto.
-
-    Esta función garantiza que los recursos se encuentren tanto en desarrollo
-    como en binarios empaquetados con Nuitka.
-
-    Args:
-        relative_path: Ruta relativa desde el directorio raíz del proyecto
-
-    Returns:
-        Path: Ruta absoluta al recurso
-
-    Example:
-        >>> get_resource_path("icons/conectar.png")
-        PosixPath('/path/to/project/icons/conectar.png')
-    """
+    """Obtiene la ruta absoluta a un recurso del proyecto."""
     return BASE_DIR / relative_path
 
 
-def build_mapa(path):  # noqa: ARG001
-    # Para compatibilidad, asumimos que path es el directorio del tema
+def build_mapa(path: Path | str) -> dict[str, list[object]]:  # noqa: ARG001
+    """Construye un mapa compatible con las expectativas del servidor."""
     paises_path = get_resource_path("themes/classic/paises.toml")
     cartas_path = get_resource_path("themes/classic/cartas.toml")
     adyacencias_path = get_resource_path("themes/classic/adyacencias.toml")
