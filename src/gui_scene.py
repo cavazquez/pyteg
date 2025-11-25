@@ -1,11 +1,15 @@
+from __future__ import annotations
+
+from typing import Any
+
 from PySide6.QtCore import Qt
 from PySide6.QtGui import (
     QBrush,
     QColor,
 )
 from PySide6.QtWidgets import (
-    QGraphicsPixmapItem,
     QGraphicsScene,
+    QGraphicsSceneContextMenuEvent,
     QGraphicsSceneMouseEvent,
 )
 
@@ -19,15 +23,15 @@ from src.utils import get_resource_path
 class CountrySelectionManager:
     """Maneja la selección de países origen y destino"""
 
-    def __init__(self, main_window, scene):
+    def __init__(self, main_window: Any, scene: QCustomGraphicsScene):
         self.main_window = main_window
         self.scene = scene
-        self._pais_origen = None
-        self._pais_destino = None
-        self._pais_origen_widget = None
-        self._pais_destino_widget = None
+        self._pais_origen: str | None = None
+        self._pais_destino: str | None = None
+        self._pais_origen_widget: Pais | None = None
+        self._pais_destino_widget: Pais | None = None
 
-    def seleccionar_pais(self, nombre_pais):
+    def seleccionar_pais(self, nombre_pais: str) -> None:
         """Selecciona un país como origen o destino"""
         if self._pais_origen is None:
             # Primer clic: seleccionar como origen
@@ -51,7 +55,7 @@ class CountrySelectionManager:
             self.cancelar_seleccion()
             self.seleccionar_pais(nombre_pais)
 
-    def cancelar_seleccion(self):
+    def cancelar_seleccion(self) -> None:
         """Cancela la selección actual de países"""
         if self._pais_origen_widget:
             self._pais_origen_widget.limpiar_seleccion_visual()
@@ -64,7 +68,7 @@ class CountrySelectionManager:
         self._pais_destino_widget = None
         self._actualizar_seleccion_label()
 
-    def confirmar_seleccion(self):
+    def confirmar_seleccion(self) -> None:
         """Confirma la selección y ejecuta movimiento (acción por defecto)"""
         if (
             self._pais_origen
@@ -84,7 +88,7 @@ class CountrySelectionManager:
             # Cancelar selección después de la acción
             self.cancelar_seleccion()
 
-    def _actualizar_seleccion_label(self):
+    def _actualizar_seleccion_label(self) -> None:
         """Actualiza el label de selección en la barra de estado"""
         if hasattr(self.main_window, "seleccion_label"):
             if self._pais_origen is None:
@@ -104,15 +108,15 @@ class CountrySelectionManager:
         # Notificar a la toolbar sobre el cambio de selección
         self._actualizar_botones_toolbar()
 
-    def get_pais_origen(self):
+    def get_pais_origen(self) -> str | None:
         """Retorna el país origen seleccionado"""
         return self._pais_origen
 
-    def get_pais_destino(self):
+    def get_pais_destino(self) -> str | None:
         """Retorna el país destino seleccionado"""
         return self._pais_destino
 
-    def _actualizar_botones_toolbar(self):
+    def _actualizar_botones_toolbar(self) -> None:
         """Actualiza el estado de los botones de atacar y mover en la toolbar"""
         hay_dos_paises = (
             self._pais_origen is not None and self._pais_destino is not None
@@ -127,10 +131,10 @@ class CountrySelectionManager:
 
 
 class QCustomGraphicsScene(QGraphicsScene):
-    def __init__(self, main_window, parent=None):
+    def __init__(self, main_window: Any, parent=None):
         super().__init__(parent)
         self.main_window = main_window
-        self.paises = {}
+        self.paises: dict[str, Pais] = {}
         # Configurar fondo celeste que representa el agua/océano
         self.setBackgroundBrush(QBrush(QColor("#87CEEB")))  # Sky Blue / Celeste suave
         # Crear el manejador de selección de países
@@ -147,17 +151,12 @@ class QCustomGraphicsScene(QGraphicsScene):
         # Llamar al evento original
         super().mouseMoveEvent(event)
 
-    def mousePressEvent(self, event):  # noqa: N802
+    def mousePressEvent(self, event: QGraphicsSceneMouseEvent) -> None:  # noqa: N802
         """Maneja los clics del mouse en la escena"""
-        if event.button() == Qt.LeftButton:
+        if event.button() == Qt.MouseButton.LeftButton:
             # Verificar si se hizo clic en un área vacía (sin países)
             items = self.items(event.scenePos())
-            pais_clicked = False
-
-            for item in items:
-                if isinstance(item, QGraphicsPixmapItem) and hasattr(item, "nombre"):
-                    pais_clicked = True
-                    break
+            pais_clicked = any(isinstance(item, Pais) for item in items)
 
             # Si no se hizo clic en un país, cancelar todas las selecciones
             if not pais_clicked:
@@ -166,11 +165,11 @@ class QCustomGraphicsScene(QGraphicsScene):
         # Llamar al evento original para mantener funcionalidad existente
         super().mousePressEvent(event)
 
-    def contextMenuEvent(self, event):  # noqa: N802
+    def contextMenuEvent(self, event: QGraphicsSceneContextMenuEvent) -> None:  # noqa: N802
         # Verificar si se hizo clic derecho sobre el QGraphicsPixmapItem
         items = self.items(event.scenePos())
         for item in items:
-            if isinstance(item, QGraphicsPixmapItem):
+            if isinstance(item, Pais):
                 pais = item.nombre()
                 # Pasar explícitamente la ventana principal como padre para Wayland
                 menu = Menu(pais, self.main_window, parent=self.main_window)
