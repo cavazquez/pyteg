@@ -131,3 +131,93 @@ class GameNotStartedError(GameRuleViolationError):
 
         """
         super().__init__(mensaje)
+
+
+class MissingFieldError(GameRuleViolationError):
+    """Excepción cuando falta un campo requerido en una acción."""
+
+    def __init__(self, campo: str, mensaje: str | None = None) -> None:
+        """Inicializa la excepción.
+
+        Args:
+            campo: Nombre del campo faltante.
+            mensaje: Mensaje descriptivo del error. Si es None,
+                se genera uno automático.
+
+        """
+        if mensaje is None:
+            mensaje = f"{campo} no especificado"
+        super().__init__(mensaje)
+        self.campo = campo
+
+
+class MissilesNotEnabledError(GameRuleViolationError):
+    """Excepción cuando se intenta usar misiles pero no están habilitados."""
+
+    def __init__(
+        self, mensaje: str = "Los misiles no están habilitados en esta partida"
+    ) -> None:
+        """Inicializa la excepción.
+
+        Args:
+            mensaje: Mensaje descriptivo del error.
+
+        """
+        super().__init__(mensaje)
+
+
+class InsufficientUnitsError(GameRuleViolationError):
+    """Excepción cuando no hay suficientes unidades para una acción."""
+
+    def __init__(self, pais: str, requeridas: int, disponibles: int) -> None:
+        """Inicializa la excepción.
+
+        Args:
+            pais: Nombre del país.
+            requeridas: Cantidad de unidades requeridas.
+            disponibles: Cantidad de unidades disponibles.
+
+        """
+        mensaje = (
+            f"Necesitas al menos {requeridas} unidades en {pais}. "
+            f"Tienes {disponibles} unidades."
+        )
+        super().__init__(mensaje)
+        self.pais = pais
+        self.requeridas = requeridas
+        self.disponibles = disponibles
+
+
+class NoMissilesAvailableError(GameRuleViolationError):
+    """Excepción cuando se intenta usar un misil pero no hay disponibles."""
+
+    def __init__(self, pais: str) -> None:
+        """Inicializa la excepción.
+
+        Args:
+            pais: Nombre del país sin misiles.
+
+        """
+        mensaje = f"No tienes misiles disponibles en {pais}"
+        super().__init__(mensaje)
+        self.pais = pais
+
+
+class MissileOutOfRangeError(GameRuleViolationError):
+    """Excepción cuando un misil está fuera de rango."""
+
+    def __init__(self, distancia: int, max_distancia: int) -> None:
+        """Inicializa la excepción.
+
+        Args:
+            distancia: Distancia calculada.
+            max_distancia: Distancia máxima permitida.
+
+        """
+        mensaje = (
+            f"El misil está fuera de rango. Distancia: {distancia}, "
+            f"Máximo permitido: {max_distancia}"
+        )
+        super().__init__(mensaje)
+        self.distancia = distancia
+        self.max_distancia = max_distancia
