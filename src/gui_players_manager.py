@@ -6,9 +6,16 @@ relacionada con la visualización y gestión de la lista de jugadores
 en la interfaz gráfica principal.
 """
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
+
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor, QFont, QPainter, QPixmap
 from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 
 class PlayersManager:
@@ -19,7 +26,7 @@ class PlayersManager:
     que muestran la información de los jugadores en la interfaz.
     """
 
-    def __init__(self, main_window):
+    def __init__(self, main_window: Any):
         """
         Inicializa el gestor de jugadores.
 
@@ -27,10 +34,10 @@ class PlayersManager:
             main_window: Referencia a la ventana principal (Gui)
         """
         self.main_window = main_window
-        self.player_labels = []
-        self.current_player_name = None
+        self.player_labels: list[tuple[QLabel, QLabel, QFrame]] = []
+        self.current_player_name: str | None = None
 
-    def update_player_list(self, players):
+    def update_player_list(self, players: Sequence[tuple[str, QColor]]) -> None:
         """
         Updates the player list on the right column.
         Only shows players that are actually playing.
@@ -46,7 +53,7 @@ class PlayersManager:
         # Aplicar sombreado al jugador actual si existe
         self._update_current_player_highlight()
 
-    def _clear_player_widgets(self):
+    def _clear_player_widgets(self) -> None:
         """Elimina todos los widgets de jugadores existentes"""
         if hasattr(self, "player_labels"):
             for _label, _turn_indicator, player_widget in self.player_labels:
@@ -54,7 +61,7 @@ class PlayersManager:
                 player_widget.deleteLater()
         self.player_labels = []
 
-    def _create_single_player_widget(self, name, color):
+    def _create_single_player_widget(self, name: str, color: QColor) -> None:
         """Crea un widget individual para un jugador"""
         # Crear un widget para el jugador (estilo tarjeta, neutro)
         player_widget = QFrame()
@@ -79,10 +86,14 @@ class PlayersManager:
         self.player_labels.append((label, turn_indicator, player_widget))
 
         # Añadir al layout
-        self.main_window.players_layout.addWidget(player_widget)
+        players_layout = getattr(self.main_window, "players_layout", None)
+        if players_layout is not None:
+            players_layout.addWidget(player_widget)
 
         # Aplicar estilo de tarjeta mediante tema
-        self.main_window.theme_manager._apply_players_theme(player_widget)  # noqa: SLF001
+        theme_manager = getattr(self.main_window, "theme_manager", None)
+        if theme_manager is not None and hasattr(theme_manager, "_apply_players_theme"):
+            theme_manager._apply_players_theme(player_widget)  # noqa: SLF001
 
     def _make_circle_icon(self, color_hex: str, glyph: str | None) -> QLabel:
         """Crea un QLabel con un QPixmap de círculo y opcional glifo."""
@@ -111,7 +122,7 @@ class PlayersManager:
         label.setPixmap(pm)
         return label
 
-    def set_current_player(self, player_name):
+    def set_current_player(self, player_name: str | None) -> None:
         """
         Establece el jugador actual y actualiza el sombreado.
 
@@ -121,7 +132,7 @@ class PlayersManager:
         self.current_player_name = player_name
         self._update_current_player_highlight()
 
-    def _update_current_player_highlight(self):
+    def _update_current_player_highlight(self) -> None:
         """Actualiza el sombreado del jugador en su turno"""
         if not hasattr(self, "player_labels") or not self.player_labels:
             return
@@ -136,7 +147,7 @@ class PlayersManager:
             else:
                 self._apply_normal_player_style(player_widget, label)
 
-    def _apply_current_player_style(self, player_widget, label):
+    def _apply_current_player_style(self, player_widget: QFrame, label: QLabel) -> None:
         """Aplica el estilo de sombreado al jugador en su turno"""
         # Estilo con sombreado sutil para el jugador actual
         player_widget.setStyleSheet("""
@@ -151,7 +162,7 @@ class PlayersManager:
         # Texto más destacado para el jugador actual
         label.setStyleSheet("color: #2c5aa0; font-weight: 700; font-size: 13px;")
 
-    def _apply_normal_player_style(self, player_widget, label):
+    def _apply_normal_player_style(self, player_widget: QFrame, label: QLabel) -> None:
         """Aplica el estilo normal a jugadores que no están en su turno"""
         # Aplicar estilo de tarjeta normal mediante tema
         self.main_window.theme_manager._apply_players_theme(player_widget)  # noqa: SLF001
