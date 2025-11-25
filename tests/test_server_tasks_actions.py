@@ -282,6 +282,11 @@ class FakeServer:
         """Marca que se envió el turno actual."""
         self.sent_turno = True
 
+    def enviar_resultado_batalla(self, resultado_data: dict[str, Any]) -> None:
+        """Envía el resultado de una batalla a todos los clientes."""
+        for client in self.dame_clientes():
+            client.transmisor.enviar_resultado_batalla(resultado_data)
+
     def dame_clientes(self) -> list["FakeClient"]:
         """Obtiene la lista de clientes.
 

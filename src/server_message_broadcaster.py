@@ -127,6 +127,16 @@ class ServerMessageBroadcaster:
                 misiles_habilitados=misiles_habilitados,
             )
 
+    def enviar_resultado_batalla(self, resultado_data: dict[str, Any]) -> None:
+        """Envía el resultado de una batalla a todos los clientes.
+
+        Args:
+            resultado_data: Datos del resultado de la batalla.
+
+        """
+        for client in self._dame_clientes():
+            client.transmisor.enviar_resultado_batalla(resultado_data)
+
     def enviar_resultado_misil(self, resultado_data: dict[str, Any]) -> None:
         """Envía el resultado de un misil a todos los clientes.
 
