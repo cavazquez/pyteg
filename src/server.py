@@ -387,6 +387,15 @@ class Server:
         """Envía la configuración de la partida a todos los clientes conectados."""
         self._game_coordinator.enviar_configuracion_partida()
 
+    def enviar_resultado_batalla(self, resultado_data: dict[str, Any]) -> None:
+        """Envía el resultado de una batalla a todos los clientes.
+
+        Args:
+            resultado_data: Datos del resultado de la batalla.
+
+        """
+        self._broadcaster.enviar_resultado_batalla(resultado_data)
+
     def enviar_resultado_misil(self, resultado_data: dict[str, Any]) -> None:
         """Envía el resultado del lanzamiento de un misil a todos los clientes.
 
