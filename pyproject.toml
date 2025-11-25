@@ -108,6 +108,8 @@ module = [
   "src.turno_timer",
   "src.gui_chat",
   "src.gui_toolbar",
+  "src.gui_sound_control",
+  "src.gui_game_actions",
   "tests.test_batalla",
   "tests.test_calculos",
   "tests.test_codecs_utils",
