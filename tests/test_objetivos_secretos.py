@@ -1,4 +1,5 @@
 import unittest
+from typing import cast
 from unittest.mock import Mock, patch
 
 from src.objetivos_secretos import ObjetivosSecretos
@@ -9,7 +10,7 @@ class TestObjetivosSecretos(unittest.TestCase):
         """Configuración inicial para los tests."""
         # Mock del TomlReader con objetivos de prueba
         self.mock_toml_reader = Mock()
-        self.objetivos_data = {
+        self.objetivos_data: dict[str, dict[str, object]] = {
             "obj_1": {
                 "id": "obj_1",
                 "tipo": "conquistar_paises",
@@ -67,7 +68,8 @@ class TestObjetivosSecretos(unittest.TestCase):
         self.objetivos_secretos.objetivos_asignados[jugador] = "obj_1"
         objetivo = self.objetivos_secretos.get_objetivo_jugador(jugador)
         self.assertIsNotNone(objetivo)
-        self.assertEqual(objetivo["tipo"], "conquistar_paises")
+        objetivo_dict = cast("dict[str, object]", objetivo)
+        self.assertEqual(objetivo_dict["tipo"], "conquistar_paises")
 
     def test_verificar_condicion_victoria_conquistar_paises(self):
         """Test de verificación de victoria por conquista de países."""
@@ -79,7 +81,7 @@ class TestObjetivosSecretos(unittest.TestCase):
         mock_jugador.userid.return_value = jugador
 
         # Mock del mapa con países controlados (formato: continente, coords, dueño, unidades)  # noqa: E501
-        mock_mapa = {
+        mock_mapa: dict[str, list[object]] = {
             "pais1": ["continente1", "coords", mock_jugador, 1],
             "pais2": ["continente1", "coords", mock_jugador, 2],
         }
@@ -107,7 +109,7 @@ class TestObjetivosSecretos(unittest.TestCase):
         jugador = "test_player"
         self.objetivos_secretos.objetivos_asignados[jugador] = "obj_2"
 
-        mock_mapa = {}
+        mock_mapa: dict[str, list[object]] = {}
         mock_colores = Mock()
         mock_colores.dame_clientes.return_value = ["jugador_rojo", "test_player"]
         mock_colores.get_color_name.side_effect = (
@@ -130,7 +132,7 @@ class TestObjetivosSecretos(unittest.TestCase):
         mock_jugador.userid.return_value = jugador
 
         # Agregar objetivo de conquistar continentes a los datos
-        objetivo_continentes = {
+        objetivo_continentes: dict[str, object] = {
             "id": "obj_3",
             "tipo": "conquistar_continentes",
             "descripcion": "Conquistar America del Norte y Africa",
@@ -140,7 +142,7 @@ class TestObjetivosSecretos(unittest.TestCase):
         self.objetivos_secretos.objetivos_asignados[jugador] = "obj_3"
 
         # Mock del mapa donde el jugador controla todos los países de ambos continentes
-        mock_mapa = {
+        mock_mapa: dict[str, list[object]] = {
             "usa": ["America del Norte", "coords", mock_jugador, 1],
             "canada": ["America del Norte", "coords", mock_jugador, 1],
             "mexico": ["America del Norte", "coords", mock_jugador, 1],

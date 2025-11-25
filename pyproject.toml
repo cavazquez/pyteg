@@ -86,11 +86,6 @@ module = [
   "src.server_state_validator",
   "src.server_player",
   "src.server_estado",
-]
-check_untyped_defs = true
-
-[[tool.mypy.overrides]]
-module = [
   "src.batalla",
   "src.calculos",
   "src.codecs_utils",
@@ -101,6 +96,26 @@ module = [
   "src.turnos",
   "src.utils",
   "src.objetivos_secretos",
+  "src.build_mapa",
+  "src.client_msg",
+  "src.client_color",
+  "src.cliente_colores",
+  "src.debug_logger",
+  "src.exception",
+  "src.logger",
+  "src.version",
+  "tests.test_batalla",
+  "tests.test_calculos",
+  "tests.test_codecs_utils",
+  "tests.test_country",
+  "tests.test_dados",
+  "tests.test_game",
+  "tests.test_mapa",
+  "tests.test_mazo",
+  "tests.test_objetivos_secretos",
+  "tests.test_tarjeta_de_pais",
+  "tests.test_turnos",
+  "tests.test_server_tasks_actions",
 ]
 check_untyped_defs = true
 
