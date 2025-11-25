@@ -17,6 +17,7 @@ from src.exception import (
 from src.turnos import PrimerTurno, SegundoTurno
 
 if TYPE_CHECKING:
+    from src.protocols import IClientProtocol, IGameProtocol, IMapProtocol
     from src.server_client import Client
     from src.server_game import Game
     from src.server_mapa import Mapa
@@ -29,7 +30,10 @@ class TurnValidator:
     """Valida que sea el turno del jugador correcto."""
 
     @staticmethod
-    def validate_turn(client: "Client", game: "Game | None") -> None:
+    def validate_turn(
+        client: "Client | IClientProtocol",
+        game: "Game | IGameProtocol | None",
+    ) -> None:
         """Valida que el juego haya comenzado y sea el turno del cliente.
 
         Args:
@@ -45,12 +49,17 @@ class TurnValidator:
             raise GameNotStartedError
 
         turno_actual = game.turno_actual()
+        if not hasattr(turno_actual, "jugador_actual"):
+            raise NotPlayerTurnError
         jugador_actual = turno_actual.jugador_actual()
         if jugador_actual is None:
             raise NotPlayerTurnError
+        client_userid = client.userid() if hasattr(client, "userid") else None
+        if client_userid is None:
+            raise NotPlayerTurnError
         if (
             not hasattr(jugador_actual, "userid")
-            or jugador_actual.userid() != client.userid()
+            or jugador_actual.userid() != client_userid
         ):
             raise NotPlayerTurnError
 
@@ -59,7 +68,9 @@ class GameStateValidator:
     """Valida el estado del juego."""
 
     @staticmethod
-    def validate_game_started(game: "Game | None") -> None:
+    def validate_game_started(
+        game: "Game | IGameProtocol | None",
+    ) -> None:
         """Valida que el juego haya comenzado.
 
         Args:
@@ -78,7 +89,10 @@ class CountryOwnershipValidator:
 
     @staticmethod
     def validate_ownership(
-        client: "Client", mapa: "Mapa", pais: str, error_message: str | None = None
+        client: "Client | IClientProtocol",
+        mapa: "Mapa | IMapProtocol",
+        pais: str,
+        error_message: str | None = None,
     ) -> None:
         """Valida que el cliente sea dueño del país.
 
@@ -94,13 +108,19 @@ class CountryOwnershipValidator:
 
         """
         pais_owner_id = mapa.ocupado_por(pais)
-        client_id = str(client.userid())
+        client_userid = client.userid() if hasattr(client, "userid") else None
+        if client_userid is None:
+            raise CountryNotOwnedError(pais, error_message)
+        client_id = str(client_userid)
         if pais_owner_id != client_id:
             raise CountryNotOwnedError(pais, error_message)
 
     @staticmethod
     def validate_not_own_country(
-        client: "Client", mapa: "Mapa", pais: str, error_message: str | None = None
+        client: "Client | IClientProtocol",
+        mapa: "Mapa | IMapProtocol",
+        pais: str,
+        error_message: str | None = None,
     ) -> None:
         """Valida que el cliente NO sea dueño del país.
 
@@ -116,7 +136,10 @@ class CountryOwnershipValidator:
 
         """
         pais_owner_id = mapa.ocupado_por(pais)
-        client_id = str(client.userid())
+        client_userid = client.userid() if hasattr(client, "userid") else None
+        if client_userid is None:
+            return
+        client_id = str(client_userid)
         if pais_owner_id == client_id:
             msg = error_message or f"No puedes atacar tu propio país: {pais}"
             raise InvalidActionError(msg)
@@ -127,7 +150,10 @@ class AdjacencyValidator:
 
     @staticmethod
     def validate_adjacent(
-        mapa: "Mapa", origen: str, destino: str, error_message: str | None = None
+        mapa: "Mapa | IMapProtocol",
+        origen: str,
+        destino: str,
+        error_message: str | None = None,
     ) -> None:
         """Valida que dos países sean adyacentes.
 
@@ -153,7 +179,10 @@ class UnitValidator:
 
     @staticmethod
     def validate_min_units(
-        mapa: "Mapa", pais: str, min_units: int, error_message: str | None = None
+        mapa: "Mapa | IMapProtocol",
+        pais: str,
+        min_units: int,
+        error_message: str | None = None,
     ) -> None:
         """Valida que un país tenga al menos una cantidad mínima de unidades.
 
@@ -175,7 +204,10 @@ class UnitValidator:
 
     @staticmethod
     def validate_sufficient_units_to_move(
-        mapa: "Mapa", origen: str, cantidad: int, error_message: str | None = None
+        mapa: "Mapa | IMapProtocol",
+        origen: str,
+        cantidad: int,
+        error_message: str | None = None,
     ) -> None:
         """Valida que haya suficientes unidades para mover sin vaciar el país.
 
@@ -232,7 +264,8 @@ class AttackRestrictionValidator:
 
     @staticmethod
     def validate_not_first_turns(
-        game: "Game", error_message: str | None = None
+        game: "Game | IGameProtocol",
+        error_message: str | None = None,
     ) -> None:
         """Valida que no sea uno de los primeros turnos donde no se puede atacar.
 

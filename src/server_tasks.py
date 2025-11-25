@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from collections.abc import Callable
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from src.config import (
     MIN_UNITS_FOR_ATTACK,
@@ -31,6 +31,11 @@ from src.server_validators import (
 
 LOGGER = get_logger("server.tasks")
 
+# Importar protocolo para type safety
+
+if TYPE_CHECKING:
+    from src.protocols import IClientProtocol
+
 
 class IServerTask(ABC):
     """Clase base para todas las tareas del servidor."""
@@ -47,7 +52,7 @@ class IServerTask(ABC):
         self._validator = ServerStateValidator()
 
     @abstractmethod
-    def _execute(self, client: Any, context: GameContext) -> None:
+    def _execute(self, client: IClientProtocol, context: GameContext) -> None:
         """Método que implementa la lógica específica de cada tarea.
 
         Args:
@@ -56,7 +61,7 @@ class IServerTask(ABC):
 
         """
 
-    def run(self, client: Any) -> None:
+    def run(self, client: IClientProtocol) -> None:
         """Ejecuta la tarea validando primero el estado del servidor."""
         # Validar estado usando TaskValidator cuando corresponda
         if self._action_name is not None:
@@ -534,6 +539,9 @@ class ServerTaskAtacar(IServerTask):
         # Realizar el ataque
         if context.game is None:
             return
+        if self._cantidad_unidades is None:
+            client.transmisor.enviar_error_chat("Cantidad de unidades no especificada")
+            return
         info_batalla = context.game.atacar(
             self._origen, self._destino, self._cantidad_unidades
         )
@@ -669,6 +677,8 @@ class ServerTaskReclamarTarjeta(IServerTask):
 
         # Verificar que sea el turno del jugador
         turno_actual = context.game.turno_actual()
+        if not hasattr(turno_actual, "jugador_actual"):
+            return
         if turno_actual.jugador_actual() != client:
             client.transmisor.enviar_error_chat("No es tu turno")
             return
@@ -729,7 +739,7 @@ class ServerTaskCanjeEspecial(IServerTask):
 
         # Buscar y remover la tarjeta correspondiente al país
         tarjeta_encontrada = None
-        tarjetas_jugador = mazo.tarjetas_asignadas(client)
+        tarjetas_jugador = mazo.tarjetas_asignadas(client)  # type: ignore[attr-defined]
 
         if len(tarjetas_jugador) == 0:
             client.transmisor.enviar_error_chat(
@@ -964,6 +974,8 @@ class ServerTaskLanzarMisil(IServerTask):
             return "El juego no ha comenzado"
 
         turno_actual = context.game.turno_actual()
+        if not hasattr(turno_actual, "jugador_actual"):
+            return "Error interno"
         if turno_actual.jugador_actual() != client:
             return "No es tu turno"
 
