@@ -70,7 +70,7 @@ class LayoutManager:
         """Crear splitter vertical para vista y chat."""
         # Create a splitter to hold the QGraphicsView and Chat
         vertical_splitter = QSplitter()
-        vertical_splitter.setOrientation(Qt.Vertical)
+        vertical_splitter.setOrientation(Qt.Orientation.Vertical)
         vertical_splitter.addWidget(self.main_window.view)
         vertical_splitter.addWidget(self.main_window.chat)
         vertical_splitter.setStretchFactor(0, 9)  # 90% for QGraphicsView
@@ -81,7 +81,7 @@ class LayoutManager:
         """Crear splitter horizontal principal."""
         # Create a horizontal splitter to hold the vertical splitter
         horizontal_splitter = QSplitter()
-        horizontal_splitter.setOrientation(Qt.Horizontal)
+        horizontal_splitter.setOrientation(Qt.Orientation.Horizontal)
         horizontal_splitter.addWidget(vertical_splitter)
         return horizontal_splitter
 
@@ -107,7 +107,7 @@ class LayoutManager:
         """Crea la sección UNIDADES con filas ordenadas e íconos."""
         # Contenedor principal de la sección
         section = QFrame()
-        section.setFrameShape(QFrame.StyledPanel)
+        section.setFrameShape(QFrame.Shape.StyledPanel)
         section.setObjectName("unitsSection")
         # Se aplicará stylesheet en _apply_units_theme()
 

@@ -7,7 +7,7 @@ import struct
 from pathlib import Path
 
 
-def compile_po_to_mo(po_file, mo_file):
+def compile_po_to_mo(po_file: Path, mo_file: Path) -> None:
     """
     Compila un archivo .po a .mo usando Python puro.
 
@@ -15,7 +15,7 @@ def compile_po_to_mo(po_file, mo_file):
         po_file: Path al archivo .po
         mo_file: Path al archivo .mo de salida
     """
-    translations = {}
+    translations: dict[str, str] = {}
 
     # Leer archivo .po
     content = po_file.read_text(encoding="utf-8")
@@ -73,7 +73,7 @@ def compile_po_to_mo(po_file, mo_file):
     print(f"✓ Compilado: {po_file} -> {mo_file} ({len(translations)} traducciones)")
 
 
-def create_mo_file(translations, mo_file):
+def create_mo_file(translations: dict[str, str], mo_file: Path) -> None:
     """
     Crea un archivo .mo válido desde un diccionario de traducciones.
 
@@ -92,10 +92,10 @@ def create_mo_file(translations, mo_file):
     keys = sorted(translations.keys())
 
     # Calcular offsets
-    koffsets = []
-    voffsets = []
-    kencoded = []
-    vencoded = []
+    koffsets: list[tuple[int, int]] = []
+    voffsets: list[tuple[int, int]] = []
+    kencoded: list[bytes] = []
+    vencoded: list[bytes] = []
 
     for key in keys:
         kencoded.append(key.encode("utf-8"))
@@ -106,9 +106,6 @@ def create_mo_file(translations, mo_file):
     valuestart = keystart
     for k in kencoded:
         valuestart += len(k)
-
-    koffsets = []
-    voffsets = []
 
     # Calcular offsets para keys
     offset = keystart

@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
+from typing import Any
 
 from PySide6.QtCore import QTimer
 from PySide6.QtGui import QColor
@@ -12,6 +15,9 @@ from src.logger import get_logger
 
 
 class IClientTask(ABC):
+    def __init__(self, data: dict[str, Any]):
+        self._raw_data = data
+
     @abstractmethod
     def run(self, main_window):
         pass
@@ -429,13 +435,13 @@ class ClientTaskError(IClientTask):
         if self._error_type == "duplicate_username":
             # Mostrar diálogo específico para nombres de usuario duplicados
             msg_box = QMessageBox(main_window)
-            msg_box.setIcon(QMessageBox.Warning)
+            msg_box.setIcon(QMessageBox.Icon.Warning)
             msg_box.setWindowTitle("Nombre de usuario duplicado")
             msg_box.setText("El nombre de usuario que elegiste ya está en uso.")
             msg_box.setInformativeText(
                 "Por favor, elige un nombre de usuario diferente."
             )
-            msg_box.setStandardButtons(QMessageBox.Ok)
+            msg_box.setStandardButtons(QMessageBox.StandardButton.Ok)
             msg_box.exec()
 
             # Cerrar ventana de esperar jugadores si está abierta
@@ -452,10 +458,10 @@ class ClientTaskError(IClientTask):
         else:
             # Mostrar diálogo genérico para otros tipos de error
             msg_box = QMessageBox(main_window)
-            msg_box.setIcon(QMessageBox.Critical)
+            msg_box.setIcon(QMessageBox.Icon.Critical)
             msg_box.setWindowTitle("Error")
             msg_box.setText(self._message or "Ha ocurrido un error.")
-            msg_box.setStandardButtons(QMessageBox.Ok)
+            msg_box.setStandardButtons(QMessageBox.StandardButton.Ok)
             msg_box.exec()
 
 
@@ -671,13 +677,13 @@ class ClientTaskVictoria(IClientTask):
             # Mostrar diálogo de victoria
             msg_box = QMessageBox(main_window)
             msg_box.setWindowTitle("¡Partida Terminada!")
-            msg_box.setIcon(QMessageBox.Information)
+            msg_box.setIcon(QMessageBox.Icon.Information)
             msg_box.setText("🏆 ¡Felicitaciones!")
             msg_box.setInformativeText(
                 f"{self._ganador_nombre} ha ganado la partida "
                 f"controlando el número objetivo de países."
             )
-            msg_box.setStandardButtons(QMessageBox.Ok)
+            msg_box.setStandardButtons(QMessageBox.StandardButton.Ok)
             msg_box.exec()
 
             # También mostrar en el chat
@@ -857,7 +863,7 @@ class ClientTaskMisilAgregado(IClientTask):
             print(f"Error al actualizar misiles en {self._pais}: {e}")
 
 
-dict_task = {
+dict_task: dict[str, type[IClientTask]] = {
     "chat": ClientTaskChat,
     "sosadmin": ClientTaskSerAdmin,
     "estado": ClientTaskEstado,
