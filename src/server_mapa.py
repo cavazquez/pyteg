@@ -11,17 +11,11 @@ from src.config import (
     MISSILE_DAMAGE_DISTANCE_2,
     MISSILE_DAMAGE_DISTANCE_3,
 )
+from src.country_data import CountryData
 
 
 class Mapa:
     """Representa el mapa del juego con países, continentes y jugadores."""
-
-    # Constantes para índices de la estructura de datos del mapa
-    _UNIDADES = 0
-    _CONTINENTE = 1
-    _JUGADOR = 2
-    _ADYACENTES = 3
-    _MISILES = 4
 
     def __init__(self, build_mapa: Callable[[], dict[str, list[Any]]]) -> None:
         """Inicializa el mapa del juego.
@@ -30,25 +24,11 @@ class Mapa:
             build_mapa: Función que construye y retorna el diccionario del mapa.
 
         """
-        self._mapa = (
-            build_mapa()
-        )  # Ahora build_mapa ya devuelve el diccionario completo
-        self._inicializar_misiles()
-
-    def _inicializar_misiles(self) -> None:
-        """Inicializa el campo de misiles para todos los países."""
-        # Validar que el mapa no sea None
-        if self._mapa is None:
-            return
-
-        for pais in self._mapa:
-            # Si el país no tiene el índice de misiles, agregarlo con valor 0
-            if len(self._mapa[pais]) <= self._MISILES:
-                # Extender la lista para incluir el campo de misiles
-                while len(self._mapa[pais]) <= self._MISILES:
-                    self._mapa[pais].append(
-                        0 if len(self._mapa[pais]) == self._MISILES else []
-                    )
+        mapa_raw = build_mapa()
+        # Convertir listas a CountryData para mejor type safety
+        self._mapa: dict[str, CountryData] = {}
+        for pais, data in mapa_raw.items():
+            self._mapa[pais] = CountryData.from_list(data)
 
     def agregar_una_unidad(self, pais: str) -> None:
         """Agrega una unidad al país especificado.
@@ -57,7 +37,7 @@ class Mapa:
             pais: Nombre del país.
 
         """
-        self._mapa[pais][self._UNIDADES] += 1
+        self._mapa[pais].unidades += 1
 
     def restar_una_unidad(self, pais: str) -> None:
         """Resta una unidad del país especificado.
@@ -66,7 +46,7 @@ class Mapa:
             pais: Nombre del país.
 
         """
-        self._mapa[pais][self._UNIDADES] -= 1
+        self._mapa[pais].unidades -= 1
 
     def cantidad_unidades(self, pais: str) -> int:
         """Obtiene la cantidad de unidades en un país.
@@ -78,7 +58,7 @@ class Mapa:
             Cantidad de unidades en el país.
 
         """
-        return int(self._mapa[pais][self._UNIDADES])
+        return self._mapa[pais].unidades
 
     def set_unidades(self, pais: str, cant: int) -> None:
         """Establece la cantidad de unidades en un país.
@@ -88,7 +68,7 @@ class Mapa:
             cant: Cantidad de unidades a establecer.
 
         """
-        self._mapa[pais][self._UNIDADES] = cant
+        self._mapa[pais].unidades = cant
 
     def mover(self, desde: str, hacia: str, cantidad: int) -> None:
         """Mueve unidades entre dos países.
@@ -99,8 +79,8 @@ class Mapa:
             cantidad: Cantidad de unidades a mover.
 
         """
-        self._mapa[desde][self._UNIDADES] -= cantidad
-        self._mapa[hacia][self._UNIDADES] += cantidad
+        self._mapa[desde].unidades -= cantidad
+        self._mapa[hacia].unidades += cantidad
 
     def continente(self, pais: str) -> str:
         """Obtiene el continente al que pertenece un país.
@@ -112,7 +92,7 @@ class Mapa:
             Nombre del continente.
 
         """
-        return str(self._mapa[pais][self._CONTINENTE])
+        return self._mapa[pais].continente
 
     def ocupado_por(self, pais: str) -> str:
         """Obtiene el jugador que ocupa un país.
@@ -124,7 +104,8 @@ class Mapa:
             ID del jugador que ocupa el país.
 
         """
-        return str(self._mapa[pais][self._JUGADOR])
+        jugador = self._mapa[pais].jugador
+        return str(jugador) if jugador is not None else ""
 
     def paises(self) -> list[str]:
         """Obtiene la lista de todos los países del mapa.
@@ -213,7 +194,7 @@ class Mapa:
             pais: Nombre del país.
 
         """
-        self._mapa[pais][self._JUGADOR] = jugador
+        self._mapa[pais].jugador = jugador
 
     def cantidad_de_paises_del_jugador(self, jugador: str) -> int:
         """Obtiene la cantidad de países que posee un jugador.
@@ -279,10 +260,14 @@ class Mapa:
         """Retorna representación en JSON del mapa.
 
         Returns:
-            String JSON del mapa.
+            String JSON del mapa en formato de lista (compatible con versión anterior).
 
         """
-        return json.dumps(self._mapa)
+        # Convertir CountryData a formato de lista para compatibilidad
+        mapa_lista: dict[str, list[Any]] = {}
+        for pais, data in self._mapa.items():
+            mapa_lista[pais] = data.to_list()
+        return json.dumps(mapa_lista)
 
     def obtener_paises_adyacentes(self, pais: str) -> list[str]:
         """Devuelve la lista de países adyacentes al país especificado.
@@ -296,9 +281,8 @@ class Mapa:
 
         """
         if pais in self._mapa:
-            adyacentes = self._mapa[pais][self._ADYACENTES]
-            if isinstance(adyacentes, list):
-                return [str(p) for p in adyacentes]
+            adyacentes = self._mapa[pais].adyacentes
+            return [str(p) for p in adyacentes]
         return []
 
     # ========== Métodos para el sistema de misiles ==========
@@ -311,7 +295,7 @@ class Mapa:
 
         """
         if pais in self._mapa:
-            self._mapa[pais][self._MISILES] += 1
+            self._mapa[pais].misiles += 1
 
     def cantidad_misiles(self, pais: str) -> int:
         """Retorna la cantidad de misiles en el país especificado.
@@ -324,7 +308,7 @@ class Mapa:
 
         """
         if pais in self._mapa:
-            return int(self._mapa[pais][self._MISILES])
+            return self._mapa[pais].misiles
         return 0
 
     def usar_misil(self, pais: str) -> None:
@@ -334,8 +318,8 @@ class Mapa:
             pais (str): Nombre del país desde donde se lanzará el misil
 
         """
-        if pais in self._mapa and self._mapa[pais][self._MISILES] > 0:
-            self._mapa[pais][self._MISILES] -= 1
+        if pais in self._mapa and self._mapa[pais].misiles > 0:
+            self._mapa[pais].misiles -= 1
 
     def calcular_distancia(self, pais_origen: str, pais_destino: str) -> int:
         """Calcula la distancia mínima entre dos países usando BFS.

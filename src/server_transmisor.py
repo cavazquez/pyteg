@@ -225,7 +225,7 @@ class ServerTransmisor:
         # Enviar información de cada país
         for pais in mapa.paises():
             unidades = mapa.cantidad_unidades(pais)
-            userid = mapa.ocupado_por(pais).userid()
+            userid = mapa.ocupado_por(pais)
             print(f"{pais} {userid} {unidades}")
             self.enviar_pais(pais, userid, unidades)
 
