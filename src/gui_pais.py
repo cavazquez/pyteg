@@ -1,15 +1,16 @@
+from __future__ import annotations
+
 import pathlib
+from typing import Any, cast
 
 from PySide6.QtCore import QEasingCurve, QPropertyAnimation, Qt, QTimer
-from PySide6.QtGui import (
-    QColor,
-    QFont,
-    QPixmap,
-)
+from PySide6.QtGui import QColor, QFont, QPixmap
 from PySide6.QtWidgets import (
     QGraphicsColorizeEffect,
+    QGraphicsEffect,
     QGraphicsOpacityEffect,
     QGraphicsPixmapItem,
+    QGraphicsSceneMouseEvent,
     QGraphicsTextItem,
 )
 
@@ -37,22 +38,25 @@ class Pais(QGraphicsPixmapItem):
         self._nombre, self._continente = pais
         self._x, self._y, self._army_x, self._army_y = pos
         self.setPos(self._x, self._y)
-        self._circle = None
-        self._center_text = None
-        self._main_window = None
+        self._circle: Circulo | None = None
+        self._center_text: QGraphicsTextItem | None = None
+        self._main_window: Any = None
 
         # Variables para efectos de batalla
-        self._titilacion_timer = None
-        self._titilacion_effect = None
-        self._perdida_flotante = None
+        self._titilacion_timer: QTimer | None = None
+        self._titilacion_effect: QGraphicsColorizeEffect | None = None
+        self._perdida_flotante: QGraphicsTextItem | None = None
 
         # Variable para el indicador de misiles
-        self._misiles_text = None
+        self._misiles_text: QGraphicsTextItem | None = None
         self._cantidad_misiles = 0
+
+        self._opacity_animation: QPropertyAnimation | None = None
+        self._movimiento_timer: QTimer | None = None
 
         self.cargar_circulo()
 
-    def cargar_circulo(self):
+    def cargar_circulo(self) -> None:
         pos_x_abs = self._army_x
         pos_y_abs = self._army_y
         # (x, y)
@@ -63,15 +67,18 @@ class Pais(QGraphicsPixmapItem):
         return self._nombre
 
     def set_color(self, color):
-        if color:
+        if color and self._circle:
             self._circle.set_color(color)
 
     def set_unidades(self, cant):
-        self._circle.set_unidades(cant)
+        if self._circle:
+            self._circle.set_unidades(cant)
 
     def get_unidades(self):
         """Retorna la cantidad de unidades como entero."""
-        return self._circle.get_unidades()
+        if self._circle:
+            return self._circle.get_unidades()
+        return 0
 
     def actualizar_misiles(self, cantidad):
         """Actualiza el indicador visual de misiles en el país.
@@ -99,7 +106,7 @@ class Pais(QGraphicsPixmapItem):
                 self._misiles_text.setParentItem(self)
 
                 # Configurar fuente y color
-                font = QFont("Arial", 12, QFont.Bold)
+                font = QFont("Arial", 12, QFont.Weight.Bold)
                 self._misiles_text.setFont(font)
                 self._misiles_text.setDefaultTextColor(QColor(255, 50, 50))
 
@@ -111,13 +118,13 @@ class Pais(QGraphicsPixmapItem):
         except (AttributeError, RuntimeError) as e:
             print(f"Error actualizando misiles en {self._nombre}: {e}")
 
-    def set_main_window(self, main_window):
+    def set_main_window(self, main_window: Any) -> None:
         """Establece la referencia a la ventana principal"""
         self._main_window = main_window
 
-    def mousePressEvent(self, event):  # noqa: N802
+    def mousePressEvent(self, event: QGraphicsSceneMouseEvent) -> None:  # noqa: N802
         """Maneja los clics del mouse en el país"""
-        if event.button() == Qt.LeftButton:
+        if event.button() == Qt.MouseButton.LeftButton:
             # Clic izquierdo: seleccionar país usando el selection_manager
             if (
                 self._main_window
@@ -149,7 +156,7 @@ class Pais(QGraphicsPixmapItem):
     def limpiar_seleccion_visual(self):
         """Elimina el indicador visual de selección"""
         if self.graphicsEffect():
-            self.setGraphicsEffect(None)
+            self.setGraphicsEffect(cast("QGraphicsEffect", None))
 
     def iniciar_titilacion_batalla(self):
         """Inicia el efecto de titilación durante una batalla."""
@@ -202,7 +209,7 @@ class Pais(QGraphicsPixmapItem):
                 self._titilacion_timer = None
 
             if self._titilacion_effect:
-                self.setGraphicsEffect(None)
+                self.setGraphicsEffect(cast("QGraphicsEffect", None))
                 self._titilacion_effect = None
 
         except (AttributeError, RuntimeError) as e:
@@ -223,7 +230,7 @@ class Pais(QGraphicsPixmapItem):
             self._perdida_flotante.setParentItem(self)
 
             # Configurar fuente y color
-            font = QFont("Arial", 16, QFont.Bold)
+            font = QFont("Arial", 16, QFont.Weight.Bold)
             self._perdida_flotante.setFont(font)
             self._perdida_flotante.setDefaultTextColor(QColor(255, 0, 0))  # Rojo
 
@@ -253,7 +260,7 @@ class Pais(QGraphicsPixmapItem):
             self._opacity_animation.setDuration(2000)  # 2 segundos
             self._opacity_animation.setStartValue(1.0)
             self._opacity_animation.setEndValue(0.0)
-            self._opacity_animation.setEasingCurve(QEasingCurve.OutQuad)
+            self._opacity_animation.setEasingCurve(QEasingCurve.Type.OutQuad)
 
             # Cuando termine la animación, limpiar el texto
             self._opacity_animation.finished.connect(self._limpiar_perdida_flotante)

@@ -1,7 +1,9 @@
-from typing import ClassVar
+from __future__ import annotations
+
+from typing import Any, ClassVar, cast
 
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QPixmap
+from PySide6.QtGui import QMouseEvent, QPixmap
 from PySide6.QtWidgets import (
     QDialog,
     QGridLayout,
@@ -37,14 +39,14 @@ class TarjetaWidget(QWidget):
         self._seleccionada = False
         self._setup_ui()
 
-    def _setup_ui(self):
+    def _setup_ui(self) -> None:
         """Configura la interfaz del widget de tarjeta."""
         layout = QVBoxLayout()
-        layout.setAlignment(Qt.AlignCenter)
+        layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         # Etiqueta del país
         self.label_pais = QLabel(self.pais)
-        self.label_pais.setAlignment(Qt.AlignCenter)
+        self.label_pais.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.label_pais.setStyleSheet("""
             QLabel {
                 font-weight: bold;
@@ -58,7 +60,7 @@ class TarjetaWidget(QWidget):
 
         # Etiqueta del símbolo con imagen
         self.label_simbolo = QLabel()
-        self.label_simbolo.setAlignment(Qt.AlignCenter)
+        self.label_simbolo.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         # Cargar imagen del símbolo si existe
         imagen_path = self.SIMBOLOS_IMAGENES.get(self.simbolo)
@@ -67,7 +69,10 @@ class TarjetaWidget(QWidget):
             if not pixmap.isNull():
                 # Escalar la imagen a un tamaño apropiado
                 scaled_pixmap = pixmap.scaled(
-                    32, 32, Qt.KeepAspectRatio, Qt.SmoothTransformation
+                    32,
+                    32,
+                    Qt.AspectRatioMode.KeepAspectRatio,
+                    Qt.TransformationMode.SmoothTransformation,
                 )
                 self.label_simbolo.setPixmap(scaled_pixmap)
             else:
@@ -93,7 +98,7 @@ class TarjetaWidget(QWidget):
         self.setFixedSize(120, 80)
 
         # Hacer el widget clickeable
-        self.setCursor(Qt.PointingHandCursor)
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
 
     def _actualizar_estilo(self):
         """Actualiza el estilo según el estado de selección."""
@@ -124,9 +129,9 @@ class TarjetaWidget(QWidget):
                 }
             """)
 
-    def mousePressEvent(self, event):  # noqa: N802
+    def mousePressEvent(self, event: QMouseEvent) -> None:  # noqa: N802
         """Maneja el clic en la tarjeta para seleccionar/deseleccionar."""
-        if event.button() == Qt.LeftButton:
+        if event.button() == Qt.MouseButton.LeftButton:
             self.toggle_seleccion()
         super().mousePressEvent(event)
 
@@ -157,15 +162,15 @@ class TarjetasDialog(QDialog):
         self.setFixedSize(600, 550)  # Aumentado para acomodar objetivo secreto
 
         # Lista de tarjetas de ejemplo (máximo 4)
-        self.tarjetas = [
+        self.tarjetas: list[dict[str, str]] = [
             {"pais": "Circulo", "simbolo": "Galeon"},
             {"pais": "Rectangulo", "simbolo": "Globo"},
             # Agregar más tarjetas de prueba si es necesario
         ]
 
         # Lista de widgets de tarjetas para manejar selección
-        self.tarjetas_widgets = []
-        self.tarjetas_seleccionadas = []
+        self.tarjetas_widgets: list[TarjetaWidget] = []
+        self.tarjetas_seleccionadas: list[TarjetaWidget] = []
 
         # Objetivo secreto asignado
         self.objetivo_secreto_id = None
@@ -173,13 +178,13 @@ class TarjetasDialog(QDialog):
 
         self._setup_ui()
 
-    def _setup_ui(self):
+    def _setup_ui(self) -> None:
         """Configura la interfaz del diálogo."""
         layout = QVBoxLayout()
 
         # Título
         titulo = QLabel(_("Tarjetas Asignadas"))
-        titulo.setAlignment(Qt.AlignCenter)
+        titulo.setAlignment(Qt.AlignmentFlag.AlignCenter)
         titulo.setStyleSheet("""
             QLabel {
                 font-size: 18px;
@@ -231,11 +236,11 @@ class TarjetasDialog(QDialog):
         layout.addLayout(cerrar_layout)
         self.setLayout(layout)
 
-    def _create_tarjetas_area(self):
+    def _create_tarjetas_area(self) -> QWidget:
         """Crea el área donde se muestran las tarjetas."""
         widget = QWidget()
         grid_layout = QGridLayout()
-        grid_layout.setAlignment(Qt.AlignCenter)
+        grid_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         # Limpiar lista de widgets
         self.tarjetas_widgets.clear()
@@ -252,7 +257,7 @@ class TarjetasDialog(QDialog):
         # Si hay menos de 4 tarjetas, mostrar espacios vacíos
         for i in range(len(self.tarjetas), 4):
             placeholder = QLabel(_("Vacío"))
-            placeholder.setAlignment(Qt.AlignCenter)
+            placeholder.setAlignment(Qt.AlignmentFlag.AlignCenter)
             placeholder.setStyleSheet("""
                 QLabel {
                     background-color: #ecf0f1;
@@ -270,14 +275,14 @@ class TarjetasDialog(QDialog):
         widget.setLayout(grid_layout)
         return widget
 
-    def _create_objetivo_secreto_area(self):
+    def _create_objetivo_secreto_area(self) -> QWidget:
         """Crea el área para mostrar el objetivo secreto."""
         container = QWidget()
         layout = QVBoxLayout()
 
         # Título de objetivo secreto
         titulo_objetivo = QLabel(_("Objetivo Secreto"))
-        titulo_objetivo.setAlignment(Qt.AlignCenter)
+        titulo_objetivo.setAlignment(Qt.AlignmentFlag.AlignCenter)
         titulo_objetivo.setStyleSheet("""
             QLabel {
                 font-size: 14px;
@@ -294,7 +299,7 @@ class TarjetasDialog(QDialog):
         # Descripción del objetivo secreto
         self.label_objetivo = QLabel(_("No hay objetivo secreto asignado"))
         self.label_objetivo.setWordWrap(True)
-        self.label_objetivo.setAlignment(Qt.AlignCenter)
+        self.label_objetivo.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.label_objetivo.setStyleSheet("""
             QLabel {
                 font-size: 12px;
@@ -311,7 +316,7 @@ class TarjetasDialog(QDialog):
         container.setLayout(layout)
         return container
 
-    def _create_buttons_layout(self):
+    def _create_buttons_layout(self) -> QHBoxLayout:
         """Crea el layout con los botones de acción."""
         layout = QHBoxLayout()
         layout.addStretch()
@@ -404,7 +409,7 @@ class TarjetasDialog(QDialog):
 
         return layout
 
-    def actualizar_tarjetas(self, nuevas_tarjetas):
+    def actualizar_tarjetas(self, nuevas_tarjetas: list[dict[str, str]]) -> None:
         """Actualiza las tarjetas mostradas en el diálogo.
 
         Args:
@@ -418,13 +423,16 @@ class TarjetasDialog(QDialog):
 
         # Actualizar el layout
         layout = self.layout()
-        layout.insertWidget(1, self.tarjetas_widget)
+        if layout is None:
+            return
+        layout_vbox = cast("QVBoxLayout", layout)
+        layout_vbox.insertWidget(1, self.tarjetas_widget)
 
-    def _create_info_seleccion(self):
+    def _create_info_seleccion(self) -> QWidget:
         """Crea el área de información sobre la selección actual."""
         widget = QWidget()
         layout = QHBoxLayout()
-        layout.setAlignment(Qt.AlignCenter)
+        layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.label_info_seleccion = QLabel(_("Seleccionadas: 0"))
         self.label_info_seleccion.setStyleSheet("""
@@ -546,34 +554,32 @@ class TarjetasDialog(QDialog):
             for tarjeta in self.tarjetas_seleccionadas
         ]
 
-        try:
-            # Enviar comando de canje al servidor
-            if hasattr(self.parent(), "transmisor"):
-                if cantidad_seleccionadas == 1:
-                    # Canje especial: país + tarjeta = 2 unidades
-                    tarjeta = self.tarjetas_seleccionadas[0]
-                    self.parent().transmisor.canje_especial(tarjeta.pais)
-                else:
-                    # Canje normal: 3 tarjetas
-                    self.parent().transmisor.canjear_tarjetas(tarjetas_info)
+        transmisor = self._get_transmisor()
+        if transmisor is None:
+            print("Error: No se puede acceder al transmisor")
+            return
 
-                # Deseleccionar todas las tarjetas después del canje
-                self.deseleccionar_todas()
+        try:
+            if cantidad_seleccionadas == 1:
+                tarjeta = self.tarjetas_seleccionadas[0]
+                transmisor.canje_especial(tarjeta.pais)
             else:
-                print("Error: No se puede acceder al transmisor")
+                transmisor.canjear_tarjetas(tarjetas_info)
+
+            self.deseleccionar_todas()
         except (AttributeError, RuntimeError) as e:
             print(f"Error al realizar canje: {e}")
 
     def reclamar_tarjeta(self):
         """Reclama una tarjeta del servidor."""
+        transmisor = self._get_transmisor()
+        if transmisor is None:
+            print("Error: No se puede acceder al transmisor")
+            return
+
         try:
-            # Obtener referencia al transmisor desde la ventana padre
-            if hasattr(self.parent(), "transmisor"):
-                self.parent().transmisor.reclamar_tarjeta()
-                # Solicitar tarjetas actualizadas inmediatamente después de reclamar
-                self.parent().transmisor.solicitar_tarjetas()
-            else:
-                print("Error: No se puede acceder al transmisor")
+            transmisor.reclamar_tarjeta()
+            transmisor.solicitar_tarjetas()
         except (AttributeError, RuntimeError) as e:
             print(f"Error al reclamar tarjeta: {e}")
 
@@ -589,3 +595,10 @@ class TarjetasDialog(QDialog):
             "id": self.objetivo_secreto_id,
             "descripcion": self.objetivo_secreto_descripcion,
         }
+
+    def _get_transmisor(self) -> Any | None:
+        """Obtiene el transmisor desde la ventana padre si existe."""
+        parent = self.parent()
+        if parent is None:
+            return None
+        return getattr(parent, "transmisor", None)
