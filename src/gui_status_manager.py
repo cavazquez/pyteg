@@ -6,6 +6,10 @@ relacionada con la actualización y gestión de la barra de estado
 en la interfaz gráfica principal.
 """
 
+from __future__ import annotations
+
+from typing import Any
+
 from PySide6.QtWidgets import QLabel
 
 from src.debug_logger import debug_logger
@@ -19,7 +23,7 @@ class StatusManager:
     gestionar el estado del juego y mantener la información del jugador actual.
     """
 
-    def __init__(self, main_window):
+    def __init__(self, main_window: Any):
         """
         Inicializa el gestor de estado.
 
@@ -28,7 +32,7 @@ class StatusManager:
         """
         self.main_window = main_window
 
-    def update_status_bar(self, text, color=None):
+    def update_status_bar(self, text: str, color: str | None = None) -> None:
         """Update the status bar with the given text.
 
         Args:
@@ -38,30 +42,33 @@ class StatusManager:
         # Apply color styling if provided
         if color:
             # Create a temporary label to apply color styling
-            if not hasattr(self.main_window, "_status_temp_label"):
-                self.main_window._status_temp_label = QLabel()  # noqa: SLF001
+            temp_label = getattr(self.main_window, "_status_temp_label", None)
+            if temp_label is None:
+                temp_label = QLabel()
+                self.main_window._status_temp_label = temp_label  # noqa: SLF001
                 status_bar = self.main_window.status_bar
-                status_bar.addWidget(self.main_window._status_temp_label)  # noqa: SLF001
+                status_bar.addWidget(temp_label)
 
-            self.main_window._status_temp_label.setText(text)  # noqa: SLF001
-            temp_label = self.main_window._status_temp_label  # noqa: SLF001
+            temp_label.setText(text)
             temp_label.setStyleSheet(f"color: {color}; font-weight: bold;")
             # Clear the default message to avoid duplication
             self.main_window.status_bar.clearMessage()
         else:
             # Use default status bar message
-            if hasattr(self.main_window, "_status_temp_label"):
-                self.main_window._status_temp_label.setText("")  # noqa: SLF001
+            temp_label = getattr(self.main_window, "_status_temp_label", None)
+            if temp_label is not None:
+                temp_label.setText("")
             self.main_window.status_bar.showMessage(text)
 
-    def clear_status_bar(self):
+    def clear_status_bar(self) -> None:
         """Clear the status bar message, but keep the turn number."""
         self.main_window.status_bar.clearMessage()
         # Also clear the temporary colored label if it exists
-        if hasattr(self.main_window, "_status_temp_label"):
-            self.main_window._status_temp_label.setText("")  # noqa: SLF001
+        temp_label = getattr(self.main_window, "_status_temp_label", None)
+        if temp_label is not None:
+            temp_label.setText("")
 
-    def update_game_state(self, estado):
+    def update_game_state(self, estado: str) -> None:
         """Update the game state display in the status bar.
 
         Args:
@@ -80,7 +87,7 @@ class StatusManager:
         estado_mostrar = estados_amigables.get(estado, estado)
         self.main_window.estado_label.setText(f"Estado: {estado_mostrar}")
 
-    def update_mi_jugador_info(self):
+    def update_mi_jugador_info(self) -> None:
         """Actualiza la información del usuario actual (mi jugador).
 
         Actualiza la información en la barra de estado.
@@ -88,11 +95,8 @@ class StatusManager:
         try:
             debug_logger.log("GUI: update_mi_jugador_info llamado")
             # Verificar que tenemos un cliente conectado
-            if (
-                not hasattr(self.main_window, "client")
-                or not self.main_window.client
-                or not self.main_window.client.userid()
-            ):
+            client = getattr(self.main_window, "client", None)
+            if client is None or not client.userid():
                 debug_logger.log("GUI: No hay cliente conectado")
                 self.main_window.mi_username_label.setText("[No conectado]")
                 self.main_window.mi_color_indicator.setStyleSheet("""
@@ -103,20 +107,18 @@ class StatusManager:
                 return
 
             # Obtener mi usuario ID
-            mi_user_id = self.main_window.client.userid()
+            mi_user_id = client.userid()
             debug_logger.log(f"GUI: Mi user_id: {mi_user_id}")
 
             # Obtener mi nombre de usuario
-            mi_username = "[Sin nombre]"
-            client = self.main_window.client
-            if hasattr(client, "username") and client.username():
-                mi_username = self.main_window.client.username()
+            mi_username = client.username() or "[Sin nombre]"
             debug_logger.log(f"GUI: Mi username: {mi_username}")
 
             # Obtener mi color asignado
             mi_color = None
-            if hasattr(self.main_window, "colores") and self.main_window.colores:
-                mi_color = self.main_window.colores.color_asignado(mi_user_id)
+            colores = getattr(self.main_window, "colores", None)
+            if colores is not None:
+                mi_color = colores.color_asignado(mi_user_id)
                 debug_logger.log(f"GUI: Mi color: {mi_color}")
 
             # Actualizar el nombre de usuario

@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
+    QAbstractButton,
     QButtonGroup,
     QDialog,
     QFrame,
@@ -8,13 +11,20 @@ from PySide6.QtWidgets import (
     QPushButton,
     QRadioButton,
     QVBoxLayout,
+    QWidget,
 )
 
 
 class AttackDialog(QDialog):
     """Diálogo para seleccionar con cuántas unidades atacar."""
 
-    def __init__(self, origen, destino, max_unidades, parent=None):
+    def __init__(
+        self,
+        origen: str,
+        destino: str,
+        max_unidades: int,
+        parent: QWidget | None = None,
+    ):
         """
         Inicializa el diálogo de ataque.
 
@@ -28,18 +38,22 @@ class AttackDialog(QDialog):
         self.origen = origen
         self.destino = destino
         self.max_unidades = min(max_unidades, 3)  # Máximo 3 unidades
-        self.cantidad_seleccionada = None
+        self.cantidad_seleccionada: int | None = None
 
         self.setWindowTitle("Seleccionar Unidades de Ataque")
         self.setFixedSize(400, 280)
         self.setModal(True)
 
         # Eliminar botones de maximizar y minimizar
-        self.setWindowFlags(Qt.Dialog | Qt.WindowTitleHint | Qt.WindowCloseButtonHint)
+        self.setWindowFlags(
+            Qt.WindowType.Dialog
+            | Qt.WindowType.WindowTitleHint
+            | Qt.WindowType.WindowCloseButtonHint
+        )
 
         self._setup_ui()
 
-    def _setup_ui(self):
+    def _setup_ui(self) -> None:
         """Configura la interfaz de usuario del diálogo."""
         layout = QVBoxLayout(self)
         layout.setSpacing(15)
@@ -47,13 +61,13 @@ class AttackDialog(QDialog):
         # Título
         title_label = QLabel(f"Atacar de {self.origen} a {self.destino}")
         title_label.setStyleSheet("font-weight: bold; font-size: 14px;")
-        title_label.setAlignment(Qt.AlignCenter)
+        title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(title_label)
 
         # Línea separadora
         line = QFrame()
-        line.setFrameShape(QFrame.HLine)
-        line.setFrameShadow(QFrame.Sunken)
+        line.setFrameShape(QFrame.Shape.HLine)
+        line.setFrameShadow(QFrame.Shadow.Sunken)
         layout.addWidget(line)
 
         # Etiqueta de instrucción
@@ -93,15 +107,15 @@ class AttackDialog(QDialog):
 
         layout.addLayout(button_layout)
 
-    def _on_selection_changed(self, button):
+    def _on_selection_changed(self, button: QAbstractButton) -> None:
         """Maneja el cambio de selección de cantidad de unidades."""
         self.cantidad_seleccionada = self.button_group.id(button)
 
-    def get_cantidad_unidades(self):
+    def get_cantidad_unidades(self) -> int:
         """
         Retorna la cantidad de unidades seleccionada.
 
         Returns:
             int: Cantidad de unidades seleccionada (1-3)
         """
-        return self.cantidad_seleccionada
+        return self.cantidad_seleccionada or 1
