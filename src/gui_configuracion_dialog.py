@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QDialog,
@@ -5,6 +7,7 @@ from PySide6.QtWidgets import (
     QLabel,
     QPushButton,
     QVBoxLayout,
+    QWidget,
 )
 
 from src.i18n import translate as _
@@ -13,13 +16,13 @@ from src.i18n import translate as _
 class ConfiguracionDialog(QDialog):
     def __init__(
         self,
-        parent=None,
-        segundos_por_turno=20,
-        paises_para_victoria=30,
+        parent: QWidget | None = None,
+        segundos_por_turno: int = 20,
+        paises_para_victoria: int = 30,
         *,
-        objetivos_secretos=False,
-        misiles_habilitados=False,
-    ):
+        objetivos_secretos: bool = False,
+        misiles_habilitados: bool = False,
+    ) -> None:
         super().__init__(parent)
         self.paises_para_victoria = paises_para_victoria
         self.objetivos_secretos = objetivos_secretos
@@ -34,7 +37,7 @@ class ConfiguracionDialog(QDialog):
 
         # Título
         titulo = QLabel(_("Configuración de la Partida"))
-        titulo.setAlignment(Qt.AlignCenter)
+        titulo.setAlignment(Qt.AlignmentFlag.AlignCenter)
         titulo.setStyleSheet("font-weight: bold; font-size: 14px; margin-bottom: 10px;")
         layout.addWidget(titulo)
 
