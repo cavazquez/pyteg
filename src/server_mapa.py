@@ -1,17 +1,12 @@
 """Módulo para manejar el mapa del juego en el servidor."""
 
 import json
-from collections import deque
 from collections.abc import Callable
 from random import shuffle
 from typing import Any
 
-from src.config import (
-    MISSILE_DAMAGE_DISTANCE_1,
-    MISSILE_DAMAGE_DISTANCE_2,
-    MISSILE_DAMAGE_DISTANCE_3,
-)
 from src.country_data import CountryData
+from src.missile_system import MissileSystem
 
 
 class Mapa:
@@ -29,6 +24,8 @@ class Mapa:
         self._mapa: dict[str, CountryData] = {}
         for pais, data in mapa_raw.items():
             self._mapa[pais] = CountryData.from_list(data)
+        # Inicializar sistema de misiles
+        self._missile_system = MissileSystem(self)
 
     def agregar_una_unidad(self, pais: str) -> None:
         """Agrega una unidad al país especificado.
@@ -273,11 +270,11 @@ class Mapa:
         """Devuelve la lista de países adyacentes al país especificado.
 
         Args:
-            pais (str): Nombre del país del que se quieren obtener los adyacentes
+            pais: Nombre del país del que se quieren obtener los adyacentes.
 
         Returns:
-            list: Lista de nombres de países adyacentes,
-            o lista vacía si no hay adyacentes definidos
+            Lista de nombres de países adyacentes, o lista vacía si no hay
+            adyacentes definidos.
 
         """
         if pais in self._mapa:
@@ -285,90 +282,105 @@ class Mapa:
             return [str(p) for p in adyacentes]
         return []
 
-    # ========== Métodos para el sistema de misiles ==========
-
-    def agregar_misil(self, pais: str) -> None:
-        """Agrega un misil al país especificado.
+    def _tiene_pais(self, pais: str) -> bool:
+        """Verifica si un país existe en el mapa.
 
         Args:
-            pais (str): Nombre del país donde se agregará el misil
+            pais: Nombre del país.
+
+        Returns:
+            True si el país existe, False en caso contrario.
+
+        """
+        return pais in self._mapa
+
+    def _obtener_misiles(self, pais: str) -> int:
+        """Obtiene la cantidad de misiles de un país (método interno).
+
+        Args:
+            pais: Nombre del país.
+
+        Returns:
+            Cantidad de misiles.
+
+        """
+        return self._mapa[pais].misiles if pais in self._mapa else 0
+
+    def _incrementar_misiles(self, pais: str) -> None:
+        """Incrementa los misiles de un país (método interno).
+
+        Args:
+            pais: Nombre del país.
 
         """
         if pais in self._mapa:
             self._mapa[pais].misiles += 1
 
-    def cantidad_misiles(self, pais: str) -> int:
-        """Retorna la cantidad de misiles en el país especificado.
+    def _decrementar_misiles(self, pais: str) -> None:
+        """Decrementa los misiles de un país (método interno).
 
         Args:
-            pais (str): Nombre del país
-
-        Returns:
-            int: Cantidad de misiles en el país
-
-        """
-        if pais in self._mapa:
-            return self._mapa[pais].misiles
-        return 0
-
-    def usar_misil(self, pais: str) -> None:
-        """Usa un misil del país especificado (lo decrementa en 1).
-
-        Args:
-            pais (str): Nombre del país desde donde se lanzará el misil
+            pais: Nombre del país.
 
         """
         if pais in self._mapa and self._mapa[pais].misiles > 0:
             self._mapa[pais].misiles -= 1
 
+    # ========== Métodos para el sistema de misiles ==========
+    # Estos métodos delegan al MissileSystem para mantener la API pública
+    # y separar la lógica de misiles del mapa.
+
+    def agregar_misil(self, pais: str) -> None:
+        """Agrega un misil al país especificado.
+
+        Args:
+            pais: Nombre del país donde se agregará el misil.
+
+        """
+        self._missile_system.agregar_misil(pais)
+
+    def cantidad_misiles(self, pais: str) -> int:
+        """Retorna la cantidad de misiles en el país especificado.
+
+        Args:
+            pais: Nombre del país.
+
+        Returns:
+            Cantidad de misiles en el país.
+
+        """
+        return self._missile_system.cantidad_misiles(pais)
+
+    def usar_misil(self, pais: str) -> None:
+        """Usa un misil del país especificado (lo decrementa en 1).
+
+        Args:
+            pais: Nombre del país desde donde se lanzará el misil.
+
+        """
+        self._missile_system.usar_misil(pais)
+
     def calcular_distancia(self, pais_origen: str, pais_destino: str) -> int:
         """Calcula la distancia mínima entre dos países usando BFS.
 
         Args:
-            pais_origen (str): País de origen
-            pais_destino (str): País de destino
+            pais_origen: País de origen.
+            pais_destino: País de destino.
 
         Returns:
-            int: Distancia mínima en saltos entre países,
-            o -1 si no hay camino
+            Distancia mínima en saltos entre países, o -1 si no hay camino.
 
         """
-        if pais_origen not in self._mapa or pais_destino not in self._mapa:
-            return -1
-
-        if pais_origen == pais_destino:
-            return 0
-
-        # BFS para encontrar la distancia mínima
-        visitados = {pais_origen}
-        cola: deque[tuple[str, int]] = deque([(pais_origen, 0)])
-
-        while cola:
-            pais_actual, distancia = cola.popleft()
-
-            for pais_adyacente in self.obtener_paises_adyacentes(pais_actual):
-                if pais_adyacente == pais_destino:
-                    return distancia + 1
-
-                if pais_adyacente not in visitados:
-                    visitados.add(pais_adyacente)
-                    cola.append((pais_adyacente, distancia + 1))
-
-        return -1  # No hay camino
+        return self._missile_system.calcular_distancia(pais_origen, pais_destino)
 
     def calcular_dano_misil(self, distancia: int) -> int:
         """Calcula el daño que causa un misil según la distancia.
 
         Args:
-            distancia (int): Distancia en saltos entre países
+            distancia: Distancia en saltos entre países.
 
         Returns:
-            int: Cantidad de unidades de daño (3, 2, 1, o 0 si fuera de rango)
+            Cantidad de unidades de daño (3, 2, 1, o 0 si fuera de rango).
 
         """
-        damage_map = {
-            1: MISSILE_DAMAGE_DISTANCE_1,
-            2: MISSILE_DAMAGE_DISTANCE_2,
-            3: MISSILE_DAMAGE_DISTANCE_3,
-        }
-        return damage_map.get(distancia, 0)  # 0 si está fuera de rango
+        return self._missile_system.calcular_dano_misil(distancia)
