@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QComboBox, QHBoxLayout, QLabel, QWidget
 
@@ -10,6 +14,9 @@ from src.i18n import (
     translate as _,
 )
 
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+
 
 class LanguageSelector(QWidget):
     """Widget selector de idioma."""
@@ -17,11 +24,12 @@ class LanguageSelector(QWidget):
     # Señal emitida cuando cambia el idioma
     language_changed = Signal(str)
 
-    def __init__(self, parent=None):
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
+        self.combo = QComboBox()
         self.setup_ui()
 
-    def setup_ui(self):
+    def setup_ui(self) -> None:
         layout = QHBoxLayout()
         layout.setContentsMargins(8, 2, 8, 2)  # Márgenes más generosos
         layout.setSpacing(6)  # Espaciado entre elementos
@@ -33,7 +41,6 @@ class LanguageSelector(QWidget):
         layout.addWidget(label)
 
         # ComboBox
-        self.combo = QComboBox()
         self.combo.setMinimumWidth(100)  # Ancho mínimo
         self.combo.setFixedHeight(22)  # Altura fija para consistencia
 
@@ -79,12 +86,12 @@ class LanguageSelector(QWidget):
         # Cargar idiomas disponibles
         self.load_languages()
 
-    def load_languages(self):
+    def load_languages(self) -> None:
         """Carga los idiomas disponibles en el combo."""
-        languages = get_available_languages()
+        languages: Sequence[str] = get_available_languages()
         current_lang = get_current_language()
 
-        language_names = {"es": "Español", "en": "English"}
+        language_names: dict[str, str] = {"es": "Español", "en": "English"}
 
         # Bloquear señales temporalmente para evitar bucles
         self.combo.blockSignals(True)  # noqa: FBT003
@@ -100,9 +107,9 @@ class LanguageSelector(QWidget):
         # Reactivar señales
         self.combo.blockSignals(False)  # noqa: FBT003
 
-    def on_language_changed(self, display_name):
+    def on_language_changed(self, display_name: str) -> None:
         """Maneja el cambio de idioma."""
-        lang_code = None
+        lang_code: str | None = None
         for i in range(self.combo.count()):
             if self.combo.itemText(i) == display_name:
                 lang_code = self.combo.itemData(i)

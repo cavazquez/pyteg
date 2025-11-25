@@ -1,22 +1,29 @@
-from PySide6.QtGui import (
-    QAction,
-)
-from PySide6.QtWidgets import QDialog, QMenu
+from __future__ import annotations
+
+from typing import Any
+
+from PySide6.QtGui import QAction
+from PySide6.QtWidgets import QDialog, QMenu, QWidget
 
 from src.gui_attack_dialog import AttackDialog
 
 
 class Menu(QMenu):
     # Variable de clase para rastrear el país de origen para mover unidades
-    pais_origen = None
+    pais_origen: str | None = None
 
-    def __init__(self, pais, main_window, parent=None):
+    def __init__(
+        self,
+        pais: str,
+        main_window: Any,
+        parent: QWidget | None = None,
+    ):
         # En Wayland, el menú necesita tener la ventana principal como padre
         # para evitar errores de "grabbing popup"
         super().__init__(parent or main_window)
         self.pais = pais
         self.main_window = main_window
-        self.transmisor = main_window.transmisor
+        self.transmisor = getattr(main_window, "transmisor", None)
 
         # Configurar acciones del menú
         self.action_pais = QAction(pais, self)
@@ -65,7 +72,7 @@ class Menu(QMenu):
         # Configurar el menú
         self.actualizar_menu()
 
-    def actualizar_menu(self):
+    def actualizar_menu(self) -> None:
         # Limpiar el menú
         self.clear()
 
@@ -79,9 +86,8 @@ class Menu(QMenu):
         self.addSeparator()
 
         # Mostrar opción de canjear misil (solo si está habilitado)
-        misiles_habilitados = (
-            hasattr(self.main_window, "misiles_habilitados")
-            and self.main_window.misiles_habilitados
+        misiles_habilitados = bool(
+            getattr(self.main_window, "misiles_habilitados", False)
         )
         if misiles_habilitados:
             self.addAction(self.action_canjear_misil)
@@ -107,7 +113,8 @@ class Menu(QMenu):
         self.addSeparator()
 
         # Opciones de selección basadas en el estado actual
-        selection_manager = getattr(self.main_window.scene, "selection_manager", None)
+        scene = getattr(self.main_window, "scene", None)
+        selection_manager = getattr(scene, "selection_manager", None)
         if selection_manager:
             pais_origen = selection_manager.get_pais_origen()
             pais_destino = selection_manager.get_pais_destino()
@@ -131,22 +138,22 @@ class Menu(QMenu):
                 self.addAction(self.action_mover_seleccion)
             self.addAction(self.action_cancelar_seleccion)
 
-    def agregar_infanteria(self):
-        if self.transmisor:
+    def agregar_infanteria(self) -> None:
+        if self.transmisor is not None:
             self.transmisor.agregar_unidad(pais=self.pais, tipo_unidad="infanteria")
 
-    def agregar_misil(self):
-        if self.transmisor:
+    def agregar_misil(self) -> None:
+        if self.transmisor is not None:
             self.transmisor.agregar_unidad(pais=self.pais, tipo_unidad="misil")
 
-    def iniciar_movimiento(self):
+    def iniciar_movimiento(self) -> None:
         """Inicia el proceso de movimiento de unidades desde este país"""
         Menu.pais_origen = self.pais
         # Actualizar el menú en la ventana principal
         if hasattr(self.main_window, "actualizar_menus_contextuales"):
             self.main_window.actualizar_menus_contextuales()
 
-    def completar_movimiento(self, cantidad):
+    def completar_movimiento(self, cantidad: int) -> None:
         """Completa el movimiento de unidades desde el país de origen al país actual"""
         if Menu.pais_origen is None or self.transmisor is None:
             return
@@ -161,15 +168,16 @@ class Menu(QMenu):
         if hasattr(self.main_window, "actualizar_menus_contextuales"):
             self.main_window.actualizar_menus_contextuales()
 
-    def cancelar_movimiento(self):
+    def cancelar_movimiento(self) -> None:
         """Cancela el proceso de movimiento de unidades"""
         Menu.pais_origen = None
         if hasattr(self.main_window, "actualizar_menus_contextuales"):
             self.main_window.actualizar_menus_contextuales()
 
-    def atacar(self):
+    def atacar(self) -> None:
         """Ataca del país origen al país destino"""
-        selection_manager = getattr(self.main_window.scene, "selection_manager", None)
+        scene = getattr(self.main_window, "scene", None)
+        selection_manager = getattr(scene, "selection_manager", None)
         if selection_manager:
             origen = selection_manager.get_pais_origen()
             destino = selection_manager.get_pais_destino()
@@ -177,7 +185,10 @@ class Menu(QMenu):
             if origen and destino and self.transmisor:
                 # Obtener información del país atacante para determinar
                 # unidades disponibles
-                max_unidades = self.main_window.get_max_attack_units(origen)
+                get_max_units = getattr(
+                    self.main_window, "get_max_attack_units", lambda _: 0
+                )
+                max_unidades = get_max_units(origen)
 
                 if max_unidades < 1:
                     self.main_window.update_status_bar(
@@ -187,7 +198,7 @@ class Menu(QMenu):
 
                 # Mostrar diálogo para seleccionar cantidad de unidades
                 dialog = AttackDialog(origen, destino, max_unidades, self.main_window)
-                if dialog.exec() == QDialog.Accepted:
+                if dialog.exec() == QDialog.DialogCode.Accepted:
                     cantidad_unidades = dialog.get_cantidad_unidades()
                     # Realizar ataque usando el método específico
                     self.transmisor.atacar(origen, destino, cantidad_unidades)
@@ -205,33 +216,37 @@ class Menu(QMenu):
             # Limpiar selección después de la acción
             selection_manager.cancelar_seleccion()
 
-    def mover(self):
+    def mover(self) -> None:
         """Mueve unidades del país origen al país destino"""
-        selection_manager = getattr(self.main_window.scene, "selection_manager", None)
+        scene = getattr(self.main_window, "scene", None)
+        selection_manager = getattr(scene, "selection_manager", None)
         if selection_manager:
             origen = selection_manager.get_pais_origen()
             destino = selection_manager.get_pais_destino()
 
-            if origen and destino and self.transmisor:
+            if origen and destino and self.transmisor is not None:
                 # Realizar movimiento de 1 unidad
                 self.transmisor.mover_unidad(origen=origen, destino=destino, cantidad=1)
                 print(f"Moviendo 1 unidad de {origen} a {destino}")
                 # Mostrar mensaje en la barra de estado
-                self.main_window.status_bar.showMessage(
-                    f"Moviendo 1 unidad de {origen} a {destino}",
-                    3000,  # 3 segundos
-                )
+                status_bar = getattr(self.main_window, "status_bar", None)
+                if status_bar is not None:
+                    status_bar.showMessage(
+                        f"Moviendo 1 unidad de {origen} a {destino}",
+                        3000,
+                    )
 
             # Limpiar selección después de la acción
             selection_manager.cancelar_seleccion()
 
-    def cancelar_seleccion_menu(self):
+    def cancelar_seleccion_menu(self) -> None:
         """Cancela la selección actual desde el menú contextual"""
-        selection_manager = getattr(self.main_window.scene, "selection_manager", None)
+        scene = getattr(self.main_window, "scene", None)
+        selection_manager = getattr(scene, "selection_manager", None)
         if selection_manager:
             selection_manager.cancelar_seleccion()
 
-    def canjear_misil(self):
+    def canjear_misil(self) -> None:
         """Canjea 6 unidades por 1 misil en el país actual"""
         if hasattr(self.main_window, "canjear_misil"):
             self.main_window.canjear_misil(self.pais)
