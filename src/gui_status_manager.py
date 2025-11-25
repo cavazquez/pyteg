@@ -144,3 +144,54 @@ class StatusManager:
         except (AttributeError, KeyError, ValueError) as e:
             print(f"Error al actualizar información de mi jugador: {e}")
             self.main_window.mi_username_label.setText("[Error]")
+
+    def update_turno(
+        self,
+        num_turno: int,
+        num_ronda: int,
+        jugador_actual_id: int | None = None,
+        jugador_actual_nombre: str | None = None,
+        jugador_actual_color: str | None = None,
+    ) -> None:
+        """Actualiza el número de turno y ronda, y la información del jugador actual.
+
+        Args:
+            num_turno: Número del turno actual.
+            num_ronda: Número de la ronda actual.
+            jugador_actual_id: ID del jugador actual.
+            jugador_actual_nombre: Nombre del jugador actual.
+            jugador_actual_color: Color del jugador actual.
+
+        """
+        # Almacenar información del turno (usando atributos públicos)
+        self.main_window._turno_actual = num_turno  # noqa: SLF001
+        self.main_window._jugador_actual_id = jugador_actual_id  # noqa: SLF001
+        self.main_window._jugador_actual_nombre = jugador_actual_nombre  # noqa: SLF001
+        self.main_window._jugador_actual_color = jugador_actual_color  # noqa: SLF001
+
+        # Actualizar el texto del turno
+        self.main_window.turno_label.setText(
+            f"Ronda: {num_ronda} - Turno: {num_turno + 1}"
+        )
+
+        # Actualizar sombreado del jugador en su turno
+        if jugador_actual_nombre:
+            self.main_window.players_manager.set_current_player(jugador_actual_nombre)
+
+    def update_timer_display(self, text: str, color: str | None = None) -> None:
+        """Actualiza el display del timer en la barra de estado.
+
+        Args:
+            text: Texto del timer a mostrar.
+            color: Color para el texto (opcional).
+
+        """
+        if color:
+            self.main_window.timer_label.setStyleSheet(
+                f"font-weight: bold; padding: 2px 8px; color: {color};"
+            )
+        else:
+            self.main_window.timer_label.setStyleSheet(
+                "font-weight: bold; padding: 2px 8px;"
+            )
+        self.main_window.timer_label.setText(text)

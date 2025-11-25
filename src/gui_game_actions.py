@@ -126,3 +126,31 @@ class GameActionsManager:
         unidades_disponibles = max(0, unidades_totales - 1)
         # Máximo 3 unidades para atacar
         return min(unidades_disponibles, 3)
+
+    def canjear_misil(self, pais: str) -> None:
+        """Canjea unidades por 1 misil en el país especificado.
+
+        Args:
+            pais: Nombre del país donde canjear el misil.
+
+        """
+        if self.main_window.transmisor:
+            self.main_window.transmisor.canjear_misil(pais)
+            self.main_window.status_bar.showMessage(
+                f"Canjeando misil en {pais}...", 3000
+            )
+
+    def lanzar_misil(self, pais_origen: str, pais_destino: str) -> None:
+        """Lanza un misil desde un país hacia otro.
+
+        Args:
+            pais_origen: País desde donde se lanza el misil.
+            pais_destino: País objetivo del misil.
+
+        """
+        if self.main_window.transmisor:
+            self.main_window.transmisor.lanzar_misil(pais_origen, pais_destino)
+            self.main_window.status_bar.showMessage(
+                f"Lanzando misil desde {pais_origen} hacia {pais_destino}...",
+                3000,
+            )

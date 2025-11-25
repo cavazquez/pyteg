@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import contextlib
 from typing import TYPE_CHECKING, Any
 
 from PySide6.QtCore import QSize, Qt
@@ -18,20 +17,18 @@ from PySide6.QtWidgets import (
 
 from src.client_transmisor import ClientNullTransmisor
 from src.cliente_colores import Colores
-from src.config import DEFAULT_TURN_SECONDS, DEFAULT_VICTORY_COUNTRIES
-from src.gui_admin import VentanaAdmin
-from src.gui_conectar import VentanaConectar
-from src.gui_configuracion_dialog import ConfiguracionDialog
-from src.gui_esperar_jugadores import VentanaEsperarJugadores
+from src.gui_card_manager import CardManager
+from src.gui_config_manager import ConfigManager
 from src.gui_game_actions import GameActionsManager
+from src.gui_language_manager import LanguageManager
 from src.gui_language_selector import LanguageSelector
 from src.gui_layout_manager import LayoutManager
 from src.gui_players_manager import PlayersManager
 from src.gui_sound_control import SoundControlWidget
 from src.gui_status_manager import StatusManager
-from src.gui_tarjetas_dialog import TarjetasDialog
 from src.gui_theme_manager import ThemeManager
 from src.gui_units_manager import UnitsManager
+from src.gui_window_manager import WindowManager
 from src.i18n import translate as _
 from src.sound_manager import SoundManager
 
@@ -42,6 +39,7 @@ if TYPE_CHECKING:
 
     from src.client import Client
     from src.gui_chat import Chat
+    from src.gui_conectar import VentanaConectar
     from src.gui_scene import QCustomGraphicsScene
     from src.gui_toolbar import ToolBar
     from src.gui_view import QCustomGraphicsView
@@ -82,6 +80,10 @@ class Gui(QMainWindow):
         self.status_manager = StatusManager(self)
         self.units_manager = UnitsManager(self)
         self.game_actions_manager = GameActionsManager(self)
+        self.config_manager = ConfigManager(self)
+        self.card_manager = CardManager(self)
+        self.window_manager = WindowManager(self)
+        self.language_manager = LanguageManager(self)
         self.sound_manager = SoundManager()
         self.setMinimumSize(QSize(800, 600))
         self.setMouseTracking(True)
@@ -91,16 +93,6 @@ class Gui(QMainWindow):
         self._jugador_actual_id: int | None = None
         self._jugador_actual_nombre: str | None = None
         self._jugador_actual_color: str | None = None
-
-        # Initialize game configuration
-        self._segundos_por_turno = DEFAULT_TURN_SECONDS
-        self._paises_para_victoria = DEFAULT_VICTORY_COUNTRIES
-        self._objetivos_secretos = False
-        self.misiles_habilitados = False
-
-        # Initialize secret objective variables
-        self._objetivo_secreto_id: str | None = None
-        self._objetivo_secreto_descripcion: str | None = None
 
         self.colores = Colores()
 
@@ -192,7 +184,9 @@ class Gui(QMainWindow):
         # Add language selector
         self.language_selector = LanguageSelector()
         # Conectar la señal de cambio de idioma
-        self.language_selector.language_changed.connect(self.on_language_changed)
+        self.language_selector.language_changed.connect(
+            self.language_manager.on_language_changed
+        )
         self.status_bar.addPermanentWidget(self.language_selector)
 
         # Separator
@@ -251,45 +245,15 @@ class Gui(QMainWindow):
 
     def abrir_ventana_conectar(self) -> None:
         """Abre la ventana de conexión al servidor."""
-        # Cancelar selección al abrir ventana de conexión
-        if self.scene and hasattr(self.scene, "selection_manager"):
-            self.scene.selection_manager.cancelar_seleccion()
-
-        # Mantener referencia persistente para conexión al selector de idioma
-        if not hasattr(self, "ventana_conectar") or self.ventana_conectar is None:
-            self.ventana_conectar = VentanaConectar(self)
-
-        self.ventana_conectar.show()
+        self.window_manager.abrir_ventana_conectar()
 
     def ventana_admin(self) -> None:
         """Abre la ventana de administración."""
-        self.w = None
-        self.w = VentanaAdmin(self)
-        if self.w is not None:
-            self.w.show()
+        self.window_manager.ventana_admin()
 
     def ventana_esperar_jugadores(self) -> None:
         """Abre la ventana de espera de jugadores."""
-        print("=== Iniciando ventana_esperar_jugadores ===")
-        print("Creando nueva ventana de espera...")
-        self.w = VentanaEsperarJugadores(self)
-
-        # Conectar la señal de cierre para limpiar la referencia
-        def limpiar_ventana() -> None:
-            print("Limpiando referencia a la ventana de espera")
-            if hasattr(self, "w") and self.w is not None:
-                with contextlib.suppress(Exception):
-                    # Desconectar todas las señales para evitar llamadas duplicadas
-                    self.w.destroyed.disconnect()
-
-                self.w = None
-
-        if self.w is not None:
-            self.w.destroyed.connect(limpiar_ventana)
-
-        # Mostrar la ventana
-        self.w.show()
-        print("Ventana de espera mostrada")
+        self.window_manager.ventana_esperar_jugadores()
 
     def update_turno(
         self,
@@ -309,17 +273,13 @@ class Gui(QMainWindow):
             jugador_actual_color (str, optional): Color del jugador actual
 
         """
-        self._turno_actual = num_turno
-        self._jugador_actual_id = jugador_actual_id
-        self._jugador_actual_nombre = jugador_actual_nombre
-        self._jugador_actual_color = jugador_actual_color
-
-        # Actualizar el texto del turno
-        self.turno_label.setText(f"Ronda: {num_ronda} - Turno: {num_turno + 1}")
-
-        # Actualizar sombreado del jugador en su turno
-        if jugador_actual_nombre:
-            self.players_manager.set_current_player(jugador_actual_nombre)
+        self.status_manager.update_turno(
+            num_turno,
+            num_ronda,
+            jugador_actual_id,
+            jugador_actual_nombre,
+            jugador_actual_color,
+        )
 
     def update_status_bar(self, text: str, color: str | None = None) -> None:
         """Update the status bar with the given text.
@@ -339,13 +299,7 @@ class Gui(QMainWindow):
             color (str, optional): Color for the text
 
         """
-        if color:
-            self.timer_label.setStyleSheet(
-                f"font-weight: bold; padding: 2px 8px; color: {color};"
-            )
-        else:
-            self.timer_label.setStyleSheet("font-weight: bold; padding: 2px 8px;")
-        self.timer_label.setText(text)
+        self.status_manager.update_timer_display(text, color)
 
     def clear_status_bar(self) -> None:
         """Clear the status bar message, but keep the turn number."""
@@ -432,9 +386,7 @@ class Gui(QMainWindow):
             pais (str): Nombre del país donde canjear el misil
 
         """
-        if self.transmisor:
-            self.transmisor.canjear_misil(pais)
-            self.status_bar.showMessage(f"Canjeando misil en {pais}...", 3000)
+        self.game_actions_manager.canjear_misil(pais)
 
     def lanzar_misil(self, pais_origen: str, pais_destino: str) -> None:
         """Lanza un misil desde un país hacia otro.
@@ -444,12 +396,7 @@ class Gui(QMainWindow):
             pais_destino (str): País objetivo del misil
 
         """
-        if self.transmisor:
-            self.transmisor.lanzar_misil(pais_origen, pais_destino)
-            self.status_bar.showMessage(
-                f"Lanzando misil desde {pais_origen} hacia {pais_destino}...",
-                3000,
-            )
+        self.game_actions_manager.lanzar_misil(pais_origen, pais_destino)
 
     def set_configuracion_partida(
         self,
@@ -468,62 +415,18 @@ class Gui(QMainWindow):
             misiles_habilitados (bool): Si el sistema de misiles está habilitado
 
         """
-        self._segundos_por_turno = segundos_por_turno
-        self._paises_para_victoria = paises_para_victoria
-        self._objetivos_secretos = objetivos_secretos
+        self.config_manager.set_configuracion_partida(
+            segundos_por_turno,
+            paises_para_victoria,
+            objetivos_secretos=objetivos_secretos,
+            misiles_habilitados=misiles_habilitados,
+        )
+        # Mantener compatibilidad con código que accede directamente
         self.misiles_habilitados = misiles_habilitados
-
-        # Inicializar variables para objetivo secreto
-        self._objetivo_secreto_id = None
-        self._objetivo_secreto_descripcion = None
 
     def mostrar_configuracion_partida(self) -> None:
         """Muestra la ventana de configuración de la partida."""
-        dialog = ConfiguracionDialog(
-            self,
-            self._segundos_por_turno,
-            self._paises_para_victoria,
-            objetivos_secretos=self._objetivos_secretos,
-            misiles_habilitados=self.misiles_habilitados,
-        )
-        dialog.exec()
-
-    def on_language_changed(self, lang_code: str) -> None:
-        """Maneja el cambio de idioma actualizando todos los componentes de la GUI.
-
-        Args:
-            lang_code (str): Código del nuevo idioma (ej: 'es', 'en')
-
-        """
-        # Actualizar título de la ventana
-        self.setWindowTitle(_("PyTeg"))
-
-        # Actualizar etiquetas de la barra de estado
-        self.mi_jugador_text.setText(_("Mi jugador:"))
-
-        # Actualizar estados si están en valores por defecto
-        if self.estado_label.text() in {
-            "Estado: Esperando jugadores",
-            "Estado: Waiting for players",
-        }:
-            self.estado_label.setText(_("Estado: Esperando jugadores"))
-
-        if self.turno_label.text() in {"Esperando turno", "Waiting for turn"}:
-            self.turno_label.setText(_("Esperando turno"))
-
-        if self.seleccion_label.text().startswith(
-            "Selección:"
-        ) or self.seleccion_label.text().startswith("Selection:"):
-            self.seleccion_label.setText(_("Selección: Ninguna"))
-
-        # Actualizar la toolbar
-        if self.toolbar is not None:
-            self.toolbar.update_language(lang_code)
-
-        # No necesitamos actualizar el selector de idioma porque ya maneja
-        # su propio estado
-
-        print(f"GUI actualizada al idioma: {lang_code}")
+        self.config_manager.mostrar_configuracion_partida()
 
     def set_objetivo_secreto(
         self, objetivo_id: str | None, descripcion: str | None
@@ -535,34 +438,8 @@ class Gui(QMainWindow):
             descripcion (str): Descripción del objetivo secreto
 
         """
-        self._objetivo_secreto_id = objetivo_id
-        self._objetivo_secreto_descripcion = descripcion
-
-        # Si hay un diálogo de tarjetas abierto, actualizarlo
-        from src.gui_tarjetas_dialog import TarjetasDialog  # noqa: PLC0415
-
-        for widget in self.findChildren(TarjetasDialog):
-            if widget.isVisible():
-                widget.set_objetivo_secreto(objetivo_id, descripcion)
+        self.config_manager.set_objetivo_secreto(objetivo_id, descripcion)
 
     def mostrar_tarjetas(self) -> None:
         """Muestra la ventana de tarjetas del jugador."""
-        # Solicitar tarjetas actualizadas al servidor
-        self.transmisor.solicitar_tarjetas()
-
-        dialog = TarjetasDialog(self)
-
-        # Si tenemos tarjetas del servidor, usarlas inmediatamente
-        if hasattr(self, "tarjetas_jugador") and self.tarjetas_jugador:
-            dialog.actualizar_tarjetas(self.tarjetas_jugador)
-        else:
-            # Si no hay tarjetas, usar lista vacía para mostrar slots vacíos
-            dialog.actualizar_tarjetas([])
-
-        # Si tenemos un objetivo secreto, mostrarlo en el diálogo
-        if self._objetivo_secreto_id and self._objetivo_secreto_descripcion:
-            dialog.set_objetivo_secreto(
-                self._objetivo_secreto_id, self._objetivo_secreto_descripcion
-            )
-
-        dialog.exec()
+        self.card_manager.mostrar_tarjetas()
