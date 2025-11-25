@@ -16,12 +16,14 @@ from src.utils import get_resource_path
 class SoundManager:
     """Gestor centralizado de efectos de sonido del juego."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Inicializa el gestor de sonidos."""
         self._enabled = True
         self._volume = 0.5  # Volumen por defecto (0.0 a 1.0)
-        self._players = {}  # Cache de reproductores por tipo de sonido
-        self._audio_outputs = {}  # Cache de salidas de audio
+        self._players: dict[
+            str, QMediaPlayer
+        ] = {}  # Cache de reproductores por tipo de sonido
+        self._audio_outputs: dict[str, QAudioOutput] = {}  # Cache de salidas de audio
 
         # Mapeo de eventos a archivos de sonido
         self._sound_files = {

@@ -52,7 +52,10 @@ def get_version() -> str:
         if pyproject_path.exists():
             with pyproject_path.open("rb") as f:
                 data = _toml_loader.load(f)
-                return data.get("project", {}).get("version", "unknown")
+                version = data.get("project", {}).get("version", "unknown")
+                if isinstance(version, str):
+                    return version
+                return "unknown"
     except (OSError, ValueError, KeyError):
         # Error al leer archivo o parsear TOML
         pass

@@ -57,18 +57,13 @@ dev = [
 
 [tool.mypy]
 python_version = "3.11"
-ignore_missing_imports = true
-follow_imports = "skip"
+strict = true
+ignore_missing_imports = false
+follow_imports = "normal"
 warn_redundant_casts = true
 warn_unused_ignores = true
-no_implicit_optional = true
-strict_equality = true
-disallow_incomplete_defs = false
-disallow_untyped_defs = false
-check_untyped_defs = true
 explicit_package_bases = true
 files = ["src", "tests", "scripts"]
-
 
 [build-system]
 requires = ["hatchling>=1.18", "hatch-nuitka"]
@@ -86,43 +81,3 @@ main = [
 onefile = true
 standalone = true
 output-dir = "dist"
-
-[[tool.mypy.overrides]]
-module = [
-  "src.version",
-  "src.tarjeta_de_pais",
-  "src.server_estado",
-  "src.client",
-]
-disallow_untyped_defs = true
-
-[tool.mypy-src.exception]
-strict = true
-
-[tool.mypy-src.codecs_utils]
-strict = true
-
-[tool.mypy-src.country]
-strict = true
-
-[tool.mypy-src.server_player]
-strict = true
-
-[tool.mypy-src.batalla]
-strict = true
-
-[tool.mypy-src.utils]
-strict = true
-
-[tool.mypy-src.server_state_validator]
-strict = true
-
-[tool.mypy-src.server_registrar_jugadores]
-strict = true
-
-[tool.mypy-src.server_client_connection]
-strict = true
-
-[tool.mypy-src.server_color]
-strict = true
-

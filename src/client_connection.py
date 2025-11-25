@@ -30,11 +30,11 @@ class ConnectionClient(QWidget):
         self._socket.stateChanged.connect(self.on_state_changed)
         self._socket.connected.connect(self.on_connected)
 
-    def conectar(self):
+    def conectar(self) -> None:
         self._socket.connectToHost(self._host, self._port)
         print(f"Conectando a {self._host}:{self._port}...")
 
-    def on_connected(self):
+    def on_connected(self) -> None:
         print(f"Conectado a {self._host}:{self._port}")
         # Reproducir sonido de conexión
         if hasattr(self._main_window, "sound_manager"):
@@ -49,17 +49,17 @@ class ConnectionClient(QWidget):
         print(f"{self._socket.state()}")
         return self._socket.state() == QAbstractSocket.SocketState.ConnectedState
 
-    def get_main_window(self):
+    def get_main_window(self) -> Any:
         """Obtiene la ventana principal."""
         return self._main_window
 
-    def send_data(self, data):
+    def send_data(self, data: str) -> None:
         print(f"Enviando {data}")
         # Agregar separador \0 al final del mensaje
         encode_data = Utf8.encode(data + "\0")
         self._socket.write(encode_data)
 
-    def read_data(self):
+    def read_data(self) -> None:
         data_json = ""
         while self._socket.bytesAvailable():
             encode_datas = self._socket.readAll()
@@ -120,7 +120,7 @@ class ConnectionClient(QWidget):
             self._socket.disconnectFromHost()
             print("Desconectando del servidor...")
 
-    def display_error(self):
+    def display_error(self) -> None:
         if self._socket.errorString() == "Connection refused":
             QMessageBox.warning(self, "Advertencia", "conexión rehusada.")
         print(f"Error: {self._socket.errorString()}")

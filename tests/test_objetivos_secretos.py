@@ -6,7 +6,7 @@ from src.objetivos_secretos import ObjetivosSecretos
 
 
 class TestObjetivosSecretos(unittest.TestCase):
-    def setUp(self):
+    def setUp(self) -> None:
         """Configuración inicial para los tests."""
         # Mock del TomlReader con objetivos de prueba
         self.mock_toml_reader = Mock()
@@ -29,7 +29,7 @@ class TestObjetivosSecretos(unittest.TestCase):
 
         # Configure mock to return specific objective data based on ID
 
-        def mock_get_objetivo_secreto(objetivo_id):
+        def mock_get_objetivo_secreto(objetivo_id: str) -> dict[str, object] | None:
             return self.objetivos_data.get(objetivo_id)
 
         self.mock_toml_reader.get_objetivo_secreto.side_effect = (
@@ -39,7 +39,7 @@ class TestObjetivosSecretos(unittest.TestCase):
 
         self.objetivos_secretos = ObjetivosSecretos(self.mock_toml_reader)
 
-    def test_asignar_objetivos_aleatorios(self):
+    def test_asignar_objetivos_aleatorios(self) -> None:
         """Test de asignación aleatoria de objetivos."""
         # Crear mocks de jugadores con userid() method
         jugadores = []
@@ -56,7 +56,7 @@ class TestObjetivosSecretos(unittest.TestCase):
         for jugador in jugadores:
             self.assertIn(jugador.userid(), self.objetivos_secretos.objetivos_asignados)
 
-    def test_get_objetivo_jugador(self):
+    def test_get_objetivo_jugador(self) -> None:
         """Test de obtención de objetivo de un jugador."""
         jugador = "test_player"
 
@@ -71,7 +71,7 @@ class TestObjetivosSecretos(unittest.TestCase):
         objetivo_dict = cast("dict[str, object]", objetivo)
         self.assertEqual(objetivo_dict["tipo"], "conquistar_paises")
 
-    def test_verificar_condicion_victoria_conquistar_paises(self):
+    def test_verificar_condicion_victoria_conquistar_paises(self) -> None:
         """Test de verificación de victoria por conquista de países."""
         jugador = "test_player"
         self.objetivos_secretos.objetivos_asignados[jugador] = "obj_1"
@@ -104,7 +104,7 @@ class TestObjetivosSecretos(unittest.TestCase):
             )
             self.assertFalse(resultado)
 
-    def test_verificar_condicion_victoria_destruir_jugador(self):
+    def test_verificar_condicion_victoria_destruir_jugador(self) -> None:
         """Test de verificación de victoria por destruir jugador."""
         jugador = "test_player"
         self.objetivos_secretos.objetivos_asignados[jugador] = "obj_2"
@@ -123,7 +123,7 @@ class TestObjetivosSecretos(unittest.TestCase):
         )
         self.assertTrue(resultado)
 
-    def test_verificar_condicion_victoria_conquistar_continentes(self):
+    def test_verificar_condicion_victoria_conquistar_continentes(self) -> None:
         """Test de verificación de victoria por conquista de continentes."""
         jugador = "test_player"
 
@@ -152,7 +152,7 @@ class TestObjetivosSecretos(unittest.TestCase):
         }
 
         # Mock get_paises para cada continente
-        def mock_get_paises(continente):
+        def mock_get_paises(continente: str) -> list[str]:
             if continente == "America del Norte":
                 return ["usa", "canada", "mexico"]
             if continente == "Africa":
@@ -166,7 +166,7 @@ class TestObjetivosSecretos(unittest.TestCase):
         )
         self.assertTrue(resultado)
 
-    def test_contar_paises_jugador(self):
+    def test_contar_paises_jugador(self) -> None:
         """Test del conteo de países de un jugador."""
         jugador = "test_player"
 
@@ -186,7 +186,7 @@ class TestObjetivosSecretos(unittest.TestCase):
         count = self.objetivos_secretos._contar_paises_jugador(jugador, mock_mapa)  # noqa: SLF001
         self.assertEqual(count, 2)
 
-    def test_sin_objetivo_asignado(self):
+    def test_sin_objetivo_asignado(self) -> None:
         """Test cuando un jugador no tiene objetivo asignado."""
         jugador = "test_player"
 

@@ -29,11 +29,11 @@ class PyTegLogger:
     Logger personalizado para PyTeg que maneja servidor y cliente por separado.
     """
 
-    def __init__(self):
-        self._loggers = {}
+    def __init__(self) -> None:
+        self._loggers: dict[str, logging.Logger] = {}
         self._setup_directories()
 
-    def _setup_directories(self):
+    def _setup_directories(self) -> None:
         """Crea los directorios necesarios para los logs."""
         log_dir = Path("logs")
         log_dir.mkdir(exist_ok=True)

@@ -5,7 +5,7 @@ from src.server_color import ServerColor
 
 
 class TestServerColor(unittest.TestCase):
-    def test_reservar_color(self):
+    def test_reservar_color(self) -> None:
         server_color = ServerColor()
         cant_colores_originales = len(server_color.colores_disponibles())
         un_color = server_color.colores_disponibles()[0]
@@ -13,7 +13,7 @@ class TestServerColor(unittest.TestCase):
         cant_colores = len(server_color.colores_disponibles())
         self.assertEqual(cant_colores_originales - 1, cant_colores)
 
-    def test_liberar_color(self):
+    def test_liberar_color(self) -> None:
         server_color = ServerColor()
         cant_colores_originales = len(server_color.colores_disponibles())
         un_color = server_color.colores_disponibles()[0]
@@ -22,7 +22,7 @@ class TestServerColor(unittest.TestCase):
         cant_colores = len(server_color.colores_disponibles())
         self.assertEqual(cant_colores_originales, cant_colores)
 
-    def test_obtener_color_de_hexrgb(self):
+    def test_obtener_color_de_hexrgb(self) -> None:
         server_color = ServerColor()
         un_color = server_color.obtener_color_de_hexrgb("#ffff00")
         self.assertIsNotNone(un_color)

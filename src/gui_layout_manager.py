@@ -3,6 +3,10 @@ Gestor de layout para la interfaz gráfica principal de PyTeg.
 Maneja la creación y configuración de todos los elementos de layout.
 """
 
+from __future__ import annotations
+
+from typing import Any
+
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor, QFont, QPainter, QPixmap
 from PySide6.QtWidgets import (
@@ -25,7 +29,7 @@ from src.gui_view import QCustomGraphicsView
 class LayoutManager:
     """Gestor de layout para la ventana principal."""
 
-    def __init__(self, main_window):
+    def __init__(self, main_window: Any) -> None:
         """Inicializar el gestor de layout.
 
         Args:
@@ -33,7 +37,7 @@ class LayoutManager:
         """
         self.main_window = main_window
 
-    def setup_graphics_view(self):
+    def setup_graphics_view(self) -> None:
         """Configurar la vista gráfica principal."""
         self._setup_chat_and_toolbar()
         self._setup_scene_and_view()
@@ -48,7 +52,7 @@ class LayoutManager:
         # Configurar layout principal
         self._setup_main_layout(horizontal_splitter)
 
-    def _setup_chat_and_toolbar(self):
+    def _setup_chat_and_toolbar(self) -> None:
         """Configurar chat y toolbar."""
         # Agrego el Chat
         self.main_window.chat = Chat(self.main_window)
@@ -58,7 +62,7 @@ class LayoutManager:
         self.main_window.toolbar = ToolBar("My main toolbar", self.main_window)
         self.main_window.addToolBar(self.main_window.toolbar)
 
-    def _setup_scene_and_view(self):
+    def _setup_scene_and_view(self) -> None:
         """Configurar escena y vista gráfica."""
         # Agrego la escena y la vista
         self.main_window.scene = QCustomGraphicsScene(self.main_window)
@@ -66,7 +70,7 @@ class LayoutManager:
             self.main_window.scene, self.main_window
         )
 
-    def _create_vertical_splitter(self):
+    def _create_vertical_splitter(self) -> QSplitter:
         """Crear splitter vertical para vista y chat."""
         # Create a splitter to hold the QGraphicsView and Chat
         vertical_splitter = QSplitter()
@@ -77,7 +81,7 @@ class LayoutManager:
         vertical_splitter.setStretchFactor(1, 1)  # 10% for Chat
         return vertical_splitter
 
-    def _create_horizontal_splitter(self, vertical_splitter):
+    def _create_horizontal_splitter(self, vertical_splitter: QSplitter) -> QSplitter:
         """Crear splitter horizontal principal."""
         # Create a horizontal splitter to hold the vertical splitter
         horizontal_splitter = QSplitter()
@@ -85,7 +89,7 @@ class LayoutManager:
         horizontal_splitter.addWidget(vertical_splitter)
         return horizontal_splitter
 
-    def _setup_right_column(self):
+    def _setup_right_column(self) -> None:
         """Configurar la columna derecha con unidades y jugadores."""
         # Widget principal para la columna derecha
         self.main_window.right_column_widget = QWidget()
@@ -103,7 +107,7 @@ class LayoutManager:
         # Add the 6 values below the player list
         self._setup_continent_values(layout)
 
-    def _setup_continent_values(self, layout):
+    def _setup_continent_values(self, layout: QVBoxLayout) -> None:
         """Crea la sección UNIDADES con filas ordenadas e íconos."""
         # Contenedor principal de la sección
         section = QFrame()
@@ -170,13 +174,13 @@ class LayoutManager:
 
     def _create_unit_row(  # noqa: PLR0913, PLR0917
         self,
-        parent_layout,
+        parent_layout: QVBoxLayout,
         key: str,
         value: int,
         icon_color: str,
         glyph: str,
         tooltip: str,
-    ):
+    ) -> None:
         """Crea una fila (ícono dibujado + etiqueta) y la registra en value_labels."""
         row = QFrame()
         row.setObjectName("unitRow")
@@ -232,7 +236,7 @@ class LayoutManager:
         label.setPixmap(pm)
         return label
 
-    def _add_players_title(self, layout):
+    def _add_players_title(self, layout: QVBoxLayout) -> None:
         """Agregar título de la sección de jugadores."""
         # Título para la sección de jugadores
         players_title = QLabel("JUGADORES")
@@ -249,7 +253,7 @@ class LayoutManager:
         """)
         layout.addWidget(players_title)
 
-    def _setup_players_list(self, layout):
+    def _setup_players_list(self, layout: QVBoxLayout) -> None:
         """Configurar la lista de jugadores."""
         # Crear un contenedor para la lista de jugadores sin scroll
         players_container = QWidget()
@@ -267,12 +271,12 @@ class LayoutManager:
         # Añadir el contenedor al layout principal
         layout.addWidget(players_container)
 
-    def _create_player_widgets(self, layout):
+    def _create_player_widgets(self, layout: QVBoxLayout) -> None:
         """Crear widgets iniciales para jugadores."""
         # Inicializar lista vacía - se crearán dinámicamente
         self.main_window.players_layout = layout
 
-    def _setup_main_layout(self, horizontal_splitter):
+    def _setup_main_layout(self, horizontal_splitter: QSplitter) -> None:
         """Configurar el layout principal de la ventana."""
         # Agregar columna derecha al splitter
         horizontal_splitter.addWidget(self.main_window.right_column_widget)

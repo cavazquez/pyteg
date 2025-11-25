@@ -9,12 +9,12 @@ from src.server_tasks_manager import ServerTaskManager
 
 
 class TestClientTaskManager(unittest.TestCase):
-    def test_task_no_existe(self):
+    def test_task_no_existe(self) -> None:
         data_json = json.loads('{"mensaje": "cualquiercosa"}')
         res = ServerTaskManager.msg_to_task(data_json)
         self.assertIsInstance(res, ServerTaskNull)
 
-    def test_task_chat(self):
+    def test_task_chat(self) -> None:
         data_json = json.loads('{"mensaje": "chat", "msg":"hola mundo!"}')
         res = ServerTaskManager.msg_to_task(data_json)
         self.assertIsInstance(res, ServerTaskChat)

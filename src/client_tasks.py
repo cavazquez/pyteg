@@ -15,45 +15,48 @@ from src.logger import get_logger
 
 
 class IClientTask(ABC):
-    def __init__(self, data: dict[str, Any]):
+    def __init__(self, data: dict[str, Any]) -> None:
         self._raw_data = data
 
     @abstractmethod
-    def run(self, main_window):
+    def run(self, main_window: Any) -> None:
         pass
 
 
 class ClientTaskNull(IClientTask):
-    def __init__(self, data):
+    def __init__(self, data: dict[str, Any]) -> None:
+        super().__init__(data)
         self._msg = data.get("mensaje")
 
-    def run(self, _):
+    def run(self, _: Any) -> None:
         print(f"mensaje {self._msg} desconocido")
 
 
 class ClientTaskChat(IClientTask):
-    def __init__(self, data):
+    def __init__(self, data: dict[str, Any]) -> None:
+        super().__init__(data)
         self._msg = data.get("msg")
         self._msg_type = data.get("msg_type", "normal")
 
-    def run(self, main_window):
+    def run(self, main_window: Any) -> None:
         main_window.chat.append(self._msg, self._msg_type)
 
 
 class ClientTaskSerAdmin(IClientTask):
-    def __init__(self, data):
-        pass
+    def __init__(self, data: dict[str, Any]) -> None:
+        super().__init__(data)
 
-    def run(self, main_window):
+    def run(self, main_window: Any) -> None:
         main_window.client.ahora_es_admin()
         main_window.ventana_admin()
 
 
 class ClientTaskEstado(IClientTask):
-    def __init__(self, data):
+    def __init__(self, data: dict[str, Any]) -> None:
+        super().__init__(data)
         self._msg = data.get("estado")
 
-    def run(self, main_window):
+    def run(self, main_window: Any) -> None:
         print(f"Recibido cambio de estado: {self._msg}")
 
         # Actualizar el estado en la interfaz gráfica
@@ -88,12 +91,12 @@ class ClientTaskEstado(IClientTask):
             if hasattr(main_window, "update"):
                 main_window.update()
 
-    def actualizar_lista_jugadores(self, main_window):
+    def actualizar_lista_jugadores(self, main_window: Any) -> None:
         """
         Actualiza la lista de jugadores en la interfaz de usuario.
         """
         # Obtener la lista de jugadores con sus colores
-        jugadores = []
+        jugadores: list[tuple[str, Any]] = []
         for user_id, color in main_window.colores.colores_asignados().items():
             # Obtener el nombre de usuario del cliente
             client = main_window.client_by_id.get(user_id)
@@ -105,10 +108,11 @@ class ClientTaskEstado(IClientTask):
 
 
 class ClientTaskColorAsignado(IClientTask):
-    def __init__(self, data):
+    def __init__(self, data: dict[str, Any]) -> None:
+        super().__init__(data)
         self._msg = data
 
-    def run(self, main_window):
+    def run(self, main_window: Any) -> None:
         try:
             # Extraer el ID de usuario y el color del mensaje
             id_user = self._msg.get("id")
@@ -164,13 +168,13 @@ class ClientTaskColorAsignado(IClientTask):
         except (AttributeError, KeyError, ValueError) as e:
             print(f"Error en ClientTaskColorAsignado: {e}")
 
-    def actualizar_lista_jugadores(self, main_window):
+    def actualizar_lista_jugadores(self, main_window: Any) -> None:
         """
         Actualiza la lista de jugadores en la interfaz de usuario.
         """
         try:
             # Obtener la lista de jugadores con sus colores
-            jugadores = []
+            jugadores: list[tuple[str, Any]] = []
             for user_id, color in main_window.colores.colores_asignados().items():
                 # Obtener el nombre de usuario del cliente
                 client = main_window.client_by_id.get(user_id)
@@ -186,20 +190,25 @@ class ClientTaskColorAsignado(IClientTask):
 
 
 class ClientTaskColor(IClientTask):
-    def __init__(self, data):
+    def __init__(self, data: dict[str, Any]) -> None:
+        super().__init__(data)
         self._msg = data
 
-    def run(self, main_window):
+    def run(self, main_window: Any) -> None:
         self._msg.pop("mensaje")
         main_window.colores.agregar_color(Color(**self._msg))
 
 
 class ClientTaskUserId(IClientTask):
-    def __init__(self, data):
+    def __init__(self, data: dict[str, Any]) -> None:
+        super().__init__(data)
         self._msg = data
 
-    def run(self, main_window):
-        userid = int(self._msg.get("user_id"))
+    def run(self, main_window: Any) -> None:
+        user_id_raw = self._msg.get("user_id")
+        if user_id_raw is None:
+            return
+        userid = int(user_id_raw)
         debug_logger = get_logger("client.tasks")
         debug_logger.debug("ClientTaskUserId: Recibido user_id %s", userid)
 
@@ -225,10 +234,11 @@ class ClientTaskUserId(IClientTask):
 
 
 class ClientTaskTurno(IClientTask):
-    def __init__(self, data):
+    def __init__(self, data: dict[str, Any]) -> None:
+        super().__init__(data)
         self._msg = data
 
-    def run(self, main_window):
+    def run(self, main_window: Any) -> None:
         num_turno = int(self._msg.get("num_turno", 0))
         num_ronda = int(
             self._msg.get("num_ronda", 1)
@@ -260,10 +270,11 @@ class ClientTaskTurno(IClientTask):
 
 
 class ClientTaskTiempo(IClientTask):
-    def __init__(self, data):
+    def __init__(self, data: dict[str, Any]) -> None:
+        super().__init__(data)
         self._msg = data
 
-    def run(self, main_window):
+    def run(self, main_window: Any) -> None:
         tiempo = int(self._msg.get("tiempo", 0))
         # Mostrar el tiempo restante en el widget dedicado del lado derecho
         if tiempo > 0:
@@ -281,10 +292,11 @@ class ClientTaskTiempo(IClientTask):
 
 
 class ClientTaskUsername(IClientTask):
-    def __init__(self, data):
+    def __init__(self, data: dict[str, Any]) -> None:
+        super().__init__(data)
         self._msg = data
 
-    def run(self, main_window):
+    def run(self, main_window: Any) -> None:
         username = self._msg.get("username")
         userid = self._msg.get("user_id")
 
@@ -310,12 +322,12 @@ class ClientTaskUsername(IClientTask):
         if hasattr(main_window, "w") and main_window.w is not None:
             main_window.w.cargar_colores_asignados()
 
-    def actualizar_lista_jugadores(self, main_window):
+    def actualizar_lista_jugadores(self, main_window: Any) -> None:
         """
         Actualiza la lista de jugadores en la interfaz de usuario.
         """
         # Obtener la lista de jugadores con sus colores
-        jugadores = []
+        jugadores: list[tuple[str, Any]] = []
         for user_id, color in main_window.colores.colores_asignados().items():
             # Obtener el nombre de usuario del cliente
             client = main_window.client_by_id.get(user_id)
@@ -327,10 +339,11 @@ class ClientTaskUsername(IClientTask):
 
 
 class ClientTaskAsignarPais(IClientTask):
-    def __init__(self, data):
+    def __init__(self, data: dict[str, Any]) -> None:
+        super().__init__(data)
         self._msg = data
 
-    def run(self, main_window):
+    def run(self, main_window: Any) -> None:
         try:
             nombre_pais = self._msg.get("pais")
             userid = self._msg.get("userid")
@@ -364,20 +377,22 @@ class ClientTaskAsignarPais(IClientTask):
 
 
 class ClientTaskUnidadesDisponibles(IClientTask):
-    def __init__(self, data):
+    def __init__(self, data: dict[str, Any]) -> None:
+        super().__init__(data)
         self._unidades = data.get("unidades", {})
 
-    def run(self, main_window):
+    def run(self, main_window: Any) -> None:
         print(f"Recibidas unidades disponibles: {self._unidades}")
         if hasattr(main_window, "update_unidades_disponibles"):
             main_window.update_unidades_disponibles(self._unidades)
 
 
 class ClientTaskActualizarListaJugadores(IClientTask):
-    def __init__(self, data):
+    def __init__(self, data: dict[str, Any]) -> None:
+        super().__init__(data)
         self._jugadores = data.get("jugadores", [])
 
-    def run(self, main_window):
+    def run(self, main_window: Any) -> None:
         """
         Actualiza la lista de jugadores en la interfaz de usuario con el
         orden actualizado.
@@ -423,11 +438,12 @@ class ClientTaskActualizarListaJugadores(IClientTask):
 
 
 class ClientTaskError(IClientTask):
-    def __init__(self, data):
+    def __init__(self, data: dict[str, Any]) -> None:
+        super().__init__(data)
         self._error_type = data.get("error_type")
         self._message = data.get("message")
 
-    def run(self, main_window):
+    def run(self, main_window: Any) -> None:
         """
         Maneja errores enviados por el servidor mostrando un diálogo
         de error al usuario.
@@ -466,7 +482,8 @@ class ClientTaskError(IClientTask):
 
 
 class ClientTaskResultadoBatalla(IClientTask):
-    def __init__(self, data):
+    def __init__(self, data: dict[str, Any]) -> None:
+        super().__init__(data)
         self._origen = data.get("origen")
         self._destino = data.get("destino")
         self._atacante = data.get("atacante")
@@ -476,7 +493,7 @@ class ClientTaskResultadoBatalla(IClientTask):
         self._resultado = data.get("resultado", {})
         self._conquistado = data.get("conquistado", False)
 
-    def run(self, main_window):
+    def run(self, main_window: Any) -> None:
         """
         Muestra el resultado de una batalla con comportamiento diferenciado:
         - Atacante: Ve animación completa de dados
@@ -519,7 +536,7 @@ class ClientTaskResultadoBatalla(IClientTask):
                     "red",
                 )
 
-    def _mostrar_animacion_completa(self, main_window):
+    def _mostrar_animacion_completa(self, main_window: Any) -> None:
         """Muestra la animación completa de dados para el atacante."""
 
         # Preparar datos de la batalla para el diálogo
@@ -538,7 +555,7 @@ class ClientTaskResultadoBatalla(IClientTask):
         dialog = BattleResultDialog(batalla_data, main_window)
 
         # Conectar señal para actualizar barra de estado cuando termine
-        def on_animation_finished():
+        def on_animation_finished() -> None:
             if self._conquistado:
                 mensaje = f"¡Has conquistado {self._destino}!"
                 color = "green"
@@ -552,7 +569,7 @@ class ClientTaskResultadoBatalla(IClientTask):
         dialog.animation_finished.connect(on_animation_finished)
         dialog.exec()  # Mostrar diálogo modal
 
-    def _mostrar_efectos_batalla(self, main_window):
+    def _mostrar_efectos_batalla(self, main_window: Any) -> None:
         """Muestra efectos visuales para espectadores (titilación + pérdidas)."""
         try:
             # 1. Iniciar titilación en países origen y destino
@@ -571,7 +588,7 @@ class ClientTaskResultadoBatalla(IClientTask):
         except (AttributeError, RuntimeError) as e:
             print(f"Error mostrando efectos de batalla: {e}")
 
-    def _iniciar_titilacion_paises(self, main_window):
+    def _iniciar_titilacion_paises(self, main_window: Any) -> None:
         """Inicia la titilación en los países origen y destino."""
         try:
             if hasattr(main_window, "scene") and hasattr(main_window.scene, "paises"):
@@ -589,7 +606,7 @@ class ClientTaskResultadoBatalla(IClientTask):
         except (AttributeError, RuntimeError) as e:
             print(f"Error iniciando titilación: {e}")
 
-    def _mostrar_perdidas_flotantes(self, main_window):
+    def _mostrar_perdidas_flotantes(self, main_window: Any) -> None:
         """Muestra las pérdidas flotantes y detiene la titilación."""
         try:
             # Detener titilación
@@ -601,12 +618,12 @@ class ClientTaskResultadoBatalla(IClientTask):
             perdidas_defensor = perdedores.count(self._defensor)
 
             # Mostrar pérdidas flotantes
-            if perdidas_atacante > 0:
+            if perdidas_atacante > 0 and isinstance(self._origen, str):
                 self._mostrar_perdida_flotante(
                     main_window, self._origen, perdidas_atacante
                 )
 
-            if perdidas_defensor > 0:
+            if perdidas_defensor > 0 and isinstance(self._destino, str):
                 self._mostrar_perdida_flotante(
                     main_window, self._destino, perdidas_defensor
                 )
@@ -625,7 +642,7 @@ class ClientTaskResultadoBatalla(IClientTask):
         except (AttributeError, RuntimeError) as e:
             print(f"Error mostrando pérdidas flotantes: {e}")
 
-    def _detener_titilacion_paises(self, main_window):
+    def _detener_titilacion_paises(self, main_window: Any) -> None:
         """Detiene la titilación en los países origen y destino."""
         try:
             if hasattr(main_window, "scene") and hasattr(main_window.scene, "paises"):
@@ -641,7 +658,9 @@ class ClientTaskResultadoBatalla(IClientTask):
         except (AttributeError, RuntimeError) as e:
             print(f"Error deteniendo titilación: {e}")
 
-    def _mostrar_perdida_flotante(self, main_window, nombre_pais, perdidas):
+    def _mostrar_perdida_flotante(
+        self, main_window: Any, nombre_pais: str, perdidas: int
+    ) -> None:
         """Muestra una pérdida flotante sobre un país específico."""
         try:
             if hasattr(main_window, "scene") and hasattr(main_window.scene, "paises"):
@@ -654,11 +673,12 @@ class ClientTaskResultadoBatalla(IClientTask):
 
 
 class ClientTaskVictoria(IClientTask):
-    def __init__(self, data):
+    def __init__(self, data: dict[str, Any]) -> None:
+        super().__init__(data)
         self._ganador_id = data.get("ganador_id")
         self._ganador_nombre = data.get("ganador_nombre")
 
-    def run(self, main_window):
+    def run(self, main_window: Any) -> None:
         """
         Muestra un mensaje de victoria cuando alguien gana la partida.
         """
@@ -697,13 +717,14 @@ class ClientTaskVictoria(IClientTask):
 
 
 class ClientTaskConfiguracionPartida(IClientTask):
-    def __init__(self, data):
+    def __init__(self, data: dict[str, Any]) -> None:
+        super().__init__(data)
         self._segundos_por_turno = data.get("segundos_por_turno", 20)
         self._paises_para_victoria = data.get("paises_para_victoria", 30)
         self._objetivos_secretos = data.get("objetivos_secretos", False)
         self._misiles_habilitados = data.get("misiles_habilitados", False)
 
-    def run(self, main_window):
+    def run(self, main_window: Any) -> None:
         """
         Procesa la configuración de la partida y la almacena en la ventana principal.
         """
@@ -733,11 +754,12 @@ class ClientTaskConfiguracionPartida(IClientTask):
 
 
 class ClientTaskObjetivoSecreto(IClientTask):
-    def __init__(self, data):
+    def __init__(self, data: dict[str, Any]) -> None:
+        super().__init__(data)
         self._objetivo_id = data.get("objetivo_id", "")
         self._descripcion = data.get("descripcion", "")
 
-    def run(self, main_window):
+    def run(self, main_window: Any) -> None:
         """
         Procesa el objetivo secreto asignado y lo almacena en la ventana principal.
         """
@@ -769,10 +791,11 @@ class ClientTaskObjetivoSecreto(IClientTask):
 
 
 class ClientTaskTarjetasJugador(IClientTask):
-    def __init__(self, data):
+    def __init__(self, data: dict[str, Any]) -> None:
+        super().__init__(data)
         self._tarjetas = data.get("tarjetas", [])
 
-    def run(self, main_window):
+    def run(self, main_window: Any) -> None:
         """
         Actualiza las tarjetas del jugador en la GUI.
 
@@ -807,7 +830,8 @@ class ClientTaskTarjetasJugador(IClientTask):
 
 
 class ClientTaskResultadoMisil(IClientTask):
-    def __init__(self, data):
+    def __init__(self, data: dict[str, Any]) -> None:
+        super().__init__(data)
         self._jugador = data.get("jugador")
         self._pais_origen = data.get("pais_origen")
         self._pais_destino = data.get("pais_destino")
@@ -815,7 +839,7 @@ class ClientTaskResultadoMisil(IClientTask):
         self._dano = data.get("dano")
         self._unidades_restantes = data.get("unidades_restantes")
 
-    def run(self, main_window):
+    def run(self, main_window: Any) -> None:
         """Procesa el resultado del lanzamiento de un misil."""
         try:
             # Mostrar mensaje en el chat
@@ -840,11 +864,12 @@ class ClientTaskResultadoMisil(IClientTask):
 
 
 class ClientTaskMisilAgregado(IClientTask):
-    def __init__(self, data):
+    def __init__(self, data: dict[str, Any]) -> None:
+        super().__init__(data)
         self._pais = data.get("pais")
         self._cantidad_misiles = data.get("cantidad_misiles")
 
-    def run(self, main_window):
+    def run(self, main_window: Any) -> None:
         """Actualiza la cantidad de misiles de un país en la interfaz."""
         try:
             # Actualizar visualmente el país en el mapa

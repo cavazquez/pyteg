@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from collections.abc import Callable
 from typing import Any
@@ -13,47 +15,47 @@ LOGGER = get_logger("server.tasks")
 class IServerTask(ABC):
     """Clase base para todas las tareas del servidor."""
 
-    def __init__(self, data):
+    def __init__(self, data: dict[str, Any]) -> None:
         self._data = data
         self._action_name: str | None = None  # Nombre de la acción para validación
         self._validator = ServerStateValidator()
 
     @abstractmethod
-    def _execute(self, client):
+    def _execute(self, client: Any) -> None:
         """Método que implementa la lógica específica de cada tarea."""
 
-    def run(self, client):
+    def run(self, client: Any) -> None:
         """Ejecuta la tarea validando primero el estado del servidor."""
         # Validar estado usando TaskValidator cuando corresponda
         if self._action_name is not None:
             self._validator.validar_accion(self._action_name, client.server)
 
         # Ejecutar la tarea si la validación pasa
-        return self._execute(client)
+        self._execute(client)
 
 
 class ServerTaskNull(IServerTask):
-    def __init__(self, data):
+    def __init__(self, data: dict[str, Any]) -> None:
         super().__init__(data)
         # No necesita validación de estado
 
-    def _execute(self, _):
+    def _execute(self, _: Any) -> None:
         msg = f"{self._data}"
         raise MensajeNoValidoError(msg)
 
 
 class ServerTaskChat(IServerTask):
-    def __init__(self, data):
+    def __init__(self, data: dict[str, Any]) -> None:
         super().__init__(data)
         self._msg = data.get("msg")
         self._action_name = "chat"
 
-    def _execute(self, client):
+    def _execute(self, client: Any) -> None:
         client.server.enviar_chat(client.username(), self._msg)
 
 
 class ServerTaskEmpezar(IServerTask):
-    def __init__(self, data):
+    def __init__(self, data: dict[str, Any]) -> None:
         super().__init__(data)
         self._segundos = data.get("segundos")
         self._paises_para_victoria = data.get("paises_para_victoria")
@@ -61,7 +63,7 @@ class ServerTaskEmpezar(IServerTask):
         self._misiles_habilitados = data.get("misiles_habilitados", False)
         self._action_name = "empezar"
 
-    def _execute(self, client):
+    def _execute(self, client: Any) -> None:
         # Configurar segundos por turno si se envió desde el cliente
         if self._segundos is not None:
             try:
@@ -98,22 +100,22 @@ class ServerTaskEmpezar(IServerTask):
 
 
 class ServerTaskSeleccionarColor(IServerTask):
-    def __init__(self, data):
+    def __init__(self, data: dict[str, Any]) -> None:
         super().__init__(data)
         self._color = data.get("color")
         self._action_name = "seleccionar_color"
 
-    def _execute(self, client):
+    def _execute(self, client: Any) -> None:
         client.cambiar_color(self._color)
         client.server.enviar_colores_asignados()
 
 
 class ServerTaskEmpezarPartida(IServerTask):
-    def __init__(self, data):
+    def __init__(self, data: dict[str, Any]) -> None:
         super().__init__(data)
         self._action_name = "empezar_partida"
 
-    def _execute(self, client):
+    def _execute(self, client: Any) -> None:
         if client.server.estado.empezar_partida():
             client.server.enviar_estado()
             client.server.empezar_partida()
@@ -125,12 +127,12 @@ class ServerTaskEmpezarPartida(IServerTask):
 
 
 class ServerTaskSetUsername(IServerTask):
-    def __init__(self, data):
+    def __init__(self, data: dict[str, Any]) -> None:
         super().__init__(data)
         self._username = data.get("username")
         self._action_name = "set_username"
 
-    def _execute(self, client):
+    def _execute(self, client: Any) -> None:
         if self._username and isinstance(self._username, str):
             # Verificar si el username ya está en uso por otro cliente
             for other_client in client.server.dame_clientes():
@@ -163,14 +165,14 @@ class ServerTaskSetUsername(IServerTask):
 
 
 class ServerTaskAgregarUnidad(IServerTask):
-    def __init__(self, data):
+    def __init__(self, data: dict[str, Any]) -> None:
         super().__init__(data)
         self._pais = data.get("pais")
         self._tipo_unidad = data.get("tipo_unidad")
         self._cantidad = data.get("cantidad", 1)  # Por defecto 1 si no se especifica
         self._action_name = "agregar_unidad"
 
-    def _execute(self, client):
+    def _execute(self, client: Any) -> None:
         # Verificar que sea el turno del cliente actual
         if not hasattr(client.server, "game") or client.server.game is None:
             client.transmisor.enviar_error_chat("El juego no ha comenzado")
@@ -226,14 +228,14 @@ class ServerTaskAgregarUnidad(IServerTask):
 
 
 class ServerTaskMoverUnidad(IServerTask):
-    def __init__(self, data):
+    def __init__(self, data: dict[str, Any]) -> None:
         super().__init__(data)
         self._origen = data.get("origen")
         self._destino = data.get("destino")
         self._cantidad = data.get("cantidad", 1)  # Por defecto 1 si no se especifica
         self._action_name = "mover_unidad"
 
-    def _execute(self, client):
+    def _execute(self, client: Any) -> None:
         # Verificar que el cliente sea el dueño del país de origen
         if client.server.mapa.ocupado_por(self._origen) != client:
             client.transmisor.enviar_error_chat(f"No eres dueño de {self._origen}")
@@ -275,14 +277,14 @@ class ServerTaskMoverUnidad(IServerTask):
 
 
 class ServerTaskAtacar(IServerTask):
-    def __init__(self, data):
+    def __init__(self, data: dict[str, Any]) -> None:
         super().__init__(data)
         self._origen = data.get("origen")
         self._destino = data.get("destino")
         self._cantidad_unidades = data.get("cantidad_unidades")
         self._action_name = "atacar"
 
-    def _execute(self, client):
+    def _execute(self, client: Any) -> None:
         # Verificar que no sea primer o segundo turno
         turno_actual = client.server.game.turno_actual()
         if isinstance(turno_actual, PrimerTurno | SegundoTurno):
@@ -401,11 +403,11 @@ class ServerTaskAtacar(IServerTask):
 
 
 class ServerTaskFinalizarTurno(IServerTask):
-    def __init__(self, data):
+    def __init__(self, data: dict[str, Any]) -> None:
         super().__init__(data)
         self._action_name = "finalizar_turno"
 
-    def _execute(self, client):
+    def _execute(self, client: Any) -> None:
         # Verificar que sea el turno del cliente actual
         if not hasattr(client.server, "game") or client.server.game is None:
             client.transmisor.enviar_error_chat("El juego no ha comenzado")
@@ -428,21 +430,21 @@ class ServerTaskFinalizarTurno(IServerTask):
 
 
 class ServerTaskSolicitarTarjetas(IServerTask):
-    def __init__(self, data):
+    def __init__(self, data: dict[str, Any]) -> None:
         super().__init__(data)
         # No necesita validación de estado específica
 
-    def _execute(self, client):
+    def _execute(self, client: Any) -> None:
         """Envía las tarjetas del jugador al cliente que las solicita."""
         client.server.enviar_tarjetas_jugador(client)
 
 
 class ServerTaskReclamarTarjeta(IServerTask):
-    def __init__(self, data):
+    def __init__(self, data: dict[str, Any]) -> None:
         super().__init__(data)
         self._action_name = "reclamar_tarjeta"
 
-    def _execute(self, client):
+    def _execute(self, client: Any) -> None:
         """Reclama una tarjeta si el jugador conquistó un país en este turno."""
         # Verificar que el juego haya comenzado
         if not hasattr(client.server, "game") or client.server.game is None:
@@ -477,12 +479,12 @@ class ServerTaskReclamarTarjeta(IServerTask):
 
 
 class ServerTaskCanjeEspecial(IServerTask):
-    def __init__(self, data):
+    def __init__(self, data: dict[str, Any]) -> None:
         super().__init__(data)
         self._pais = data.get("pais")
         self._action_name = "canje_especial"
 
-    def _execute(self, client):
+    def _execute(self, client: Any) -> None:
         """Ejecuta el canje especial de país + tarjeta por 2 unidades."""
         mapa = client.server.game.mapa()
         mazo = client.server.game.mazo()
@@ -538,12 +540,12 @@ class ServerTaskCanjeEspecial(IServerTask):
 
 
 class ServerTaskCanjearMisil(IServerTask):
-    def __init__(self, data):
+    def __init__(self, data: dict[str, Any]) -> None:
         super().__init__(data)
         self._pais = data.get("pais")
         self._action_name = "canjear_misil"
 
-    def _execute(self, client):
+    def _execute(self, client: Any) -> None:
         # 1. Verificar que los misiles estén habilitados
         if not client.server.misiles_habilitados():
             client.transmisor.enviar_error_chat(
@@ -597,13 +599,13 @@ class ServerTaskCanjearMisil(IServerTask):
 
 
 class ServerTaskLanzarMisil(IServerTask):
-    def __init__(self, data):
+    def __init__(self, data: dict[str, Any]) -> None:
         super().__init__(data)
         self._pais_origen = data.get("pais_origen")
         self._pais_destino = data.get("pais_destino")
         self._action_name = "lanzar_misil"
 
-    def _execute(self, client):
+    def _execute(self, client: Any) -> None:
         # Validar precondiciones y permisos
         error = self._validar_lanzamiento_misil(client)
         if error:
@@ -624,7 +626,7 @@ class ServerTaskLanzarMisil(IServerTask):
         # Notificar resultados
         self._notificar_resultado_misil(client, distancia, dano)
 
-    def _validar_lanzamiento_misil(self, client) -> str | None:
+    def _validar_lanzamiento_misil(self, client: Any) -> str | None:
         """Valida todas las condiciones para lanzar un misil.
 
         Returns:
@@ -644,7 +646,7 @@ class ServerTaskLanzarMisil(IServerTask):
         # Validar distancia y daño
         return self._validar_distancia_dano(client)
 
-    def _validar_estado_juego(self, client) -> str | None:
+    def _validar_estado_juego(self, client: Any) -> str | None:
         """Valida que el juego esté en estado correcto."""
         if not client.server.misiles_habilitados():
             return "Los misiles no están habilitados en esta partida"
@@ -658,7 +660,7 @@ class ServerTaskLanzarMisil(IServerTask):
 
         return None
 
-    def _validar_posesion_misil(self, client) -> str | None:
+    def _validar_posesion_misil(self, client: Any) -> str | None:
         """Valida posesión de países y disponibilidad de misiles."""
         if client.server.mapa.ocupado_por(self._pais_origen) != client:
             return f"No eres dueño de {self._pais_origen}"
@@ -671,7 +673,7 @@ class ServerTaskLanzarMisil(IServerTask):
 
         return None
 
-    def _validar_distancia_dano(self, client) -> str | None:
+    def _validar_distancia_dano(self, client: Any) -> str | None:
         """Valida distancia y daño del misil."""
         distancia = client.server.mapa.calcular_distancia(
             self._pais_origen, self._pais_destino
@@ -697,7 +699,9 @@ class ServerTaskLanzarMisil(IServerTask):
 
         return None
 
-    def _notificar_resultado_misil(self, client, distancia, dano):
+    def _notificar_resultado_misil(
+        self, client: Any, distancia: int, dano: int
+    ) -> None:
         """Notifica el resultado del lanzamiento del misil a todos."""
         unidades_restantes = client.server.mapa.cantidad_unidades(self._pais_destino)
 

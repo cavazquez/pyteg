@@ -155,7 +155,7 @@ def create_mo_file(translations: dict[str, str], mo_file: Path) -> None:
             f.write(v)
 
 
-def main():
+def main() -> None:
     """Función principal."""
     base_dir = Path(__file__).parent.parent
     locales_dir = base_dir / "locales"
