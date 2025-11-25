@@ -20,7 +20,7 @@ def build_mapa():
 
     # Construir el diccionario del mapa
     # Ahora cada país tendrá: [unidades, continente, dueño, [paises_adyacentes]]
-    mapa = {}
+    mapa: dict[str, list[object]] = {}
     paises = reader.todos_los_paises()
 
     # Primero creamos todos los países con su información básica

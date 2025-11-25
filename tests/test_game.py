@@ -11,7 +11,12 @@ class TestGame(unittest.TestCase):
     def setUp(self):
         """Set up test fixtures."""
         self.server = Server()
-        self.mapa = Mapa(lambda: None)
+        self.mapa = Mapa(
+            lambda: {
+                "Argentina": [1, "America", None, ["Brasil"]],
+                "Brasil": [1, "America", None, ["Argentina"]],
+            }
+        )
         self.default_jugadores = ["Fulano", "Mengano"]
 
     def test_create_instance(self):

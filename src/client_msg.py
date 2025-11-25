@@ -36,7 +36,7 @@ class MsgEmpezar(IMsg):
         self._misiles_habilitados = misiles_habilitados
 
     def to_json(self):
-        data = {"mensaje": self._tipo}
+        data: dict[str, object] = {"mensaje": self._tipo}
         if self._segundos is not None:
             data["segundos"] = self._segundos
         if self._paises_para_victoria is not None:
