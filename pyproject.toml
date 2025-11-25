@@ -96,3 +96,33 @@ module = [
 ]
 disallow_untyped_defs = true
 
+[tool.mypy-src.exception]
+strict = true
+
+[tool.mypy-src.codecs_utils]
+strict = true
+
+[tool.mypy-src.country]
+strict = true
+
+[tool.mypy-src.server_player]
+strict = true
+
+[tool.mypy-src.batalla]
+strict = true
+
+[tool.mypy-src.utils]
+strict = true
+
+[tool.mypy-src.server_state_validator]
+strict = true
+
+[tool.mypy-src.server_registrar_jugadores]
+strict = true
+
+[tool.mypy-src.server_client_connection]
+strict = true
+
+[tool.mypy-src.server_color]
+strict = true
+

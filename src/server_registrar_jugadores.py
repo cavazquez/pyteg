@@ -1,20 +1,30 @@
+"""Rutina para registrar jugadores entrantes."""
+
+from __future__ import annotations
+
 import socket
 import threading
+from typing import TYPE_CHECKING, Any, Protocol
 
 from src.logger import get_logger
 from src.server_build_client import ServerBuildClient
 from src.server_client_connection import ConnectionServer
 
+if TYPE_CHECKING:
+    from src.server_estado import Estado
 
-def registrar_jugadores(server, host: str = "127.0.0.1", port: int = 65432):
-    """
-    Inicia el servidor para aceptar conexiones de jugadores.
 
-    Args:
-        server: Instancia del servidor que manejará las conexiones
-        host: Dirección IP donde escuchar (predeterminado: 127.0.0.1)
-        port: Puerto donde escuchar (predeterminado: 65432)
-    """
+class ServerLike(Protocol):
+    estado: Estado
+
+    def registrar_cliente(self, user_id: Any, client: Any) -> None: ...
+
+
+def registrar_jugadores(
+    server: ServerLike, host: str = "127.0.0.1", port: int = 65432
+) -> None:
+    """Inicia el servidor para aceptar conexiones de jugadores."""
+
     logger = get_logger("server.registrar_jugadores")
     logger.info("Iniciando servidor de jugadores en %s:%s", host, port)
 
@@ -32,7 +42,6 @@ def registrar_jugadores(server, host: str = "127.0.0.1", port: int = 65432):
                 conn, addr = server_socket.accept()
                 logger.info("Nueva conexión aceptada desde %s", addr)
 
-                # Verificar si el juego ya está en progreso
                 if server.estado.es_jugando() or server.estado.es_finalizado():
                     estado_actual = server.estado.estado_actual()
                     logger.warning(
@@ -41,14 +50,13 @@ def registrar_jugadores(server, host: str = "127.0.0.1", port: int = 65432):
                         addr,
                         estado_actual,
                     )
-                    # Enviar mensaje de rechazo y cerrar conexión
                     try:
                         mensaje_rechazo = (
                             "El juego ya está en progreso. "
                             "No se pueden conectar nuevos jugadores."
                         )
                         conn.send(mensaje_rechazo.encode("utf-8"))
-                    except Exception:
+                    except OSError:
                         logger.exception("Error al enviar mensaje de rechazo")
                     finally:
                         conn.close()
@@ -58,12 +66,7 @@ def registrar_jugadores(server, host: str = "127.0.0.1", port: int = 65432):
                 user_id, client = server_build_client.build(connection, server)
                 server.registrar_cliente(user_id, client)
 
-                # Iniciar el cliente en un nuevo hilo
-                client_thread = threading.Thread(
-                    target=client.run,
-                    daemon=True,  # El hilo terminará cuando
-                    # el programa principal termine
-                )
+                client_thread = threading.Thread(target=client.run, daemon=True)
                 client_thread.start()
                 logger.info("Cliente %s conectado y en ejecución", user_id)
 
@@ -73,8 +76,8 @@ def registrar_jugadores(server, host: str = "127.0.0.1", port: int = 65432):
             except Exception:
                 logger.exception("Error al manejar la conexión")
 
-    except (OSError, RuntimeError) as e:
-        logger.critical("Error crítico en el servidor: %s", e, exc_info=True)
+    except (OSError, RuntimeError) as exc:
+        logger.critical("Error crítico en el servidor: %s", exc, exc_info=True)
     finally:
         logger.info("Cerrando el servidor...")
         server_socket.close()
