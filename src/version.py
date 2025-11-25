@@ -6,14 +6,19 @@ el archivo pyproject.toml como desde variables de entorno en tiempo
 de compilación.
 """
 
+import importlib
 import os
 from pathlib import Path
 
-try:
-    import tomllib
-except ImportError:
-    # Python < 3.11 fallback
-    import tomli as tomllib
+
+def _get_toml_loader():
+    try:
+        return importlib.import_module("tomllib")
+    except ModuleNotFoundError:
+        return importlib.import_module("tomli")
+
+
+_toml_loader = _get_toml_loader()
 
 
 def get_version() -> str:
@@ -40,7 +45,7 @@ def get_version() -> str:
 
         if pyproject_path.exists():
             with pyproject_path.open("rb") as f:
-                data = tomllib.load(f)
+                data = _toml_loader.load(f)
                 return data.get("project", {}).get("version", "unknown")
     except (OSError, ValueError, KeyError):
         # Error al leer archivo o parsear TOML

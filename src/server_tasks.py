@@ -1,8 +1,11 @@
 from abc import ABC, abstractmethod
 
 from src.exception import MensajeNoValidoError
+from src.logger import get_logger
 from src.server_state_validator import ServerStateValidator
 from src.turnos import PrimerTurno, SegundoTurno
+
+LOGGER = get_logger("server.tasks")
 
 
 class IServerTask(ABC):
@@ -76,18 +79,18 @@ class ServerTaskEmpezar(IServerTask):
 
         # Configurar objetivos secretos si se envió desde el cliente
         client.server.set_objetivos_secretos(activados=self._objetivos_secretos)
-        print(f"DEBUG: Objetivos secretos configurados: {self._objetivos_secretos}")
+        LOGGER.debug("Objetivos secretos configurados: %s", self._objetivos_secretos)
 
         # Configurar misiles si se envió desde el cliente
         client.server.set_misiles_habilitados(activados=self._misiles_habilitados)
-        print(f"DEBUG: Misiles habilitados: {self._misiles_habilitados}")
+        LOGGER.debug("Misiles habilitados: %s", self._misiles_habilitados)
 
         if client.server.estado.esperar_jugadores():
             client.server.enviar_estado()
         else:
-            print(
-                f"No se pudo cambiar a estado EsperarJugadores desde "
-                f"{client.server.estado.estado_actual()}"
+            LOGGER.warning(
+                "No se pudo cambiar a estado EsperarJugadores desde %s",
+                client.server.estado.estado_actual(),
             )
 
 
@@ -112,9 +115,9 @@ class ServerTaskEmpezarPartida(IServerTask):
             client.server.enviar_estado()
             client.server.empezar_partida()
         else:
-            print(
-                f"No se pudo empezar la partida desde el estado "
-                f"{client.server.estado.estado_actual()}"
+            LOGGER.warning(
+                "No se pudo empezar la partida desde el estado %s",
+                client.server.estado.estado_actual(),
             )
 
 
@@ -138,9 +141,10 @@ class ServerTaskSetUsername(IServerTask):
                         "Por favor, elige otro nombre."
                     )
                     client.transmisor.enviar_error("duplicate_username", error_msg)
-                    print(
-                        f"Usuario {client.userid()} intentó usar username "
-                        f"duplicado: {self._username}"
+                    LOGGER.warning(
+                        "Usuario %s intentó usar username duplicado: %s",
+                        client.userid(),
+                        self._username,
                     )
                     return
 
@@ -148,8 +152,10 @@ class ServerTaskSetUsername(IServerTask):
             client.set_username(self._username)
             # Notificar a todos los clientes sobre el cambio de nombre
             client.server.enviar_username()
-            print(
-                f"Usuario {client.userid()} ha cambiado su nombre a: {self._username}"
+            LOGGER.info(
+                "Usuario %s ha cambiado su nombre a: %s",
+                client.userid(),
+                self._username,
             )
 
 
@@ -203,9 +209,11 @@ class ServerTaskAgregarUnidad(IServerTask):
             if hasattr(turno_actual, "usar_unidad"):
                 turno_actual.usar_unidad()
 
-        msg = f"Se agregaron {self._cantidad} unidad(es) de tipo {self._tipo_unidad}"
-        msg += f" en {self._pais}"
-        print(msg)
+        msg = (
+            f"Se agregaron {self._cantidad} unidad(es) de tipo {self._tipo_unidad}"
+            f" en {self._pais}"
+        )
+        LOGGER.info(msg)
 
         # Notificar a todos los clientes sobre el cambio en el mapa
         client.server.enviar_mapa()
@@ -252,8 +260,11 @@ class ServerTaskMoverUnidad(IServerTask):
 
         # Mover las unidades
         client.server.mapa.mover(self._origen, self._destino, self._cantidad)
-        print(
-            f"Se movieron {self._cantidad} unidades de {self._origen} a {self._destino}"
+        LOGGER.info(
+            "Se movieron %s unidades de %s a %s",
+            self._cantidad,
+            self._origen,
+            self._destino,
         )
 
         # Notificar a todos los clientes sobre el cambio en el mapa
@@ -309,10 +320,18 @@ class ServerTaskAtacar(IServerTask):
 
         # Logging del estado antes del ataque
         unidades_destino = client.server.mapa.cantidad_unidades(self._destino)
-        print("=== INICIO ATAQUE ===")
-        print(f"Origen: {self._origen} ({unidades_origen} unidades)")
-        print(f"Destino: {self._destino} ({unidades_destino} unidades)")
-        print(f"Cantidad unidades atacando: {self._cantidad_unidades}")
+        LOGGER.info("=== INICIO ATAQUE ===")
+        LOGGER.info(
+            "Origen: %s (%s unidades)",
+            self._origen,
+            unidades_origen,
+        )
+        LOGGER.info(
+            "Destino: %s (%s unidades)",
+            self._destino,
+            unidades_destino,
+        )
+        LOGGER.info("Cantidad unidades atacando: %s", self._cantidad_unidades)
 
         # Realizar el ataque
         info_batalla = client.server.game.atacar(
@@ -322,22 +341,31 @@ class ServerTaskAtacar(IServerTask):
         # Logging del estado después del ataque
         unidades_origen_post = client.server.mapa.cantidad_unidades(self._origen)
         unidades_destino_post = client.server.mapa.cantidad_unidades(self._destino)
-        print("=== RESULTADO ATAQUE ===")
-        print(
-            f"Origen: {self._origen} "
-            f"({unidades_origen} -> {unidades_origen_post} unidades)"
+        LOGGER.info("=== RESULTADO ATAQUE ===")
+        LOGGER.info(
+            "Origen: %s (%s -> %s unidades)",
+            self._origen,
+            unidades_origen,
+            unidades_origen_post,
         )
-        print(
-            f"Destino: {self._destino} "
-            f"({unidades_destino} -> {unidades_destino_post} unidades)"
+        LOGGER.info(
+            "Destino: %s (%s -> %s unidades)",
+            self._destino,
+            unidades_destino,
+            unidades_destino_post,
         )
-        print(f"Conquistado: {info_batalla['conquistado']}")
+        LOGGER.info("Conquistado: %s", info_batalla["conquistado"])
         cantidad_texto = (
             f" con {self._cantidad_unidades} unidades"
             if self._cantidad_unidades is not None
             else ""
         )
-        print(f"Ataque realizado de {self._origen} a {self._destino}{cantidad_texto}")
+        LOGGER.info(
+            "Ataque realizado de %s a %s%s",
+            self._origen,
+            self._destino,
+            cantidad_texto,
+        )
 
         # Enviar resultado de la batalla a todos los clientes
         batalla_data = {
@@ -356,9 +384,10 @@ class ServerTaskAtacar(IServerTask):
         # Marcar que el jugador conquistó un país en este turno
         # (para poder reclamar tarjeta)
         if info_batalla["conquistado"]:
-            print(
-                f"{client.username()} conquistó {self._destino} - "
-                f"puede reclamar tarjeta"
+            LOGGER.info(
+                "%s conquistó %s - puede reclamar tarjeta",
+                client.username(),
+                self._destino,
             )
             # Marcar al jugador como elegible para reclamar tarjeta
             client.server.game.marcar_jugador_puede_reclamar(client)
@@ -431,7 +460,7 @@ class ServerTaskReclamarTarjeta(IServerTask):
             return
 
         # Asignar la tarjeta
-        print(f"Asignando tarjeta a {client.username()} por reclamación manual")
+        LOGGER.info("Asignando tarjeta a %s por reclamación manual", client.username())
         client.server.game.dame_una_tarjeta(client)
 
         # Remover al jugador de la lista de elegibles (solo una tarjeta por turno)
