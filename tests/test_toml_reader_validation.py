@@ -1,4 +1,5 @@
 import unittest
+from typing import cast
 
 from src.toml_reader import TomlReader, TomlReaderError
 
@@ -165,7 +166,7 @@ class TestTomlReaderValidation(unittest.TestCase):
         reader = TomlReader(
             '[Cartas]\njocker = "test.png"', None, adyacencias_invalidas
         )
-        reader.adyacencias = "string_instead_of_dict"
+        reader.adyacencias = cast("dict[str, list[str]]", "string_instead_of_dict")
 
         with self.assertRaises(TomlReaderError) as context:
             reader._validar_adyacencias()  # noqa: SLF001

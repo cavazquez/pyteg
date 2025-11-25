@@ -104,6 +104,9 @@ module = [
   "src.exception",
   "src.logger",
   "src.version",
+  "src.sound_manager",
+  "src.turno_timer",
+  "src.gui_chat",
   "tests.test_batalla",
   "tests.test_calculos",
   "tests.test_codecs_utils",
@@ -112,10 +115,16 @@ module = [
   "tests.test_game",
   "tests.test_mapa",
   "tests.test_mazo",
+  "tests.test_misiles",
   "tests.test_objetivos_secretos",
   "tests.test_tarjeta_de_pais",
   "tests.test_turnos",
   "tests.test_server_tasks_actions",
+  "tests.test_server_client",
+  "tests.test_server_color",
+  "tests.test_server_tasks_manager",
+  "tests.test_toml_reader",
+  "tests.test_toml_reader_validation",
 ]
 check_untyped_defs = true
 
