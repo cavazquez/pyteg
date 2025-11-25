@@ -8,10 +8,10 @@ from typing import TYPE_CHECKING, Any
 from src.batalla import Batalla
 from src.config import (
     DEFAULT_VICTORY_COUNTRIES,
-    EXCHANGE_MULTIPLIER,
-    EXCHANGE_UNITS,
-    MAX_CARDS_BEFORE_FORCE_EXCHANGE,
 )
+from src.game_card_manager import CardManager
+from src.game_turn_manager import TurnManager
+from src.game_victory_checker import VictoryChecker
 from src.turnos import PrimerTurno, SegundoTurno, SiguientesTurnos
 
 if TYPE_CHECKING:
@@ -49,17 +49,27 @@ class Game:
             paises_para_victoria = DEFAULT_VICTORY_COUNTRIES
         self._mapa = mapa
         self._start = False
-        self._turnos: list[TurnoType] = [PrimerTurno("NUllJugador")]
         self._jugadores = jugadores
-        self._num_turno = 0
-        self._num_ronda = 1
-        self._mazo = mazo
-        self._cant_canjes: dict[str, int] = {}
         self._server = server  # Referencia al servidor para notificar cambios
         self._paises_para_victoria = paises_para_victoria
-        self._jugadores_pueden_reclamar: set[Client] = (
-            set()
-        )  # Jugadores elegibles para reclamar tarjetas
+
+        # Inicializar gestor de turnos
+        self._turn_manager = TurnManager(mapa)
+
+        # Inicializar gestor de tarjetas
+        self._card_manager = CardManager(mazo, self._turn_manager)
+
+        # Inicializar verificador de victoria
+        objetivos_secretos_activados = (
+            hasattr(server, "_objetivos_secretos") and server._objetivos_secretos  # noqa: SLF001
+        )
+        self._victory_checker = VictoryChecker(
+            mapa,
+            paises_para_victoria,
+            getattr(server, "objetivos_secretos", None),
+            objetivos_secretos_activados=objetivos_secretos_activados,
+            color_manager=getattr(server, "color", None),
+        )
 
     def empezar(self) -> None:
         """Inicia el juego asignando países y creando los primeros turnos."""
@@ -68,9 +78,9 @@ class Game:
         jugadores_nombres = [
             j.username() if hasattr(j, "username") else str(j) for j in jugadores
         ]
-        self._turnos = [PrimerTurno(j) for j in jugadores_nombres]
+        self._turn_manager.inicializar_turnos(jugadores_nombres)
         self._mapa.asignar_paises(jugadores_nombres)
-        self._cant_canjes = dict.fromkeys(jugadores_nombres, 0)
+        self._card_manager.inicializar_canjes(jugadores_nombres)
         self._start = True
 
     def empezo(self) -> bool:
@@ -89,7 +99,7 @@ class Game:
             El mazo de tarjetas.
 
         """
-        return self._mazo
+        return self._card_manager.mazo()
 
     def dame_una_tarjeta(self, jugador: Client) -> None:
         """Asigna una tarjeta a un jugador. Si tiene 5, fuerza un canje.
@@ -98,11 +108,7 @@ class Game:
             jugador: Jugador al que asignar la tarjeta.
 
         """
-        cant_tarjetas_asignadas = self.mazo().cant_tarjetas_asignadas(jugador)
-        if cant_tarjetas_asignadas == MAX_CARDS_BEFORE_FORCE_EXCHANGE:
-            lista_3_tarjetas = self.mazo().dame_3_tarjetas_para_canje(jugador)
-            self.canjear(jugador, lista_3_tarjetas)
-        self.mazo().asignar_tarjeta(jugador)
+        self._card_manager.dame_una_tarjeta(jugador)
 
     def turnos(self) -> list[TurnoType]:
         """Obtiene la lista de turnos.
@@ -111,7 +117,7 @@ class Game:
             Lista de turnos.
 
         """
-        return self._turnos
+        return self._turn_manager.turnos()
 
     def turno_actual(self) -> TurnoType:
         """Obtiene el turno actual.
@@ -120,9 +126,7 @@ class Game:
             El turno actual.
 
         """
-        if self._num_turno >= len(self._turnos):
-            return self.turnos()[-1]
-        return self.turnos()[self.id_turno_actual()]
+        return self._turn_manager.turno_actual()
 
     def id_turno_actual(self) -> int:
         """Obtiene el índice del turno actual.
@@ -131,7 +135,7 @@ class Game:
             Índice del turno actual.
 
         """
-        return self._num_turno
+        return self._turn_manager.id_turno_actual()
 
     def num_ronda(self) -> int:
         """Obtiene el número de ronda actual.
@@ -140,7 +144,7 @@ class Game:
             Número de ronda.
 
         """
-        return self._num_ronda
+        return self._turn_manager.num_ronda()
 
     def cant_canjes(self, jugador: Client | str) -> int:
         """Obtiene la cantidad de canjes realizados por un jugador.
@@ -152,8 +156,7 @@ class Game:
             Cantidad de canjes realizados.
 
         """
-        username = jugador.username() if hasattr(jugador, "username") else str(jugador)
-        return self._cant_canjes.get(username, 0)
+        return self._card_manager.cant_canjes(jugador)
 
     def canjear(self, jugador: Client | str, tarjetas: list[TarjetaDePais]) -> None:
         """Realiza un canje de tarjetas por unidades.
@@ -163,16 +166,7 @@ class Game:
             tarjetas: Lista de tarjetas a canjear.
 
         """
-        cant_canjes = self.cant_canjes(jugador)
-        turno = self._turnos[self._num_turno]
-        cantidad_a_agregar = EXCHANGE_UNITS.get(
-            cant_canjes, EXCHANGE_MULTIPLIER * cant_canjes
-        )
-
-        turno.agregar_unidades_generales(cantidad_a_agregar)
-        self._mazo.desasignar_tarjetas(tarjetas)
-        username = jugador.username() if hasattr(jugador, "username") else str(jugador)
-        self._cant_canjes[username] = self._cant_canjes.get(username, 0) + 1
+        self._card_manager.canjear(jugador, tarjetas)
 
     def cant_jugadores(self) -> int:
         """Obtiene la cantidad de jugadores.
@@ -194,12 +188,15 @@ class Game:
 
     def finalizar_turno(self) -> None:
         """Finaliza el turno actual y avanza al siguiente."""
-        self._num_turno += 1
-        num = self._num_turno
+        ronda_completada = self._turn_manager.avanzar_turno()
+        num = self._turn_manager.id_turno_actual()
         cant_jugadores = self.cant_jugadores()
-        if num == cant_jugadores:
+
+        if num == cant_jugadores or ronda_completada:
             # Verificar condición de victoria al final de la ronda
-            ganador = self._verificar_condicion_victoria()
+            ganador = self._victory_checker.verificar_condicion_victoria(
+                self.lista_jugadores()
+            )
             if ganador:
                 # Alguien ganó la partida
                 ganador_id = (
@@ -210,22 +207,21 @@ class Game:
                 )
                 self._server.enviar_victoria(ganador_id, ganador_nombre)
                 return  # No continuar con la siguiente ronda
+
             # Rotar la lista de jugadores para la nueva ronda
             jugadores = self.lista_jugadores()
-            if len(jugadores) > 1:
-                jugadores = jugadores[1:] + jugadores[:1]  # Rotar a la izquierda
+            jugadores_rotados = self._turn_manager.rotar_jugadores(jugadores)
 
             jugadores_nombres = [
-                j.username() if hasattr(j, "username") else str(j) for j in jugadores
+                j.username() if hasattr(j, "username") else str(j)
+                for j in jugadores_rotados
             ]
-            if isinstance(self.turno_actual(), PrimerTurno):
-                self._turnos = [SegundoTurno(j) for j in jugadores_nombres]
-            else:
-                self._turnos = [
-                    SiguientesTurnos(j, self.mapa()) for j in jugadores_nombres
-                ]
-            self._num_turno = 0
-            self._num_ronda += 1
+            es_segundo_turno = isinstance(
+                self._turn_manager.turno_actual(), PrimerTurno
+            )
+            self._turn_manager.iniciar_nueva_ronda(
+                jugadores_nombres, es_segundo_turno=es_segundo_turno
+            )
 
             # Notificar al servidor que se completó una ronda
             # para que actualice los colores de los jugadores
@@ -256,19 +252,7 @@ class Game:
             Lista de nombres de jugadores en el orden de los turnos.
 
         """
-        # Obtener los jugadores en el orden de los turnos actuales
-        jugadores_orden: list[str] = []
-        for turno in self._turnos:
-            jugador = turno.jugador_actual()
-            if jugador not in jugadores_orden:
-                jugadores_orden.append(jugador)
-
-        # Si por alguna razón no hay jugadores
-        # en los turnos, devolver la lista normal
-        if not jugadores_orden:
-            return [j.username() for j in self.lista_jugadores()]
-
-        return jugadores_orden
+        return self._turn_manager.lista_jugadores_orden_turno(self.lista_jugadores())
 
     def atacar(
         self,
@@ -382,74 +366,6 @@ class Game:
             "conquistado": conquistado,
         }
 
-    def _verificar_condicion_victoria(self) -> Client | None:
-        """Verifica si algún jugador ha ganado la partida.
-
-        Verifica si algún jugador ha ganado controlando el número objetivo
-        de países o cumpliendo su objetivo secreto.
-
-        Returns:
-            El jugador ganador si existe, None en caso contrario.
-
-        """
-        total_paises = len(self._mapa.paises())
-
-        # Si no hay países en el mapa, no puede haber ganador (edge case para tests)
-        if total_paises == 0:
-            return None
-
-        # Verificar objetivos secretos si están activados
-        if (
-            hasattr(self._server, "_objetivos_secretos")
-            and self._server._objetivos_secretos  # noqa: SLF001
-        ):
-            for jugador in self.lista_jugadores():
-                if self._server.objetivos_secretos.verificar_condicion_victoria(
-                    str(jugador.userid()),
-                    self._mapa._mapa,  # noqa: SLF001
-                    self._server.color,
-                ):
-                    jugador_nombre = (
-                        jugador.username()
-                        if hasattr(jugador, "username")
-                        else str(jugador)
-                    )
-                    objetivo = self._server.objetivos_secretos.get_objetivo_jugador(
-                        str(jugador.userid())
-                    )
-                    print(
-                        f"¡{jugador_nombre} ha ganado cumpliendo su objetivo secreto!"
-                    )
-                    if objetivo:
-                        print(f"Objetivo cumplido: {objetivo['descripcion']}")
-                    return jugador
-
-        # Verificar condición de victoria tradicional (por países)
-        for jugador in self.lista_jugadores():
-            jugador_nombre = (
-                jugador.username() if hasattr(jugador, "username") else str(jugador)
-            )
-            paises_controlados = self._mapa.cantidad_de_paises_del_jugador(
-                jugador_nombre
-            )
-
-            if self._paises_para_victoria == 0:
-                objetivo_paises = total_paises
-            else:
-                objetivo_paises = self._paises_para_victoria
-
-            if paises_controlados >= objetivo_paises:
-                if self._paises_para_victoria == 0:
-                    print(f"¡{jugador_nombre} ha ganado controlando todos los países!")
-                else:
-                    print(
-                        f"¡{jugador_nombre} ha ganado controlando "
-                        f"{paises_controlados} países!"
-                    )
-                return jugador
-
-        return None
-
     def marcar_jugador_puede_reclamar(self, jugador: Client) -> None:
         """Marca a un jugador como elegible para reclamar tarjeta.
 
@@ -457,7 +373,7 @@ class Game:
             jugador: Jugador a marcar como elegible.
 
         """
-        self._jugadores_pueden_reclamar.add(jugador)
+        self._card_manager.marcar_jugador_puede_reclamar(jugador)
 
     def puede_reclamar_tarjeta(self, jugador: Client) -> bool:
         """Verifica si un jugador puede reclamar tarjeta.
@@ -469,7 +385,7 @@ class Game:
             True si el jugador puede reclamar tarjeta, False en caso contrario.
 
         """
-        return jugador in self._jugadores_pueden_reclamar
+        return self._card_manager.puede_reclamar_tarjeta(jugador)
 
     def reclamar_tarjeta_jugador(self, jugador: Client) -> None:
         """Remueve al jugador de la lista de elegibles tras reclamar.
@@ -478,8 +394,8 @@ class Game:
             jugador: Jugador que reclamó la tarjeta.
 
         """
-        self._jugadores_pueden_reclamar.discard(jugador)
+        self._card_manager.reclamar_tarjeta_jugador(jugador)
 
     def limpiar_elegibilidad_reclamar(self) -> None:
         """Limpia la elegibilidad de reclamar tarjetas (al finalizar turno)."""
-        self._jugadores_pueden_reclamar.clear()
+        self._card_manager.limpiar_elegibilidad_reclamar()
