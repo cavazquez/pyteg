@@ -3,12 +3,14 @@ import secrets
 from src.batalla import Batalla
 from src.turnos import PrimerTurno, SegundoTurno, SiguientesTurnos
 
+TurnoType = PrimerTurno | SegundoTurno | SiguientesTurnos
+
 
 class Game:
     def __init__(self, mapa, mazo, jugadores, server, paises_para_victoria=30):
         self._mapa = mapa
         self._start = False
-        self._turnos = [PrimerTurno("NUllJugador")]
+        self._turnos: list[TurnoType] = [PrimerTurno("NUllJugador")]
         self._jugadores = jugadores
         self._num_turno = 0
         self._num_ronda = 1
