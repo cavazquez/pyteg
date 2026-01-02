@@ -44,7 +44,7 @@ ignore = [
 
 [dependency-groups]
 dev = [
-    "mypy==1.18.2",
+    "mypy==1.19.1",
     "pyside6-stubs==6.7.3.0",
     "typing-extensions==4.15.0",
     "types-polib==1.2.0.20250401",
