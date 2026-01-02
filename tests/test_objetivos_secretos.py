@@ -116,8 +116,8 @@ class TestObjetivosSecretos(unittest.TestCase):
         mock_mapa: dict[str, list[object]] = {}
         mock_colores = Mock()
         mock_colores.dame_clientes.return_value = ["jugador_rojo", "test_player"]
-        mock_colores.get_color_name.side_effect = (
-            lambda x: "rojo" if x == "jugador_rojo" else "azul"
+        mock_colores.get_color_name.side_effect = lambda x: (
+            "rojo" if x == "jugador_rojo" else "azul"
         )
         mock_colores.get_color_name_by_client_id.return_value = "azul"
 
