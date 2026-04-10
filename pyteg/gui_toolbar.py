@@ -171,17 +171,20 @@ class ToolBar(QToolBar):
 
     def _setup_action_buttons(self) -> None:
         """Configura los botones de acción en la barra de herramientas."""
-        # Grupo: Conexión
+        self._toolbar_add_connection_group()
+        self._toolbar_add_game_actions_group()
+        self._toolbar_add_view_options_group()
+
+    def _toolbar_add_connection_group(self) -> None:
         icono_conectar = self._validar_icono("icons/conectar.png", "conectar")
         self.button_conectar = QAction(icono_conectar, _("Conectar"), self)
         self.button_conectar.triggered.connect(self.main_window.abrir_ventana_conectar)
         self.button_conectar.setToolTip(_("Conectar al servidor"))
         self.button_conectar.setStatusTip(_("Abrir ventana de conexión"))
         self.addAction(self.button_conectar)
-
         self.addSeparator()
 
-        # Grupo: Acciones de juego
+    def _toolbar_add_game_actions_group(self) -> None:
         icono_atacar = self._validar_icono("icons/atacar.png", "atacar")
         self.button_atacar = QAction(icono_atacar, _("Atacar"), self)
         self.button_atacar.triggered.connect(self.main_window.atacar)
@@ -189,10 +192,9 @@ class ToolBar(QToolBar):
         self.button_atacar.setStatusTip(_("Ejecutar ataque entre países seleccionados"))
         self.addAction(self.button_atacar)
 
-        # Botón mover
         icono_mover = self._validar_icono("icons/mover.png", "mover")
         self.button_mover = QAction(icono_mover, _("Mover"), self)
-        self.button_mover.setEnabled(False)  # Inicialmente deshabilitado
+        self.button_mover.setEnabled(False)
         self.button_mover.triggered.connect(self._mover_paises_seleccionados)
         self.button_mover.setToolTip(_("Mover unidades entre países"))
         self.button_mover.setStatusTip(
@@ -201,7 +203,6 @@ class ToolBar(QToolBar):
         self.addAction(self.button_mover)
         self.addSeparator()
 
-        # Botón para mostrar tarjetas del jugador
         icono_tarjetas = self._validar_icono("icons/default_size.png", "tarjetas")
         self.button_tarjetas = QAction(icono_tarjetas, _("Tarjetas"), self)
         self.button_tarjetas.setEnabled(True)
@@ -210,25 +211,23 @@ class ToolBar(QToolBar):
         self.button_tarjetas.setStatusTip(_("Mostrar tarjetas asignadas al jugador"))
         self.addAction(self.button_tarjetas)
 
-        # Botón para finalizar el turno
         icono_finalizar = self._validar_icono("icons/finish.png", "finalizar turno")
         self.button_finalizar_turno = QAction(
             icono_finalizar, _("Finalizar Turno"), self
         )
-        self.button_finalizar_turno.setEnabled(True)  # Siempre habilitado
+        self.button_finalizar_turno.setEnabled(True)
         self.button_finalizar_turno.triggered.connect(self.main_window.finalizar_turno)
         self.button_finalizar_turno.setToolTip(_("Finalizar tu turno actual"))
         self.button_finalizar_turno.setStatusTip(
             _("Pasar el turno al siguiente jugador")
         )
         self.addAction(self.button_finalizar_turno)
-
         self.addSeparator()
 
-        # Botón para mostrar configuración de la partida
+    def _toolbar_add_view_options_group(self) -> None:
         icono_config = self._validar_icono("icons/resize.png", "configuración")
         self.button_configuracion = QAction(icono_config, _("Configuración"), self)
-        self.button_configuracion.setEnabled(True)  # Siempre habilitado
+        self.button_configuracion.setEnabled(True)
         self.button_configuracion.triggered.connect(
             self.main_window.mostrar_configuracion_partida
         )
@@ -238,18 +237,15 @@ class ToolBar(QToolBar):
         )
         self.addAction(self.button_configuracion)
 
-        # Botón para resetear zoom del mapa
         icono_zoom = self._validar_icono("icons/default_size.png", "resetear zoom")
         self.button_reset_zoom = QAction(icono_zoom, _("Ajustar Mapa"), self)
-        self.button_reset_zoom.setEnabled(True)  # Siempre habilitado
+        self.button_reset_zoom.setEnabled(True)
         self.button_reset_zoom.triggered.connect(self._reset_map_zoom)
         self.button_reset_zoom.setToolTip(_("Ajustar mapa a la ventana"))
         self.button_reset_zoom.setStatusTip(
             _("Resetear zoom y ajustar mapa al tamaño de la ventana")
         )
         self.addAction(self.button_reset_zoom)
-
-        # Grupo: Administración (removido)
 
     def _setup_size_menu(self) -> None:
         """Configura el menú de tamaño y su botón."""

@@ -25,9 +25,12 @@ class TestClienteEjecutarMensaje(unittest.TestCase):
     def test_mensaje_desconocido_envia_error_chat(self) -> None:
         """Un mensaje no registrado se traduce en error vía transmisor."""
         client, _server = self._make_client()
-        with patch.object(
-            client.transmisor, "enviar_error_chat", autospec=True
-        ) as enviar_error:
+        with (
+            patch.object(
+                client.transmisor, "enviar_error_chat", autospec=True
+            ) as enviar_error,
+            patch("pyteg.server_tasks.LOGGER.warning"),
+        ):
             client.ejecutar_mensaje({"mensaje": "noexiste"})
             enviar_error.assert_called()
 

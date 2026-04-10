@@ -36,12 +36,6 @@ ignore = [
 	"D213",   #
 	]
 
-[tool.ruff.lint.per-file-ignores]
-# GUI y parser TOML: __init__ / métodos de montaje con muchas sentencias puntuales.
-"pyteg/gui.py" = ["PLR0915"]
-"pyteg/gui_toolbar.py" = ["PLR0915"]
-"pyteg/toml_reader.py" = ["PLR0915"]
-
 [dependency-groups]
 dev = [
     "mypy==1.19.1",

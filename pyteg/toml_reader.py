@@ -9,9 +9,14 @@ class TomlReaderError(Exception):
 
 
 class TomlReader:
-    """Lector y validador de archivos TOML del juego."""
+    """Lector y validador de archivos TOML del juego.
 
-    def __init__(  # noqa: PLR0912
+    Raises:
+        TomlReaderError: Si el TOML no se puede parsear o la estructura no es válida.
+
+    """
+
+    def __init__(
         self,
         paises_toml_string: str,
         cartas_toml_string: str | None = None,
@@ -27,17 +32,23 @@ class TomlReader:
             objetivos_secretos_toml_string: String con contenido TOML de objetivos
                 secretos (opcional)
 
-        Raises:
-            TomlReaderError: Si la estructura TOML no es válida
-
         """
+        self._init_load_paises(paises_toml_string)
+        self._init_merge_cartas(cartas_toml_string)
+        self.adyacencias: dict[str, list[str]] = {}
+        self._init_merge_adyacencias(adyacencias_toml_string)
+        self.objetivos_secretos: dict[str, dict[str, Any]] = {}
+        self._init_merge_objetivos_secretos(objetivos_secretos_toml_string)
+        self._init_validate_and_build()
+
+    def _init_load_paises(self, paises_toml_string: str) -> None:
         try:
             self.parsed_toml = tomllib.loads(paises_toml_string)
         except tomllib.TOMLDecodeError as e:
             msg = f"Error al parsear TOML de países: {e}"
             raise TomlReaderError(msg) from e
 
-        # Procesar cartas desde archivo separado o desde el mismo archivo
+    def _init_merge_cartas(self, cartas_toml_string: str | None) -> None:
         if cartas_toml_string is not None:
             try:
                 cartas_parsed = tomllib.loads(cartas_toml_string)
@@ -48,15 +59,13 @@ class TomlReader:
             except tomllib.TOMLDecodeError as e:
                 msg = f"Error al parsear TOML de cartas: {e}"
                 raise TomlReaderError(msg) from e
-        # Compatibilidad: buscar cartas en el archivo de países
         elif "Cartas" in self.parsed_toml:
             self.cartas = self.parsed_toml["Cartas"]
         else:
             msg = "No se encontró sección 'Cartas' en ningún archivo"
             raise TomlReaderError(msg)
 
-        # Procesar adyacencias desde archivo separado o desde el mismo archivo
-        self.adyacencias: dict[str, list[str]] = {}
+    def _init_merge_adyacencias(self, adyacencias_toml_string: str | None) -> None:
         if adyacencias_toml_string is not None:
             try:
                 adyacencias_parsed = tomllib.loads(adyacencias_toml_string)
@@ -68,43 +77,33 @@ class TomlReader:
             except tomllib.TOMLDecodeError as e:
                 msg = f"Error al parsear TOML de adyacencias: {e}"
                 raise TomlReaderError(msg) from e
-        # Compatibilidad: buscar adyacencias en el archivo de países
         elif "Adyacencias" in self.parsed_toml:
             self.adyacencias = self.parsed_toml["Adyacencias"]
             self._validar_adyacencias()
 
-        # Procesar objetivos secretos desde archivo separado
-        self.objetivos_secretos: dict[str, dict[str, Any]] = {}
-        if objetivos_secretos_toml_string is not None:
-            try:
-                objetivos_parsed = tomllib.loads(objetivos_secretos_toml_string)
-                if "Objetivos" not in objetivos_parsed:
-                    msg = (
-                        "Archivo de objetivos secretos debe contener "
-                        "sección 'Objetivos'"
-                    )
-                    raise TomlReaderError(msg)
-                self.objetivos_secretos = objetivos_parsed["Objetivos"]
-                self._validar_objetivos_secretos()
-            except tomllib.TOMLDecodeError as e:
-                msg = f"Error al parsear TOML de objetivos secretos: {e}"
-                raise TomlReaderError(msg) from e
+    def _init_merge_objetivos_secretos(
+        self, objetivos_secretos_toml_string: str | None
+    ) -> None:
+        if objetivos_secretos_toml_string is None:
+            return
+        try:
+            objetivos_parsed = tomllib.loads(objetivos_secretos_toml_string)
+            if "Objetivos" not in objetivos_parsed:
+                msg = "Archivo de objetivos secretos debe contener sección 'Objetivos'"
+                raise TomlReaderError(msg)
+            self.objetivos_secretos = objetivos_parsed["Objetivos"]
+            self._validar_objetivos_secretos()
+        except tomllib.TOMLDecodeError as e:
+            msg = f"Error al parsear TOML de objetivos secretos: {e}"
+            raise TomlReaderError(msg) from e
 
-        # Validar estructura básica
+    def _init_validate_and_build(self) -> None:
         self._validar_estructura_basica()
-
-        # Inicializar estructuras de datos
         self.continentes: dict[str, tuple[int, int]] = {}
         self.paises: dict[str, dict[str, Any]] = {}
-        self._pais_a_continente: dict[str, str] = {}  # Índice inverso para performance
-
-        # Validar cartas
+        self._pais_a_continente: dict[str, str] = {}
         self._validar_cartas()
-
-        # Procesar continentes y países
         self._procesar_continentes_y_paises()
-
-        # Validaciones finales
         self._validar_consistencia_datos()
 
     def _validar_estructura_basica(self) -> None:
