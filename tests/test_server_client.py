@@ -5,7 +5,7 @@ from __future__ import annotations
 import unittest
 from unittest.mock import MagicMock, patch
 
-from src.server_client import Client
+from pyteg.server_client import Client
 
 
 class TestClienteEjecutarMensaje(unittest.TestCase):

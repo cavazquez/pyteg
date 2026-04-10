@@ -15,12 +15,12 @@ try:
 except ImportError:
     polib = None  # type: ignore[assignment]
 
-# Agregar el directorio src al path para importar módulos
-sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+# Agregar el paquete pyteg al path para importar módulos
+sys.path.insert(0, str(Path(__file__).parent.parent / "pyteg"))
 
 BASE_DIR = Path(__file__).parent.parent
 LOCALES_DIR = BASE_DIR / "locales"
-SRC_DIR = BASE_DIR / "src"
+SRC_DIR = BASE_DIR / "pyteg"
 DOMAIN = "pyteg"
 
 

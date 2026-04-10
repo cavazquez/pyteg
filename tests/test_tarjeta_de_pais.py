@@ -2,7 +2,7 @@
 
 import unittest
 
-from src.tarjeta_de_pais import TarjetaDePais
+from pyteg.tarjeta_de_pais import TarjetaDePais
 
 
 class TestTarjetaDePais(unittest.TestCase):

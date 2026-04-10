@@ -2,8 +2,8 @@
 
 import unittest
 
-from src.config import MIN_CARDS_SAME_SYMBOL_FOR_EXCHANGE
-from src.mazo import Mazo
+from pyteg.config import MIN_CARDS_SAME_SYMBOL_FOR_EXCHANGE
+from pyteg.mazo import Mazo
 
 
 class TestMazo(unittest.TestCase):

@@ -3,7 +3,7 @@
 import unittest
 from pathlib import Path
 
-from src.toml_reader import TomlReader
+from pyteg.toml_reader import TomlReader
 
 
 class TestTomlReader(unittest.TestCase):

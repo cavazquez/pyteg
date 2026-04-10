@@ -1,0 +1,8 @@
+# Ruff alineado con pyproject.toml / uv.lock (dev: ruff==0.14.10)
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.14.10
+    hooks:
+      - id: ruff
+        args: [--config=pyproject.toml]
+      - id: ruff-format

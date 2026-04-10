@@ -3,13 +3,13 @@
 import unittest
 from typing import Any
 
-from src.server_estado import Estado
-from src.server_tasks import (
+from pyteg.server_estado import Estado
+from pyteg.server_tasks import (
     ServerTaskAgregarUnidad,
     ServerTaskAtacar,
     ServerTaskMoverUnidad,
 )
-from src.turnos import PrimerTurno
+from pyteg.turnos import PrimerTurno
 
 
 class DummyValidator:

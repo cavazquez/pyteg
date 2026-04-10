@@ -4,16 +4,19 @@ Todas las fechas en formato YYYY-MM-DD.
 
 ## [Unreleased]
 
+### Changed
+- **Paquete Python renombrado de `src` a `pyteg`**: imports `from pyteg.…`, entry points y builds Nuitka apuntan al directorio `pyteg/`; actualizar scripts locales que ejecuten `python src/...` a `python pyteg/...`.
+
 ### Fixed
 - **Corrección de carga de recursos en binarios**: Solucionado problema donde los binarios compilados con Nuitka no podían cargar iconos y otros recursos
-  - Implementada función `get_resource_path()` en `src/utils.py` que maneja rutas de recursos tanto en desarrollo como en binarios empaquetados
+  - Implementada función `get_resource_path()` en `pyteg/utils.py` que maneja rutas de recursos tanto en desarrollo como en binarios empaquetados
   - Actualizada carga de iconos en toolbar, imágenes de países, imágenes de tarjetas y archivos TOML
   - Servidor ahora incluye directorio `themes` en el build para acceder a archivos de configuración
   - Los binarios ahora funcionan correctamente sin errores de `ImagenNoEncontradaError`
 
 ### Added
 - **Sistema de versionado consistente**: Los binarios ahora incluyen la versión en el nombre del archivo y la muestran al ejecutarse
-  - Nuevo módulo `src/version.py` para gestión centralizada de versiones
+  - Nuevo módulo `pyteg/version.py` para gestión centralizada de versiones
   - Consistencia entre `pyproject.toml` y tags de Git
   - Binarios nombrados con formato `pyteg-{server|client}-{version}` (ej: `pyteg-server-0.0.6`)
   - Archivos comprimidos incluyen versión: `pyteg-{version}-{platform}-{arch}` (ej: `pyteg-0.0.6-linux-x86_64.tar.gz`)
@@ -84,7 +87,7 @@ Todas las fechas en formato YYYY-MM-DD.
   - Refactorización de GUI con funciones `_()` para traducción
   - Documentación completa en README.md sobre uso del sistema i18n
 - **Sistema completo de condición de victoria configurable**: 
-  - Objetivo por defecto: 30 países (`DEFAULT_VICTORY_COUNTRIES` en `src/config.py`, configurable al crear partida)
+  - Objetivo por defecto: 30 países (`DEFAULT_VICTORY_COUNTRIES` en `pyteg/config.py`, configurable al crear partida)
   - Configuración del objetivo de países al crear la partida (similar a duración de turno)
   - Verificación automática al final de cada ronda
   - Mensaje de victoria (MsgVictoria) con diálogo informativo y notificación en chat

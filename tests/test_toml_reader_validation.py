@@ -3,7 +3,7 @@
 import unittest
 from typing import cast
 
-from src.toml_reader import TomlReader, TomlReaderError
+from pyteg.toml_reader import TomlReader, TomlReaderError
 
 
 class TestTomlReaderValidation(unittest.TestCase):

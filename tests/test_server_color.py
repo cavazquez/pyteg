@@ -2,8 +2,8 @@
 
 import unittest
 
-from src.colores import Amarillo
-from src.server_color import ServerColor
+from pyteg.colores import Amarillo
+from pyteg.server_color import ServerColor
 
 
 class TestServerColor(unittest.TestCase):

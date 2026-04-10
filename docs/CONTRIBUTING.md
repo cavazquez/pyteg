@@ -32,12 +32,23 @@ uv run ruff format .
 uv run coverage run --branch -m unittest discover
 uv run coverage report -m
 
-# Mypy (estricto; configuración en pyproject.toml → src/, tests/, scripts/)
+# Mypy (estricto; configuración en pyproject.toml → pyteg/, tests/, scripts/)
 uv run mypy
 
 # Todo en una pasada (incluye auto-fix de Ruff)
 ./run_tests.sh
 ```
+
+## Pre-commit (opcional)
+
+En la raíz del repo hay [`.pre-commit-config.yaml`](../.pre-commit-config.yaml) con **Ruff** (misma versión mayor que en `pyproject.toml` / el hook `v0.14.10`). **Mypy** sigue siendo obligatorio vía CI y `./run_tests.sh`, no se ejecuta en cada commit para no alentar el flujo local.
+
+```bash
+pip install pre-commit   # o: uv tool install pre-commit
+pre-commit install
+```
+
+Tras eso, Ruff corre en `git commit`. Quien no use pre-commit no está obligado; la fuente de verdad sigue siendo el workflow de GitHub Actions y los comandos anteriores.
 
 ## Política de retención de logs
 Los logs se escriben en `logs/` con rotación automática y limpieza periódica. Puedes ajustar los límites vía variables de entorno:

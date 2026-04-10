@@ -93,7 +93,7 @@ jobs:
             --disable-console \
             --enable-plugin=pyside6 \
             --include-data-dir=themes=themes \
-            src/server.py
+            pyteg/server.py
 
           # Build client
           PYTEG_VERSION=${VERSION} uv run python -m nuitka \
@@ -107,7 +107,7 @@ jobs:
             --include-data-dir=themes=themes \
             --include-data-dir=locales=locales \
             --include-data-dir=icons=icons \
-            src/run_client.py
+            pyteg/run_client.py
 
       - name: Create platform-specific archive
         shell: bash

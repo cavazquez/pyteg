@@ -2,7 +2,7 @@
 
 import unittest
 
-from src.codecs_utils import Utf8
+from pyteg.codecs_utils import Utf8
 
 
 class TestUtf8(unittest.TestCase):

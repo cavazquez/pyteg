@@ -1,7 +1,7 @@
 # Implementar la recepción de un mensaje del cliente
 
 ## 1. Crear la clase del mensaje
-Crear una nueva clase que herede de IMsg en el archivo `/src/client_msg.py`:
+Crear una nueva clase que herede de IMsg en el archivo `/pyteg/client_msg.py`:
 
 ```python
 class MsgMiMensajeCliente(IMsg):
@@ -18,7 +18,7 @@ class MsgMiMensajeCliente(IMsg):
 ```
 
 ## 2. Crear el ServerTask
-Crear una nueva clase que herede de IServerTask en el archivo `/src/server_tasks.py`:
+Crear una nueva clase que herede de IServerTask en el archivo `/pyteg/server_tasks.py`:
 
 ```python
 class ServerTaskMiMensajeCliente(IServerTask):
@@ -32,14 +32,14 @@ class ServerTaskMiMensajeCliente(IServerTask):
 ```
 
 ## 3. Registrar la tarea
-Registrar la tarea en el diccionario de tareas en el archivo `/src/server_tasks_manager.py`:
+Registrar la tarea en el diccionario de tareas en el archivo `/pyteg/server_tasks_manager.py`:
 
 ```python
 dict_task["mi_mensaje_cliente"] = ServerTaskMiMensajeCliente
 ```
 
 ## 4. Implementar el mensaje en el ClientTransmisor
-Añadir el método en la clase ClientTransmisor en el archivo `/src/client_transmisor.py`:
+Añadir el método en la clase ClientTransmisor en el archivo `/pyteg/client_transmisor.py`:
 
 ```python
 def enviar_mi_mensaje(self, datos):

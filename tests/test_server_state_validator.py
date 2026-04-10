@@ -3,9 +3,9 @@
 import unittest
 from dataclasses import dataclass
 
-from src.exception import EstadoInvalidoError
-from src.server_estado import Estado
-from src.server_state_validator import ServerStateValidator
+from pyteg.exception import EstadoInvalidoError
+from pyteg.server_estado import Estado
+from pyteg.server_state_validator import ServerStateValidator
 
 
 @dataclass
