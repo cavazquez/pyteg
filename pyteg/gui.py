@@ -56,9 +56,16 @@ class Gui(QMainWindow):
 
         """
         super().__init__()
+        self._gui_init_core_state(client)
+        self._gui_init_window_and_managers()
+        self._gui_init_turn_tracking()
+        self.layout_manager.setup_graphics_view()
+        self._gui_build_status_bar()
+        self.show()
+
+    def _gui_init_core_state(self, client: Client) -> None:
         self._vivo = True
         self.client = client
-        # Inicializar tema lo antes posible para uso en setup inicial
         self._theme = "light"
         self.client_by_id: dict[int, Any] = {}
         self.transmisor = ClientNullTransmisor()
@@ -69,11 +76,10 @@ class Gui(QMainWindow):
         self.view: QCustomGraphicsView | None = None
         self.chat: Chat | None = None
         self.toolbar: ToolBar | None = None
-        self.setWindowTitle(_("PyTeg"))
-        # self.setFixedSize(QSize(800, 600))
-        self.resize(QSize(1280, 800))
 
-        # Inicializar gestores
+    def _gui_init_window_and_managers(self) -> None:
+        self.setWindowTitle(_("PyTeg"))
+        self.resize(QSize(1280, 800))
         self.layout_manager = LayoutManager(self)
         self.theme_manager = ThemeManager(self)
         self.players_manager = PlayersManager(self)
@@ -88,54 +94,45 @@ class Gui(QMainWindow):
         self.setMinimumSize(QSize(800, 600))
         self.setMouseTracking(True)
 
-        # Initialize turn number and current player info
+    def _gui_init_turn_tracking(self) -> None:
         self._turno_actual = 0
-        self._jugador_actual_id: int | None = None
-        self._jugador_actual_nombre: str | None = None
-        self._jugador_actual_color: str | None = None
-
+        self._jugador_actual_id = None
+        self._jugador_actual_nombre = None
+        self._jugador_actual_color = None
         self.colores = Colores()
 
-        # Configurar la vista gráfica usando el layout manager
-        self.layout_manager.setup_graphics_view()
-
-        # Create a status bar with permanent widgets for turn number and status
+    def _gui_build_status_bar(self) -> None:
         self.status_bar = QStatusBar()
         self.status_bar.setFixedHeight(26)
-        # Aplicar tema al status bar (ya existe self._theme)
         self.theme_manager._apply_statusbar_theme()  # noqa: SLF001
+        self._gui_status_bar_turn_and_local_player()
+        self._gui_status_bar_pills_and_controls()
+        self.setStatusBar(self.status_bar)
 
-        # Add a widget for the current player with color indicator and nickname
+    def _gui_status_bar_add_vseparator(self) -> None:
+        sep = QFrame()
+        sep.setFrameShape(QFrame.Shape.VLine)
+        sep.setFrameShadow(QFrame.Shadow.Sunken)
+        self.status_bar.addPermanentWidget(sep)
+
+    def _gui_status_bar_turn_and_local_player(self) -> None:
         self.jugador_actual_widget = QWidget()
         self.jugador_actual_layout = QHBoxLayout(self.jugador_actual_widget)
         self.jugador_actual_layout.setContentsMargins(4, 0, 4, 0)
         self.jugador_actual_layout.setSpacing(6)
-
-        # Turn and player info
         self.turno_label = QLabel("Turno: 0")
         self.turno_label.setStyleSheet("font-weight: 600;")
         self.jugador_actual_layout.addWidget(self.turno_label)
-
         self.status_bar.addPermanentWidget(self.jugador_actual_widget)
+        self._gui_status_bar_add_vseparator()
 
-        # Separator
-        sep1 = QFrame()
-        sep1.setFrameShape(QFrame.Shape.VLine)
-        sep1.setFrameShadow(QFrame.Shadow.Sunken)
-        self.status_bar.addPermanentWidget(sep1)
-
-        # Add a widget for "My Player" info
         self.mi_jugador_widget = QWidget()
         self.mi_jugador_layout = QHBoxLayout(self.mi_jugador_widget)
         self.mi_jugador_layout.setContentsMargins(4, 0, 4, 0)
         self.mi_jugador_layout.setSpacing(6)
-
-        # "Mi jugador:" label
         self.mi_jugador_text = QLabel(_("Mi jugador:"))
         self.mi_jugador_text.setStyleSheet("color: #555;")
         self.mi_jugador_layout.addWidget(self.mi_jugador_text)
-
-        # My color indicator (square)
         self.mi_color_indicator = QLabel()
         self.mi_color_indicator.setFixedSize(16, 16)
         self.mi_color_indicator.setStyleSheet("""
@@ -144,84 +141,46 @@ class Gui(QMainWindow):
             border-radius: 2px;
         """)
         self.mi_jugador_layout.addWidget(self.mi_color_indicator)
-
-        # My username
         self.mi_username_label = QLabel(_("[No conectado]"))
         self.mi_username_label.setStyleSheet("font-weight: 600;")
         self.mi_jugador_layout.addWidget(self.mi_username_label)
-
         self.status_bar.addPermanentWidget(self.mi_jugador_widget)
+        self._gui_status_bar_add_vseparator()
 
-        # Separator
-        sep2 = QFrame()
-        sep2.setFrameShape(QFrame.Shape.VLine)
-        sep2.setFrameShadow(QFrame.Shadow.Sunken)
-        self.status_bar.addPermanentWidget(sep2)
-
-        # Add a label for the game state
+    def _gui_status_bar_pills_and_controls(self) -> None:
         self.estado_label = QLabel(_("Estado: Desconectado"))
         self.estado_label.setObjectName("estadoLabel")
         self.estado_label.setProperty("class", "pill")
         self.status_bar.addPermanentWidget(self.estado_label)
+        self._gui_status_bar_add_vseparator()
 
-        # Separator
-        sep3 = QFrame()
-        sep3.setFrameShape(QFrame.Shape.VLine)
-        sep3.setFrameShadow(QFrame.Shadow.Sunken)
-        self.status_bar.addPermanentWidget(sep3)
-
-        # Add a label for country selection
         self.seleccion_label = QLabel(_("Selección: Ninguna"))
         self.seleccion_label.setProperty("class", "pill")
         self.status_bar.addPermanentWidget(self.seleccion_label)
+        self._gui_status_bar_add_vseparator()
 
-        # Separator
-        sep4 = QFrame()
-        sep4.setFrameShape(QFrame.Shape.VLine)
-        sep4.setFrameShadow(QFrame.Shadow.Sunken)
-        self.status_bar.addPermanentWidget(sep4)
-
-        # Add language selector
         self.language_selector = LanguageSelector()
-        # Conectar la señal de cambio de idioma
         self.language_selector.language_changed.connect(
             self.language_manager.on_language_changed
         )
         self.status_bar.addPermanentWidget(self.language_selector)
+        self._gui_status_bar_add_vseparator()
 
-        # Separator
-        sep5 = QFrame()
-        sep5.setFrameShape(QFrame.Shape.VLine)
-        sep5.setFrameShadow(QFrame.Shadow.Sunken)
-        self.status_bar.addPermanentWidget(sep5)
-
-        # Add sound control widget
         self.sound_control = SoundControlWidget(self.sound_manager)
         self.status_bar.addPermanentWidget(self.sound_control)
+        self._gui_status_bar_add_vseparator()
 
-        # Separator
-        sep6 = QFrame()
-        sep6.setFrameShape(QFrame.Shape.VLine)
-        sep6.setFrameShadow(QFrame.Shadow.Sunken)
-        self.status_bar.addPermanentWidget(sep6)
-
-        # Add timer widget for countdown
         self.timer_label = QLabel("")
         self.timer_label.setStyleSheet("font-weight: bold; padding: 2px 8px;")
         self.timer_label.setMinimumWidth(120)
         self.status_bar.addPermanentWidget(self.timer_label)
 
-        # Add a stretch to push the status message to the right
         spacer = QWidget()
         spacer.setSizePolicy(
             QSizePolicy.Policy.Expanding,
             QSizePolicy.Policy.Preferred,
         )
         self.status_bar.addPermanentWidget(spacer)
-
-        self.setStatusBar(self.status_bar)
-
-        self.show()  # IMPORTANT!!!!! Windows are hidden by default.
 
     def vivo(self) -> bool:
         """Verifica si la ventana está activa.
