@@ -35,6 +35,10 @@ logs/
 pip-log.txt
 pip-delete-this-directory.txt
 
+# Type checker / linter caches
+.mypy_cache/
+.ruff_cache/
+
 # Unit test / coverage reports
 htmlcov/
 .tox/

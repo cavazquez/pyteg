@@ -84,7 +84,7 @@ Todas las fechas en formato YYYY-MM-DD.
   - Refactorización de GUI con funciones `_()` para traducción
   - Documentación completa en README.md sobre uso del sistema i18n
 - **Sistema completo de condición de victoria configurable**: 
-  - Condición de victoria cambiada a controlar 50 países (por defecto, configurable)
+  - Objetivo por defecto: 30 países (`DEFAULT_VICTORY_COUNTRIES` en `src/config.py`, configurable al crear partida)
   - Configuración del objetivo de países al crear la partida (similar a duración de turno)
   - Verificación automática al final de cada ronda
   - Mensaje de victoria (MsgVictoria) con diálogo informativo y notificación en chat

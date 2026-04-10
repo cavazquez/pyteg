@@ -16,18 +16,18 @@ gráfica en Python.
 - Cliente gráfico con PySide6 y animación de dados en las batallas
 - **Efectos visuales inmersivos**: Atacante ve animación completa, espectadores ven titilación de países y pérdidas flotantes
 - **Sistema de sonidos**: Efectos de audio para batallas, movimientos, turnos y eventos del juego con controles de volumen
-- Modo multijugador con servidor TCP y validación de estados
+- Modo multijugador con servidor TCP y validación de estados (sin cifrado; pensado para redes de confianza, p. ej. LAN)
 - Restricción de ataques en los dos primeros turnos
 - Elección de cantidad de unidades para atacar (1 a 3)
 - Validación de nombres de usuario duplicados (con desconexión)
 - Estado del juego visible en la barra de estado (ronda, turno, color)
 - Bloqueo de nuevas conexiones cuando la partida está en curso
-- **Condición de victoria configurable**: Por defecto 50 países (configurable al crear partida)
+- **Condición de victoria configurable**: Por defecto 30 países (`DEFAULT_VICTORY_COUNTRIES` en `src/config.py`; configurable al crear partida)
 - **Objetivos secretos**: Sistema opcional de objetivos secretos del TEG clásico
 - **Ventana de configuración**: Muestra duración de turno, objetivo de países y objetivos secretos
 - **Verificación automática de condición de victoria al final de cada ronda**
 - **Soporte multiidioma (i18n)**: Español e inglés con selector en la interfaz
-- 160+ tests automatizados y linting con Ruff
+- Suite `unittest` (~175 casos con `python -m unittest discover`), Ruff, mypy estricto y cobertura en CI y en `./run_tests.sh`
 
 ## Requisitos
 - Python 3.11 o superior
@@ -126,22 +126,16 @@ Formateo y estilo:
 - Límite de línea: 88 caracteres (en todo el proyecto)
 - Ruff para lint y formato
 
-Comandos útiles:
+Comandos útiles (tras `uv sync --group dev`; detalle en `docs/CONTRIBUTING.md`):
 ```bash
-# Lint
-uvx ruff check .
+# Lint / formato / mypy / tests (versiones fijadas en el proyecto)
+uv run ruff check .
+uv run ruff format --check .
+uv run mypy
+uv run coverage run --branch -m unittest discover
+uv run coverage report -m
 
-# Formato (solo verifica)
-uvx ruff format --check .
-
-# Aplicar formato
-uvx ruff format .
-
-# Tests con coverage
-uvx coverage run --branch -m unittest
-uvx coverage report -m
-
-# Todo en una pasada
+# Todo en una pasada (incluye auto-fix de Ruff)
 ./run_tests.sh
 ```
 

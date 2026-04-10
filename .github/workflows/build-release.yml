@@ -47,7 +47,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          uv sync --dev
+          uv sync --group dev
 
       - name: Install system dependencies (Linux)
         if: matrix.platform == 'linux'
@@ -69,6 +69,9 @@ jobs:
             libxi6 \
             libxext6 \
             libx11-6
+
+      - name: Mypy
+        run: uv run mypy
 
       - name: Run tests
         run: |

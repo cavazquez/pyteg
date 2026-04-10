@@ -1,49 +1,38 @@
 """Tests para el módulo de cliente del servidor."""
 
+from __future__ import annotations
+
 import unittest
+from unittest.mock import MagicMock, patch
+
+from src.server_client import Client
 
 
-class TestEjecutarMensaje(unittest.TestCase):
-    """Tests para ejecutar mensajes del cliente."""
+class TestClienteEjecutarMensaje(unittest.TestCase):
+    """Tests para Client.ejecutar_mensaje."""
 
-    # def test_mensaje_inexistente(self):
-    #    data = {"mensaje": "noexiste"}
-    #    game = Game(Mapa(lambda: None), None)
-    #    cliente = Client(1, "conn", "server", None)
-    #    with self.assertRaises(MensajeNoValidoError):
-    #        cliente.ejecutar_mensaje(data, game)
+    def _make_client(self, username: str = "TestUser") -> tuple[Client, MagicMock]:
+        conn = MagicMock()
+        server = MagicMock()
+        server.mapa = MagicMock()
+        server.game = MagicMock()
+        server.estado = MagicMock()
+        server.estado.puede_ejecutar_accion.return_value = True
+        server.estado.estado_actual.return_value = "jugando"
+        client = Client(1, conn, server, username, soy_admin=False)
+        return client, server
 
-    # def test_asignar_username(self):
-    #    game = Game(Mapa(lambda: None), None)
-    #    data = {"mensaje": "username", "nombre": "Fulano"}
-    #    cliente = Client(1, "conn", "server", None)
-    #    cliente.ejecutar_mensaje(data, game)
-    #    self.assertEqual(game.jugadores().get(1), "Fulano")
-    #    self.assertEqual(cliente.username(), "Fulano")
+    def test_mensaje_desconocido_envia_error_chat(self) -> None:
+        """Un mensaje no registrado se traduce en error vía transmisor."""
+        client, _server = self._make_client()
+        with patch.object(
+            client.transmisor, "enviar_error_chat", autospec=True
+        ) as enviar_error:
+            client.ejecutar_mensaje({"mensaje": "noexiste"})
+            enviar_error.assert_called()
 
-    # def test_no_permitir_asignar_2_veces_username(self):
-    #    game = Game(Mapa(lambda: None), None)
-    #    data = {"mensaje": "username", "nombre": "Fulano"}
-    #    cliente = Client(1, "conn", "server", None)
-    #    cliente.ejecutar_mensaje(data, game)
-    #    data = {"mensaje": "username", "nombre": "Mengano"}
-    #    cliente.ejecutar_mensaje(data, game)
-    #    self.assertEqual(game.jugadores().get(1), "Fulano")
-    #    self.assertEqual(cliente.username(), "Fulano")
-
-    # def test_agregar_2_jugadores(self):
-    #    game = Game(Mapa(lambda: None), None)
-    #    data = {"mensaje": "username", "nombre": "Fulano"}
-    #    cliente = Client(1, "conn", "server", None)
-    #    cliente.ejecutar_mensaje(data, game)
-    #    data = {"mensaje": "username", "nombre": "Mengano"}
-    #    cliente2 = Client(2, "conn", "server", None)
-    #    cliente2.ejecutar_mensaje(data, game)
-    #    self.assertEqual(game.jugadores().get(1), "Fulano")
-    #    self.assertEqual(game.jugadores().get(2), "Mengano")
-
-    # def test_enviar_chat(self):
-    #    data = {"mensaje": "chat", "chat": "Hola"}
-    #    msg = data["chat"]
-    #    cliente = Client(1, "conn", "server", None)
-    #    self.assertEqual(f"{cliente.username()}: {msg}", cliente.mensaje_chat(msg))
+    def test_mensaje_chat_llama_enviar_chat(self) -> None:
+        """El mensaje de chat reenvía el texto al broadcast del servidor."""
+        client, server = self._make_client("Fulano")
+        client.ejecutar_mensaje({"mensaje": "chat", "msg": "Hola"})
+        server.enviar_chat.assert_called_once_with("Fulano", "Hola")
