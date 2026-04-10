@@ -8,20 +8,20 @@ Se ha implementado un sistema completo de efectos de sonido para PyTeg que propo
 
 ### Componentes principales
 
-1. **SoundManager** (`src/sound_manager.py`)
+1. **SoundManager** (`pyteg/sound_manager.py`)
    - Gestor centralizado de reproducción de sonidos
    - Usa `QMediaPlayer` y `QAudioOutput` de PySide6
    - Control de volumen (0.0 - 1.0)
    - Sistema de mute/unmute
    - Cache de reproductores para mejor rendimiento
 
-2. **SoundControlWidget** (`src/gui_sound_control.py`)
+2. **SoundControlWidget** (`pyteg/gui_sound_control.py`)
    - Widget de control en la barra de estado
    - Botón de mute/unmute con iconos dinámicos (🔊/🔉/🔇)
    - Slider de volumen (0-100%)
    - Indicador de porcentaje
 
-3. **Integración en GUI** (`src/gui.py`)
+3. **Integración en GUI** (`pyteg/gui.py`)
    - Instancia de `SoundManager` creada al inicializar
    - Widget de control agregado a la barra de estado
    - Limpieza de recursos al cerrar la aplicación
@@ -139,16 +139,16 @@ sound_manager.play("attack")
 ## Archivos modificados/creados
 
 ### Nuevos archivos
-- `src/sound_manager.py` - Gestor de sonidos
-- `src/gui_sound_control.py` - Widget de control
+- `pyteg/sound_manager.py` - Gestor de sonidos
+- `pyteg/gui_sound_control.py` - Widget de control
 - `sounds/README.md` - Documentación de sonidos
 - `docs/SOUND_SYSTEM.md` - Esta documentación
 
 ### Archivos modificados
-- `src/gui.py` - Integración del SoundManager
-- `src/client_tasks.py` - Sonidos en eventos (ataque, turno, victoria)
-- `src/client_transmisor.py` - Sonido de movimiento
-- `src/client_connection.py` - Sonidos de conexión/desconexión
+- `pyteg/gui.py` - Integración del SoundManager
+- `pyteg/client_tasks.py` - Sonidos en eventos (ataque, turno, victoria)
+- `pyteg/client_transmisor.py` - Sonido de movimiento
+- `pyteg/client_connection.py` - Sonidos de conexión/desconexión
 - `README.md` - Actualizada lista de características
 
 ## Testing

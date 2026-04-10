@@ -8,8 +8,8 @@ dependencies = [
 ]
 
 [project.scripts]
-pyteg-client = "src.run_client:main"
-pyteg-server = "src.server:main"
+pyteg-client = "pyteg.run_client:main"
+pyteg-server = "pyteg.server:main"
 
 [tool.ruff.format]
 preview = true
@@ -28,19 +28,19 @@ ignore = [
 	"ANN", # flake8-annotations 
 	"COM812",    # missing-trailing-comma ; ruff format
 	"ISC001",    # single-line-implicit-string-concatenation ; ruff format
-	# Revisar los siguientes
-	#"BLE001", # blind-except
-	"PLR0904", # too-many-public-methods 	
-	#"PLR0911", # too-many-return-statements
-	#"PLR0914", # too-many-locals
+	"PLR0904", # too-many-public-methods
 	"PLR6301", # no-self-use
 	"ERA001",  # commented-out-code
 	"C901",    # complex-structure
-	"D203",   # 
+	"D203",   #
 	"D213",   #
-	"PLR0914", # too-many-locals (revisar caso por caso)
-	"PLR0915", # too-many-statements (revisar caso por caso)
 	]
+
+[tool.ruff.lint.per-file-ignores]
+# GUI y parser TOML: __init__ / métodos de montaje con muchas sentencias puntuales.
+"pyteg/gui.py" = ["PLR0915"]
+"pyteg/gui_toolbar.py" = ["PLR0915"]
+"pyteg/toml_reader.py" = ["PLR0915"]
 
 [dependency-groups]
 dev = [
@@ -68,20 +68,20 @@ follow_imports = "normal"
 warn_redundant_casts = true
 warn_unused_ignores = true
 explicit_package_bases = true
-files = ["src", "tests", "scripts"]
+files = ["pyteg", "tests", "scripts"]
 
 [build-system]
 requires = ["hatchling>=1.18", "hatch-nuitka"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src"]
+packages = ["pyteg"]
 
 [tool.hatch.build.targets.nuitka]
 # Entradas a compilar con Nuitka
 main = [
-  "src/server.py",
-  "src/run_client.py",
+  "pyteg/server.py",
+  "pyteg/run_client.py",
 ]
 onefile = true
 standalone = true

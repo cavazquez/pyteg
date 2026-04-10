@@ -2,7 +2,7 @@
 
 import unittest
 
-from src.batalla import Batalla
+from pyteg.batalla import Batalla
 
 
 class TestBatalla(unittest.TestCase):

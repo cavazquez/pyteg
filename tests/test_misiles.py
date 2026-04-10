@@ -2,7 +2,7 @@
 
 import unittest
 
-from src.server_mapa import Mapa
+from pyteg.server_mapa import Mapa
 
 
 class TestMisiles(unittest.TestCase):

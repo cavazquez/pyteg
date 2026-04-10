@@ -16,13 +16,13 @@ gráfica en Python.
 - Cliente gráfico con PySide6 y animación de dados en las batallas
 - **Efectos visuales inmersivos**: Atacante ve animación completa, espectadores ven titilación de países y pérdidas flotantes
 - **Sistema de sonidos**: Efectos de audio para batallas, movimientos, turnos y eventos del juego con controles de volumen
-- Modo multijugador con servidor TCP y validación de estados (sin cifrado; pensado para redes de confianza, p. ej. LAN)
+- Modo multijugador con servidor TCP y validación de estados (sin cifrado; pensado para redes de confianza, p. ej. LAN). Detalle del modelo de amenaza: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#seguridad-y-modelo-de-amenaza) y [ADR-009](docs/DECISIONS.md#adr-009-tcp-sin-cifrado-y-red-de-confianza).
 - Restricción de ataques en los dos primeros turnos
 - Elección de cantidad de unidades para atacar (1 a 3)
 - Validación de nombres de usuario duplicados (con desconexión)
 - Estado del juego visible en la barra de estado (ronda, turno, color)
 - Bloqueo de nuevas conexiones cuando la partida está en curso
-- **Condición de victoria configurable**: Por defecto 30 países (`DEFAULT_VICTORY_COUNTRIES` en `src/config.py`; configurable al crear partida)
+- **Condición de victoria configurable**: Por defecto 30 países (`DEFAULT_VICTORY_COUNTRIES` en `pyteg/config.py`; configurable al crear partida)
 - **Objetivos secretos**: Sistema opcional de objetivos secretos del TEG clásico
 - **Ventana de configuración**: Muestra duración de turno, objetivo de países y objetivos secretos
 - **Verificación automática de condición de victoria al final de cada ronda**
@@ -56,12 +56,12 @@ uv sync
 
 - Terminal 1 (servidor):
 ```bash
-uv run python src/server.py
+uv run python pyteg/server.py
 ```
 
 - Terminal 2..8 (clientes):
 ```bash
-uv run python src/run_client.py
+uv run python pyteg/run_client.py
 ```
 
 Consejos:
@@ -87,7 +87,7 @@ uv run hatch build -t wheel -t sdist
 ```
 
 ## Estructura del proyecto
-- `src/`: Código fuente principal
+- `pyteg/`: Código fuente principal
 - `tests/`: Tests unitarios
 - `themes/`: Temas visuales y mapas
   - `classic/`: Tema clásico con mapa mundial completo (50 países)
@@ -175,7 +175,7 @@ python3 scripts/manage_translations.py all
 
 Para marcar texto como traducible en el código:
 ```python
-from i18n import _
+from pyteg.i18n import _
 
 # Texto simple
 label = QLabel(_("Texto a traducir"))

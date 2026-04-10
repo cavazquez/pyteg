@@ -2,7 +2,7 @@
 
 import unittest
 
-from src.country import Country
+from pyteg.country import Country
 
 
 class TestCountry(unittest.TestCase):

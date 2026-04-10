@@ -30,10 +30,10 @@ Este documento registra decisiones de arquitectura y sus motivaciones.
 - Decisión: Toolbar habilita/inhabilita botones según conexión y selección de países; “Finalizar Turno” siempre habilitado.
 - Consecuencias: Reduce errores de usuario; comunica estado de la app.
 
-## ADR-006: mypy para verificar aridad en CI local
-- Contexto: Aumentar confianza sin bloquear por tipado completo.
-- Decisión: Ejecutar mypy con múltiples códigos deshabilitados para enfocarse en aridad de llamadas.
-- Consecuencias: Detecta llamadas incorrectas sin sobrecargar mantenimiento.
+## ADR-006: mypy estricto en el proyecto
+- Contexto: Aumentar confianza en refactor y contratos entre módulos.
+- Decisión: Configuración `[tool.mypy] strict = true` en `pyproject.toml` sobre `pyteg/`, `tests/` y `scripts/`; ejecución local (`uv run mypy`) y en CI.
+- Consecuencias: Los PR deben pasar mypy; stubs de terceros (p. ej. PySide6) pueden requerir ajustes puntuales.
 
 ## ADR-007: Tamaño de AttackDialog 400x280
 - Contexto: Mejorar legibilidad de opciones.
@@ -44,6 +44,11 @@ Este documento registra decisiones de arquitectura y sus motivaciones.
 - Contexto: Velocidad y aislamiento reproducible.
 - Decisión: Adoptar UV para sync/run y hatch para builds.
 - Consecuencias: Comandos canon homogenizados (README y scripts).
+
+## ADR-009: TCP sin cifrado y red de confianza
+- Contexto: Pyteg es un juego multijugador local o en red cercana; añadir TLS y autenticación fuerte incrementa complejidad de despliegue y protocolo.
+- Decisión: Mantener el transporte como **TCP en claro**; documentar que el modelo de amenaza asume red/host de confianza (p. ej. LAN).
+- Consecuencias: No protege contra escuchas ni clientes arbitrarios en redes abiertas; operadores deben acotar el puerto con firewall o VPN si exponen el servidor. Extensiones futuras (TLS, token de sala) quedan como posibles evoluciones explícitas del protocolo.
 
 ## Cómo proponer nuevas decisiones
 1. Agregar una nueva sección ADR-00X con contexto, decisión, consecuencias y referencias.

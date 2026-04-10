@@ -7,7 +7,15 @@ Pyteg implementa el juego TEG en un modelo cliente-servidor:
 - Servidor: valida reglas del juego, procesa acciones (agregar unidades, atacar, mover, finalizar turno), mantiene el estado y difunde actualizaciones.
 - Cliente: UI con PySide6, conecta al servidor, envía acciones y procesa mensajes para reflejar el estado (mapa, chat, barra de estado, diálogos).
 
-## Módulos principales (src/)
+## Seguridad y modelo de amenaza
+
+El transporte entre cliente y servidor es **TCP en claro**, sin TLS ni autenticación fuerte entre procesos. El diseño asume **red de confianza** (típicamente LAN o anfitrión controlado): cualquier host que pueda alcanzar el puerto del servidor puede intentar conectar; el juego no ofrece cifrado ni verificación de identidad más allá de las reglas propias de la partida (p. ej. nombres de usuario).
+
+**Riesgos conscientes:** lectura o modificación pasiva/activa del tráfico por terceros en la misma red; conexión de clientes no deseados si el puerto es accesible desde Internet sin firewall.
+
+**Posibles extensiones futuras** (cambian el protocolo y el despliegue): TLS u otro canal cifrado, contraseña o token de sala, lista de permitidos. No hay hoja de ruta fijada; ver [DECISIONS.md](DECISIONS.md) (ADR-009).
+
+## Módulos principales (pyteg/)
 - server.py: servidor y loop principal (acepta conexiones, dirige mensajes a tareas).
 - server_tasks.py: tareas validadas del servidor (AgregarUnidad, Atacar, MoverUnidad, FinalizarTurno, etc.).
 - server_game.py: reglas del juego, batallas y cálculo de conquistas.

@@ -2,11 +2,11 @@
 
 import unittest
 
-from src.mazo import Mazo
-from src.server import Server
-from src.server_game import Game
-from src.server_mapa import Mapa
-from src.turnos import PrimerTurno, SegundoTurno, SiguientesTurnos
+from pyteg.mazo import Mazo
+from pyteg.server import Server
+from pyteg.server_game import Game
+from pyteg.server_mapa import Mapa
+from pyteg.turnos import PrimerTurno, SegundoTurno, SiguientesTurnos
 
 
 class TestGame(unittest.TestCase):

@@ -123,7 +123,7 @@ def main() -> int:
 
     # 1. Ruff lint
     success, output = run_command(
-        ["uv", "run", "ruff", "check", "src", "tests", "scripts"],
+        ["uv", "run", "ruff", "check", "pyteg", "tests", "scripts"],
         "Ruff lint",
     )
     results["Ruff Lint"] = (success, output)
@@ -132,7 +132,7 @@ def main() -> int:
 
     # 2. Ruff format check
     success, output = run_command(
-        ["uv", "run", "ruff", "format", "--check", "src", "tests", "scripts"],
+        ["uv", "run", "ruff", "format", "--check", "pyteg", "tests", "scripts"],
         "Ruff format check",
     )
     results["Ruff Format"] = (success, output)
@@ -141,7 +141,7 @@ def main() -> int:
 
     # 3. MyPy type checking
     success, output = run_command(
-        ["uv", "run", "mypy", "src", "tests", "scripts"],
+        ["uv", "run", "mypy", "pyteg", "tests", "scripts"],
         "MyPy type checking",
         continue_on_error=True,
     )
@@ -149,7 +149,7 @@ def main() -> int:
 
     # 4. Radon complexity
     success, output = run_command(
-        ["uv", "run", "radon", "cc", "src", "-a", "-nb"],
+        ["uv", "run", "radon", "cc", "pyteg", "-a", "-nb"],
         "Radon complexity analysis",
         continue_on_error=True,
     )
@@ -157,7 +157,7 @@ def main() -> int:
 
     # 5. Radon maintainability
     success, output = run_command(
-        ["uv", "run", "radon", "mi", "src", "-nb"],
+        ["uv", "run", "radon", "mi", "pyteg", "-nb"],
         "Radon maintainability index",
         continue_on_error=True,
     )
@@ -165,7 +165,7 @@ def main() -> int:
 
     # 6. Vulture dead code
     success, output = run_command(
-        ["uv", "run", "vulture", "src", "--min-confidence", "80"],
+        ["uv", "run", "vulture", "pyteg", "--min-confidence", "80"],
         "Vulture dead code detection",
         continue_on_error=True,
     )
@@ -204,7 +204,7 @@ def main() -> int:
 
     # 8. Bandit security
     success, output = run_command(
-        ["uv", "run", "bandit", "-r", "src", "-f", "txt"],
+        ["uv", "run", "bandit", "-r", "pyteg", "-f", "txt"],
         "Bandit security analysis",
         continue_on_error=True,
     )

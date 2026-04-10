@@ -1,7 +1,7 @@
 # Instrucciones para implementar un nuevo mensaje del servidor al cliente
 
 ## 1. Crear la clase del mensaje
-Crear una nueva clase que herede de IMsg en el archivo `/src/server_msg.py`:
+Crear una nueva clase que herede de IMsg en el archivo `/pyteg/server_msg.py`:
 
 ```python
 class MsgMiNuevoMensaje(IMsg):
@@ -18,7 +18,7 @@ class MsgMiNuevoMensaje(IMsg):
 ```
 
 ## 2. Agregar el método en ServerTransmisor
-Añadir el método en la clase ServerTransmisor en el archivo `/src/server_transmisor.py`:
+Añadir el método en la clase ServerTransmisor en el archivo `/pyteg/server_transmisor.py`:
 
 ```python
 def enviar_mi_mensaje(self, datos):

@@ -2,8 +2,8 @@
 
 import unittest
 
-from src.calculos import Calculos
-from src.server_mapa import Mapa
+from pyteg.calculos import Calculos
+from pyteg.server_mapa import Mapa
 
 
 class TestCalculos(unittest.TestCase):

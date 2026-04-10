@@ -2,7 +2,7 @@
 
 import unittest
 
-from src.dados import Dados
+from pyteg.dados import Dados
 
 # Constantes para tests
 DICE_MAX_VALUE = 6
