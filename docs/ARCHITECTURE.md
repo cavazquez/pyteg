@@ -99,8 +99,9 @@ La interfaz gráfica ha sido refactorizada en una arquitectura modular para mejo
 - Logs del servidor y cliente configurables vía logging.conf.
 
 ## Pruebas y calidad
-- 120+ tests en tests/.
-- run_tests.sh ejecuta: ruff check, ruff format, coverage, y mypy (enfoque en aridad de llamadas).
+- Suite en `tests/` ejecutada con `python -m unittest discover` (orden de magnitud: ~175 casos; el número exacto puede variar entre versiones).
+- [`run_tests.sh`](../run_tests.sh) ejecuta Ruff (formato, check con fixes), mypy según `[tool.mypy]` en `pyproject.toml`, y cobertura con `coverage run --branch`.
+- El workflow [`.github/workflows/ruff-uv.yml`](../.github/workflows/ruff-uv.yml) en CI ejecuta Ruff, unittest, mypy y reporte de cobertura.
 
 ## Extensión del protocolo
 Guías en docs/ sobre cómo crear mensajes cliente-servidor y bidireccionales. Ver:

@@ -8,37 +8,34 @@
 
 ## Configuración
 ```bash
+# Solo dependencias de ejecución (cliente/servidor)
 uv sync
+
+# Incluye Ruff, mypy, coverage, etc. (recomendado para contribuir)
+uv sync --group dev
 ```
 
 ## Comandos canon
+Instala dependencias de desarrollo una vez: `uv sync --group dev`.
+
 ```bash
-# Lint
-uvx ruff check .
+# Lint (misma versión que el lockfile)
+uv run ruff check .
 
 # Formato (verificar)
-uvx ruff format --check .
+uv run ruff format --check .
 
 # Formato (aplicar)
-uvx ruff format .
+uv run ruff format .
 
 # Tests + coverage
-uvx coverage run --branch -m unittest
-uvx coverage report -m
+uv run coverage run --branch -m unittest discover
+uv run coverage report -m
 
-# mypy (foco en aridad de llamadas)
-uvx mypy --ignore-missing-imports --explicit-package-bases --no-error-summary \
-  --disable-error-code=import --disable-error-code=attr-defined \
-  --disable-error-code=assignment --disable-error-code=return-value \
-  --disable-error-code=operator --disable-error-code=index \
-  --disable-error-code=misc --disable-error-code=type-arg \
-  --disable-error-code=union-attr --disable-error-code=override \
-  --disable-error-code=var-annotated --disable-error-code=valid-type \
-  --disable-error-code=name-defined --disable-error-code=has-type \
-  --disable-error-code=abstract --disable-error-code=no-untyped-def \
-  --disable-error-code=no-untyped-call src/
+# Mypy (estricto; configuración en pyproject.toml → src/, tests/, scripts/)
+uv run mypy
 
-# Todo en una pasada
+# Todo en una pasada (incluye auto-fix de Ruff)
 ./run_tests.sh
 ```
 
