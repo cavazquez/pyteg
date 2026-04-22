@@ -54,8 +54,10 @@ class ServerTransmisor:
         """
         try:
             json_str = msg.to_json()
+            # ConnectionServer.send() espera str y agrega \0 internamente.
+            # También funciona con conexiones raw de bytes.
             if isinstance(json_str, str):
-                self._conn.send(json_str.encode())
+                self._conn.send(json_str)
             else:
                 self._conn.send(json_str)
         except (ConnectionError, OSError, BrokenPipeError) as e:

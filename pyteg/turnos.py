@@ -36,6 +36,29 @@ class SiguientesTurnos:
         self._unidades_asia = Calculos.calcular_unidades_asia(mapa, jugador)
         self._unidades_oceania = Calculos.calcular_unidades_oceania(mapa, jugador)
 
+    def unidades_por_tipo(self) -> dict[str, int]:
+        """Retorna todas las unidades disponibles clasificadas por tipo/continente.
+
+        Returns:
+            Diccionario con unidades generales y bonificaciones por continente
+            (solo continentes con valor > 0).
+
+        """
+        result: dict[str, int] = {"infanteria": self._unidades}
+        if self._unidades_africa > 0:
+            result["Africa"] = self._unidades_africa
+        if self._unidades_europa > 0:
+            result["Europa"] = self._unidades_europa
+        if self._unidades_sudamerica > 0:
+            result["América del Sur"] = self._unidades_sudamerica
+        if self._unidades_norteamerica > 0:
+            result["América del Norte"] = self._unidades_norteamerica
+        if self._unidades_asia > 0:
+            result["Asia"] = self._unidades_asia
+        if self._unidades_oceania > 0:
+            result["Oceanía"] = self._unidades_oceania
+        return result
+
     def jugador_actual(self) -> str:
         """Obtiene el nombre del jugador actual.
 
@@ -190,6 +213,15 @@ class SegundoTurno:
         """
         self._unidades += num
 
+    def unidades_por_tipo(self) -> dict[str, int]:
+        """Retorna las unidades disponibles (solo infantería en el segundo turno).
+
+        Returns:
+            Diccionario con las unidades de infantería disponibles.
+
+        """
+        return {"infanteria": self._unidades}
+
 
 class PrimerTurno:
     """Representa el primer turno de un jugador."""
@@ -234,3 +266,12 @@ class PrimerTurno:
 
         """
         self._unidades += num
+
+    def unidades_por_tipo(self) -> dict[str, int]:
+        """Retorna las unidades disponibles (solo infantería en el primer turno).
+
+        Returns:
+            Diccionario con las unidades de infantería disponibles.
+
+        """
+        return {"infanteria": self._unidades}

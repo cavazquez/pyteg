@@ -26,6 +26,8 @@ El transporte entre cliente y servidor es **TCP en claro**, sin TLS ni autentica
 - client_tasks.py: procesamiento de mensajes en el cliente y actualización de UI.
 - gui.py: ventana principal refactorizada modularmente con gestores especializados.
 - gui_*: módulos especializados de la interfaz gráfica (layout, temas, jugadores, status, unidades, acciones).
+- turno_protocol.py: define la interfaz `ITurno` para desacoplar el servidor de las clases de turno.
+- turnos.py: implementaciones de turnos (PrimerTurno, SegundoTurno, SiguientesTurnos).
 - run_client.py: punto de entrada del cliente.
 
 ## Flujo de mensajes
@@ -107,7 +109,8 @@ La interfaz gráfica ha sido refactorizada en una arquitectura modular para mejo
 - Logs del servidor y cliente configurables vía logging.conf.
 
 ## Pruebas y calidad
-- Suite en `tests/` ejecutada con `python -m unittest discover` (orden de magnitud: ~175 casos; el número exacto puede variar entre versiones).
+- Suite en `tests/` ejecutada con `python -m unittest discover` (orden de magnitud: >200 casos).
+- **Tests de Integración**: `tests/test_integration.py` levanta un servidor TCP real en un hilo separado y conecta clientes reales con sockets para validar el protocolo de mensajes JSON end-to-end.
 - [`run_tests.sh`](../run_tests.sh) ejecuta Ruff (formato, check con fixes), mypy según `[tool.mypy]` en `pyproject.toml`, y cobertura con `coverage run --branch`.
 - El workflow [`.github/workflows/ruff-uv.yml`](../.github/workflows/ruff-uv.yml) en CI ejecuta Ruff, unittest, mypy y reporte de cobertura.
 

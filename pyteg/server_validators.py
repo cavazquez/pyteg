@@ -49,8 +49,6 @@ class TurnValidator:
             raise GameNotStartedError
 
         turno_actual = game.turno_actual()
-        if not hasattr(turno_actual, "jugador_actual"):
-            raise NotPlayerTurnError
         jugador_actual = turno_actual.jugador_actual()
         if jugador_actual is None:
             raise NotPlayerTurnError

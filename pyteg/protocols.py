@@ -14,6 +14,7 @@ from pyteg.server_state_validator import HasEstado
 if TYPE_CHECKING:
     from pyteg.colores import IColor
     from pyteg.server_transmisor import ServerTransmisor
+    from pyteg.turno_protocol import ITurno
 
 
 class IClientProtocol(Protocol):
@@ -137,7 +138,7 @@ class IGameProtocol(Protocol):
         """
         ...
 
-    def turno_actual(self) -> object:  # TurnoType, pero evitamos import circular
+    def turno_actual(self) -> ITurno:
         """Obtiene el turno actual.
 
         Returns:
@@ -146,7 +147,7 @@ class IGameProtocol(Protocol):
         """
         ...
 
-    def turnos(self) -> list[object]:  # list[TurnoType]
+    def turnos(self) -> list[ITurno]:
         """Obtiene la lista de turnos.
 
         Returns:
