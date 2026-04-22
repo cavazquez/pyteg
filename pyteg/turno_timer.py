@@ -63,8 +63,20 @@ class TurnoTimer(threading.Thread):
                 continue
 
             turno_actual = self._server.game.turno_actual()
-            jugador = turno_actual.jugador_actual()
-            userid_turno = jugador.userid()
+            jugador_nombre = turno_actual.jugador_actual()
+
+            # Buscar el ID del jugador actual en la lista de clientes
+            userid_turno = None
+            for client in self._server.dame_clientes():
+                if client.username() == jugador_nombre:
+                    userid_turno = client.userid()
+                    break
+
+            if userid_turno is None:
+                # Si no se encuentra el cliente (posiblemente desconectado),
+                # esperar un poco y reintentar
+                time.sleep(1)
+                continue
 
             # Cuenta regresiva
             for remaining in range(self._segundos_por_turno, 0, -1):
