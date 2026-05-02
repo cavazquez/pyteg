@@ -20,6 +20,10 @@ jobs:
             enable-cache: true
         - name: Install project and dev dependencies
           run: uv sync --group dev
+        - name: Install gettext (msgfmt)
+          run: sudo apt-get update && sudo apt-get install -y gettext
+        - name: Compile gettext catalogs (.po → .mo)
+          run: uv run python scripts/manage_translations.py compile
         - name: Lint with ruff
           run: |
             # stop the build if there are Python syntax errors or undefined names
