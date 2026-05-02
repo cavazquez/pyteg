@@ -78,13 +78,14 @@ class LayoutManager:
             Splitter vertical creado.
 
         """
-        # Create a splitter to hold the QGraphicsView and Chat
         vertical_splitter = QSplitter()
         vertical_splitter.setOrientation(Qt.Orientation.Vertical)
-        vertical_splitter.addWidget(self.main_window.view)
-        vertical_splitter.addWidget(self.main_window.chat)
-        vertical_splitter.setStretchFactor(0, 9)  # 90% for QGraphicsView
-        vertical_splitter.setStretchFactor(1, 1)  # 10% for Chat
+        if self.main_window.view is not None:
+            vertical_splitter.addWidget(self.main_window.view)
+        if self.main_window.chat is not None:
+            vertical_splitter.addWidget(self.main_window.chat)
+        vertical_splitter.setStretchFactor(0, 9)
+        vertical_splitter.setStretchFactor(1, 1)
         return vertical_splitter
 
     def _create_horizontal_splitter(self, vertical_splitter: QSplitter) -> QSplitter:

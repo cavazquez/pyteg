@@ -2,20 +2,22 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from pyteg.exceptions import InvalidActionError
 from pyteg.server.juego.validators import GameStateValidator, TurnValidator
 from pyteg.server.tasks.base import LOGGER, IServerTask
+from pyteg.server.tasks.types import BaseTaskData
 
 if TYPE_CHECKING:
     from pyteg.core.partida.context import GameContext
+    from pyteg.protocols import IClientProtocol
 
 
-class ServerTaskReclamarTarjeta(IServerTask):
+class ServerTaskReclamarTarjeta(IServerTask[BaseTaskData]):
     """Tarea para reclamar una tarjeta después de conquistar un país."""
 
-    def __init__(self, data: dict[str, Any]) -> None:
+    def __init__(self, data: BaseTaskData) -> None:
         """Inicializa la tarea de reclamar tarjeta.
 
         Args:
@@ -25,7 +27,7 @@ class ServerTaskReclamarTarjeta(IServerTask):
         super().__init__(data)
         self._action_name = "reclamar_tarjeta"
 
-    def _execute(self, client: Any, context: GameContext) -> None:
+    def _execute(self, client: IClientProtocol, context: GameContext) -> None:
         """Reclama una tarjeta si el jugador conquistó un país en este turno.
 
         Raises:

@@ -21,6 +21,7 @@ from .exchange_mixin import TarjetasExchangeMixin
 from .selection_mixin import TarjetasSelectionMixin
 
 if TYPE_CHECKING:
+    from pyteg.client.tasks.types import TarjetaItem
     from pyteg.gui.widgets.tarjeta import TarjetaWidget
 
 
@@ -39,7 +40,7 @@ class TarjetasDialog(TarjetasExchangeMixin, TarjetasSelectionMixin, QDialog):
         self.setModal(True)
         self.setFixedSize(600, 550)
 
-        self.tarjetas: list[dict[str, str]] = [
+        self.tarjetas: list[TarjetaItem] = [
             {"pais": "Circulo", "simbolo": "Galeon"},
             {"pais": "Rectangulo", "simbolo": "Globo"},
         ]
@@ -164,7 +165,7 @@ class TarjetasDialog(TarjetasExchangeMixin, TarjetasSelectionMixin, QDialog):
 
         return layout
 
-    def actualizar_tarjetas(self, nuevas_tarjetas: list[dict[str, str]]) -> None:
+    def actualizar_tarjetas(self, nuevas_tarjetas: list[TarjetaItem]) -> None:
         """Actualiza las tarjetas mostradas en el diálogo."""
         self.tarjetas = nuevas_tarjetas[:4]
 

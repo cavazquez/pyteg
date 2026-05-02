@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from pyteg.config import MIN_UNITS_FOR_ATTACK
 from pyteg.exceptions import MissingFieldError
@@ -16,12 +16,15 @@ from pyteg.server.juego.validators import (
     ValidationError,
 )
 from pyteg.server.tasks.base import LOGGER, IServerTask
+from pyteg.server.tasks.types import AtacarTaskData
 
 if TYPE_CHECKING:
     from pyteg.core.partida.context import GameContext
+    from pyteg.protocols import IClientProtocol
+    from pyteg.server.msg.types import BattleResultPayload
 
 
-class ServerTaskAtacar(IServerTask):
+class ServerTaskAtacar(IServerTask[AtacarTaskData]):
     """Tarea para procesar ataques entre países."""
 
     def _validate_required_fields(self) -> None:
@@ -38,7 +41,7 @@ class ServerTaskAtacar(IServerTask):
             error_msg = "País de destino no especificado"
             raise ValidationError(error_msg)
 
-    def __init__(self, data: dict[str, Any]) -> None:
+    def __init__(self, data: AtacarTaskData) -> None:
         """Inicializa la tarea de atacar.
 
         Args:
@@ -51,7 +54,7 @@ class ServerTaskAtacar(IServerTask):
         self._cantidad_unidades = data.get("cantidad_unidades")
         self._action_name = "atacar"
 
-    def _execute(self, client: Any, context: GameContext) -> None:
+    def _execute(self, client: IClientProtocol, context: GameContext) -> None:
         self._validate_required_fields()
 
         if self._cantidad_unidades is None:
@@ -136,11 +139,13 @@ class ServerTaskAtacar(IServerTask):
 
         context.enviar_mapa()
 
-        batalla_data = {
+        batalla_data: BattleResultPayload = {
             "origen": self._origen,
             "destino": self._destino,
             "atacante": info_batalla["atacante"],
             "defensor": info_batalla["defensor"],
+            "atacante_id": info_batalla.get("atacante_id"),
+            "defensor_id": info_batalla.get("defensor_id"),
             "dados_atacante": info_batalla["dados_atacante"],
             "dados_defensor": info_batalla["dados_defensor"],
             "resultado": info_batalla["resultado"],

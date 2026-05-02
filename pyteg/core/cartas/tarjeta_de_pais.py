@@ -2,7 +2,25 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from pyteg.protocols import IJugador
+
+
+def _to_userid(jugador: IJugador | int) -> int:
+    """Normaliza un jugador o userid a `int`.
+
+    Args:
+        jugador: Objeto con `userid()` o el userid (int) directo.
+
+    Returns:
+        userid (int) del jugador.
+
+    """
+    if hasattr(jugador, "userid"):
+        return int(jugador.userid())
+    return int(jugador)
 
 
 class TarjetaDePais:
@@ -19,7 +37,7 @@ class TarjetaDePais:
         self._pais = pais
         self._simbolo = simbolo
         self._usado = False
-        self._jugador: Any = None
+        self._jugador: int | None = None
 
     @property
     def pais(self) -> str:
@@ -50,23 +68,23 @@ class TarjetaDePais:
         """
         return self._usado
 
-    def jugador(self) -> Any:
-        """Obtiene el jugador asignado a la tarjeta.
+    def jugador(self) -> int | None:
+        """Obtiene el `userid` del jugador asignado a la tarjeta.
 
         Returns:
-            Jugador asignado o None si no está asignada.
+            `userid` (int) del jugador, o `None` si no está asignada.
 
         """
         return self._jugador
 
-    def asignar(self, jugador: Any) -> None:
+    def asignar(self, jugador: IJugador | int) -> None:
         """Asigna la tarjeta a un jugador.
 
         Args:
-            jugador: Jugador al que asignar la tarjeta.
+            jugador: Jugador (con `userid()`) o `userid` (int) al que asignar.
 
         """
-        self._jugador = jugador
+        self._jugador = _to_userid(jugador)
         self._usado = True
 
     def asignada(self) -> bool:

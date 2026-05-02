@@ -21,7 +21,11 @@ from pyteg.event_types import (
 from pyteg.message_bus import get_message_bus
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from pyteg.protocols import IGameProtocol, IMapProtocol
     from pyteg.server.conexion.cliente import Client
+    from pyteg.server.msg.types import BattleResultPayload, MissileResultPayload
 
 
 class ServerMessageBroadcaster:
@@ -98,12 +102,12 @@ class ServerMessageBroadcaster:
                     otro_client.userid(), otro_client.username()
                 )
 
-    def enviar_mapa(self, mapa: Any, game: Any) -> None:
+    def enviar_mapa(self, mapa: IMapProtocol, game: IGameProtocol | None) -> None:
         """Envía el estado actual del mapa a todos los clientes.
 
         Args:
             mapa: Instancia del mapa del juego.
-            game: Instancia del juego actual.
+            game: Instancia del juego actual (o None si aún no comenzó).
 
         """
         for client in self._dame_clientes():
@@ -164,24 +168,24 @@ class ServerMessageBroadcaster:
             },
         )
 
-    def enviar_resultado_batalla(self, resultado_data: dict[str, Any]) -> None:
+    def enviar_resultado_batalla(self, resultado_data: BattleResultPayload) -> None:
         """Envía el resultado de una batalla a todos los clientes.
 
         Args:
-            resultado_data: Datos del resultado de la batalla.
+            resultado_data: Payload tipado del resultado de la batalla.
 
         """
         for client in self._dame_clientes():
             client.transmisor.enviar_resultado_batalla(resultado_data)
 
         # Publicar evento en MessageBus
-        get_message_bus().publish(EVENT_BATALLA_RESULTADO, resultado_data)
+        get_message_bus().publish(EVENT_BATALLA_RESULTADO, dict(resultado_data))
 
-    def enviar_resultado_misil(self, resultado_data: dict[str, Any]) -> None:
+    def enviar_resultado_misil(self, resultado_data: MissileResultPayload) -> None:
         """Envía el resultado de un misil a todos los clientes.
 
         Args:
-            resultado_data: Datos del resultado del misil.
+            resultado_data: Payload tipado del resultado del misil.
 
         """
         for client in self._dame_clientes():
@@ -226,11 +230,16 @@ class ServerMessageBroadcaster:
             },
         )
 
-    def enviar_objetivos_secretos(self, get_objetivo_jugador: Any) -> None:
+    def enviar_objetivos_secretos(
+        self,
+        get_objetivo_jugador: Callable[[int], dict[str, str] | None],
+    ) -> None:
         """Envía el objetivo secreto asignado a cada jugador.
 
         Args:
-            get_objetivo_jugador: Función para obtener objetivo de un jugador.
+            get_objetivo_jugador: Función para obtener objetivo de un jugador
+                a partir de su `userid` (int). Devuelve `None` si no tiene
+                objetivo asignado.
 
         """
         for client in self._dame_clientes():

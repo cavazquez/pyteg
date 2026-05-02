@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from pyteg.config import SPECIAL_EXCHANGE_UNITS
 from pyteg.exceptions import (
@@ -12,15 +12,17 @@ from pyteg.exceptions import (
 )
 from pyteg.server.juego.validators import GameStateValidator
 from pyteg.server.tasks.base import IServerTask
+from pyteg.server.tasks.types import CanjeEspecialTaskData
 
 if TYPE_CHECKING:
     from pyteg.core.partida.context import GameContext
+    from pyteg.protocols import IClientProtocol
 
 
-class ServerTaskCanjeEspecial(IServerTask):
+class ServerTaskCanjeEspecial(IServerTask[CanjeEspecialTaskData]):
     """Tarea para realizar un canje especial (país + tarjeta por 2 unidades)."""
 
-    def __init__(self, data: dict[str, Any]) -> None:
+    def __init__(self, data: CanjeEspecialTaskData) -> None:
         """Inicializa la tarea de canje especial.
 
         Args:
@@ -31,7 +33,7 @@ class ServerTaskCanjeEspecial(IServerTask):
         self._pais = data.get("pais")
         self._action_name = "canje_especial"
 
-    def _execute(self, client: Any, context: GameContext) -> None:
+    def _execute(self, client: IClientProtocol, context: GameContext) -> None:
         """Ejecuta el canje especial de país + tarjeta por 2 unidades.
 
         Raises:

@@ -13,12 +13,14 @@ from pyteg.server.juego.validators import (
     ValidationError,
 )
 from pyteg.server.tasks.base import IServerTask
+from pyteg.server.tasks.types import CanjearMisilTaskData
 
 if TYPE_CHECKING:
     from pyteg.core.partida.context import GameContext
+    from pyteg.protocols import IClientProtocol
 
 
-class ServerTaskCanjearMisil(IServerTask):
+class ServerTaskCanjearMisil(IServerTask[CanjearMisilTaskData]):
     """Tarea para canjear unidades por un misil."""
 
     def _validate_field_not_none(self, field_value: Any, field_name: str) -> None:
@@ -36,7 +38,7 @@ class ServerTaskCanjearMisil(IServerTask):
             error_msg = f"{field_name} no especificado"
             raise ValidationError(error_msg)
 
-    def __init__(self, data: dict[str, Any]) -> None:
+    def __init__(self, data: CanjearMisilTaskData) -> None:
         """Inicializa la tarea de canjear misil.
 
         Args:
@@ -61,7 +63,7 @@ class ServerTaskCanjearMisil(IServerTask):
             msg = "Los misiles no están habilitados en esta partida"
             raise ValidationError(msg)
 
-    def _execute(self, client: Any, context: GameContext) -> None:
+    def _execute(self, client: IClientProtocol, context: GameContext) -> None:
         self._validate_missiles_enabled(client.server)
 
         self._validate_field_not_none(self._pais, "País")

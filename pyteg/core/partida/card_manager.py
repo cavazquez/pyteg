@@ -13,11 +13,12 @@ from pyteg.config import (
     EXCHANGE_UNITS,
     MAX_CARDS_BEFORE_FORCE_EXCHANGE,
 )
+from pyteg.core.cartas.tarjeta_de_pais import _to_userid
 
 if TYPE_CHECKING:
     from pyteg.core.cartas.mazo import Mazo
     from pyteg.core.cartas.tarjeta_de_pais import TarjetaDePais
-    from pyteg.server.conexion.cliente import Client
+    from pyteg.protocols import IClientProtocol, IJugador
 
 
 class CardManager:
@@ -38,7 +39,7 @@ class CardManager:
         self._mazo = mazo
         self._turn_manager = turn_manager
         self._cant_canjes: dict[int, int] = {}
-        self._jugadores_pueden_reclamar: set[Client] = set()
+        self._jugadores_pueden_reclamar: set[IClientProtocol] = set()
 
     def inicializar_canjes(self, jugadores_userids: list[int]) -> None:
         """Inicializa el contador de canjes para los jugadores.
@@ -49,7 +50,7 @@ class CardManager:
         """
         self._cant_canjes = dict.fromkeys(jugadores_userids, 0)
 
-    def dame_una_tarjeta(self, jugador: Client) -> None:
+    def dame_una_tarjeta(self, jugador: IClientProtocol) -> None:
         """Asigna una tarjeta a un jugador. Si tiene 5, fuerza un canje.
 
         Args:
@@ -62,24 +63,24 @@ class CardManager:
             self.canjear(jugador, lista_3_tarjetas)
         self._mazo.asignar_tarjeta(jugador)
 
-    def cant_canjes(self, jugador: Client | int) -> int:
+    def cant_canjes(self, jugador: IJugador | int) -> int:
         """Obtiene la cantidad de canjes realizados por un jugador.
 
         Args:
-            jugador: Cliente o userid (int) del jugador.
+            jugador: Jugador (con `userid()`) o userid (int).
 
         Returns:
             Cantidad de canjes realizados.
 
         """
-        userid = self._jugador_a_userid(jugador)
+        userid = _to_userid(jugador)
         return self._cant_canjes.get(userid, 0)
 
-    def canjear(self, jugador: Client | int, tarjetas: list[TarjetaDePais]) -> None:
+    def canjear(self, jugador: IJugador | int, tarjetas: list[TarjetaDePais]) -> None:
         """Realiza un canje de tarjetas por unidades.
 
         Args:
-            jugador: Cliente o userid (int) del jugador.
+            jugador: Jugador (con `userid()`) o userid (int).
             tarjetas: Lista de tarjetas a canjear.
 
         """
@@ -91,27 +92,10 @@ class CardManager:
 
         turno.agregar_unidades_generales(cantidad_a_agregar)
         self._mazo.desasignar_tarjetas(tarjetas)
-        userid = self._jugador_a_userid(jugador)
+        userid = _to_userid(jugador)
         self._cant_canjes[userid] = self._cant_canjes.get(userid, 0) + 1
 
-    @staticmethod
-    def _jugador_a_userid(jugador: Client | int) -> int:
-        """Normaliza la entrada a un userid (int).
-
-        Acepta un objeto cliente con método `userid()` o directamente el int.
-
-        Args:
-            jugador: Cliente con `userid()` o el userid directo.
-
-        Returns:
-            userid (int) del jugador.
-
-        """
-        if hasattr(jugador, "userid"):
-            return int(jugador.userid())
-        return int(jugador)
-
-    def marcar_jugador_puede_reclamar(self, jugador: Client) -> None:
+    def marcar_jugador_puede_reclamar(self, jugador: IClientProtocol) -> None:
         """Marca a un jugador como elegible para reclamar tarjeta.
 
         Args:
@@ -120,7 +104,7 @@ class CardManager:
         """
         self._jugadores_pueden_reclamar.add(jugador)
 
-    def puede_reclamar_tarjeta(self, jugador: Client) -> bool:
+    def puede_reclamar_tarjeta(self, jugador: IClientProtocol) -> bool:
         """Verifica si un jugador puede reclamar tarjeta.
 
         Args:
@@ -132,7 +116,7 @@ class CardManager:
         """
         return jugador in self._jugadores_pueden_reclamar
 
-    def reclamar_tarjeta_jugador(self, jugador: Client) -> None:
+    def reclamar_tarjeta_jugador(self, jugador: IClientProtocol) -> None:
         """Remueve al jugador de la lista de elegibles tras reclamar.
 
         Args:

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import contextlib
 from functools import partial
-from typing import Any, Protocol, cast
+from typing import TYPE_CHECKING, Protocol, cast
 
 from PySide6.QtCore import QSize
 from PySide6.QtGui import QAction
@@ -14,11 +14,14 @@ from pyteg.exceptions import ImagenNoEncontradaError
 from pyteg.gui.toolbar.icons import cargar_icono_toolbar
 from pyteg.i18n import translate as _
 
+if TYPE_CHECKING:
+    from pyteg.gui.managers.protocols import MainWindowProtocol
+
 
 class _ToolBarSizeTarget(Protocol):
     """Interfaz mínima de la barra para redimensionar ventana y menú de tamaños."""
 
-    main_window: Any
+    main_window: MainWindowProtocol
     button_fullscreen: QAction | None
 
     def resize_window(self, width: int, height: int) -> None: ...
@@ -159,9 +162,10 @@ def create_size_button(host: _ToolBarSizeTarget, size_menu: QMenu) -> QToolButto
     return size_button
 
 
-def center_window_on_screen(main_window: Any) -> None:
+def center_window_on_screen(main_window: QWidget | MainWindowProtocol) -> None:
     """Centra la ventana principal en la pantalla disponible."""
-    frame_geometry = main_window.frameGeometry()
+    qt_window = cast("QWidget", main_window)
+    frame_geometry = qt_window.frameGeometry()
     screen_center = QApplication.primaryScreen().availableGeometry().center()
     frame_geometry.moveCenter(screen_center)
-    main_window.move(frame_geometry.topLeft())
+    qt_window.move(frame_geometry.topLeft())

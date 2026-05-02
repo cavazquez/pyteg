@@ -23,6 +23,7 @@ from pyteg.version import NAME, VERSION
 if TYPE_CHECKING:
     from pyteg.server.conexion.cliente import Client
     from pyteg.server.juego.game import Game
+    from pyteg.server.msg.types import BattleResultPayload, MissileResultPayload
 
 
 class Server:
@@ -265,9 +266,7 @@ class Server:
                         jugador_actual_id = cliente.userid()
                         jugador_actual_nombre = cliente.username()
                         color_obj = cliente.color_actual()
-                        jugador_actual_color = (
-                            color_obj.to_hex() if color_obj else None
-                        )
+                        jugador_actual_color = color_obj.to_hex() if color_obj else None
 
         except (AttributeError, KeyError) as e:
             print(f"Error obteniendo información del jugador actual: {e}")
@@ -338,20 +337,20 @@ class Server:
         """Envía la configuración de la partida a todos los clientes conectados."""
         self._game_coordinator.enviar_configuracion_partida()
 
-    def enviar_resultado_batalla(self, resultado_data: dict[str, Any]) -> None:
+    def enviar_resultado_batalla(self, resultado_data: BattleResultPayload) -> None:
         """Envía el resultado de una batalla a todos los clientes.
 
         Args:
-            resultado_data: Datos del resultado de la batalla.
+            resultado_data: Payload tipado del resultado de la batalla.
 
         """
         self._broadcaster.enviar_resultado_batalla(resultado_data)
 
-    def enviar_resultado_misil(self, resultado_data: dict[str, Any]) -> None:
+    def enviar_resultado_misil(self, resultado_data: MissileResultPayload) -> None:
         """Envía el resultado del lanzamiento de un misil a todos los clientes.
 
         Args:
-            resultado_data (dict): Datos del resultado del misil
+            resultado_data: Payload tipado del resultado del misil.
 
         """
         self._broadcaster.enviar_resultado_misil(resultado_data)

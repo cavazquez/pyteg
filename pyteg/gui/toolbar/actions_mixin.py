@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from PySide6.QtGui import QAction
+
+    from pyteg.gui.managers.protocols import MainWindowProtocol
 
 from pyteg.i18n import translate as _
 
@@ -13,7 +15,7 @@ from pyteg.i18n import translate as _
 class ToolBarActionsMixin:
     """Habilitación de botones según conexión y selección de países en la escena."""
 
-    main_window: Any
+    main_window: MainWindowProtocol
     button_conectar: QAction | None
     button_atacar: QAction | None
     button_mover: QAction | None

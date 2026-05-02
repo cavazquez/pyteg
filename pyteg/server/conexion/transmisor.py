@@ -31,6 +31,7 @@ from pyteg.server.msg import (
 
 if TYPE_CHECKING:
     from pyteg.colores import IColor
+    from pyteg.server.msg.types import BattleResultPayload, MissileResultPayload
 
 
 class ServerTransmisor:
@@ -232,19 +233,12 @@ class ServerTransmisor:
             print(f"{pais} {userid} {unidades}")
             self.enviar_pais(pais, userid, unidades)
 
-    def enviar_resultado_batalla(self, batalla_data: dict[str, Any]) -> None:
+    def enviar_resultado_batalla(self, batalla_data: BattleResultPayload) -> None:
         """Envía el resultado de una batalla al cliente.
 
         Args:
-            batalla_data (dict): Diccionario con todos los datos de la batalla:
-                - origen (str): País atacante
-                - destino (str): País defensor
-                - atacante (str): Nombre del jugador atacante
-                - defensor (str): Nombre del jugador defensor
-                - dados_atacante (list): Lista de dados del atacante
-                - dados_defensor (list): Lista de dados del defensor
-                - resultado (dict): Resultado de la batalla con pérdidas
-                - conquistado (bool): Si el país fue conquistado
+            batalla_data: Payload tipado con los datos de la batalla.
+                Ver `pyteg.server.msg.types.BattleResultPayload`.
 
         """
         msg = MsgResultadoBatalla(batalla_data)
@@ -334,17 +328,12 @@ class ServerTransmisor:
         msg = MsgCanjeEspecial(pais, unidades_agregadas)
         self._send_message(msg)
 
-    def enviar_resultado_misil(self, resultado_data: dict[str, Any]) -> None:
+    def enviar_resultado_misil(self, resultado_data: MissileResultPayload) -> None:
         """Envía el resultado del lanzamiento de un misil al cliente.
 
         Args:
-            resultado_data (dict): Diccionario con los datos del misil:
-                - jugador (str): Nombre del jugador que lanzó el misil
-                - pais_origen (str): País desde donde se lanzó
-                - pais_destino (str): País atacado
-                - distancia (int): Distancia entre países
-                - dano (int): Daño causado
-                - unidades_restantes (int): Unidades que quedan en destino
+            resultado_data: Payload tipado con los datos del misil. Ver
+                `pyteg.server.msg.types.MissileResultPayload`.
 
         """
         msg = MsgResultadoMisil(resultado_data)

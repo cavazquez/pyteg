@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from PySide6.QtWidgets import QApplication
 
@@ -12,11 +12,13 @@ from pyteg.i18n import translate as _
 if TYPE_CHECKING:
     from PySide6.QtGui import QAction
 
+    from pyteg.gui.managers.protocols import MainWindowProtocol
+
 
 class ToolBarWindowMixin:
     """Redimensionado, centrado, fullscreen y reset de vista del mapa."""
 
-    main_window: Any
+    main_window: MainWindowProtocol
     button_fullscreen: QAction | None
 
     def resize_window(self, width: int, height: int) -> None:

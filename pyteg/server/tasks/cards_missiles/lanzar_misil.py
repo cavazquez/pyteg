@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from pyteg.config import MIN_UNITS_TO_LEAVE, MISSILE_MAX_DISTANCE
 from pyteg.exceptions import (
@@ -19,15 +19,18 @@ from pyteg.server.juego.validators import (
     TurnValidator,
 )
 from pyteg.server.tasks.base import IServerTask
+from pyteg.server.tasks.types import LanzarMisilTaskData
 
 if TYPE_CHECKING:
     from pyteg.core.partida.context import GameContext
+    from pyteg.protocols import IClientProtocol
+    from pyteg.server.msg.types import MissileResultPayload
 
 
-class ServerTaskLanzarMisil(IServerTask):
+class ServerTaskLanzarMisil(IServerTask[LanzarMisilTaskData]):
     """Tarea para lanzar un misil desde un país hacia otro."""
 
-    def __init__(self, data: dict[str, Any]) -> None:
+    def __init__(self, data: LanzarMisilTaskData) -> None:
         """Inicializa la tarea de lanzar misil.
 
         Args:
@@ -39,7 +42,7 @@ class ServerTaskLanzarMisil(IServerTask):
         self._pais_destino = data.get("pais_destino")
         self._action_name = "lanzar_misil"
 
-    def _execute(self, client: Any, context: GameContext) -> None:
+    def _execute(self, client: IClientProtocol, context: GameContext) -> None:
         if self._pais_origen is None:
             msg = "País de origen"
             raise MissingFieldError(msg)
@@ -62,7 +65,9 @@ class ServerTaskLanzarMisil(IServerTask):
 
         context.enviar_mapa()
 
-    def _validar_lanzamiento_misil(self, client: Any, context: GameContext) -> None:
+    def _validar_lanzamiento_misil(
+        self, client: IClientProtocol, context: GameContext
+    ) -> None:
         """Valida todas las condiciones para lanzar un misil.
 
         Args:
@@ -76,7 +81,9 @@ class ServerTaskLanzarMisil(IServerTask):
 
         self._validar_distancia_dano(client, context)
 
-    def _validar_estado_juego(self, client: Any, context: GameContext) -> None:
+    def _validar_estado_juego(
+        self, client: IClientProtocol, context: GameContext
+    ) -> None:
         """Valida que el juego esté en estado correcto.
 
         Args:
@@ -97,7 +104,9 @@ class ServerTaskLanzarMisil(IServerTask):
 
         TurnValidator.validate_turn(client, context.game)
 
-    def _validar_posesion_misil(self, client: Any, context: GameContext) -> None:
+    def _validar_posesion_misil(
+        self, client: IClientProtocol, context: GameContext
+    ) -> None:
         """Valida posesión de países y disponibilidad de misiles.
 
         Args:
@@ -127,7 +136,7 @@ class ServerTaskLanzarMisil(IServerTask):
 
     def _validar_distancia_dano(
         self,
-        client: Any,  # noqa: ARG002
+        client: IClientProtocol,  # noqa: ARG002
         context: GameContext,
     ) -> None:
         """Valida distancia y daño del misil.
@@ -168,12 +177,15 @@ class ServerTaskLanzarMisil(IServerTask):
             )
 
     def _notificar_resultado_misil(
-        self, client: Any, distancia: int, dano: int
+        self, client: IClientProtocol, distancia: int, dano: int
     ) -> None:
         """Notifica el resultado del lanzamiento del misil a todos."""
+        if self._pais_origen is None or self._pais_destino is None:
+            return
+
         unidades_restantes = client.server.mapa.cantidad_unidades(self._pais_destino)
 
-        resultado_data = {
+        resultado_data: MissileResultPayload = {
             "jugador_id": int(client.userid()),
             "jugador": client.username(),
             "pais_origen": self._pais_origen,

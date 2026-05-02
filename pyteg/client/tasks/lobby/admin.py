@@ -2,18 +2,19 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from pyteg.client.tasks.base import IClientTask
+from pyteg.client.tasks.types import BaseClientTaskData
 
 if TYPE_CHECKING:
     from pyteg.client.tasks.protocols import GameWindowProtocol
 
 
-class ClientTaskSerAdmin(IClientTask):
+class ClientTaskSerAdmin(IClientTask[BaseClientTaskData]):
     """Tarea para convertir al cliente en administrador."""
 
-    def __init__(self, data: dict[str, Any]) -> None:
+    def __init__(self, data: BaseClientTaskData) -> None:
         """Inicializa la tarea de administrador.
 
         Args:

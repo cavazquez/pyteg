@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from typing import Any
-
 
 class Client:
     """Cliente del juego que representa a un jugador."""
@@ -11,16 +9,16 @@ class Client:
     def __init__(self) -> None:
         """Inicializa un nuevo cliente."""
         self._username: str | None = None
-        self._userid: Any = None
+        self._userid: int | None = None
         self._es_admin = False
 
     def set_username(self, username: str) -> None:
         """Establece el nombre de usuario del cliente."""
         self._username = username
 
-    def set_userid(self, userid: Any) -> None:
+    def set_userid(self, userid: int) -> None:
         """Establece el ID de usuario del cliente."""
-        self._userid = userid
+        self._userid = int(userid)
 
     def username(self) -> str | None:
         """Obtiene el nombre de usuario del cliente.
@@ -31,11 +29,11 @@ class Client:
         """
         return self._username
 
-    def userid(self) -> Any:
+    def userid(self) -> int | None:
         """Obtiene el ID de usuario del cliente.
 
         Returns:
-            ID de usuario del cliente.
+            ID de usuario del cliente, o None si no está asignado.
 
         """
         return self._userid

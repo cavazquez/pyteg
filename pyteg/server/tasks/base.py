@@ -3,30 +3,39 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Generic, TypeVar
 
 from pyteg.core.partida.context import GameContext
 from pyteg.exceptions import GameRuleViolationError, MensajeNoValidoError, PyTegError
 from pyteg.logger import get_logger
 from pyteg.server.juego.state_validator import ServerStateValidator
+from pyteg.server.tasks.types import BaseTaskData
 
 LOGGER = get_logger("server.tasks")
 
 if TYPE_CHECKING:
     from pyteg.protocols import IClientProtocol
 
+TData = TypeVar("TData", bound=BaseTaskData)
 
-class IServerTask(ABC):
-    """Clase base para todas las tareas del servidor."""
 
-    def __init__(self, data: dict[str, Any]) -> None:
+class IServerTask(ABC, Generic[TData]):
+    """Clase base para todas las tareas del servidor.
+
+    Parametrizada por `TData` (subtipo de `BaseTaskData`) para que cada
+    subclase tipi su `data` con el `TypedDict` correspondiente y mypy
+    detecte campos mal escritos o no soportados.
+    """
+
+    def __init__(self, data: TData) -> None:
         """Inicializa la tarea del servidor.
 
         Args:
-            data: Datos del mensaje recibido del cliente.
+            data: Datos del mensaje recibido del cliente (tipados por
+                la subclase).
 
         """
-        self._data = data
+        self._data: TData = data
         self._action_name: str | None = None  # Nombre de la acción para validación
         self._validator = ServerStateValidator()
 
@@ -76,10 +85,10 @@ class IServerTask(ABC):
             LOGGER.warning("Error de PyTeg: %s", e.mensaje)
 
 
-class ServerTaskNull(IServerTask):
+class ServerTaskNull(IServerTask[BaseTaskData]):
     """Tarea nula para mensajes no reconocidos."""
 
-    def __init__(self, data: dict[str, Any]) -> None:
+    def __init__(self, data: BaseTaskData) -> None:
         """Inicializa la tarea nula.
 
         Args:

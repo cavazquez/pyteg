@@ -298,9 +298,7 @@ class ServerGameCoordinator:
                         jugador_actual_id = cliente.userid()
                         jugador_actual_nombre = cliente.username()
                         color_obj = cliente.color_actual()
-                        jugador_actual_color = (
-                            color_obj.to_hex() if color_obj else None
-                        )
+                        jugador_actual_color = color_obj.to_hex() if color_obj else None
 
         except (AttributeError, KeyError) as e:
             print(f"Error obteniendo información del jugador actual: {e}")

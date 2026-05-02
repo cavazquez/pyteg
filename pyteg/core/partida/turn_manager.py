@@ -11,7 +11,9 @@ from typing import TYPE_CHECKING
 from pyteg.core.turnos.turnos import PrimerTurno, SegundoTurno, SiguientesTurnos
 
 if TYPE_CHECKING:
-    from pyteg.server.conexion.cliente import Client
+    from collections.abc import Sequence
+
+    from pyteg.protocols import IClientProtocol
     from pyteg.server.juego.mapa import Mapa
 
 TurnoType = PrimerTurno | SegundoTurno | SiguientesTurnos
@@ -115,7 +117,7 @@ class TurnManager:
         self._num_ronda += 1
 
     def lista_jugadores_orden_turno(
-        self, jugadores: list[Client] | None = None
+        self, jugadores: Sequence[IClientProtocol] | None = None
     ) -> list[int]:
         """Devuelve la lista de userids en el orden actual de los turnos.
 
@@ -133,11 +135,13 @@ class TurnManager:
                 jugadores_orden.append(jugador)
 
         if not jugadores_orden and jugadores:
-            return [j.userid() for j in jugadores]
+            return [int(j.userid()) for j in jugadores]
 
         return jugadores_orden
 
-    def rotar_jugadores(self, jugadores: list[Client]) -> list[Client]:
+    def rotar_jugadores(
+        self, jugadores: Sequence[IClientProtocol]
+    ) -> list[IClientProtocol]:
         """Rota la lista de jugadores para la nueva ronda.
 
         Args:
@@ -147,6 +151,7 @@ class TurnManager:
             Lista de jugadores rotada.
 
         """
-        if len(jugadores) > 1:
-            return jugadores[1:] + jugadores[:1]  # Rotar a la izquierda
-        return jugadores
+        jugadores_list = list(jugadores)
+        if len(jugadores_list) > 1:
+            return jugadores_list[1:] + jugadores_list[:1]
+        return jugadores_list

@@ -2,19 +2,23 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from pyteg.client.tasks.base import IClientTask
 from pyteg.client.tasks.logging_helper import CLIENT_TASKS_LOG
+from pyteg.client.tasks.types import (
+    AsignarPaisTaskData,
+    UnidadesDisponiblesTaskData,
+)
 
 if TYPE_CHECKING:
     from pyteg.client.tasks.protocols import GameWindowProtocol
 
 
-class ClientTaskAsignarPais(IClientTask):
+class ClientTaskAsignarPais(IClientTask[AsignarPaisTaskData]):
     """Tarea para asignar un país a un jugador."""
 
-    def __init__(self, data: dict[str, Any]) -> None:
+    def __init__(self, data: AsignarPaisTaskData) -> None:
         """Inicializa la tarea de asignación de país.
 
         Args:
@@ -30,6 +34,12 @@ class ClientTaskAsignarPais(IClientTask):
             nombre_pais = self._msg.get("pais")
             userid = self._msg.get("userid")
             unidades = self._msg.get("unidades", 1)
+
+            if main_window.scene is None or nombre_pais is None or userid is None:
+                CLIENT_TASKS_LOG.warning(
+                    "Datos incompletos para asignar país (scene/pais/userid)",
+                )
+                return
 
             pais = main_window.scene.paises.get(nombre_pais)
             if not pais:
@@ -59,10 +69,10 @@ class ClientTaskAsignarPais(IClientTask):
             CLIENT_TASKS_LOG.warning("Error al asignar país: %s", e)
 
 
-class ClientTaskUnidadesDisponibles(IClientTask):
+class ClientTaskUnidadesDisponibles(IClientTask[UnidadesDisponiblesTaskData]):
     """Tarea para actualizar las unidades disponibles del jugador."""
 
-    def __init__(self, data: dict[str, Any]) -> None:
+    def __init__(self, data: UnidadesDisponiblesTaskData) -> None:
         """Inicializa la tarea de unidades disponibles.
 
         Args:

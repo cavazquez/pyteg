@@ -5,6 +5,10 @@ import unittest
 from pyteg.config import MIN_CARDS_SAME_SYMBOL_FOR_EXCHANGE
 from pyteg.core.cartas.mazo import Mazo
 
+JUG1 = 1
+JUG2 = 2
+JUG_FULANO = 100
+
 
 class TestMazo(unittest.TestCase):
     """Tests para la clase Mazo."""
@@ -56,15 +60,15 @@ class TestMazo(unittest.TestCase):
         simbolos = ["Galeon", "Globo"]
         paises = ["Argentina", "Uruguay", "Chile"]
         mazo = Mazo(paises, simbolos)
-        self.assertEqual(mazo.cant_tarjetas_asignadas("jug1"), 0)
+        self.assertEqual(mazo.cant_tarjetas_asignadas(JUG1), 0)
 
     def test_asignar_una_tarjeta(self) -> None:
         """Prueba asignar una tarjeta a un jugador."""
         simbolos = ["Galeon", "Globo"]
         paises = ["Argentina", "Uruguay", "Chile"]
         mazo = Mazo(paises, simbolos)
-        mazo.asignar_tarjeta("jug1")
-        self.assertEqual(mazo.cant_tarjetas_asignadas("jug1"), 1)
+        mazo.asignar_tarjeta(JUG1)
+        self.assertEqual(mazo.cant_tarjetas_asignadas(JUG1), 1)
         self.assertEqual(mazo.cantidad_tarjetas_asignadas(), 1)
 
     def test_asignar_otra_tarjeta(self) -> None:
@@ -72,11 +76,11 @@ class TestMazo(unittest.TestCase):
         simbolos = ["Galeon", "Globo"]
         paises = ["Argentina", "Uruguay", "Chile"]
         mazo = Mazo(paises, simbolos)
-        mazo.asignar_tarjeta("jug1")
-        mazo.asignar_tarjeta("jug1")
-        mazo.asignar_tarjeta("jug2")
-        self.assertEqual(mazo.cant_tarjetas_asignadas("jug1"), 2)
-        self.assertEqual(mazo.cant_tarjetas_asignadas("jug2"), 1)
+        mazo.asignar_tarjeta(JUG1)
+        mazo.asignar_tarjeta(JUG1)
+        mazo.asignar_tarjeta(JUG2)
+        self.assertEqual(mazo.cant_tarjetas_asignadas(JUG1), 2)
+        self.assertEqual(mazo.cant_tarjetas_asignadas(JUG2), 1)
         self.assertEqual(mazo.cantidad_tarjetas_asignadas(), 3)
 
     def test_sin_tarjeta_para_asignar(self) -> None:
@@ -84,19 +88,19 @@ class TestMazo(unittest.TestCase):
         simbolos = ["Galeon", "Globo"]
         paises = ["Argentina"]
         mazo = Mazo(paises, simbolos)
-        mazo.asignar_tarjeta("jug1")
-        mazo.asignar_tarjeta("jug1")
-        self.assertEqual(mazo.cant_tarjetas_asignadas("jug1"), 1)
+        mazo.asignar_tarjeta(JUG1)
+        mazo.asignar_tarjeta(JUG1)
+        self.assertEqual(mazo.cant_tarjetas_asignadas(JUG1), 1)
 
     def test_no_asignar_tarjetas_usadas(self) -> None:
         """Prueba que no se asignen tarjetas ya usadas."""
         simbolos = ["Galeon", "Globo"]
         paises = ["Argentina", "Brasil"]
         mazo = Mazo(paises, simbolos)
-        tarjeta1 = mazo.asignar_tarjeta("jug1")
+        tarjeta1 = mazo.asignar_tarjeta(JUG1)
         self.assertIsNotNone(tarjeta1)
         tarjeta1.desasignar()  # type: ignore[union-attr]
-        tarjeta2 = mazo.asignar_tarjeta("jug1", mezclar=lambda x, _: x)
+        tarjeta2 = mazo.asignar_tarjeta(JUG1, mezclar=lambda x, _: x)
         self.assertIsNotNone(tarjeta2)
         self.assertNotEqual(tarjeta2.pais, tarjeta1.pais)  # type: ignore[union-attr]
 
@@ -105,7 +109,7 @@ class TestMazo(unittest.TestCase):
         simbolos = ["Galeon", "Globo"]
         paises = ["Argentina"]
         mazo = Mazo(paises, simbolos)
-        tarjeta = mazo.asignar_tarjeta("jug1")
+        tarjeta = mazo.asignar_tarjeta(JUG1)
         self.assertIsNotNone(tarjeta)
         tarjeta.desasignar()  # type: ignore[union-attr]
         self.assertEqual(mazo.cantidad_tarjetas_usadas(), 1)
@@ -115,13 +119,13 @@ class TestMazo(unittest.TestCase):
         simbolos = ["Galeon", "Globo"]
         paises = ["Argentina", "Brasil"]
         mazo = Mazo(paises, simbolos)
-        tarjeta1 = mazo.asignar_tarjeta("jug1")
-        tarjeta2 = mazo.asignar_tarjeta("jug1")
+        tarjeta1 = mazo.asignar_tarjeta(JUG1)
+        tarjeta2 = mazo.asignar_tarjeta(JUG1)
         self.assertIsNotNone(tarjeta1)
         self.assertIsNotNone(tarjeta2)
         tarjeta1.desasignar()  # type: ignore[union-attr]
         tarjeta2.desasignar()  # type: ignore[union-attr]
-        mazo.asignar_tarjeta("jug1")
+        mazo.asignar_tarjeta(JUG1)
         self.assertEqual(mazo.cantidad_tarjetas_usadas(), 1)
 
     def test_dame_simbolos(self) -> None:
@@ -138,7 +142,7 @@ class TestMazo(unittest.TestCase):
         simbolos = ["Galeon"]
         paises = ["Argentina", "Brasil", "Uruguay"]
         mazo = Mazo(paises, simbolos)
-        jugador = "Fulano"
+        jugador = JUG_FULANO
 
         self.assertListEqual(mazo.simbolo_asignado_almenos_3_tarjetas(jugador), [])
         mazo.asignar_tarjeta(jugador)
@@ -154,7 +158,7 @@ class TestMazo(unittest.TestCase):
         simbolos = ["Galeon", "Cañon"]
         paises = ["Argentina", "Brasil", "Uruguay"]
         mazo = Mazo(paises, simbolos)
-        jugador = "Fulano"
+        jugador = JUG_FULANO
 
         mazo.asignar_tarjeta(jugador)
         mazo.asignar_tarjeta(jugador)
@@ -169,7 +173,7 @@ class TestMazo(unittest.TestCase):
         simbolos = ["Galeon"]
         paises = ["Argentina", "Brasil", "Uruguay"]
         mazo = Mazo(paises, simbolos)
-        jugador = "Fulano"
+        jugador = JUG_FULANO
 
         mazo.asignar_tarjeta(jugador)
         mazo.asignar_tarjeta(jugador)

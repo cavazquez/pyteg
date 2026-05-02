@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, cast
+from typing import TYPE_CHECKING, cast
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
@@ -11,19 +11,22 @@ from PySide6.QtWidgets import (
     QGraphicsSceneMouseEvent,
 )
 
+if TYPE_CHECKING:
+    from pyteg.gui.managers.protocols import MainWindowProtocol
+
 
 class PaisSelectionMixin:
     """Oscurecimiento por selección y clic para delegar en `selection_manager`."""
 
     _nombre: str
-    _main_window: Any
+    _main_window: MainWindowProtocol | None
 
     def mousePressEvent(self, event: QGraphicsSceneMouseEvent) -> None:  # noqa: N802
         """Maneja los clics del mouse en el país."""
         if event.button() == Qt.MouseButton.LeftButton:
             if (
-                self._main_window
-                and hasattr(self._main_window, "scene")
+                self._main_window is not None
+                and self._main_window.scene is not None
                 and hasattr(self._main_window.scene, "selection_manager")
             ):
                 self._main_window.scene.selection_manager.seleccionar_pais(self._nombre)
