@@ -3,10 +3,10 @@
 import unittest
 
 from pyteg.core.cartas.mazo import Mazo
+from pyteg.core.turnos.turnos import PrimerTurno, SegundoTurno, SiguientesTurnos
 from pyteg.server.app import Server
 from pyteg.server.juego.game import Game
 from pyteg.server.juego.mapa import Mapa
-from pyteg.turnos import PrimerTurno, SegundoTurno, SiguientesTurnos
 
 
 class TestGame(unittest.TestCase):

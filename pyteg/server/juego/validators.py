@@ -7,6 +7,7 @@ en múltiples tareas del servidor para evitar duplicación de código.
 from typing import TYPE_CHECKING
 
 from pyteg.config import FIRST_TURNS_NO_ATTACK
+from pyteg.core.turnos.turnos import PrimerTurno, SegundoTurno
 from pyteg.exception import (
     CountryNotOwnedError,
     GameNotStartedError,
@@ -14,7 +15,6 @@ from pyteg.exception import (
     InvalidActionError,
     NotPlayerTurnError,
 )
-from pyteg.turnos import PrimerTurno, SegundoTurno
 
 if TYPE_CHECKING:
     from pyteg.protocols import IClientProtocol, IGameProtocol, IMapProtocol

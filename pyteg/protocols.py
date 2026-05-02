@@ -26,8 +26,8 @@ from pyteg.server.juego.state_validator import HasEstado
 
 if TYPE_CHECKING:
     from pyteg.colores import IColor
+    from pyteg.core.turnos.protocol import ITurno
     from pyteg.server.conexion.transmisor import ServerTransmisor
-    from pyteg.turno_protocol import ITurno
 
 
 class IClientProtocol(Protocol):

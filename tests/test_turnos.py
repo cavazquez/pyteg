@@ -2,8 +2,8 @@
 
 import unittest
 
+from pyteg.core.turnos.turnos import PrimerTurno, SegundoTurno, SiguientesTurnos
 from pyteg.server.juego.mapa import Mapa
-from pyteg.turnos import PrimerTurno, SegundoTurno, SiguientesTurnos
 
 
 class TestPrimerTurno(unittest.TestCase):

@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from pyteg.turnos import PrimerTurno, SegundoTurno, SiguientesTurnos
+from pyteg.core.turnos.turnos import PrimerTurno, SegundoTurno, SiguientesTurnos
 
 if TYPE_CHECKING:
     from pyteg.server.conexion.cliente import Client
