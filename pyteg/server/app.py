@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Any
 
 from pyteg.core.cartas.mazo import Mazo
 from pyteg.core.mapa.build_mapa import build_mapa
-from pyteg.objetivos_secretos import ObjetivosSecretos
+from pyteg.core.partida.objetivos_secretos import ObjetivosSecretos
 from pyteg.server.conexion.broadcaster import ServerMessageBroadcaster
 from pyteg.server.conexion.registrar_jugadores import registrar_jugadores
 from pyteg.server.conexion.registry import ServerClientRegistry

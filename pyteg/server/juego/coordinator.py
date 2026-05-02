@@ -14,7 +14,7 @@ from pyteg.server.juego.game import Game
 
 if TYPE_CHECKING:
     from pyteg.core.cartas.mazo import Mazo
-    from pyteg.objetivos_secretos import ObjetivosSecretos
+    from pyteg.core.partida.objetivos_secretos import ObjetivosSecretos
     from pyteg.server.conexion.cliente import Client
     from pyteg.server.juego.estado import Estado
     from pyteg.server.juego.mapa import Mapa

@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any
 from pyteg.server.tasks.base import LOGGER, IServerTask
 
 if TYPE_CHECKING:
-    from pyteg.game_context import GameContext
+    from pyteg.core.partida.context import GameContext
 
 
 class ServerTaskChat(IServerTask):
