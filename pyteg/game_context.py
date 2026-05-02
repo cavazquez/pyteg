@@ -10,8 +10,8 @@ from typing import TYPE_CHECKING, Any, Protocol
 
 if TYPE_CHECKING:
     from pyteg.protocols import IGameProtocol, IMapProtocol
-    from pyteg.server_game import Game
-    from pyteg.server_mapa import Mapa
+    from pyteg.server.juego.game import Game
+    from pyteg.server.juego.mapa import Mapa
 
 
 class ServerLike(Protocol):

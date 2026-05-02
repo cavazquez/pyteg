@@ -12,17 +12,17 @@ from pyteg.objetivos_secretos import ObjetivosSecretos
 from pyteg.server.conexion.broadcaster import ServerMessageBroadcaster
 from pyteg.server.conexion.registrar_jugadores import registrar_jugadores
 from pyteg.server.conexion.registry import ServerClientRegistry
-from pyteg.server_color import ServerColor
-from pyteg.server_estado import Estado
-from pyteg.server_game_coordinator import ServerGameCoordinator
-from pyteg.server_mapa import Mapa
+from pyteg.server.juego.color import ServerColor
+from pyteg.server.juego.coordinator import ServerGameCoordinator
+from pyteg.server.juego.estado import Estado
+from pyteg.server.juego.mapa import Mapa
 from pyteg.toml_reader import TomlReader
 from pyteg.utils import get_resource_path
 from pyteg.version import NAME, VERSION
 
 if TYPE_CHECKING:
     from pyteg.server.conexion.cliente import Client
-    from pyteg.server_game import Game
+    from pyteg.server.juego.game import Game
 
 
 class Server:

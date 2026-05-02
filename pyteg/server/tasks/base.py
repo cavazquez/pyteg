@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Any
 from pyteg.exception import GameRuleViolationError, MensajeNoValidoError, PyTegError
 from pyteg.game_context import GameContext
 from pyteg.logger import get_logger
-from pyteg.server_state_validator import ServerStateValidator
+from pyteg.server.juego.state_validator import ServerStateValidator
 
 LOGGER = get_logger("server.tasks")
 

@@ -6,7 +6,7 @@ import unittest
 from unittest.mock import MagicMock
 
 from pyteg.config import DEFAULT_TURN_SECONDS, VICTORY_ALL_COUNTRIES
-from pyteg.server_game_coordinator import ServerGameCoordinator
+from pyteg.server.juego.coordinator import ServerGameCoordinator
 
 
 class TestServerGameCoordinator(unittest.TestCase):

@@ -3,7 +3,7 @@
 from typing import ClassVar
 
 from pyteg.config import COUNTRIES_DIVISOR, MIN_GENERAL_UNITS
-from pyteg.server_mapa import Mapa
+from pyteg.server.juego.mapa import Mapa
 
 
 class Calculos:

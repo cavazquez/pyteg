@@ -22,7 +22,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Protocol
 
-from pyteg.server_state_validator import HasEstado
+from pyteg.server.juego.state_validator import HasEstado
 
 if TYPE_CHECKING:
     from pyteg.colores import IColor
