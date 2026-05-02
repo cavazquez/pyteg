@@ -5,7 +5,7 @@ Este documento registra decisiones de arquitectura y sus motivaciones.
 ## ADR-001: Cliente-Servidor con mensajes tipificados
 - Contexto: Necesidad de multijugador y UI reactiva.
 - Decisión: Arquitectura TCP cliente-servidor. Mensajes tipificados en `pyteg/server/msg/` y `pyteg/client/msg/`, con transmisores `pyteg/server/conexion/transmisor.py` y `pyteg/client/conexion/transmisor/transmisor.py`.
-- Consecuencias: Facilita validaciones centralizadas y broadcast selectivo. Exige mantener compatibilidad de protocolo.
+- Consecuencias: Facilita validaciones centralizadas y broadcast selectivo. El protocolo JSON evoluciona de forma explícita; los cambios incompatibles se documentan en ADR (p. ej. ADR-012).
 
 ## ADR-002: Validación estricta de turnos en el servidor
 - Contexto: Se detectó que los jugadores podían agregar unidades fuera de su turno.
@@ -59,6 +59,11 @@ Este documento registra decisiones de arquitectura y sus motivaciones.
 - Contexto: Tras modularizar la GUI, las tareas y los managers tomaban `main_window: Any` y abundaban `hasattr` defensivos.
 - Decisión: Introducir `GameWindowProtocol` (`pyteg/client/tasks/protocols.py`) para `IClientTask.run` y `MainWindowProtocol` (`pyteg/gui/managers/protocols.py`) que extiende el anterior para los gestores. Sub-objetos con tipos que arrastran dependencias Qt/GUI se declaran como `Any` en el protocolo; el cumplimiento sigue siendo estructural vía Mypy. Atributos que solo los managers tocaban como privados de `Gui` se promovieron a públicos donde hacía falta tipar sin `# noqa: SLF001`. En `Gui.__init__`, los gestores se construyen pasando `cast(MainWindowProtocol, self)` porque los sub-gestores se asignan de forma incremental antes de que existan todos los campos del protocolo.
 - Consecuencias: Menos acoplamiento conceptual a `Any`, menos `hasattr(main_window, …)` donde el contrato es estable; los padres `QWidget` en diálogos usan `cast(QWidget, …)` en el sitio de llamada. Un smoke test (`tests/test_gui_protocol_compat.py`) comprueba presencia de métodos/atributos clave sin levantar `QApplication` completo.
+
+## ADR-012: Identidad canónica del jugador = `userid` (int) en dominio y wire format
+- Contexto: En el dominio (mapa, turnos, canjes, validadores, combate, objetivos) se usaba el **nombre** (`str`) como clave, mientras otras partes del servidor (colores, lobby, temporizador) ya usaban **userid** (`int`). Eso mezclaba identidades, desalineaba tipos en mensajes (`MsgPais` como int pero alimentado con nombres) y produjo bugs (comparaciones `str` vs `int`, lookups inviables).
+- Decisión: En **dominio servidor** y en los **mensajes JSON que transportan identidad de jugador**, la identidad canónica es **`userid: int`**. `username` queda para **presentación** (UI/chat). Donde el tipo JSON y el contenido estaban desalineados, se ajusta el payload (p. ej. `ganador_id`, `atacante_id`/`defensor_id`, `jugador_id` en misiles).
+- Consecuencias: **Se rompe compatibilidad de protocolo** entre clientes y servidores de versiones mezcladas; desplegar cliente y servidor alineados. Los tests deben modelar dueños de país y turnos como enteros; no basar reglas en nombres de usuario.
 
 ## Cómo proponer nuevas decisiones
 1. Agregar una nueva sección ADR-00X con contexto, decisión, consecuencias y referencias.

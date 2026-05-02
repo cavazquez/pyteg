@@ -37,17 +37,17 @@ class CardManager:
         """
         self._mazo = mazo
         self._turn_manager = turn_manager
-        self._cant_canjes: dict[str, int] = {}
+        self._cant_canjes: dict[int, int] = {}
         self._jugadores_pueden_reclamar: set[Client] = set()
 
-    def inicializar_canjes(self, jugadores_nombres: list[str]) -> None:
+    def inicializar_canjes(self, jugadores_userids: list[int]) -> None:
         """Inicializa el contador de canjes para los jugadores.
 
         Args:
-            jugadores_nombres: Lista de nombres de jugadores.
+            jugadores_userids: Lista de userids (int) de jugadores.
 
         """
-        self._cant_canjes = dict.fromkeys(jugadores_nombres, 0)
+        self._cant_canjes = dict.fromkeys(jugadores_userids, 0)
 
     def dame_una_tarjeta(self, jugador: Client) -> None:
         """Asigna una tarjeta a un jugador. Si tiene 5, fuerza un canje.
@@ -62,24 +62,24 @@ class CardManager:
             self.canjear(jugador, lista_3_tarjetas)
         self._mazo.asignar_tarjeta(jugador)
 
-    def cant_canjes(self, jugador: Client | str) -> int:
+    def cant_canjes(self, jugador: Client | int) -> int:
         """Obtiene la cantidad de canjes realizados por un jugador.
 
         Args:
-            jugador: Jugador o nombre del jugador.
+            jugador: Cliente o userid (int) del jugador.
 
         Returns:
             Cantidad de canjes realizados.
 
         """
-        username = jugador.username() if hasattr(jugador, "username") else str(jugador)
-        return self._cant_canjes.get(username, 0)
+        userid = self._jugador_a_userid(jugador)
+        return self._cant_canjes.get(userid, 0)
 
-    def canjear(self, jugador: Client | str, tarjetas: list[TarjetaDePais]) -> None:
+    def canjear(self, jugador: Client | int, tarjetas: list[TarjetaDePais]) -> None:
         """Realiza un canje de tarjetas por unidades.
 
         Args:
-            jugador: Jugador o nombre del jugador.
+            jugador: Cliente o userid (int) del jugador.
             tarjetas: Lista de tarjetas a canjear.
 
         """
@@ -91,8 +91,25 @@ class CardManager:
 
         turno.agregar_unidades_generales(cantidad_a_agregar)
         self._mazo.desasignar_tarjetas(tarjetas)
-        username = jugador.username() if hasattr(jugador, "username") else str(jugador)
-        self._cant_canjes[username] = self._cant_canjes.get(username, 0) + 1
+        userid = self._jugador_a_userid(jugador)
+        self._cant_canjes[userid] = self._cant_canjes.get(userid, 0) + 1
+
+    @staticmethod
+    def _jugador_a_userid(jugador: Client | int) -> int:
+        """Normaliza la entrada a un userid (int).
+
+        Acepta un objeto cliente con método `userid()` o directamente el int.
+
+        Args:
+            jugador: Cliente con `userid()` o el userid directo.
+
+        Returns:
+            userid (int) del jugador.
+
+        """
+        if hasattr(jugador, "userid"):
+            return int(jugador.userid())
+        return int(jugador)
 
     def marcar_jugador_puede_reclamar(self, jugador: Client) -> None:
         """Marca a un jugador como elegible para reclamar tarjeta.

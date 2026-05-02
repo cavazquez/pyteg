@@ -16,6 +16,9 @@ if TYPE_CHECKING:
 
 TurnoType = PrimerTurno | SegundoTurno | SiguientesTurnos
 
+# Userid placeholder usado antes de que se inicialicen los turnos reales.
+_USERID_PLACEHOLDER = 0
+
 
 class TurnManager:
     """Gestiona los turnos y rondas del juego.
@@ -33,18 +36,18 @@ class TurnManager:
 
         """
         self._mapa = mapa
-        self._turnos: list[TurnoType] = [PrimerTurno("NUllJugador")]
+        self._turnos: list[TurnoType] = [PrimerTurno(_USERID_PLACEHOLDER)]
         self._num_turno = 0
         self._num_ronda = 1
 
-    def inicializar_turnos(self, jugadores_nombres: list[str]) -> None:
+    def inicializar_turnos(self, jugadores_userids: list[int]) -> None:
         """Inicializa los turnos del juego con los jugadores.
 
         Args:
-            jugadores_nombres: Lista de nombres de jugadores en orden.
+            jugadores_userids: Lista de userids (int) de jugadores en orden.
 
         """
-        self._turnos = [PrimerTurno(j) for j in jugadores_nombres]
+        self._turnos = [PrimerTurno(j) for j in jugadores_userids]
 
     def turnos(self) -> list[TurnoType]:
         """Obtiene la lista de turnos.
@@ -95,45 +98,42 @@ class TurnManager:
         return False
 
     def iniciar_nueva_ronda(
-        self, jugadores_nombres: list[str], *, es_segundo_turno: bool = False
+        self, jugadores_userids: list[int], *, es_segundo_turno: bool = False
     ) -> None:
         """Inicia una nueva ronda con los jugadores rotados.
 
         Args:
-            jugadores_nombres: Lista de nombres de jugadores en el nuevo orden.
+            jugadores_userids: Lista de userids (int) de jugadores en el nuevo orden.
             es_segundo_turno: Si True, crea SegundoTurno, sino SiguientesTurnos.
 
         """
         if es_segundo_turno:
-            self._turnos = [SegundoTurno(j) for j in jugadores_nombres]
+            self._turnos = [SegundoTurno(j) for j in jugadores_userids]
         else:
-            self._turnos = [SiguientesTurnos(j, self._mapa) for j in jugadores_nombres]
+            self._turnos = [SiguientesTurnos(j, self._mapa) for j in jugadores_userids]
         self._num_turno = 0
         self._num_ronda += 1
 
     def lista_jugadores_orden_turno(
         self, jugadores: list[Client] | None = None
-    ) -> list[str]:
-        """Devuelve la lista de jugadores en el orden actual de los turnos.
+    ) -> list[int]:
+        """Devuelve la lista de userids en el orden actual de los turnos.
 
         Args:
             jugadores: Lista de jugadores del juego (opcional, para fallback).
 
         Returns:
-            Lista de nombres de jugadores en el orden de los turnos.
+            Lista de userids (int) en el orden de los turnos.
 
         """
-        # Obtener los jugadores en el orden de los turnos actuales
-        jugadores_orden: list[str] = []
+        jugadores_orden: list[int] = []
         for turno in self._turnos:
             jugador = turno.jugador_actual()
             if jugador not in jugadores_orden:
                 jugadores_orden.append(jugador)
 
-        # Si por alguna razón no hay jugadores
-        # en los turnos, devolver la lista normal
         if not jugadores_orden and jugadores:
-            return [j.username() for j in jugadores]
+            return [j.userid() for j in jugadores]
 
         return jugadores_orden
 

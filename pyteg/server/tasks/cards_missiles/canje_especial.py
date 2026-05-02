@@ -52,7 +52,7 @@ class ServerTaskCanjeEspecial(IServerTask):
         mapa = context.game.mapa()
         mazo = context.game.mazo()
 
-        if not mapa.jugador_posee_pais(client, self._pais):
+        if not mapa.jugador_posee_pais(client.userid(), self._pais):
             raise CountryNotOwnedError(self._pais)
 
         tarjeta_encontrada = None

@@ -57,24 +57,14 @@ class TurnoTimer(threading.Thread):
     def run(self) -> None:
         """Ejecuta el hilo del temporizador de turnos."""
         while not self._stop_event.is_set():
-            # Esperar a que exista una partida iniciada
             if not self._server.game or not self._server.game.empezo():
                 time.sleep(1)
                 continue
 
             turno_actual = self._server.game.turno_actual()
-            jugador_nombre = turno_actual.jugador_actual()
+            userid_turno = turno_actual.jugador_actual()
 
-            # Buscar el ID del jugador actual en la lista de clientes
-            userid_turno = None
-            for client in self._server.dame_clientes():
-                if client.username() == jugador_nombre:
-                    userid_turno = client.userid()
-                    break
-
-            if userid_turno is None:
-                # Si no se encuentra el cliente (posiblemente desconectado),
-                # esperar un poco y reintentar
+            if not userid_turno:
                 time.sleep(1)
                 continue
 

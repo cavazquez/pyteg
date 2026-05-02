@@ -110,7 +110,8 @@ class MsgResultadoMisil(IMsg):
 
         Args:
             resultado_data (dict): Diccionario con todos los datos del misil:
-                - jugador (str): Nombre del jugador que lanzó el misil
+                - jugador_id (int): userid del jugador que lanzó el misil
+                - jugador (str, opcional): Nombre del jugador (UI/chat)
                 - pais_origen (str): País desde donde se lanzó
                 - pais_destino (str): País atacado
                 - distancia (int): Distancia entre países
@@ -119,7 +120,8 @@ class MsgResultadoMisil(IMsg):
 
         """
         self._tipo = "resultado_misil"
-        self._jugador = resultado_data["jugador"]
+        self._jugador_id = resultado_data.get("jugador_id")
+        self._jugador = resultado_data.get("jugador", "")
         self._pais_origen = resultado_data["pais_origen"]
         self._pais_destino = resultado_data["pais_destino"]
         self._distancia = resultado_data["distancia"]
@@ -133,8 +135,9 @@ class MsgResultadoMisil(IMsg):
             Representación JSON del mensaje como cadena.
 
         """
-        data = {
+        data: dict[str, Any] = {
             "mensaje": self._tipo,
+            "jugador_id": self._jugador_id,
             "jugador": self._jugador,
             "pais_origen": self._pais_origen,
             "pais_destino": self._pais_destino,

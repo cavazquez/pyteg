@@ -2,6 +2,8 @@
 
 Este documento describe todos los mensajes que el cliente puede enviar al servidor durante una partida de TEG.
 
+Los mensajes entrantes (servidor→cliente), incluyendo campos como `userid` / `user_id` / `jugador_actual_id`, están documentados en `docs/mensajes_servidor.md`. La identidad canónica en wire format es **`userid` numérico (JSON number)**; ver `docs/DECISIONS.md` (ADR-012).
+
 ## Estructura General de los Mensajes
 
 Todos los mensajes siguen un formato JSON con un campo `mensaje` que identifica el tipo de mensaje. Los demás campos varían según el tipo de mensaje.

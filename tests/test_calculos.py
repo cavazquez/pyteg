@@ -1,9 +1,14 @@
 """Tests para el módulo de cálculos."""
 
+from __future__ import annotations
+
 import unittest
 
 from pyteg.core.combate.calculos import Calculos
 from pyteg.server.juego.mapa import Mapa
+
+J_MENGANO = 2
+J_FULANO = 1
 
 
 class TestCalculos(unittest.TestCase):
@@ -16,45 +21,45 @@ class TestCalculos(unittest.TestCase):
             return {"Argentina": [1, "Pangea", None], "Uruguay": [10, "Pangea", None]}
 
         mapa = Mapa(build_mapa)
-        self.assertEqual(Calculos.calcular_unidades_generales(mapa, "Mengano"), 3)
+        self.assertEqual(Calculos.calcular_unidades_generales(mapa, J_MENGANO), 3)
 
     def test_calcular_unidades_generales_con_4_paises(self) -> None:
         """Prueba calcular unidades generales con 4 países del jugador."""
 
         def build_mapa() -> dict[str, list[int | str | None]]:
             return {
-                "Argentina": [1, "Pangea", "Mengano"],
-                "Uruguay": [10, "Pangea", "Mengano"],
-                "Chile": [10, "America", "Mengano"],
-                "Brasil": [10, "Pangea", "Mengano"],
+                "Argentina": [1, "Pangea", J_MENGANO],
+                "Uruguay": [10, "Pangea", J_MENGANO],
+                "Chile": [10, "America", J_MENGANO],
+                "Brasil": [10, "Pangea", J_MENGANO],
             }
 
         mapa = Mapa(build_mapa)
-        self.assertEqual(Calculos.calcular_unidades_generales(mapa, "Mengano"), 3)
+        self.assertEqual(Calculos.calcular_unidades_generales(mapa, J_MENGANO), 3)
 
     def test_calcular_unidades_generales_con_8_paises(self) -> None:
         """Prueba calcular unidades generales con 8 países del jugador."""
 
         def build_mapa() -> dict[str, list[int | str | None]]:
             return {
-                "Argentina": [1, "Pangea", "Mengano"],
-                "Uruguay": [10, "Pangea", "Mengano"],
-                "Chile": [10, "Pangea", "Mengano"],
-                "Brasil": [10, "America", "Mengano"],
-                "Mexico": [10, "Pangea", "Mengano"],
-                "Canada": [10, "Pangea", "Mengano"],
-                "Francia": [10, "Europa", "Mengano"],
-                "Italia": [10, "Europa", "Mengano"],
+                "Argentina": [1, "Pangea", J_MENGANO],
+                "Uruguay": [10, "Pangea", J_MENGANO],
+                "Chile": [10, "Pangea", J_MENGANO],
+                "Brasil": [10, "America", J_MENGANO],
+                "Mexico": [10, "Pangea", J_MENGANO],
+                "Canada": [10, "Pangea", J_MENGANO],
+                "Francia": [10, "Europa", J_MENGANO],
+                "Italia": [10, "Europa", J_MENGANO],
             }
 
         mapa = Mapa(build_mapa)
-        self.assertEqual(Calculos.calcular_unidades_generales(mapa, "Mengano"), 4)
+        self.assertEqual(Calculos.calcular_unidades_generales(mapa, J_MENGANO), 4)
 
     def test_calcular_unidades_continente_invalido(self) -> None:
         """Prueba calcular unidades con un continente inválido."""
         mapa = Mapa(dict)
         self.assertEqual(
-            Calculos.calcular_unidades_continente(mapa, "Mengano", "Atlantis"),
+            Calculos.calcular_unidades_continente(mapa, J_MENGANO, "Atlantis"),
             0,
         )
 
@@ -63,155 +68,161 @@ class TestCalculos(unittest.TestCase):
 
         def build_mapa() -> dict[str, list[int | str | None]]:
             return {
-                "Argentina": [1, "Europa", "Mengano"],
-                "Uruguay": [10, "Europa", "Mengano"],
-                "Chile": [10, "America", "Mengano"],
-                "Brasil": [10, "Pangea", "None"],
+                "Argentina": [1, "Europa", J_MENGANO],
+                "Uruguay": [10, "Europa", J_MENGANO],
+                "Chile": [10, "America", J_MENGANO],
+                "Brasil": [10, "Pangea", None],
             }
 
         mapa = Mapa(build_mapa)
-        self.assertEqual(Calculos.calcular_unidades_europa(mapa, "Mengano"), 5)
+        self.assertEqual(Calculos.calcular_unidades_europa(mapa, J_MENGANO), 5)
 
     def test_calcular_unidades_sin_toda_europa(self) -> None:
         """Prueba calcular unidades cuando el jugador no tiene toda Europa."""
 
         def build_mapa() -> dict[str, list[int | str | None]]:
             return {
-                "Argentina": [1, "Europa", "Mengano"],
-                "Uruguay": [10, "Europa", "Fulano"],
-                "Chile": [10, "America", "Mengano"],
-                "Brasil": [10, "Pangea", "None"],
+                "Argentina": [1, "Europa", J_MENGANO],
+                "Uruguay": [10, "Europa", J_FULANO],
+                "Chile": [10, "America", J_MENGANO],
+                "Brasil": [10, "Pangea", None],
             }
 
         mapa = Mapa(build_mapa)
-        self.assertEqual(Calculos.calcular_unidades_europa(mapa, "Mengano"), 0)
+        self.assertEqual(Calculos.calcular_unidades_europa(mapa, J_MENGANO), 0)
 
     def test_calcular_unidades_con_toda_asia(self) -> None:
         """Prueba calcular unidades cuando el jugador tiene toda Asia."""
 
         def build_mapa() -> dict[str, list[int | str | None]]:
             return {
-                "Argentina": [1, "Asia", "Mengano"],
-                "Uruguay": [10, "Asia", "Mengano"],
-                "Chile": [10, "America", "Mengano"],
-                "Brasil": [10, "Pangea", "None"],
+                "Argentina": [1, "Asia", J_MENGANO],
+                "Uruguay": [10, "Asia", J_MENGANO],
+                "Chile": [10, "America", J_MENGANO],
+                "Brasil": [10, "Pangea", None],
             }
 
         mapa = Mapa(build_mapa)
-        self.assertEqual(Calculos.calcular_unidades_asia(mapa, "Mengano"), 7)
+        self.assertEqual(Calculos.calcular_unidades_asia(mapa, J_MENGANO), 7)
 
     def test_calcular_unidades_sin_toda_asia(self) -> None:
         """Prueba calcular unidades cuando el jugador no tiene toda Asia."""
 
         def build_mapa() -> dict[str, list[int | str | None]]:
             return {
-                "Argentina": [1, "Asia", "Mengano"],
-                "Uruguay": [10, "Asia", "Fulano"],
-                "Chile": [10, "America", "Mengano"],
-                "Brasil": [10, "Pangea", "None"],
+                "Argentina": [1, "Asia", J_MENGANO],
+                "Uruguay": [10, "Asia", J_FULANO],
+                "Chile": [10, "America", J_MENGANO],
+                "Brasil": [10, "Pangea", None],
             }
 
         mapa = Mapa(build_mapa)
-        self.assertEqual(Calculos.calcular_unidades_asia(mapa, "Mengano"), 0)
+        self.assertEqual(Calculos.calcular_unidades_asia(mapa, J_MENGANO), 0)
 
     def test_calcular_unidades_con_toda_africa(self) -> None:
         """Prueba calcular unidades cuando el jugador tiene toda África."""
 
         def build_mapa() -> dict[str, list[int | str | None]]:
             return {
-                "Argentina": [1, "Africa", "Mengano"],
-                "Uruguay": [10, "Africa", "Mengano"],
-                "Chile": [10, "America", "Mengano"],
-                "Brasil": [10, "Pangea", "None"],
+                "Argentina": [1, "Africa", J_MENGANO],
+                "Uruguay": [10, "Africa", J_MENGANO],
+                "Chile": [10, "America", J_MENGANO],
+                "Brasil": [10, "Pangea", None],
             }
 
         mapa = Mapa(build_mapa)
-        self.assertEqual(Calculos.calcular_unidades_africa(mapa, "Mengano"), 3)
+        self.assertEqual(Calculos.calcular_unidades_africa(mapa, J_MENGANO), 3)
 
     def test_calcular_unidades_sin_toda_africa(self) -> None:
         """Prueba calcular unidades cuando el jugador no tiene toda África."""
 
         def build_mapa() -> dict[str, list[int | str | None]]:
             return {
-                "Argentina": [1, "Africa", "Mengano"],
-                "Uruguay": [10, "Africa", "Fulano"],
-                "Chile": [10, "America", "Mengano"],
-                "Brasil": [10, "Pangea", "None"],
+                "Argentina": [1, "Africa", J_MENGANO],
+                "Uruguay": [10, "Africa", J_FULANO],
+                "Chile": [10, "America", J_MENGANO],
+                "Brasil": [10, "Pangea", None],
             }
 
         mapa = Mapa(build_mapa)
-        self.assertEqual(Calculos.calcular_unidades_africa(mapa, "Mengano"), 0)
+        self.assertEqual(Calculos.calcular_unidades_africa(mapa, J_MENGANO), 0)
 
     def test_calcular_unidades_con_toda_oceania(self) -> None:
         """Prueba calcular unidades cuando el jugador tiene toda Oceanía."""
 
         def build_mapa() -> dict[str, list[int | str | None]]:
             return {
-                "Argentina": [1, "Oceania", "Mengano"],
-                "Uruguay": [10, "Oceania", "Mengano"],
-                "Chile": [10, "America", "Mengano"],
-                "Brasil": [10, "Pangea", "None"],
+                "Argentina": [1, "Oceania", J_MENGANO],
+                "Uruguay": [10, "Oceania", J_MENGANO],
+                "Chile": [10, "America", J_MENGANO],
+                "Brasil": [10, "Pangea", None],
             }
 
         mapa = Mapa(build_mapa)
-        self.assertEqual(Calculos.calcular_unidades_oceania(mapa, "Mengano"), 2)
+        self.assertEqual(Calculos.calcular_unidades_oceania(mapa, J_MENGANO), 2)
 
     def test_calcular_unidades_sin_toda_ocenia(self) -> None:
         """Prueba calcular unidades cuando el jugador no tiene toda Oceanía."""
 
         def build_mapa() -> dict[str, list[int | str | None]]:
             return {
-                "Argentina": [1, "Oceania", "Mengano"],
-                "Uruguay": [10, "Oceania", "Fulano"],
-                "Chile": [10, "America", "Mengano"],
-                "Brasil": [10, "Pangea", "None"],
+                "Argentina": [1, "Oceania", J_MENGANO],
+                "Uruguay": [10, "Oceania", J_FULANO],
+                "Chile": [10, "America", J_MENGANO],
+                "Brasil": [10, "Pangea", None],
             }
 
         mapa = Mapa(build_mapa)
-        self.assertEqual(Calculos.calcular_unidades_oceania(mapa, "Mengano"), 0)
+        self.assertEqual(Calculos.calcular_unidades_oceania(mapa, J_MENGANO), 0)
 
     def test_calcular_unidades_con_toda_america_del_sur(self) -> None:
         """Prueba calcular unidades cuando el jugador tiene toda América del Sur."""
 
         def build_mapa() -> dict[str, list[int | str | None]]:
             return {
-                "Argentina": [1, "Sudamerica", "Mengano"],
-                "Uruguay": [10, "Sudamerica", "Mengano"],
-                "Chile": [10, "America", "Mengano"],
-                "Brasil": [10, "Pangea", "None"],
+                "Argentina": [1, "Sudamerica", J_MENGANO],
+                "Uruguay": [10, "Sudamerica", J_MENGANO],
+                "Chile": [10, "America", J_MENGANO],
+                "Brasil": [10, "Pangea", None],
             }
 
         mapa = Mapa(build_mapa)
-        self.assertEqual(Calculos.calcular_unidades_america_del_sur(mapa, "Mengano"), 3)
+        self.assertEqual(
+            Calculos.calcular_unidades_america_del_sur(mapa, J_MENGANO),
+            3,
+        )
 
     def test_calcular_unidades_sin_toda_america_del_sur(self) -> None:
         """Prueba calcular unidades cuando el jugador no tiene toda América del Sur."""
 
         def build_mapa() -> dict[str, list[int | str | None]]:
             return {
-                "Argentina": [1, "Sudamerica", "Mengano"],
-                "Uruguay": [10, "Sudamerica", "Fulano"],
-                "Chile": [10, "America", "Mengano"],
-                "Brasil": [10, "Pangea", "None"],
+                "Argentina": [1, "Sudamerica", J_MENGANO],
+                "Uruguay": [10, "Sudamerica", J_FULANO],
+                "Chile": [10, "America", J_MENGANO],
+                "Brasil": [10, "Pangea", None],
             }
 
         mapa = Mapa(build_mapa)
-        self.assertEqual(Calculos.calcular_unidades_america_del_sur(mapa, "Mengano"), 0)
+        self.assertEqual(
+            Calculos.calcular_unidades_america_del_sur(mapa, J_MENGANO),
+            0,
+        )
 
     def test_calcular_unidades_con_toda_america_del_norte(self) -> None:
         """Prueba calcular unidades cuando el jugador tiene toda América del Norte."""
 
         def build_mapa() -> dict[str, list[int | str | None]]:
             return {
-                "Argentina": [1, "Norteamerica", "Mengano"],
-                "Uruguay": [10, "Norteamerica", "Mengano"],
-                "Chile": [10, "America", "Mengano"],
-                "Brasil": [10, "Pangea", "None"],
+                "Argentina": [1, "Norteamerica", J_MENGANO],
+                "Uruguay": [10, "Norteamerica", J_MENGANO],
+                "Chile": [10, "America", J_MENGANO],
+                "Brasil": [10, "Pangea", None],
             }
 
         mapa = Mapa(build_mapa)
         self.assertEqual(
-            Calculos.calcular_unidades_america_del_norte(mapa, "Mengano"),
+            Calculos.calcular_unidades_america_del_norte(mapa, J_MENGANO),
             5,
         )
 
@@ -223,14 +234,18 @@ class TestCalculos(unittest.TestCase):
 
         def build_mapa() -> dict[str, list[int | str | None]]:
             return {
-                "Argentina": [1, "Norteamerica", "Mengano"],
-                "Uruguay": [10, "Norteamerica", "Fulano"],
-                "Chile": [10, "America", "Mengano"],
-                "Brasil": [10, "Pangea", "None"],
+                "Argentina": [1, "Norteamerica", J_MENGANO],
+                "Uruguay": [10, "Norteamerica", J_FULANO],
+                "Chile": [10, "America", J_MENGANO],
+                "Brasil": [10, "Pangea", None],
             }
 
         mapa = Mapa(build_mapa)
         self.assertEqual(
-            Calculos.calcular_unidades_america_del_norte(mapa, "Mengano"),
+            Calculos.calcular_unidades_america_del_norte(mapa, J_MENGANO),
             0,
         )
+
+
+if __name__ == "__main__":
+    unittest.main()

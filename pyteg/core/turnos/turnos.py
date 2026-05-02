@@ -13,11 +13,11 @@ if TYPE_CHECKING:
 class SiguientesTurnos:
     """Representa los turnos después del segundo turno."""
 
-    def __init__(self, jugador: str, mapa: Mapa) -> None:
+    def __init__(self, jugador: int, mapa: Mapa) -> None:
         """Inicializa un turno posterior al segundo.
 
         Args:
-            jugador: Nombre del jugador en turno.
+            jugador: userid (int) del jugador en turno.
             mapa: Mapa del juego para calcular unidades.
 
         """
@@ -59,11 +59,11 @@ class SiguientesTurnos:
             result["Oceanía"] = self._unidades_oceania
         return result
 
-    def jugador_actual(self) -> str:
-        """Obtiene el nombre del jugador actual.
+    def jugador_actual(self) -> int:
+        """Obtiene el userid del jugador actual.
 
         Returns:
-            Nombre del jugador en turno.
+            userid (int) del jugador en turno.
 
         """
         return self._jugador
@@ -172,21 +172,21 @@ class SiguientesTurnos:
 class SegundoTurno:
     """Representa el segundo turno de un jugador."""
 
-    def __init__(self, jugador: str) -> None:
+    def __init__(self, jugador: int) -> None:
         """Inicializa el segundo turno.
 
         Args:
-            jugador: Nombre del jugador en turno.
+            jugador: userid (int) del jugador en turno.
 
         """
         self._jugador = jugador
         self._unidades = 3
 
-    def jugador_actual(self) -> str:
-        """Obtiene el nombre del jugador actual.
+    def jugador_actual(self) -> int:
+        """Obtiene el userid del jugador actual.
 
         Returns:
-            Nombre del jugador en turno.
+            userid (int) del jugador en turno.
 
         """
         return self._jugador
@@ -226,21 +226,21 @@ class SegundoTurno:
 class PrimerTurno:
     """Representa el primer turno de un jugador."""
 
-    def __init__(self, jugador: str) -> None:
+    def __init__(self, jugador: int) -> None:
         """Inicializa el primer turno.
 
         Args:
-            jugador: Nombre del jugador en turno.
+            jugador: userid (int) del jugador en turno.
 
         """
         self._jugador = jugador
         self._unidades = 6
 
-    def jugador_actual(self) -> str:
-        """Obtiene el nombre del jugador actual.
+    def jugador_actual(self) -> int:
+        """Obtiene el userid del jugador actual.
 
         Returns:
-            Nombre del jugador en turno.
+            userid (int) del jugador en turno.
 
         """
         return self._jugador

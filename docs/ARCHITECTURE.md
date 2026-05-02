@@ -7,6 +7,11 @@ Pyteg implementa el juego TEG en un modelo cliente-servidor:
 - Servidor: valida reglas del juego, procesa acciones (agregar unidades, atacar, mover, finalizar turno), mantiene el estado y difunde actualizaciones.
 - Cliente: UI con PySide6, conecta al servidor, envía acciones y procesa mensajes para reflejar el estado (mapa, chat, barra de estado, diálogos).
 
+### Identidad del jugador (dominio vs presentación)
+- **Dominio (servidor / core)**: el jugador se identifica de forma canónica con **`userid: int`** (dueño de país en el mapa, orden de turnos, canjes, validadores, combate, objetivos secretos, victoria).
+- **Presentación**: el **`username`** es texto para UI/chat; no debe usarse como clave de reglas cuando exista `userid`.
+- **Red**: los mensajes que transportan identidad usan **`userid`/`user_id` como number JSON** cuando corresponde; ver `docs/mensajes_servidor.md` y `docs/DECISIONS.md` (ADR-012).
+
 ## Seguridad y modelo de amenaza
 
 El transporte entre cliente y servidor es **TCP en claro**, sin TLS ni autenticación fuerte entre procesos. El diseño asume **red de confianza** (típicamente LAN o anfitrión controlado): cualquier host que pueda alcanzar el puerto del servidor puede intentar conectar; el juego no ofrece cifrado ni verificación de identidad más allá de las reglas propias de la partida (p. ej. nombres de usuario).
@@ -96,7 +101,10 @@ Para una vista visual del intercambio de mensajes, ver el diagrama de secuencia 
 
 ## Mensajería clave
 - MsgChat (tipos: normal, error, system). Los errores de validación se publican en chat con formato y color.
-- MsgResultadoBatalla: detalla dados, pérdidas y si hubo conquista. Enviado a todos tras cada ataque.
+- MsgPais: actualiza ocupación de un país; `userid` es **int** (o `null` si no hay dueño).
+- MsgResultadoBatalla: dados, pérdidas y conquista; incluye `atacante_id`/`defensor_id` (**int**) además de nombres para UI/chat.
+- MsgVictoria: `ganador_id` (**int**) y `ganador_nombre` (texto).
+- MsgResultadoMisil: `jugador_id` (**int**) y `jugador` (nombre opcional para UI/chat).
 - Turno/Unidades: al inicio de cada turno, el servidor envía el turno actual y, además, las unidades disponibles al jugador activo; tras agregar unidades, vuelve a enviar unidades disponibles.
 - Actualización de mapa: se emite después de acciones que modifican el estado (agregar, mover, atacar, conquista).
 

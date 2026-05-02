@@ -18,11 +18,11 @@ class ITurno(Protocol):
     sin necesidad de heredar explícitamente de esta clase.
     """
 
-    def jugador_actual(self) -> str:
-        """Obtiene el nombre del jugador en turno.
+    def jugador_actual(self) -> int:
+        """Obtiene el userid (int) del jugador en turno.
 
         Returns:
-            Nombre del jugador actual.
+            userid (int) del jugador actual.
 
         """
         ...

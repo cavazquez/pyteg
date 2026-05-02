@@ -13,8 +13,8 @@ class TestMisiles(unittest.TestCase):
 
         def build_mapa() -> dict[str, list[int | str | list[str]]]:
             return {
-                "Argentina": [5, "Sudamerica", "Jugador1", ["Brasil"]],
-                "Brasil": [3, "Sudamerica", "Jugador2", ["Argentina"]],
+                "Argentina": [5, "Sudamerica", 1, ["Brasil"]],
+                "Brasil": [3, "Sudamerica", 2, ["Argentina"]],
             }
 
         mapa = Mapa(build_mapa)
@@ -26,7 +26,7 @@ class TestMisiles(unittest.TestCase):
 
         def build_mapa() -> dict[str, list[int | str | list[str]]]:
             return {
-                "Argentina": [5, "Sudamerica", "Jugador1", ["Brasil"]],
+                "Argentina": [5, "Sudamerica", 1, ["Brasil"]],
             }
 
         mapa = Mapa(build_mapa)
@@ -43,7 +43,7 @@ class TestMisiles(unittest.TestCase):
 
         def build_mapa() -> dict[str, list[int | str | list[str]]]:
             return {
-                "Argentina": [5, "Sudamerica", "Jugador1", ["Brasil"]],
+                "Argentina": [5, "Sudamerica", 1, ["Brasil"]],
             }
 
         mapa = Mapa(build_mapa)
@@ -62,7 +62,7 @@ class TestMisiles(unittest.TestCase):
 
         def build_mapa() -> dict[str, list[int | str | list[str]]]:
             return {
-                "Argentina": [5, "Sudamerica", "Jugador1", ["Brasil"]],
+                "Argentina": [5, "Sudamerica", 1, ["Brasil"]],
             }
 
         mapa = Mapa(build_mapa)
@@ -77,7 +77,7 @@ class TestMisiles(unittest.TestCase):
 
         def build_mapa() -> dict[str, list[int | str | list[str]]]:
             return {
-                "Argentina": [5, "Sudamerica", "Jugador1", ["Brasil"]],
+                "Argentina": [5, "Sudamerica", 1, ["Brasil"]],
             }
 
         mapa = Mapa(build_mapa)
@@ -88,10 +88,10 @@ class TestMisiles(unittest.TestCase):
 
         def build_mapa() -> dict[str, list[int | str | list[str]]]:
             return {
-                "Argentina": [5, "Sudamerica", "Jugador1", ["Brasil", "Chile"]],
-                "Brasil": [3, "Sudamerica", "Jugador2", ["Argentina", "Uruguay"]],
-                "Chile": [2, "Sudamerica", "Jugador1", ["Argentina"]],
-                "Uruguay": [4, "Sudamerica", "Jugador3", ["Brasil"]],
+                "Argentina": [5, "Sudamerica", 1, ["Brasil", "Chile"]],
+                "Brasil": [3, "Sudamerica", 2, ["Argentina", "Uruguay"]],
+                "Chile": [2, "Sudamerica", 1, ["Argentina"]],
+                "Uruguay": [4, "Sudamerica", 3, ["Brasil"]],
             }
 
         mapa = Mapa(build_mapa)
@@ -104,9 +104,9 @@ class TestMisiles(unittest.TestCase):
 
         def build_mapa() -> dict[str, list[int | str | list[str]]]:
             return {
-                "Argentina": [5, "Sudamerica", "Jugador1", ["Brasil"]],
-                "Brasil": [3, "Sudamerica", "Jugador2", ["Argentina", "Uruguay"]],
-                "Uruguay": [4, "Sudamerica", "Jugador3", ["Brasil"]],
+                "Argentina": [5, "Sudamerica", 1, ["Brasil"]],
+                "Brasil": [3, "Sudamerica", 2, ["Argentina", "Uruguay"]],
+                "Uruguay": [4, "Sudamerica", 3, ["Brasil"]],
             }
 
         mapa = Mapa(build_mapa)
@@ -117,10 +117,10 @@ class TestMisiles(unittest.TestCase):
 
         def build_mapa() -> dict[str, list[int | str | list[str]]]:
             return {
-                "A": [5, "Cont", "J1", ["B"]],
-                "B": [3, "Cont", "J2", ["A", "C"]],
-                "C": [2, "Cont", "J1", ["B", "D"]],
-                "D": [4, "Cont", "J3", ["C"]],
+                "A": [5, "Cont", 1, ["B"]],
+                "B": [3, "Cont", 2, ["A", "C"]],
+                "C": [2, "Cont", 1, ["B", "D"]],
+                "D": [4, "Cont", 3, ["C"]],
             }
 
         mapa = Mapa(build_mapa)
@@ -131,7 +131,7 @@ class TestMisiles(unittest.TestCase):
 
         def build_mapa() -> dict[str, list[int | str | list[str]]]:
             return {
-                "Argentina": [5, "Sudamerica", "Jugador1", ["Brasil"]],
+                "Argentina": [5, "Sudamerica", 1, ["Brasil"]],
             }
 
         mapa = Mapa(build_mapa)
@@ -142,9 +142,9 @@ class TestMisiles(unittest.TestCase):
 
         def build_mapa() -> dict[str, list[int | str | list[str]]]:
             return {
-                "Argentina": [5, "Sudamerica", "Jugador1", ["Brasil"]],
-                "Brasil": [3, "Sudamerica", "Jugador2", ["Argentina"]],
-                "Australia": [2, "Oceania", "Jugador3", []],  # País aislado
+                "Argentina": [5, "Sudamerica", 1, ["Brasil"]],
+                "Brasil": [3, "Sudamerica", 2, ["Argentina"]],
+                "Australia": [2, "Oceania", 3, []],  # País aislado
             }
 
         mapa = Mapa(build_mapa)
@@ -155,7 +155,7 @@ class TestMisiles(unittest.TestCase):
 
         def build_mapa() -> dict[str, list[int | str | list[str]]]:
             return {
-                "Argentina": [5, "Sudamerica", "Jugador1", ["Brasil"]],
+                "Argentina": [5, "Sudamerica", 1, ["Brasil"]],
             }
 
         mapa = Mapa(build_mapa)
@@ -206,12 +206,12 @@ class TestMisiles(unittest.TestCase):
 
         def build_mapa() -> dict[str, list[int | str | list[str]]]:
             return {
-                "A": [1, "C1", "J1", ["B", "C"]],
-                "B": [1, "C1", "J2", ["A", "D"]],
-                "C": [1, "C1", "J1", ["A", "D", "E"]],
-                "D": [1, "C2", "J3", ["B", "C", "F"]],
-                "E": [1, "C2", "J1", ["C", "F"]],
-                "F": [1, "C2", "J2", ["D", "E"]],
+                "A": [1, "C1", 1, ["B", "C"]],
+                "B": [1, "C1", 2, ["A", "D"]],
+                "C": [1, "C1", 1, ["A", "D", "E"]],
+                "D": [1, "C2", 3, ["B", "C", "F"]],
+                "E": [1, "C2", 1, ["C", "F"]],
+                "F": [1, "C2", 2, ["D", "E"]],
             }
 
         mapa = Mapa(build_mapa)
@@ -231,8 +231,8 @@ class TestMisiles(unittest.TestCase):
 
         def build_mapa() -> dict[str, list[int | str | list[str]]]:
             return {
-                "Argentina": [5, "Sudamerica", "Jugador1", ["Brasil"]],
-                "Brasil": [3, "Sudamerica", "Jugador2", ["Argentina"]],
+                "Argentina": [5, "Sudamerica", 1, ["Brasil"]],
+                "Brasil": [3, "Sudamerica", 2, ["Argentina"]],
             }
 
         mapa = Mapa(build_mapa)
@@ -241,11 +241,11 @@ class TestMisiles(unittest.TestCase):
         mapa.agregar_misil("Argentina")
         mapa.agregar_misil("Argentina")
         self.assertEqual(mapa.cantidad_misiles("Argentina"), 2)
-        self.assertEqual(mapa.ocupado_por("Argentina"), "Jugador1")
+        self.assertEqual(mapa.ocupado_por("Argentina"), 1)
 
         # Jugador2 conquista Argentina
-        mapa.asignar_pais("Jugador2", "Argentina")
+        mapa.asignar_pais(2, "Argentina")
 
         # Los misiles siguen en Argentina (ahora pertenecen a Jugador2)
         self.assertEqual(mapa.cantidad_misiles("Argentina"), 2)
-        self.assertEqual(mapa.ocupado_por("Argentina"), "Jugador2")
+        self.assertEqual(mapa.ocupado_por("Argentina"), 2)

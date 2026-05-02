@@ -49,16 +49,13 @@ class TurnValidator:
             raise GameNotStartedError
 
         turno_actual = game.turno_actual()
-        jugador_actual = turno_actual.jugador_actual()
-        if jugador_actual is None:
+        userid_en_turno = turno_actual.jugador_actual()
+        if not userid_en_turno:
             raise NotPlayerTurnError
         client_userid = client.userid() if hasattr(client, "userid") else None
-        if client_userid is None:
+        if not client_userid:
             raise NotPlayerTurnError
-        if (
-            not hasattr(jugador_actual, "userid")
-            or jugador_actual.userid() != client_userid
-        ):
+        if int(userid_en_turno) != int(client_userid):
             raise NotPlayerTurnError
 
 
@@ -86,6 +83,22 @@ class CountryOwnershipValidator:
     """Valida la propiedad de países."""
 
     @staticmethod
+    def _client_userid(
+        client: "Client | IClientProtocol",
+    ) -> int | None:
+        """Devuelve el userid (int) del cliente, normalizado.
+
+        Returns:
+            userid (int) del cliente o None si no está definido.
+
+        """
+        if hasattr(client, "userid"):
+            uid = client.userid()
+            if uid:
+                return int(uid)
+        return None
+
+    @staticmethod
     def validate_ownership(
         client: "Client | IClientProtocol",
         mapa: "Mapa | IMapProtocol",
@@ -105,12 +118,11 @@ class CountryOwnershipValidator:
             CountryNotOwnedError: Si el cliente no es dueño del país.
 
         """
-        pais_owner_id = mapa.ocupado_por(pais)
-        client_userid = client.userid() if hasattr(client, "userid") else None
-        if client_userid is None:
+        ocupante = mapa.ocupado_por(pais)
+        jugador = CountryOwnershipValidator._client_userid(client)
+        if jugador is None:
             raise CountryNotOwnedError(pais, error_message)
-        client_id = str(client_userid)
-        if pais_owner_id != client_id:
+        if ocupante != jugador:
             raise CountryNotOwnedError(pais, error_message)
 
     @staticmethod
@@ -133,12 +145,11 @@ class CountryOwnershipValidator:
             InvalidActionError: Si el cliente es dueño del país.
 
         """
-        pais_owner_id = mapa.ocupado_por(pais)
-        client_userid = client.userid() if hasattr(client, "userid") else None
-        if client_userid is None:
+        ocupante = mapa.ocupado_por(pais)
+        jugador = CountryOwnershipValidator._client_userid(client)
+        if jugador is None:
             return
-        client_id = str(client_userid)
-        if pais_owner_id == client_id:
+        if ocupante == jugador:
             msg = error_message or f"No puedes atacar tu propio país: {pais}"
             raise InvalidActionError(msg)
 

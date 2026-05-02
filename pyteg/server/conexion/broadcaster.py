@@ -112,18 +112,17 @@ class ServerMessageBroadcaster:
         # Publicar evento en MessageBus
         get_message_bus().publish(EVENT_MAPA_ACTUALIZADO, {})
 
-    def enviar_victoria(self, ganador_id: str, ganador_nombre: str) -> None:
+    def enviar_victoria(self, ganador_id: int, ganador_nombre: str) -> None:
         """Envía el mensaje de victoria a todos los clientes.
 
         Args:
-            ganador_id: ID del jugador ganador.
-            ganador_nombre: Nombre del jugador ganador.
+            ganador_id: userid (int) del jugador ganador.
+            ganador_nombre: Nombre del jugador ganador (UI/chat).
 
         """
         for client in self._dame_clientes():
             client.transmisor.enviar_victoria(ganador_id, ganador_nombre)
 
-        # Publicar evento en MessageBus
         get_message_bus().publish(
             EVENT_VICTORIA,
             {"ganador_id": ganador_id, "ganador_nombre": ganador_nombre},
@@ -235,8 +234,8 @@ class ServerMessageBroadcaster:
 
         """
         for client in self._dame_clientes():
-            user_id = client.userid()
-            objetivo = get_objetivo_jugador(str(user_id))
+            user_id = int(client.userid())
+            objetivo = get_objetivo_jugador(user_id)
             if objetivo:
                 client.transmisor.enviar_objetivo_secreto(
                     objetivo["id"], objetivo["descripcion"]

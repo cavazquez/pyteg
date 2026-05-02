@@ -24,7 +24,7 @@ class CountryData:
     Attributes:
         unidades: Cantidad de unidades en el país.
         continente: Nombre del continente al que pertenece.
-        jugador: ID del jugador que posee el país (None si no está asignado).
+        jugador: userid (int) del jugador que posee el país, o None si no está asignado.
         adyacentes: Lista de países adyacentes.
         misiles: Cantidad de misiles en el país.
 
@@ -32,7 +32,7 @@ class CountryData:
 
     unidades: int = 1
     continente: str = ""
-    jugador: str | None = None
+    jugador: int | None = None
     adyacentes: list[str] = field(default_factory=list)
     misiles: int = 0
 
@@ -66,11 +66,8 @@ class CountryData:
         """
         unidades = int(data[_IDX_UNIDADES]) if len(data) > _IDX_UNIDADES else 1
         continente = str(data[_IDX_CONTINENTE]) if len(data) > _IDX_CONTINENTE else ""
-        jugador = (
-            data[_IDX_JUGADOR]
-            if len(data) > _IDX_JUGADOR and data[_IDX_JUGADOR] is not None
-            else None
-        )
+        jugador_raw = data[_IDX_JUGADOR] if len(data) > _IDX_JUGADOR else None
+        jugador = int(jugador_raw) if jugador_raw is not None else None
         adyacentes = list(data[_IDX_ADYACENTES]) if len(data) > _IDX_ADYACENTES else []
         misiles = int(data[_IDX_MISILES]) if len(data) > _IDX_MISILES else 0
 
