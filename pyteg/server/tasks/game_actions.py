@@ -9,7 +9,7 @@ from pyteg.config import (
     VALID_UNIT_TYPES,
 )
 from pyteg.exception import MissingFieldError
-from pyteg.server_tasks.base import LOGGER, IServerTask
+from pyteg.server.tasks.base import LOGGER, IServerTask
 from pyteg.server_validators import (
     AdjacencyValidator,
     AttackRestrictionValidator,

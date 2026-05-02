@@ -3,11 +3,11 @@
 import json
 import unittest
 
-from pyteg.server_tasks import (
+from pyteg.server.tasks import (
     ServerTaskChat,
     ServerTaskNull,
 )
-from pyteg.server_tasks_manager import ServerTaskManager
+from pyteg.server.tasks.manager import ServerTaskManager
 
 
 class TestClientTaskManager(unittest.TestCase):

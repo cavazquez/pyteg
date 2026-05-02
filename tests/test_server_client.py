@@ -29,7 +29,7 @@ class TestClienteEjecutarMensaje(unittest.TestCase):
             patch.object(
                 client.transmisor, "enviar_error_chat", autospec=True
             ) as enviar_error,
-            patch("pyteg.server_tasks.LOGGER.warning"),
+            patch("pyteg.server.tasks.LOGGER.warning"),
         ):
             client.ejecutar_mensaje({"mensaje": "noexiste"})
             enviar_error.assert_called()

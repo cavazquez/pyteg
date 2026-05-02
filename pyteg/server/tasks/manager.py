@@ -2,7 +2,7 @@
 
 from typing import Any
 
-from pyteg.server_tasks import IServerTask, ServerTaskNull, dict_task
+from pyteg.server.tasks import IServerTask, ServerTaskNull, dict_task
 
 
 class ServerTaskManager:
