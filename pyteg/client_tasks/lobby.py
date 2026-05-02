@@ -7,7 +7,7 @@ from typing import Any
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import QMessageBox
 
-from pyteg.client import Client
+from pyteg.client.app import Client
 from pyteg.client_color import Color
 from pyteg.client_tasks.base import IClientTask
 from pyteg.client_tasks.logging_helper import CLIENT_TASKS_LOG
