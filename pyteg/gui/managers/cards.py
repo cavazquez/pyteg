@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from pyteg.gui_tarjetas_dialog import TarjetasDialog
+from pyteg.gui.tarjetas import TarjetasDialog
 
 
 class CardManager:

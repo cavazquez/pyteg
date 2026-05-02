@@ -15,7 +15,7 @@ Se ha implementado un sistema completo de efectos de sonido para PyTeg que propo
    - Sistema de mute/unmute
    - Cache de reproductores para mejor rendimiento
 
-2. **SoundControlWidget** (`pyteg/gui_sound_control.py`)
+2. **SoundControlWidget** (`pyteg/gui/widgets/sound_control.py`)
    - Widget de control en la barra de estado
    - Botón de mute/unmute con iconos dinámicos (🔊/🔉/🔇)
    - Slider de volumen (0-100%)
@@ -140,7 +140,7 @@ sound_manager.play("attack")
 
 ### Nuevos archivos
 - `pyteg/sound_manager.py` - Gestor de sonidos
-- `pyteg/gui_sound_control.py` - Widget de control
+- `pyteg/gui/widgets/sound_control.py` - Widget de control
 - `sounds/README.md` - Documentación de sonidos
 - `docs/SOUND_SYSTEM.md` - Esta documentación
 

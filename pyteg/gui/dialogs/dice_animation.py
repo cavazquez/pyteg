@@ -16,7 +16,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from pyteg.gui_dice_widget import DiceWidget
+from pyteg.gui.widgets.dice_widget import DiceWidget
 
 
 class BattleResultDialog(QDialog):

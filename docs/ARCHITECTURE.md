@@ -24,8 +24,7 @@ El transporte entre cliente y servidor es **TCP en claro**, sin TLS ni autentica
 - server_msg/: paquete de mensajes servidor→cliente (`connection`, `map_turn`, `battle`, `cards_missiles`, etc.).
 - client_connection.py: manejo de conexión y estado conectado/desconectado.
 - client_tasks/: paquete de tareas de cliente (`lobby`, `game_flow`, `battle`, `cards_missiles`).
-- gui.py: ventana principal refactorizada modularmente con gestores especializados.
-- gui_*: módulos especializados de la interfaz gráfica (layout, temas, jugadores, status, unidades, acciones).
+- pyteg/gui/: paquete de la GUI del cliente (`main_window`, `managers/`, `widgets/`, `dialogs/`, `mapa/`, etc.).
 
 ### Toolbar y país en el mapa (descomposición)
 
@@ -33,29 +32,26 @@ La barra de herramientas y el sprite de cada país se dividieron por responsabil
 
 | Módulo | Rol |
 |--------|-----|
-| `gui_toolbar.py` | Clase `ToolBar`: QAction, textos, `update_language`, cableado con la ventana principal. |
-| `gui_toolbar_actions.py` | Mixin: estado de conexión, habilitar atacar/mover, mover desde la selección del mapa (el ataque va por `main_window.atacar`). |
-| `gui_toolbar_window.py` | Mixin: tamaño de ventana, pantalla completa, centrado, reset de zoom del mapa. |
-| `gui_toolbar_size.py` | Menú de tamaños predefinidos, estilos del menú/botón, `center_window_on_screen`. |
-| `gui_toolbar_icons.py` | Carga de íconos con validación de recurso (`ImagenNoEncontradaError`). |
-| `gui_pais.py` | `Pais`: pixmap, círculo de unidades, color y datos base. |
-| `gui_pais_selection.py` | Mixin: clic → `selection_manager`, oscurecimiento origen/destino. |
-| `gui_pais_battle_fx.py` | Mixin: titilación en batalla, pérdidas flotantes, contador de misiles. |
+| `pyteg/gui/toolbar/toolbar.py` | Clase `ToolBar`: QAction, textos, `update_language`, cableado con la ventana principal. |
+| `pyteg/gui/toolbar/actions_mixin.py` | Mixin: estado de conexión, habilitar atacar/mover, mover desde la selección del mapa (el ataque va por `main_window.atacar`). |
+| `pyteg/gui/toolbar/window_mixin.py` | Mixin: tamaño de ventana, pantalla completa, centrado, reset de zoom del mapa. |
+| `pyteg/gui/toolbar/size.py` | Menú de tamaños predefinidos, estilos del menú/botón, `center_window_on_screen`. |
+| `pyteg/gui/toolbar/icons.py` | Carga de íconos con validación de recurso (`ImagenNoEncontradaError`). |
+| `pyteg/gui/mapa/pais.py` | `Pais`: pixmap, círculo de unidades, color y datos base. |
+| `pyteg/gui/mapa/pais_selection_mixin.py` | Mixin: clic → `selection_manager`, oscurecimiento origen/destino. |
+| `pyteg/gui/mapa/pais_battle_fx_mixin.py` | Mixin: titilación en batalla, pérdidas flotantes, contador de misiles. |
 
 Otros módulos voluminosos de la GUI pueden seguir el mismo patrón cuando una nueva función los haga crecer de forma desordenada.
 
-### Diálogo de tarjetas (`gui_tarjetas/`)
-
-El diálogo modal de tarjetas se agrupa en un paquete (no se usa la carpeta `gui/` para no chocar con el módulo `gui.py`):
+### Diálogo de tarjetas (`pyteg/gui/tarjetas/`)
 
 | Módulo | Rol |
 |--------|-----|
-| `gui_tarjetas/dialog.py` | Clase `TarjetasDialog`: layout, objetivo secreto, botones y `actualizar_tarjetas`. |
-| `gui_tarjetas/styles.py` | Cadenas QSS y helper para el color del contador de selección. |
-| `gui_tarjetas/protocols.py` | `Protocol` para tipar `self` en los mixins sin import circular. |
-| `gui_tarjetas/selection_mixin.py` | Grilla 2×2, selección, contador y reglas locales de canje. |
-| `gui_tarjetas/exchange_mixin.py` | Canje y reclamo vía `transmisor` del padre. |
-| `gui_tarjetas_dialog.py` | Shim de compatibilidad: reexporta `TarjetasDialog`. |
+| `pyteg/gui/tarjetas/dialog.py` | Clase `TarjetasDialog`: layout, objetivo secreto, botones y `actualizar_tarjetas`. |
+| `pyteg/gui/tarjetas/styles.py` | Cadenas QSS y helper para el color del contador de selección. |
+| `pyteg/gui/tarjetas/protocols.py` | `Protocol` para tipar `self` en los mixins sin import circular. |
+| `pyteg/gui/tarjetas/selection_mixin.py` | Grilla 2x2, selección, contador y reglas locales de canje. |
+| `pyteg/gui/tarjetas/exchange_mixin.py` | Canje y reclamo vía `transmisor` del padre. |
 
 - turno_protocol.py: define la interfaz `ITurno` para desacoplar el servidor de las clases de turno.
 - turnos.py: implementaciones de turnos (PrimerTurno, SegundoTurno, SiguientesTurnos).
@@ -88,34 +84,34 @@ Para una vista visual del intercambio de mensajes, ver el diagrama de secuencia 
 
 La interfaz gráfica ha sido refactorizada en una arquitectura modular para mejorar mantenibilidad, legibilidad y escalabilidad:
 
-### Ventana principal (gui.py - 366 líneas)
+### Ventana principal (`pyteg/gui/main_window.py`)
 - **Responsabilidad**: Coordinación de gestores, eventos de Qt, ventanas auxiliares
 - **Gestores integrados**: Instancia y coordina todos los gestores especializados
 - **Reducción**: 65% menos líneas (de ~1039 a 366 líneas)
 
 ### Gestores especializados
 
-#### LayoutManager (gui_layout_manager.py - 313 líneas)
+#### LayoutManager (`pyteg/gui/managers/layout.py`)
 - **Responsabilidad**: Estructura visual, widgets base, layout de ventana
 - **Funciones clave**: Creación de paneles, configuración de splitters, iconos
 
-#### ThemeManager (gui_theme_manager.py - 115 líneas)
+#### ThemeManager (`pyteg/gui/managers/theme.py`)
 - **Responsabilidad**: Gestión de temas claro/oscuro, estilos CSS
 - **Funciones clave**: Aplicación de temas, toggle de modo, estilos por componente
 
-#### PlayersManager (gui_players_manager.py - 92 líneas)
+#### PlayersManager (`pyteg/gui/managers/players.py`)
 - **Responsabilidad**: Lista de jugadores, widgets de jugador, indicadores de color
 - **Funciones clave**: Actualización de lista, creación de widgets, iconos circulares
 
-#### StatusManager (gui_status_manager.py - 125 líneas)
+#### StatusManager (`pyteg/gui/managers/status.py`)
 - **Responsabilidad**: Barra de estado, información de jugador actual, mensajes
 - **Funciones clave**: Actualización de estado de juego, información de turno
 
-#### UnitsManager (gui_units_manager.py - 111 líneas)
+#### UnitsManager (`pyteg/gui/managers/units.py`)
 - **Responsabilidad**: Panel de unidades disponibles, efectos visuales
 - **Funciones clave**: Actualización de unidades, efectos de flash, estilos
 
-#### GameActionsManager (gui_game_actions.py - 79 líneas)
+#### GameActionsManager (`pyteg/gui/managers/game_actions.py`)
 - **Responsabilidad**: Acciones del juego (atacar, finalizar turno)
 - **Funciones clave**: Lógica de ataque, finalización de turno, cálculo de unidades
 
@@ -127,13 +123,13 @@ La interfaz gráfica ha sido refactorizada en una arquitectura modular para mejo
 - **Legibilidad**: Código más organizado y comprensible
 
 ## Estados de la GUI
-- Toolbar (`gui_toolbar.py` + mixins en `gui_toolbar_actions.py`, `gui_toolbar_window.py`, menú de tamaños en `gui_toolbar_size.py`):
+- Toolbar (`pyteg/gui/toolbar/`):
   - Botón Conectar habilitado cuando no hay conexión; al conectar se deshabilita.
   - Botones Atacar y Mover habilitados solo cuando hay 2 países seleccionados y hay conexión.
   - Botón Finalizar Turno permanece siempre habilitado.
-- Selección de países (gui_scene.py): gestiona origen/destino y notifica a la toolbar para habilitar/deshabilitar acciones.
-- Chat (gui_chat.py): muestra mensajes tipificados con color asignado a usuarios y formato consistente.
-- AttackDialog (gui_attack_dialog.py): tamaño 400x280 para mejor visualización.
+- Selección de países (`pyteg/gui/mapa/scene.py` + `selection_manager.py`): gestiona origen/destino y notifica a la toolbar.
+- Chat (`pyteg/gui/widgets/chat/`): mensajes tipificados con color por usuario.
+- AttackDialog (`pyteg/gui/dialogs/attack.py`): tamaño 400x280 para mejor visualización.
 
 ## Logging y depuración
 - Logging detallado en batallas: estado antes/después, dados, pérdidas, conquista.

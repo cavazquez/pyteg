@@ -7,7 +7,7 @@ from __future__ import annotations
 import unittest
 from unittest.mock import MagicMock
 
-from pyteg.gui_scene import CountrySelectionManager
+from pyteg.gui.mapa.selection_manager import CountrySelectionManager
 
 
 def _make_manager() -> tuple[CountrySelectionManager, MagicMock]:

@@ -9,17 +9,17 @@ from PySide6.QtWidgets import QMainWindow, QWidget
 
 from pyteg.client_transmisor import ClientNullTransmisor
 from pyteg.cliente_colores import Colores
+from pyteg.gui.managers.cards import CardManager
+from pyteg.gui.managers.config import ConfigManager
+from pyteg.gui.managers.game_actions import GameActionsManager
+from pyteg.gui.managers.language import LanguageManager
+from pyteg.gui.managers.layout import LayoutManager
+from pyteg.gui.managers.players import PlayersManager
+from pyteg.gui.managers.status import StatusManager
+from pyteg.gui.managers.theme import ThemeManager
+from pyteg.gui.managers.units import UnitsManager
+from pyteg.gui.managers.window import WindowManager
 from pyteg.gui.status_bar import build_status_bar
-from pyteg.gui_card_manager import CardManager
-from pyteg.gui_config_manager import ConfigManager
-from pyteg.gui_game_actions import GameActionsManager
-from pyteg.gui_language_manager import LanguageManager
-from pyteg.gui_layout_manager import LayoutManager
-from pyteg.gui_players_manager import PlayersManager
-from pyteg.gui_status_manager import StatusManager
-from pyteg.gui_theme_manager import ThemeManager
-from pyteg.gui_units_manager import UnitsManager
-from pyteg.gui_window_manager import WindowManager
 from pyteg.i18n import translate as _
 from pyteg.sound_manager import SoundManager
 
@@ -30,13 +30,13 @@ if TYPE_CHECKING:
     from PySide6.QtWidgets import QHBoxLayout, QLabel, QStatusBar
 
     from pyteg.client import Client
+    from pyteg.gui.dialogs.conectar import VentanaConectar
+    from pyteg.gui.mapa.scene import QCustomGraphicsScene
+    from pyteg.gui.toolbar import ToolBar
+    from pyteg.gui.widgets.chat import Chat
     from pyteg.gui.widgets.language_selector import LanguageSelector
     from pyteg.gui.widgets.sound_control import SoundControlWidget
-    from pyteg.gui_chat import Chat
-    from pyteg.gui_conectar import VentanaConectar
-    from pyteg.gui_scene import QCustomGraphicsScene
-    from pyteg.gui_toolbar import ToolBar
-    from pyteg.gui_view import QCustomGraphicsView
+    from pyteg.gui.widgets.view import QCustomGraphicsView
 
 
 class Gui(QMainWindow):

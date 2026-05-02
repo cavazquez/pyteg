@@ -8,7 +8,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QGridLayout, QHBoxLayout, QLabel, QWidget
 
 from pyteg.config import CARD_SELECTION_ORANGE_THRESHOLD, CARDS_FOR_EXCHANGE
-from pyteg.gui_tarjeta_widget import TarjetaWidget
+from pyteg.gui.widgets.tarjeta import TarjetaWidget
 from pyteg.i18n import translate as _
 
 from . import styles

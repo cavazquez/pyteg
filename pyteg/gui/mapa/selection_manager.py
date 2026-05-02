@@ -4,11 +4,11 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Protocol
 
-from pyteg.gui_toolbar import ToolBar
+from pyteg.gui.toolbar import ToolBar
 from pyteg.i18n import translate as _
 
 if TYPE_CHECKING:
-    from pyteg.gui_pais import Pais
+    from pyteg.gui.mapa.pais import Pais
 
 
 class _MapSceneWithCountries(Protocol):

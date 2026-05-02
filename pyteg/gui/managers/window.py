@@ -9,9 +9,9 @@ from __future__ import annotations
 import contextlib
 from typing import Any
 
-from pyteg.gui_admin import VentanaAdmin
-from pyteg.gui_conectar import VentanaConectar
-from pyteg.gui_esperar_jugadores import VentanaEsperarJugadores
+from pyteg.gui.dialogs.conectar import VentanaConectar
+from pyteg.gui.windows.admin import VentanaAdmin
+from pyteg.gui.windows.esperar_jugadores import VentanaEsperarJugadores
 from pyteg.logger import get_logger
 
 _LOG = get_logger("gui.window_manager")

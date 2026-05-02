@@ -226,7 +226,7 @@ class LanguageSelector(QWidget):
             print(f"Idioma cambiado a: {lang_code}")
 '''
 
-    selector_file = SRC_DIR / "gui_language_selector.py"
+    selector_file = SRC_DIR / "gui" / "widgets" / "language_selector.py"
     selector_file.write_text(selector_code, encoding="utf-8")
 
     print(f"✓ Creado selector de idioma: {selector_file}")

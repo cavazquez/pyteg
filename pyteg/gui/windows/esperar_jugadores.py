@@ -13,7 +13,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from pyteg.gui_radio_color import GuiRadioButtonColor
+from pyteg.gui.widgets.radio_color import GuiRadioButtonColor
 from pyteg.i18n import translate as _
 from pyteg.logger import get_logger
 

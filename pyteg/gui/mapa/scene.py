@@ -16,9 +16,9 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from pyteg.gui.mapa.menu import Menu
+from pyteg.gui.mapa.pais import Pais
 from pyteg.gui.mapa.selection_manager import CountrySelectionManager
-from pyteg.gui_menu import Menu
-from pyteg.gui_pais import Pais
 from pyteg.i18n import translate as _
 from pyteg.toml_reader import TomlReader
 from pyteg.utils import get_resource_path

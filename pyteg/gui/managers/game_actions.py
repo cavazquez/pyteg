@@ -11,7 +11,7 @@ from typing import Any, cast
 
 from PySide6.QtWidgets import QDialog
 
-from pyteg.gui_attack_dialog import AttackDialog
+from pyteg.gui.dialogs.attack import AttackDialog
 from pyteg.logger import get_logger
 
 _LOG = get_logger("gui.game_actions")

@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 
 from PySide6.QtWidgets import QDialog
 
-from pyteg.gui_attack_dialog import AttackDialog
+from pyteg.gui.dialogs.attack import AttackDialog
 from pyteg.i18n import ngettext
 from pyteg.i18n import translate as _
 from pyteg.logger import get_logger

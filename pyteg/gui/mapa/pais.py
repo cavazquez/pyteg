@@ -13,9 +13,9 @@ from PySide6.QtWidgets import (
 )
 
 from pyteg.exception import ImagenNoEncontradaError
-from pyteg.gui_circulo import Circulo
-from pyteg.gui_pais_battle_fx import PaisBattleFxMixin
-from pyteg.gui_pais_selection import PaisSelectionMixin
+from pyteg.gui.mapa.pais_battle_fx_mixin import PaisBattleFxMixin
+from pyteg.gui.mapa.pais_selection_mixin import PaisSelectionMixin
+from pyteg.gui.widgets.circulo import Circulo
 
 if TYPE_CHECKING:
     from PySide6.QtCore import QPropertyAnimation, QTimer

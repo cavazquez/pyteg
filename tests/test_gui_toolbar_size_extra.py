@@ -1,4 +1,4 @@
-"""Tests ligeros de `gui_toolbar_size` sin toolbar real."""
+"""Tests ligeros de `pyteg.gui.toolbar.size` sin toolbar real."""
 
 # ruff: noqa: D102
 
@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import unittest
 
-from pyteg.gui_toolbar_size import predefined_window_size_rows
+from pyteg.gui.toolbar.size import predefined_window_size_rows
 
 
 class TestGuiToolbarSize(unittest.TestCase):
