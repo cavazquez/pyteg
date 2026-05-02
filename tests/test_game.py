@@ -3,7 +3,7 @@
 import unittest
 
 from pyteg.mazo import Mazo
-from pyteg.server import Server
+from pyteg.server.app import Server
 from pyteg.server_game import Game
 from pyteg.server_mapa import Mapa
 from pyteg.turnos import PrimerTurno, SegundoTurno, SiguientesTurnos
