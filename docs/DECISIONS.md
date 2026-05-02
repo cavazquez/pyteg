@@ -50,6 +50,16 @@ Este documento registra decisiones de arquitectura y sus motivaciones.
 - Decisión: Mantener el transporte como **TCP en claro**; documentar que el modelo de amenaza asume red/host de confianza (p. ej. LAN).
 - Consecuencias: No protege contra escuchas ni clientes arbitrarios en redes abiertas; operadores deben acotar el puerto con firewall o VPN si exponen el servidor. Extensiones futuras (TLS, token de sala) quedan como posibles evoluciones explícitas del protocolo.
 
+## ADR-010: Splits por dominio de `protocols`, `exceptions` y `logger`
+- Contexto: Módulos monolíticos (`protocols.py`, `exception.py`, `logger.py`) concentraban muchas responsabilidades y dificultaban revisión y navegación.
+- Decisión: Reorganizar en paquetes por dominio o responsabilidad (`pyteg/protocols/{client,server,game,mapa}`, `pyteg/exceptions/{base,system,game_rules}`, `pyteg/logger/{config,retention,formatter,handlers,process,manager}`), con `__init__.py` que reexporta la API pública. Sin capas de compatibilidad (“shims”): cada migración actualiza todos los importadores en el mismo cambio.
+- Consecuencias: Imports más largos solo donde se importa un símbolo interno; los puntos de entrada habituales siguen siendo `from pyteg.protocols import …`, `from pyteg.exceptions import …`, `from pyteg.logger import get_logger`. Rompe código externo que importara rutas antiguas (no era API estable de librería).
+
+## ADR-011: Protocolos para tipar `Gui` visto desde tareas y managers
+- Contexto: Tras modularizar la GUI, las tareas y los managers tomaban `main_window: Any` y abundaban `hasattr` defensivos.
+- Decisión: Introducir `GameWindowProtocol` (`pyteg/client/tasks/protocols.py`) para `IClientTask.run` y `MainWindowProtocol` (`pyteg/gui/managers/protocols.py`) que extiende el anterior para los gestores. Sub-objetos con tipos que arrastran dependencias Qt/GUI se declaran como `Any` en el protocolo; el cumplimiento sigue siendo estructural vía Mypy. Atributos que solo los managers tocaban como privados de `Gui` se promovieron a públicos donde hacía falta tipar sin `# noqa: SLF001`. En `Gui.__init__`, los gestores se construyen pasando `cast(MainWindowProtocol, self)` porque los sub-gestores se asignan de forma incremental antes de que existan todos los campos del protocolo.
+- Consecuencias: Menos acoplamiento conceptual a `Any`, menos `hasattr(main_window, …)` donde el contrato es estable; los padres `QWidget` en diálogos usan `cast(QWidget, …)` en el sitio de llamada. Un smoke test (`tests/test_gui_protocol_compat.py`) comprueba presencia de métodos/atributos clave sin levantar `QApplication` completo.
+
 ## Cómo proponer nuevas decisiones
 1. Agregar una nueva sección ADR-00X con contexto, decisión, consecuencias y referencias.
 2. Enlazar commits/PRs cuando sea posible.

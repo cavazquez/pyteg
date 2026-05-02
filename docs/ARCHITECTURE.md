@@ -37,6 +37,25 @@ El transporte entre cliente y servidor es **TCP en claro**, sin TLS ni autentica
   - `core/partida/`: contexto, manager de cartas/turnos, comprobador de victoria, configuración y objetivos secretos.
 - `pyteg/gui/`: paquete de la GUI del cliente (`main_window`, `managers/`, `widgets/`, `dialogs/`, `mapa/`, `tarjetas/`, `toolbar/`, `status_bar/`).
 
+### Infraestructura transversal y tipado estático
+
+Paquetes en la raíz de `pyteg/` que centralizan contratos y utilidades compartidas (imports públicos vía `__init__.py` de cada paquete):
+
+| Ubicación | Contenido |
+|-----------|-----------|
+| `pyteg/protocols/` | `Protocol` por dominio servidor/cliente: `IClientProtocol`, `ServerLikeProtocol`, `IGameProtocol`, `IMapProtocol` (`client.py`, `server.py`, `game.py`, `mapa.py`). Consumidos por tareas del servidor y validadores. |
+| `pyteg/exceptions/` | Excepciones por familia: `base.py` (`PyTegError`), `system.py` (mensajes/estado/recursos), `game_rules.py` (`GameRuleViolationError` y subclases). Import canónico: `from pyteg.exceptions import …`. |
+| `pyteg/logger/` | Logging por responsabilidad (`config`, `retention`, `formatter`, `handlers`, `process`, `manager`); API pública estable: `get_logger`, `set_console_level`, `set_file_level`, `configure_logging`, `logger`. |
+
+Tipado estructural de la ventana principal (`Gui`):
+
+| Ubicación | Rol |
+|-----------|-----|
+| `pyteg/client/tasks/protocols.py` | `GameWindowProtocol`: API mínima que consumen las tareas del cliente (`IClientTask.run`). Sub-objetos pesados (scene, chat, transmisor, etc.) se declaran como `Any` en el protocolo para evitar imports circulares; `Gui` conserva los tipos reales. |
+| `pyteg/gui/managers/protocols.py` | `MainWindowProtocol`: extiende `GameWindowProtocol` con la superficie adicional usada por los gestores (`managers/`) y el panel de unidades (widgets internos, tema, filas de unidades, referencias cruzadas entre managers). |
+
+Las tareas del cliente no deben importar widgets concretos salvo factories ya expuestas en `Gui`; los managers reciben `MainWindowProtocol` y, donde Qt exige `QWidget` como padre (diálogos), se usa `cast(QWidget, …)` en el punto de llamada.
+
 ### Toolbar y país en el mapa (descomposición)
 
 La barra de herramientas y el sprite de cada país se dividieron por responsabilidad para facilitar cambios aislados:
