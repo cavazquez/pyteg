@@ -5,6 +5,10 @@ section() {
   printf '\n==> %s\n\n' "$1"
 }
 
+section "gettext: compilar .po → .mo (locales/)"
+# Los .mo no se versionan (.gitignore); regenerarlos evita inglés roto tras git pull.
+uv run python scripts/manage_translations.py compile
+
 section "Ruff format (auto-fix)"
 uv run ruff format .
 

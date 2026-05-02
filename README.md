@@ -156,7 +156,7 @@ uv run mypy
 uv run coverage run --branch -m unittest discover
 uv run coverage report -m
 
-# Todo en una pasada (incluye auto-fix de Ruff)
+# Todo en una pasada (incluye auto-fix de Ruff y compilación gettext → .mo)
 ./run_tests.sh
 ```
 
@@ -183,11 +183,22 @@ PyTeg incluye soporte completo para múltiples idiomas usando gettext:
 - Los cambios se aplican inmediatamente
 
 ### Para desarrolladores
+
+Los archivos **`.mo` no van al repositorio** (están en `.gitignore`): son binarios generados a partir de los `.po`. Sin ellos, el idioma **inglés** puede no cargar correctamente hasta compilar.
+
+- Tras un **`git pull`** que cambie `locales/`, compilá una vez:
+  ```bash
+  uv run python scripts/manage_translations.py compile
+  ```
+  (equivalente: `python3 scripts/manage_translations.py compile` si no usás `uv`.)
+- **`./run_tests.sh`** ejecuta al inicio ese mismo `compile`, así que correr la suite completa deja los catálogos actualizados en tu máquina.
+- En **CI** (GitHub Actions) también se compilan los catálogos antes de los tests.
+
 ```bash
 # Extraer strings para traducir
 python3 scripts/manage_translations.py extract
 
-# Compilar traducciones
+# Compilar traducciones (.po → .mo)
 python3 scripts/manage_translations.py compile
 
 # Ejecutar todas las tareas de traducción
