@@ -8,6 +8,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from PySide6.QtWidgets import QApplication
+
 from pyteg.i18n import translate as _
 from pyteg.logger import get_logger
 
@@ -56,14 +58,31 @@ class LanguageManager:
         }:
             self.main_window.turno_label.setText(_("Esperando turno"))
 
-        if self.main_window.seleccion_label.text().startswith(
-            "Selección:"
-        ) or self.main_window.seleccion_label.text().startswith("Selection:"):
-            self.main_window.seleccion_label.setText(_("Selección: Ninguna"))
+        # Refrescar el label de selección desde la fuente de verdad
+        # (CountrySelectionManager) en vez de comparar cadenas literales.
+        scene = getattr(self.main_window, "scene", None)
+        selection_manager = getattr(scene, "selection_manager", None)
+        if selection_manager is not None and hasattr(
+            selection_manager, "refresh_labels"
+        ):
+            selection_manager.refresh_labels()
 
         # Actualizar la toolbar
         if self.main_window.toolbar is not None:
             self.main_window.toolbar.update_language(lang_code)
+
+        # Refrescar cualquier widget top-level visible que exponga
+        # `update_language(lang_code)` (duck typing). Esto cubre la ventana de
+        # espera de jugadores, el diálogo de tarjetas (si en algún momento se
+        # vuelve no-modal), etc., sin acoplar `LanguageManager` a clases concretas.
+        for widget in QApplication.topLevelWidgets():
+            update = getattr(widget, "update_language", None)
+            if (
+                callable(update)
+                and widget.isVisible()
+                and widget is not self.main_window
+            ):
+                update(lang_code)
 
         # No necesitamos actualizar el selector de idioma porque ya maneja
         # su propio estado

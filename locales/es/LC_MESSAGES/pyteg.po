@@ -216,3 +216,54 @@ msgstr "El ataque de {} a {} fue repelido"
 
 msgid "{} conquistó {} desde {}"
 msgstr "{} conquistó {} desde {}"
+
+# Selection label (status bar)
+msgid "Selección: Haz clic en un país para seleccionar origen"
+msgstr "Selección: Haz clic en un país para seleccionar origen"
+
+msgid "Origen: {} | Haz clic en otro país para destino"
+msgstr "Origen: {} | Haz clic en otro país para destino"
+
+msgid "Origen: {origen} | Destino: {destino} | Clic derecho: Atacar/Mover"
+msgstr "Origen: {origen} | Destino: {destino} | Clic derecho: Atacar/Mover"
+
+msgid "Moviendo 1 unidad de {} a {}"
+msgstr "Moviendo 1 unidad de {} a {}"
+
+msgid "Coordenadas: ({}, {})"
+msgstr "Coordenadas: ({}, {})"
+
+# Wait-for-players window
+msgid "Empezar"
+msgstr "Empezar"
+
+# Cards dialog
+msgid "Mis Tarjetas"
+msgstr "Mis Tarjetas"
+
+msgid "Tarjetas Asignadas"
+msgstr "Tarjetas Asignadas"
+
+msgid "Objetivo Secreto"
+msgstr "Objetivo Secreto"
+
+msgid "No hay objetivo secreto asignado"
+msgstr "No hay objetivo secreto asignado"
+
+msgid "Seleccionar Todas"
+msgstr "Seleccionar Todas"
+
+msgid "Deseleccionar Todas"
+msgstr "Deseleccionar Todas"
+
+msgid "Reclamar Tarjeta"
+msgstr "Reclamar Tarjeta"
+
+msgid "Canje"
+msgstr "Canje"
+
+msgid "Vacío"
+msgstr "Vacío"
+
+msgid "Seleccionadas: %s"
+msgstr "Seleccionadas: %s"
