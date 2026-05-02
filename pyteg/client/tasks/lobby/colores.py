@@ -77,7 +77,7 @@ class ClientTaskColorAsignado(IClientTask):
         except (AttributeError, KeyError, ValueError) as e:
             CLIENT_TASKS_LOG.warning("Error en ClientTaskColorAsignado: %s", e)
 
-    def actualizar_lista_jugadores(self, main_window: Any) -> None:
+    def actualizar_lista_jugadores(self, main_window: GameWindowProtocol) -> None:
         """Actualiza la lista de jugadores en la interfaz de usuario."""
         try:
             jugadores: list[tuple[str, Any]] = []

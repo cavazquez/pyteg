@@ -1,6 +1,6 @@
 """Protocolo estructural de la ventana del juego visto por las tareas del cliente.
 
-Permite reemplazar `main_window: Any` en `IClientTask.run` por un tipo
+Permite reemplazar `main_window: GameWindowProtocol` en `IClientTask.run` por un tipo
 explícito que documenta el API que las tasks consumen del `Gui`. Sub-objetos
 cuyos tipos requieren imports cruzados con el paquete GUI (scene, chat,
 transmisor, client, colores, sound_manager, status_bar, w, conexion) se
