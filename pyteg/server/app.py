@@ -6,7 +6,7 @@ import argparse
 import sys
 from typing import TYPE_CHECKING, Any
 
-from pyteg.build_mapa import build_mapa
+from pyteg.core.mapa.build_mapa import build_mapa
 from pyteg.mazo import Mazo
 from pyteg.objetivos_secretos import ObjetivosSecretos
 from pyteg.server.conexion.broadcaster import ServerMessageBroadcaster

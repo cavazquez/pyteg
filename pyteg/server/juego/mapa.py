@@ -5,7 +5,7 @@ from collections.abc import Callable
 from random import shuffle
 from typing import Any
 
-from pyteg.country_data import CountryData
+from pyteg.core.mapa.country_data import CountryData
 from pyteg.missile_system import MissileSystem
 
 
