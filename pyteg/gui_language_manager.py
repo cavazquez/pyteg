@@ -9,6 +9,9 @@ from __future__ import annotations
 from typing import Any
 
 from pyteg.i18n import translate as _
+from pyteg.logger import get_logger
+
+_LOG = get_logger("gui.language_manager")
 
 
 class LanguageManager:
@@ -65,4 +68,4 @@ class LanguageManager:
         # No necesitamos actualizar el selector de idioma porque ya maneja
         # su propio estado
 
-        print(f"GUI actualizada al idioma: {lang_code}")
+        _LOG.debug("GUI actualizada al idioma: %s", lang_code)

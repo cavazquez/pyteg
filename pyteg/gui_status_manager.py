@@ -12,6 +12,9 @@ from typing import Any
 from PySide6.QtWidgets import QLabel
 
 from pyteg.debug_logger import debug_logger
+from pyteg.logger import get_logger
+
+_LOG = get_logger("gui.status_manager")
 
 
 class StatusManager:
@@ -142,7 +145,7 @@ class StatusManager:
                     border-radius: 2px;
                 """)
         except (AttributeError, KeyError, ValueError) as e:
-            print(f"Error al actualizar información de mi jugador: {e}")
+            _LOG.warning("Error al actualizar información de mi jugador: %s", e)
             self.main_window.mi_username_label.setText("[Error]")
 
     def update_turno(

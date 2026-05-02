@@ -14,6 +14,9 @@ from PySide6.QtWidgets import (
 )
 
 from pyteg.gui_radio_color import GuiRadioButtonColor
+from pyteg.logger import get_logger
+
+_LOG = get_logger("gui.esperar_jugadores")
 
 
 class VentanaEsperarJugadores(QWidget):
@@ -84,37 +87,40 @@ class VentanaEsperarJugadores(QWidget):
         if not self._initialized:
             return
 
-        print("=== Cargando colores asignados ===")
+        _LOG.debug("Cargando colores asignados")
         self.limpiar()
         colores_manager = getattr(self._main_window, "colores", None)
         if colores_manager is None:
             return
         colores_asignados = colores_manager.colores_asignados()
-        print(f"Colores asignados: {colores_asignados}")
+        _LOG.debug("Colores asignados: %s", colores_asignados)
 
         for user_id, color in colores_asignados.items():
-            print(f"{user_id=} {color=}")
+            _LOG.debug("user_id=%s color=%s", user_id, color)
             radio = self.radio_por_colores.get(color.name())
-            print(f"{radio=}")
+            _LOG.debug("radio=%s", radio)
+            client = None
             if radio:
                 client = self._main_window.client_by_id.get(user_id)
                 if client is None:
-                    print(f"  - No se encontró cliente para el ID {user_id}")
+                    _LOG.debug("No se encontró cliente para el ID %s", user_id)
                     continue
 
             if client and radio:
-                print(
-                    f"  - Asignando usuario {client.username()} al color {color.name()}"
+                _LOG.debug(
+                    "Asignando usuario %s al color %s",
+                    client.username(),
+                    color.name(),
                 )
                 radio.seleccionar(f"{client.username()}")
 
     def actualizar_botones_colores(self) -> None:
         """Actualiza los botones de radio para cada color disponible."""
-        print("=== Actualizando botones de colores ===")
+        _LOG.debug("Actualizando botones de colores")
 
         # Verificar si ya hay widgets en el layout
         if self.colores_layout.count() > 0:
-            print(f"  - Limpiando {self.colores_layout.count()} widgets existentes")
+            _LOG.debug("Limpiando %s widgets existentes", self.colores_layout.count())
             # Crear una lista temporal de los widgets a eliminar
             widgets_para_eliminar = []
             for i in range(self.colores_layout.count()):
@@ -142,12 +148,12 @@ class VentanaEsperarJugadores(QWidget):
         colores = list(
             {color.name(): color for color in colores_manager.colores()}.values()
         )
-        print(f"  - Creando {len(colores)} botones de colores")
+        _LOG.debug("Creando %s botones de colores", len(colores))
 
         # Crear nuevos botones de radio para cada color
         for color in colores:
             color_name = color.name()
-            print(f"  - Creando botón para color {color_name}")
+            _LOG.debug("Creando botón para color %s", color_name)
 
             # Crear un layout horizontal para cada fila
             fila_layout = QHBoxLayout()
@@ -175,7 +181,7 @@ class VentanaEsperarJugadores(QWidget):
             # Añadir la fila al layout de colores
             self.colores_layout.addLayout(fila_layout)
 
-        print(f"  - Total de botones creados: {len(self.radio_por_colores)}")
+        _LOG.debug("Total de botones creados: %s", len(self.radio_por_colores))
 
     def limpiar(self) -> None:
         """Limpia todos los botones de radio de colores."""

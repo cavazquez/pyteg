@@ -7,6 +7,9 @@ from PySide6.QtGui import QBrush, QColor, QPen
 from PySide6.QtWidgets import QGraphicsEllipseItem
 
 from pyteg.gui_unidades import Unidades
+from pyteg.logger import get_logger
+
+_LOG = get_logger("gui.circulo")
 
 
 class Circulo(QGraphicsEllipseItem):
@@ -49,9 +52,9 @@ class Circulo(QGraphicsEllipseItem):
             if qcolor.isValid():
                 self.setBrush(QBrush(qcolor))
             else:
-                print(f"Color no válido: {color}")
+                _LOG.warning("Color no válido: %s", color)
         except (ValueError, TypeError) as exc:
-            print(f"Error al establecer el color: {exc}")
+            _LOG.warning("Error al establecer el color: %s", exc)
 
     def set_unidades(self, cant: int | str) -> None:
         """Establece la cantidad de unidades a mostrar.

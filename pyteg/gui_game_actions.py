@@ -12,6 +12,9 @@ from typing import Any, cast
 from PySide6.QtWidgets import QDialog
 
 from pyteg.gui_attack_dialog import AttackDialog
+from pyteg.logger import get_logger
+
+_LOG = get_logger("gui.game_actions")
 
 
 class GameActionsManager:
@@ -99,7 +102,7 @@ class GameActionsManager:
             if hasattr(self.main_window.scene, "selection_manager"):
                 self.main_window.scene.selection_manager.cancelar_seleccion()
         else:
-            print("No se pudo finalizar el turno: transmisor no disponible")
+            _LOG.warning("No se pudo finalizar el turno: transmisor no disponible")
 
     def get_max_attack_units(self, pais: str) -> int:
         """Obtiene el máximo número de unidades disponibles para atacar desde un país.

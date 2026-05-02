@@ -26,6 +26,21 @@ El transporte entre cliente y servidor es **TCP en claro**, sin TLS ni autentica
 - client_tasks/: paquete de tareas de cliente (`lobby`, `game_flow`, `battle`, `cards_missiles`).
 - gui.py: ventana principal refactorizada modularmente con gestores especializados.
 - gui_*: módulos especializados de la interfaz gráfica (layout, temas, jugadores, status, unidades, acciones).
+
+### Toolbar y país en el mapa (descomposición)
+
+La barra de herramientas y el sprite de cada país se dividieron por responsabilidad para facilitar cambios aislados:
+
+| Módulo | Rol |
+|--------|-----|
+| `gui_toolbar.py` | Clase `ToolBar`: QAction, textos, `update_language`, cableado con la ventana principal. |
+| `gui_toolbar_actions.py` | Mixin: estado de conexión, habilitar atacar/mover, envío vía transmisor desde la selección del mapa. |
+| `gui_toolbar_window.py` | Mixin: tamaño de ventana, pantalla completa, centrado, reset de zoom del mapa. |
+| `gui_toolbar_size.py` | Menú de tamaños predefinidos, estilos del menú/botón, `center_window_on_screen`. |
+| `gui_toolbar_icons.py` | Carga de íconos con validación de recurso (`ImagenNoEncontradaError`). |
+| `gui_pais.py` | `Pais`: pixmap, círculo de unidades, color y datos base. |
+| `gui_pais_selection.py` | Mixin: clic → `selection_manager`, oscurecimiento origen/destino. |
+| `gui_pais_battle_fx.py` | Mixin: titilación en batalla, pérdidas flotantes, contador de misiles. |
 - turno_protocol.py: define la interfaz `ITurno` para desacoplar el servidor de las clases de turno.
 - turnos.py: implementaciones de turnos (PrimerTurno, SegundoTurno, SiguientesTurnos).
 - run_client.py: punto de entrada del cliente.
@@ -96,7 +111,7 @@ La interfaz gráfica ha sido refactorizada en una arquitectura modular para mejo
 - **Legibilidad**: Código más organizado y comprensible
 
 ## Estados de la GUI
-- Toolbar (gui_toolbar.py):
+- Toolbar (`gui_toolbar.py` + mixins en `gui_toolbar_actions.py`, `gui_toolbar_window.py`, menú de tamaños en `gui_toolbar_size.py`):
   - Botón Conectar habilitado cuando no hay conexión; al conectar se deshabilita.
   - Botones Atacar y Mover habilitados solo cuando hay 2 países seleccionados y hay conexión.
   - Botón Finalizar Turno permanece siempre habilitado.

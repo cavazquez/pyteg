@@ -158,6 +158,22 @@ msgstr "Tiempo restante: {}s"
 msgid "Objetivo: {} | Turno: {}s"
 msgstr "Objetivo: {} | Turno: {}s"
 
+# Toolbar: menú de tamaño
+msgid "Ajustar a la pantalla"
+msgstr "Ajustar a la pantalla"
+
+msgid "Tamaño por defecto"
+msgstr "Tamaño por defecto"
+
+msgid "Cambiar tamaño de la ventana"
+msgstr "Cambiar tamaño de la ventana"
+
+msgid "Atacando desde {} hacia {}"
+msgstr "Atacando desde {} hacia {}"
+
+msgid "Moviendo {} unidad(es) de {} a {}"
+msgstr "Moviendo {} unidad(es) de {} a {}"
+
 # Battle results
 msgid "El ataque de {} a {} fue repelido"
 msgstr "El ataque de {} a {} fue repelido"
