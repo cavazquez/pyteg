@@ -5,7 +5,7 @@ Maneja la creación y configuración de todos los elementos de layout.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, cast
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
@@ -22,11 +22,14 @@ from pyteg.gui.toolbar import ToolBar
 from pyteg.gui.widgets.chat import Chat
 from pyteg.gui.widgets.view import QCustomGraphicsView
 
+if TYPE_CHECKING:
+    from pyteg.gui.managers.protocols import MainWindowProtocol
+
 
 class LayoutManager:
     """Gestor de layout para la ventana principal."""
 
-    def __init__(self, main_window: Any) -> None:
+    def __init__(self, main_window: MainWindowProtocol) -> None:
         """Inicializar el gestor de layout.
 
         Args:
@@ -165,7 +168,7 @@ class LayoutManager:
         horizontal_splitter.addWidget(self.main_window.right_column_widget)
 
         # Create a widget to hold the QGraphicsView and input area
-        self.main_window.main_widget = QWidget(self.main_window)
+        self.main_window.main_widget = QWidget(cast("QWidget", self.main_window))
         main_layout = QGridLayout()
         main_layout.addWidget(horizontal_splitter, 0, 0)
         self.main_window.main_widget.setLayout(main_layout)

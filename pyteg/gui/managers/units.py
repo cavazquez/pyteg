@@ -7,9 +7,12 @@ en la interfaz gráfica principal.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING
 
 from PySide6.QtCore import QTimer
+
+if TYPE_CHECKING:
+    from pyteg.gui.managers.protocols import MainWindowProtocol
 
 
 class UnitsManager:
@@ -19,7 +22,7 @@ class UnitsManager:
     visuales y gestionar los efectos de cambio (flash) cuando las unidades cambian.
     """
 
-    def __init__(self, main_window: Any) -> None:
+    def __init__(self, main_window: MainWindowProtocol) -> None:
         """Inicializa el gestor de unidades.
 
         Args:

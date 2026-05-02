@@ -6,10 +6,15 @@ relacionada con la configuración de la partida.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, cast
 
 from pyteg.config import DEFAULT_TURN_SECONDS, DEFAULT_VICTORY_COUNTRIES
 from pyteg.gui.dialogs.configuracion import ConfiguracionDialog
+
+if TYPE_CHECKING:
+    from PySide6.QtWidgets import QWidget
+
+    from pyteg.gui.managers.protocols import MainWindowProtocol
 
 
 class ConfigManager:
@@ -19,7 +24,7 @@ class ConfigManager:
     configuración de la partida, incluyendo objetivos secretos y misiles.
     """
 
-    def __init__(self, main_window: Any) -> None:
+    def __init__(self, main_window: MainWindowProtocol) -> None:
         """Inicializa el gestor de configuración.
 
         Args:
@@ -67,7 +72,7 @@ class ConfigManager:
     def mostrar_configuracion_partida(self) -> None:
         """Muestra la ventana de configuración de la partida."""
         dialog = ConfiguracionDialog(
-            self.main_window,
+            cast("QWidget", self.main_window),
             self._segundos_por_turno,
             self._paises_para_victoria,
             objetivos_secretos=self._objetivos_secretos,

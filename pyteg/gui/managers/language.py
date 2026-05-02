@@ -6,12 +6,15 @@ relacionada con el cambio de idioma y la actualización de textos.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING
 
 from PySide6.QtWidgets import QApplication
 
 from pyteg.i18n import translate as _
 from pyteg.logger import get_logger
+
+if TYPE_CHECKING:
+    from pyteg.gui.managers.protocols import MainWindowProtocol
 
 _LOG = get_logger("gui.language_manager")
 
@@ -23,7 +26,7 @@ class LanguageManager:
     todos los componentes de la GUI cuando cambia el idioma.
     """
 
-    def __init__(self, main_window: Any) -> None:
+    def __init__(self, main_window: MainWindowProtocol) -> None:
         """Inicializa el gestor de idioma.
 
         Args:
@@ -80,7 +83,7 @@ class LanguageManager:
             if (
                 callable(update)
                 and widget.isVisible()
-                and widget is not self.main_window
+                and id(widget) != id(self.main_window)
             ):
                 update(lang_code)
 
