@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import contextlib
 from typing import Any
 
 from PySide6.QtCore import QSize, Qt
@@ -205,13 +204,12 @@ class VentanaConectar(QDialog):
             if hasattr(self._main_window, "language_selector") and hasattr(
                 self._main_window.language_selector, "language_changed"
             ):
-                with contextlib.suppress(TypeError, RuntimeError):
-                    self._main_window.language_selector.language_changed.disconnect(
-                        self.update_language
-                    )
-
+                # UniqueConnection: evita duplicar el slot si este método se llama
+                # más de una vez; no usar disconnect() antes del primer connect (Qt
+                # emite RuntimeWarning si no había enlace).
                 self._main_window.language_selector.language_changed.connect(
-                    self.update_language
+                    self.update_language,
+                    Qt.ConnectionType.UniqueConnection,
                 )
 
         except (AttributeError, TypeError, RuntimeError) as e:
