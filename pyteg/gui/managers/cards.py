@@ -40,21 +40,15 @@ class CardManager:
 
         dialog = TarjetasDialog(cast("QWidget", self.main_window))
 
-        # Si tenemos tarjetas del servidor, usarlas inmediatamente
-        if (
-            hasattr(self.main_window, "tarjetas_jugador")
-            and self.main_window.tarjetas_jugador
-        ):
+        if self.main_window.tarjetas_jugador:
             dialog.actualizar_tarjetas(self.main_window.tarjetas_jugador)
         else:
             # Si no hay tarjetas, usar lista vacía para mostrar slots vacíos
             dialog.actualizar_tarjetas([])
 
-        # Si tenemos un objetivo secreto, mostrarlo en el diálogo
-        if hasattr(self.main_window, "config_manager"):
-            objetivo_id = self.main_window.config_manager.objetivo_secreto_id
-            descripcion = self.main_window.config_manager.objetivo_secreto_descripcion
-            if objetivo_id and descripcion:
-                dialog.set_objetivo_secreto(objetivo_id, descripcion)
+        objetivo_id = self.main_window.config_manager.objetivo_secreto_id
+        descripcion = self.main_window.config_manager.objetivo_secreto_descripcion
+        if objetivo_id and descripcion:
+            dialog.set_objetivo_secreto(objetivo_id, descripcion)
 
         dialog.exec()

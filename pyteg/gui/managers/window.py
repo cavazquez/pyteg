@@ -45,10 +45,7 @@ class WindowManager:
             self.main_window.scene.selection_manager.cancelar_seleccion()
 
         # Mantener referencia persistente para conexión al selector de idioma
-        if (
-            not hasattr(self.main_window, "ventana_conectar")
-            or self.main_window.ventana_conectar is None
-        ):
+        if self.main_window.ventana_conectar is None:
             self.main_window.ventana_conectar = VentanaConectar(self.main_window)
 
         self.main_window.ventana_conectar.show()
@@ -68,7 +65,7 @@ class WindowManager:
         # Conectar la señal de cierre para limpiar la referencia
         def limpiar_ventana() -> None:
             _LOG.debug("Limpiando referencia a la ventana de espera")
-            if hasattr(self.main_window, "w") and self.main_window.w is not None:
+            if self.main_window.w is not None:
                 with contextlib.suppress(Exception):
                     # Desconectar todas las señales para evitar llamadas duplicadas
                     self.main_window.w.destroyed.disconnect()
