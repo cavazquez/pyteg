@@ -1,0 +1,48 @@
+"""Tareas del cliente: interfaz base y mensajes desconocidos."""
+
+from __future__ import annotations
+
+from abc import ABC, abstractmethod
+from typing import Any
+
+from pyteg.client_tasks.logging_helper import CLIENT_TASKS_LOG
+
+
+class IClientTask(ABC):
+    """Interfaz base para todas las tareas del cliente."""
+
+    def __init__(self, data: dict[str, Any]) -> None:
+        """Inicializa la tarea con los datos recibidos.
+
+        Args:
+            data: Diccionario con los datos de la tarea.
+
+        """
+        self._raw_data = data
+
+    @abstractmethod
+    def run(self, main_window: Any) -> None:
+        """Ejecuta la tarea.
+
+        Args:
+            main_window: Ventana principal de la aplicación.
+
+        """
+
+
+class ClientTaskNull(IClientTask):
+    """Tarea para manejar mensajes desconocidos."""
+
+    def __init__(self, data: dict[str, Any]) -> None:
+        """Inicializa la tarea con un mensaje desconocido.
+
+        Args:
+            data: Diccionario con los datos de la tarea.
+
+        """
+        super().__init__(data)
+        self._msg = data.get("mensaje")
+
+    def run(self, _: Any) -> None:
+        """Ejecuta la tarea mostrando un mensaje de error."""
+        CLIENT_TASKS_LOG.debug("Mensaje desconocido: %s", self._msg)

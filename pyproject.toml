@@ -54,6 +54,10 @@ dev = [
 ]
 
 
+[tool.coverage.run]
+branch = true
+source = ["pyteg"]
+
 [tool.mypy]
 python_version = "3.11"
 strict = true

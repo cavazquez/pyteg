@@ -1,16 +1,14 @@
-![example workflow](https://github.com/cavazquez/pyteg/actions/workflows/ruff-uv.yml/badge.svg)
-[![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)
-[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
-
 # Pyteg
 
 Implementación del juego Teg en Python
 
 ## 🧰 Herramientas y tecnologías
 
+![CI Ruff y unittest](https://github.com/cavazquez/pyteg/actions/workflows/ruff-uv.yml/badge.svg)
+[![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+
 [![🐍 Python](https://img.shields.io/badge/🐍_Python-3.11%2B-3776AB?style=flat&logo=python&logoColor=white)](https://www.python.org/)
-[![⚡ uv](https://img.shields.io/badge/⚡_uv-gestor_deps-7048B8?style=flat&logo=uv&logoColor=white)](https://github.com/astral-sh/uv)
-[![🪶 Ruff](https://img.shields.io/badge/🪶_Ruff-lint_y_formato-261230?style=flat&logo=ruff&logoColor=white)](https://github.com/astral-sh/ruff)
 [![📐 mypy](https://img.shields.io/badge/📐_mypy-tipos_estrictos-2C5282?style=flat)](https://github.com/python/mypy)
 [![🧪 unittest](https://img.shields.io/badge/🧪_unittest-suite_tests-0F9D58?style=flat)](https://docs.python.org/3/library/unittest.html)
 

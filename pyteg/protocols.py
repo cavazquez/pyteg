@@ -3,6 +3,19 @@
 Este módulo define protocolos que especifican las interfaces necesarias
 para diferentes componentes del sistema, permitiendo reemplazar `Any`
 con tipos específicos y mejorar la seguridad de tipos.
+
+Organización por dominio
+------------------------
+- **Cliente / servidor**: `IClientProtocol`, `ServerLikeProtocol` — borde entre el
+  cliente conectado y el objeto servidor en tareas del servidor.
+- **Reglas de juego**: `IGameProtocol` — turnos, batalla, tarjetas, mazo.
+- **Mapa**: `IMapProtocol` — unidades, ocupación, misiles, distancias.
+
+Estabilidad
+-----------
+Los protocolos son contratos de tipado para el código del monorepo; no constituyen
+una API pública versionada como librería externa. Los cambios deben ir acompañados
+de actualizaciones en las implementaciones concretas bajo `pyteg`.
 """
 
 from __future__ import annotations

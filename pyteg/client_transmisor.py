@@ -21,6 +21,9 @@ from pyteg.client_msg import (
     MsgSetUsername,
     MsgSolicitarTarjetas,
 )
+from pyteg.logger import get_logger
+
+_LOG = get_logger("client.transmisor")
 
 
 class IClientTransmisor(ABC):
@@ -182,7 +185,7 @@ class ClientNullTransmisor(IClientTransmisor):
             _: Mensaje de chat (ignorado).
 
         """
-        print("No estas conectado")
+        _LOG.debug("No estas conectado")
 
     def empezar(
         self,
@@ -201,11 +204,11 @@ class ClientNullTransmisor(IClientTransmisor):
             _color: Color a seleccionar (ignorado).
 
         """
-        print("No estas conectado")
+        _LOG.debug("No estas conectado")
 
     def empezar_partida(self) -> None:
         """Inicia la partida (no-op cuando no hay conexión)."""
-        print("No estas conectado")
+        _LOG.debug("No estas conectado")
 
     def set_username(self, _: str) -> None:
         """Establece el nombre de usuario (no-op cuando no hay conexión).
@@ -214,7 +217,7 @@ class ClientNullTransmisor(IClientTransmisor):
             _: Nombre de usuario (ignorado).
 
         """
-        print("No estas conectado")
+        _LOG.debug("No estas conectado")
 
     def agregar_unidad(self, _pais: str, _tipo_unidad: str, _cantidad: int = 1) -> None:
         """Agrega una unidad (no-op cuando no hay conexión).
@@ -225,7 +228,7 @@ class ClientNullTransmisor(IClientTransmisor):
             _cantidad: Cantidad de unidades (ignorado).
 
         """
-        print("No estas conectado")
+        _LOG.debug("No estas conectado")
 
     def mover_unidad(self, _origen: str, _destino: str, _cantidad: int = 1) -> None:
         """Mueve unidades (no-op cuando no hay conexión).
@@ -236,7 +239,7 @@ class ClientNullTransmisor(IClientTransmisor):
             _cantidad: Cantidad de unidades (ignorado).
 
         """
-        print("No puedes mover unidades. No estas conectado.")
+        _LOG.debug("No puedes mover unidades. No estas conectado.")
 
     def atacar(self, _: str, __: str, cantidad_unidades: int | None = None) -> None:  # noqa: ARG002
         """Ataca (no-op cuando no hay conexión).
@@ -247,7 +250,7 @@ class ClientNullTransmisor(IClientTransmisor):
             cantidad_unidades: Cantidad de unidades (ignorado).
 
         """
-        print("No puedes atacar. No estas conectado.")
+        _LOG.debug("No puedes atacar. No estas conectado.")
 
     def actualizar_lista_jugadores(self, _: list[dict[str, Any]]) -> None:
         """Actualiza la lista de jugadores (no-op cuando no hay conexión).
@@ -259,30 +262,30 @@ class ClientNullTransmisor(IClientTransmisor):
 
     def finalizar_turno(self) -> None:
         """Finaliza el turno (no-op cuando no hay conexión)."""
-        print("No puedes finalizar el turno. No estás conectado.")
+        _LOG.debug("No puedes finalizar el turno. No estás conectado.")
 
     def solicitar_tarjetas(self) -> None:
         """Solicita tarjetas (no-op cuando no hay conexión)."""
-        print("No puedes ver tarjetas. No estás conectado.")
+        _LOG.debug("No puedes ver tarjetas. No estás conectado.")
 
     def reclamar_tarjeta(self) -> None:
         """Reclama una tarjeta (no-op cuando no hay conexión)."""
-        print("No puedes reclamar tarjetas. No estás conectado.")
+        _LOG.debug("No puedes reclamar tarjetas. No estás conectado.")
 
     def canje_especial(self, pais: str) -> None:
         """Realiza un canje especial cuando no está conectado."""
         _ = pais  # Evitar warning de argumento no usado
-        print("No puedes realizar canje especial. No estás conectado.")
+        _LOG.debug("No puedes realizar canje especial. No estás conectado.")
 
     def canjear_misil(self, pais: str) -> None:
         """Canjea un misil cuando no está conectado."""
         _ = pais  # Evitar warning de argumento no usado
-        print("No puedes canjear misiles. No estás conectado.")
+        _LOG.debug("No puedes canjear misiles. No estás conectado.")
 
     def lanzar_misil(self, pais_origen: str, pais_destino: str) -> None:
         """Lanza un misil cuando no está conectado."""
         _, _ = pais_origen, pais_destino  # Evitar warning de argumentos no usados
-        print("No puedes lanzar misiles. No estás conectado.")
+        _LOG.debug("No puedes lanzar misiles. No estás conectado.")
 
 
 class ClientTransmisor(IClientTransmisor):
@@ -324,7 +327,7 @@ class ClientTransmisor(IClientTransmisor):
             misiles_habilitados: Si los misiles están habilitados.
 
         """
-        print("Transmisor empezar()")
+        _LOG.debug("Transmisor empezar()")
         msg = MsgEmpezar(
             segundos,
             paises_para_victoria,
@@ -340,13 +343,13 @@ class ClientTransmisor(IClientTransmisor):
             color: Color a seleccionar.
 
         """
-        print("Selecciono color")
+        _LOG.debug("Selecciono color")
         msg = MsgSeleccionarColor(color)
         self._conn.send_data(msg.to_json())
 
     def empezar_partida(self) -> None:
         """Inicia la partida."""
-        print("empezar_partida")
+        _LOG.debug("empezar_partida")
         msg = MsgEmpezarPartida()
         self._conn.send_data(msg.to_json())
 
@@ -369,7 +372,9 @@ class ClientTransmisor(IClientTransmisor):
             cantidad (int, optional): Cantidad de unidades a agregar. Defaults to 1.
 
         """
-        print(f"Agregando {cantidad} unidad(es) de tipo {tipo_unidad} en {pais}")
+        _LOG.debug(
+            "Agregando %s unidad(es) de tipo %s en %s", cantidad, tipo_unidad, pais
+        )
         msg = MsgAgregarUnidad(pais, tipo_unidad, cantidad)
         self._conn.send_data(msg.to_json())
 
@@ -382,7 +387,7 @@ class ClientTransmisor(IClientTransmisor):
             cantidad (int, optional): Cantidad de unidades a mover. Defaults to 1.
 
         """
-        print(f"Moviendo {cantidad} unidad(es) de {origen} a {destino}")
+        _LOG.debug("Moviendo %s unidad(es) de %s a %s", cantidad, origen, destino)
 
         # Reproducir sonido de movimiento
         main_window = self._conn.get_main_window()
@@ -452,7 +457,7 @@ class ClientTransmisor(IClientTransmisor):
             pais (str): Nombre del país donde se canjeará el misil
 
         """
-        print(f"Canjeando misil en {pais}")
+        _LOG.debug("Canjeando misil en %s", pais)
         msg = MsgCanjearMisil(pais)
         self._conn.send_data(msg.to_json())
 
@@ -464,6 +469,6 @@ class ClientTransmisor(IClientTransmisor):
             pais_destino (str): País objetivo del misil
 
         """
-        print(f"Lanzando misil desde {pais_origen} hacia {pais_destino}")
+        _LOG.debug("Lanzando misil desde %s hacia %s", pais_origen, pais_destino)
         msg = MsgLanzarMisil(pais_origen, pais_destino)
         self._conn.send_data(msg.to_json())
