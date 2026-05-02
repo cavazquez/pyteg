@@ -1,4 +1,4 @@
-"""Módulo para la ventana de conexión al servidor."""
+"""Diálogo Qt para conectarse al servidor."""
 
 from __future__ import annotations
 
@@ -20,6 +20,8 @@ from PySide6.QtWidgets import (
 
 from pyteg.client_connection import ConnectionClient
 from pyteg.client_transmisor import ClientTransmisor
+from pyteg.gui.dialogs.conectar import styles
+from pyteg.gui.dialogs.conectar.validation import ValidationError, validate
 from pyteg.i18n import translate as _
 from pyteg.logger import get_logger
 
@@ -43,33 +45,26 @@ class VentanaConectar(QDialog):
         self.username: QLineEdit
         self._conexion: ConnectionClient | None = None
 
-        # Configurar ventana
         self._setup_window()
 
-        # Layout principal
         main_layout = QVBoxLayout()
         main_layout.setSpacing(15)
         main_layout.setContentsMargins(20, 20, 20, 20)
 
-        # Añadir componentes al layout principal
         self._setup_header(main_layout)
         self._setup_form(main_layout)
         self._setup_buttons(main_layout)
 
-        # Aplicar estilo general al diálogo
         self._apply_general_style()
 
-        # Establecer el layout principal
         self.setLayout(main_layout)
 
-        # Conectar al selector de idioma para cambios dinámicos
         self._connect_to_language_selector()
 
     def _setup_window(self) -> None:
         """Configura las propiedades básicas de la ventana."""
         self.setWindowTitle(_("Conectar al servidor"))
         self.setFixedSize(QSize(400, 300))
-        # Quitar botones de maximizar, minimizar y ayuda, dejando solo el de cerrar
         self.setWindowFlags(
             Qt.WindowType.Dialog
             | Qt.WindowType.CustomizeWindowHint
@@ -79,30 +74,18 @@ class VentanaConectar(QDialog):
 
     def _setup_header(self, parent_layout: QVBoxLayout) -> None:
         """Configura el título y la descripción."""
-        # Título
         title_label = QLabel(_("Conectar a Partida"))
-        title_label.setStyleSheet("""
-            font-size: 16px;
-            font-weight: bold;
-            color: #212529;
-            margin-bottom: 5px;
-        """)
+        title_label.setStyleSheet(styles.TITLE_LABEL_STYLE)
         parent_layout.addWidget(title_label)
 
-        # Descripción
         desc_label = QLabel(
             _("Ingresa los datos para conectarte a una partida existente")
         )
-        desc_label.setStyleSheet("""
-            font-size: 12px;
-            color: #6c757d;
-            margin-bottom: 10px;
-        """)
+        desc_label.setStyleSheet(styles.DESC_LABEL_STYLE)
         parent_layout.addWidget(desc_label)
 
     def _setup_form(self, parent_layout: QVBoxLayout) -> None:
         """Configura el formulario con los campos de entrada."""
-        # Crear layout de formulario
         form_layout = QFormLayout()
         form_layout.setSpacing(15)
         form_layout.setLabelAlignment(
@@ -110,32 +93,25 @@ class VentanaConectar(QDialog):
         )
         form_layout.setFormAlignment(Qt.AlignmentFlag.AlignLeft)
 
-        # Crear campos de entrada
         self._create_input_fields()
 
-        # Crear etiquetas con estilo
-        label_style = "font-weight: bold; color: #495057; font-size: 13px;"
-
         addr_label = QLabel(_("Dirección:"))
-        addr_label.setStyleSheet(label_style)
+        addr_label.setStyleSheet(styles.FORM_LABEL_STYLE)
 
         port_label = QLabel(_("Puerto:"))
-        port_label.setStyleSheet(label_style)
+        port_label.setStyleSheet(styles.FORM_LABEL_STYLE)
 
         user_label = QLabel(_("Usuario:"))
-        user_label.setStyleSheet(label_style)
+        user_label.setStyleSheet(styles.FORM_LABEL_STYLE)
 
-        # Añadir campos al formulario con espaciadores entre ellos
         form_layout.addRow(addr_label, self.addr)
 
-        # Espaciador entre campos
         spacer1 = QLabel()
         spacer1.setFixedHeight(10)
         form_layout.addRow("", spacer1)
 
         form_layout.addRow(port_label, self.port)
 
-        # Espaciador entre campos
         spacer2 = QLabel()
         spacer2.setFixedHeight(10)
         form_layout.addRow("", spacer2)
@@ -146,7 +122,6 @@ class VentanaConectar(QDialog):
 
     def _create_input_fields(self) -> None:
         """Crea y estiliza los campos de entrada."""
-        # Campos de entrada
         self.addr = QLineEdit("localhost")
         self.addr.setPlaceholderText(_("Dirección del servidor"))
 
@@ -157,29 +132,12 @@ class VentanaConectar(QDialog):
         self.username = QLineEdit()
         self.username.setPlaceholderText(_("Tu nombre en el juego"))
 
-        # Estilo para los campos
-        input_style = """
-            QLineEdit {
-                padding: 5px;
-                border: 1px solid #ced4da;
-                border-radius: 4px;
-                background-color: white;
-                font-size: 13px;
-                min-height: 16px;
-                height: 24px;
-            }
-            QLineEdit:focus {
-                border-color: #4361ee;
-                outline: none;
-            }
-        """
-        self.addr.setStyleSheet(input_style)
-        self.port.setStyleSheet(input_style)
-        self.username.setStyleSheet(input_style)
+        self.addr.setStyleSheet(styles.INPUT_STYLE)
+        self.port.setStyleSheet(styles.INPUT_STYLE)
+        self.username.setStyleSheet(styles.INPUT_STYLE)
 
     def _setup_buttons(self, parent_layout: QVBoxLayout) -> None:
         """Configura los botones de acción."""
-        # Añadir espacio vertical antes de los botones
         spacer = QLabel()
         spacer.setFixedHeight(15)
         parent_layout.addWidget(spacer)
@@ -187,52 +145,15 @@ class VentanaConectar(QDialog):
         buttons_layout = QHBoxLayout()
         buttons_layout.setSpacing(10)
 
-        # Botón cancelar
         button_cancelar = QPushButton(_("Cancelar"))
         button_cancelar.clicked.connect(self.reject)
-        button_cancelar.setStyleSheet("""
-            QPushButton {
-                padding: 8px 15px;
-                border: 1px solid #ced4da;
-                border-radius: 4px;
-                background-color: white;
-                color: #6c757d;
-                font-size: 13px;
-                min-width: 80px;
-            }
-            QPushButton:hover {
-                background-color: #f8f9fa;
-                border-color: #adb5bd;
-            }
-            QPushButton:pressed {
-                background-color: #e9ecef;
-            }
-        """)
+        button_cancelar.setStyleSheet(styles.CANCEL_BUTTON_STYLE)
 
-        # Botón conectar
         button_conectar = QPushButton(_("Conectar"))
         button_conectar.setDefault(True)
         button_conectar.clicked.connect(self.connect_to_server)
-        button_conectar.setStyleSheet("""
-            QPushButton {
-                padding: 8px 15px;
-                border: none;
-                border-radius: 4px;
-                background-color: #4361ee;
-                color: white;
-                font-weight: bold;
-                font-size: 13px;
-                min-width: 80px;
-            }
-            QPushButton:hover {
-                background-color: #3a56d4;
-            }
-            QPushButton:pressed {
-                background-color: #2f46c2;
-            }
-        """)
+        button_conectar.setStyleSheet(styles.CONNECT_BUTTON_STYLE)
 
-        # Añadir botones al layout
         buttons_layout.addStretch(1)
         buttons_layout.addWidget(button_cancelar)
         buttons_layout.addWidget(button_conectar)
@@ -241,52 +162,28 @@ class VentanaConectar(QDialog):
 
     def _apply_general_style(self) -> None:
         """Aplica estilos generales al diálogo."""
-        self.setStyleSheet("""
-            QDialog {
-                background-color: #f8f9fa;
-                font-family: 'Segoe UI', Arial, sans-serif;
-            }
-            QLabel {
-                font-family: 'Segoe UI', Arial, sans-serif;
-            }
-            QFormLayout {
-                margin-top: 5px;
-                margin-bottom: 5px;
-            }
-        """)
+        self.setStyleSheet(styles.DIALOG_STYLE)
 
     def connect_to_server(self) -> None:
         """Intenta conectarse al servidor con los datos proporcionados."""
-        try:
-            addr = self.addr.text()
-            port = int(self.port.text())
-            username = self.username.text().strip()
-
-            # Validar campos
-            if not addr:
-                self._show_error(
-                    _("Por favor ingresa una dirección de servidor válida")
-                )
+        result = validate(self.addr.text(), self.port.text(), self.username.text())
+        if isinstance(result, ValidationError):
+            self._show_error(result.message)
+            if result.field == "addr":
                 self.addr.setFocus()
-                return
-
-            if not port:
-                self._show_error(_("Por favor ingresa un puerto válido"))
+            elif result.field == "port":
                 self.port.setFocus()
-                return
-
-            if not username:
-                self._show_error(_("Por favor ingresa un nombre de usuario"))
+            elif result.field == "username":
                 self.username.setFocus()
-                return
+            return
 
-            # Intentar conexión
+        addr, port, username = result
+        try:
             self._conexion = ConnectionClient(self._main_window, addr, port, username)
             self._conexion.conectar()
 
-            # Configurar el transmisor en main_window
             self._main_window.transmisor = ClientTransmisor(self._conexion)
-            self.accept()  # Cerrar el diálogo si la conexión es exitosa
+            self.accept()
 
         except (ConnectionError, OSError, ValueError) as e:
             self._show_error(_("Error al conectar: {}").format(str(e)))
@@ -299,45 +196,20 @@ class VentanaConectar(QDialog):
         error_box.setIcon(QMessageBox.Icon.Critical)
         error_box.setStandardButtons(QMessageBox.StandardButton.Ok)
 
-        # Estilo para el mensaje de error
-        error_box.setStyleSheet("""
-            QMessageBox {
-                background-color: #f8f9fa;
-                font-family: 'Segoe UI', Arial, sans-serif;
-            }
-            QLabel {
-                color: #212529;
-                font-size: 13px;
-                min-width: 300px;
-            }
-            QPushButton {
-                padding: 6px 12px;
-                border: none;
-                border-radius: 4px;
-                background-color: #4361ee;
-                color: white;
-                font-size: 12px;
-            }
-            QPushButton:hover {
-                background-color: #3a56d4;
-            }
-        """)
+        error_box.setStyleSheet(styles.ERROR_BOX_STYLE)
         error_box.exec()
 
     def _connect_to_language_selector(self) -> None:
         """Conecta al selector de idioma para cambios dinámicos."""
         try:
-            # Conectar directamente al selector de idioma de la ventana principal
             if hasattr(self._main_window, "language_selector") and hasattr(
                 self._main_window.language_selector, "language_changed"
             ):
-                # Desconectar cualquier conexión anterior para evitar duplicados
                 with contextlib.suppress(TypeError, RuntimeError):
                     self._main_window.language_selector.language_changed.disconnect(
                         self.update_language
                     )
 
-                # Conectar la señal
                 self._main_window.language_selector.language_changed.connect(
                     self.update_language
                 )
@@ -347,10 +219,8 @@ class VentanaConectar(QDialog):
 
     def update_language(self) -> None:
         """Actualiza todos los textos de la interfaz al cambiar el idioma."""
-        # Actualizar título de la ventana
         self.setWindowTitle(_("Conectar al servidor"))
 
-        # Buscar y actualizar todos los QLabel
         labels = self.findChildren(QLabel)
         for label in labels:
             current_text = label.text()
@@ -370,7 +240,6 @@ class VentanaConectar(QDialog):
             elif current_text in {"Usuario:", "User:"}:
                 label.setText(_("Usuario:"))
 
-        # Buscar y actualizar todos los QPushButton
         buttons = self.findChildren(QPushButton)
         for button in buttons:
             current_text = button.text()
@@ -379,7 +248,6 @@ class VentanaConectar(QDialog):
             elif current_text in {"Conectar", "Connect"}:
                 button.setText(_("Conectar"))
 
-        # Actualizar placeholders
         if hasattr(self, "addr"):
             self.addr.setPlaceholderText(_("Dirección del servidor"))
         if hasattr(self, "port"):
