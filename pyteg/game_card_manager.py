@@ -15,9 +15,9 @@ from pyteg.config import (
 )
 
 if TYPE_CHECKING:
-    from pyteg.mazo import Mazo
+    from pyteg.core.cartas.mazo import Mazo
+    from pyteg.core.cartas.tarjeta_de_pais import TarjetaDePais
     from pyteg.server.conexion.cliente import Client
-    from pyteg.tarjeta_de_pais import TarjetaDePais
 
 
 class CardManager:
