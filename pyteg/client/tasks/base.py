@@ -5,7 +5,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Any
 
-from pyteg.client_tasks.logging_helper import CLIENT_TASKS_LOG
+from pyteg.client.tasks.logging_helper import CLIENT_TASKS_LOG
 
 
 class IClientTask(ABC):

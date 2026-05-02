@@ -2,14 +2,14 @@
 
 from __future__ import annotations
 
-from pyteg.client_tasks.base import ClientTaskNull, IClientTask
-from pyteg.client_tasks.battle import ClientTaskResultadoBatalla
-from pyteg.client_tasks.cards_missiles import (
+from pyteg.client.tasks.base import ClientTaskNull, IClientTask
+from pyteg.client.tasks.battle import ClientTaskResultadoBatalla
+from pyteg.client.tasks.cards_missiles import (
     ClientTaskMisilAgregado,
     ClientTaskResultadoMisil,
     ClientTaskTarjetasJugador,
 )
-from pyteg.client_tasks.game_flow import (
+from pyteg.client.tasks.game_flow import (
     ClientTaskAsignarPais,
     ClientTaskConfiguracionPartida,
     ClientTaskObjetivoSecreto,
@@ -18,7 +18,7 @@ from pyteg.client_tasks.game_flow import (
     ClientTaskUnidadesDisponibles,
     ClientTaskVictoria,
 )
-from pyteg.client_tasks.lobby import (
+from pyteg.client.tasks.lobby import (
     ClientTaskActualizarListaJugadores,
     ClientTaskChat,
     ClientTaskColor,

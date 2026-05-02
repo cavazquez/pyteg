@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from pyteg.client_tasks.base import IClientTask
-from pyteg.client_tasks.logging_helper import CLIENT_TASKS_LOG
+from pyteg.client.tasks.base import IClientTask
+from pyteg.client.tasks.logging_helper import CLIENT_TASKS_LOG
 from pyteg.gui.tarjetas import TarjetasDialog
 
 
