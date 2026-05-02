@@ -14,7 +14,7 @@ from pyteg.config import (
 )
 
 if TYPE_CHECKING:
-    from pyteg.server_mapa import Mapa
+    from pyteg.server.juego.mapa import Mapa
 
 
 class MissileSystem:

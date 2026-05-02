@@ -9,7 +9,7 @@ from pyteg.server.conexion.cliente import Client
 
 if TYPE_CHECKING:
     from pyteg.server.conexion.connection import ConnectionServer
-    from pyteg.server_estado import Estado
+    from pyteg.server.juego.estado import Estado
 
 
 class ServerLike(Protocol):

@@ -4,8 +4,8 @@ import unittest
 from dataclasses import dataclass
 
 from pyteg.exception import EstadoInvalidoError
-from pyteg.server_estado import Estado
-from pyteg.server_state_validator import ServerStateValidator
+from pyteg.server.juego.estado import Estado
+from pyteg.server.juego.state_validator import ServerStateValidator
 
 
 @dataclass

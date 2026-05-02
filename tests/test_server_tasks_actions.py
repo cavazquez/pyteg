@@ -3,12 +3,12 @@
 import unittest
 from typing import Any
 
+from pyteg.server.juego.estado import Estado
 from pyteg.server.tasks import (
     ServerTaskAgregarUnidad,
     ServerTaskAtacar,
     ServerTaskMoverUnidad,
 )
-from pyteg.server_estado import Estado
 from pyteg.turnos import PrimerTurno
 
 

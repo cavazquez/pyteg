@@ -9,15 +9,15 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 from pyteg.config import DEFAULT_TURN_SECONDS, VICTORY_ALL_COUNTRIES
-from pyteg.server_game import Game
+from pyteg.server.juego.game import Game
 from pyteg.turno_timer import TurnoTimer
 
 if TYPE_CHECKING:
     from pyteg.mazo import Mazo
     from pyteg.objetivos_secretos import ObjetivosSecretos
     from pyteg.server.conexion.cliente import Client
-    from pyteg.server_estado import Estado
-    from pyteg.server_mapa import Mapa
+    from pyteg.server.juego.estado import Estado
+    from pyteg.server.juego.mapa import Mapa
 
 
 class ServerGameCoordinator:

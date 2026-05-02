@@ -19,8 +19,8 @@ from pyteg.turnos import PrimerTurno, SegundoTurno
 if TYPE_CHECKING:
     from pyteg.protocols import IClientProtocol, IGameProtocol, IMapProtocol
     from pyteg.server.conexion.cliente import Client
-    from pyteg.server_game import Game
-    from pyteg.server_mapa import Mapa
+    from pyteg.server.juego.game import Game
+    from pyteg.server.juego.mapa import Mapa
 
 # Alias para compatibilidad
 ValidationError = GameRuleViolationError

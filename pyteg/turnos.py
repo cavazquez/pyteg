@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 from pyteg.calculos import Calculos
 
 if TYPE_CHECKING:
-    from pyteg.server_mapa import Mapa
+    from pyteg.server.juego.mapa import Mapa
 
 
 class SiguientesTurnos:

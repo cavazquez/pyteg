@@ -12,7 +12,7 @@ from pyteg.turnos import PrimerTurno, SegundoTurno, SiguientesTurnos
 
 if TYPE_CHECKING:
     from pyteg.server.conexion.cliente import Client
-    from pyteg.server_mapa import Mapa
+    from pyteg.server.juego.mapa import Mapa
 
 TurnoType = PrimerTurno | SegundoTurno | SiguientesTurnos
 

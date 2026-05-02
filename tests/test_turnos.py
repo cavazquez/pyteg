@@ -2,7 +2,7 @@
 
 import unittest
 
-from pyteg.server_mapa import Mapa
+from pyteg.server.juego.mapa import Mapa
 from pyteg.turnos import PrimerTurno, SegundoTurno, SiguientesTurnos
 
 

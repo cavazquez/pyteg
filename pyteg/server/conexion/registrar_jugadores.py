@@ -11,7 +11,7 @@ from pyteg.server.conexion.build_cliente import ServerBuildClient
 from pyteg.server.conexion.connection import ConnectionServer
 
 if TYPE_CHECKING:
-    from pyteg.server_estado import Estado
+    from pyteg.server.juego.estado import Estado
 
 
 class ServerLike(Protocol):

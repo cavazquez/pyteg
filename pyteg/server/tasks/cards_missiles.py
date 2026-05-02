@@ -19,14 +19,14 @@ from pyteg.exception import (
     MissingFieldError,
     NoMissilesAvailableError,
 )
-from pyteg.server.tasks.base import LOGGER, IServerTask
-from pyteg.server_validators import (
+from pyteg.server.juego.validators import (
     CountryOwnershipValidator,
     GameStateValidator,
     TurnValidator,
     UnitValidator,
     ValidationError,
 )
+from pyteg.server.tasks.base import LOGGER, IServerTask
 
 if TYPE_CHECKING:
     from pyteg.game_context import GameContext

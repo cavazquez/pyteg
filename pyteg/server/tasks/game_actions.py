@@ -9,8 +9,7 @@ from pyteg.config import (
     VALID_UNIT_TYPES,
 )
 from pyteg.exception import MissingFieldError
-from pyteg.server.tasks.base import LOGGER, IServerTask
-from pyteg.server_validators import (
+from pyteg.server.juego.validators import (
     AdjacencyValidator,
     AttackRestrictionValidator,
     CountryOwnershipValidator,
@@ -20,6 +19,7 @@ from pyteg.server_validators import (
     UnitValidator,
     ValidationError,
 )
+from pyteg.server.tasks.base import LOGGER, IServerTask
 
 if TYPE_CHECKING:
     from pyteg.game_context import GameContext
