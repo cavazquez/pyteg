@@ -58,7 +58,8 @@ class ClientTaskResultadoMisil(IClientTask):
 
         """
         super().__init__(data)
-        self._jugador = data.get("jugador")
+        self._jugador_id = data.get("jugador_id")
+        self._jugador_fallback = data.get("jugador")
         self._pais_origen = data.get("pais_origen")
         self._pais_destino = data.get("pais_destino")
         self._distancia = data.get("distancia")
@@ -68,9 +69,16 @@ class ClientTaskResultadoMisil(IClientTask):
     def run(self, main_window: GameWindowProtocol) -> None:
         """Procesa el resultado del lanzamiento de un misil."""
         try:
-            # Mostrar mensaje en el chat
+            jugador_nombre: str | None = None
+            if self._jugador_id is not None:
+                cliente = main_window.client_by_id.get(int(self._jugador_id))
+                if cliente is not None and hasattr(cliente, "username"):
+                    jugador_nombre = cliente.username()
+            if not jugador_nombre:
+                jugador_nombre = self._jugador_fallback or str(self._jugador_id)
+
             mensaje = (
-                f"🚀 {self._jugador} lanzó un misil desde {self._pais_origen} "
+                f"🚀 {jugador_nombre} lanzó un misil desde {self._pais_origen} "
                 f"hacia {self._pais_destino} (distancia: {self._distancia}). "
                 f"Daño: {self._dano} unidades. "
                 f"Unidades restantes: {self._unidades_restantes}"

@@ -62,6 +62,7 @@ class FakeMapa:
         self.owners: dict[str, object] = {}
         self.units: dict[str, int] = {}
         self.adyacentes: dict[str, list[str]] = {}
+        self._anon_owner_ids: dict[int, int] = {}
 
     def set_pais(
         self,
@@ -83,24 +84,25 @@ class FakeMapa:
         self.units[nombre] = unidades
         self.adyacentes[nombre] = list(adyacentes)
 
-    def ocupado_por(self, pais: str) -> str:
-        """Obtiene el propietario de un país.
+    def ocupado_por(self, pais: str) -> int | None:
+        """Obtiene el userid del propietario de un país.
 
         Args:
             pais: Nombre del país.
 
         Returns:
-            ID del propietario del país como string.
+            userid (int) del ocupante, o None si no tiene dueño.
 
         """
         owner = self.owners.get(pais)
         if owner is None:
-            return ""
-        # Si el propietario tiene userid(), retornar su ID como string
+            return None
         if hasattr(owner, "userid"):
-            return str(owner.userid())
-        # Si es un objeto genérico, retornar su representación como string
-        return str(id(owner))
+            return int(owner.userid())
+        oid = id(owner)
+        if oid not in self._anon_owner_ids:
+            self._anon_owner_ids[oid] = -len(self._anon_owner_ids) - 1
+        return self._anon_owner_ids[oid]
 
     def agregar_una_unidad(self, pais: str) -> None:
         """Agrega una unidad a un país.
@@ -162,14 +164,17 @@ class FakeTurno:
         self._jugador = jugador
         self._unidades = unidades
 
-    def jugador_actual(self) -> object:
-        """Obtiene el jugador actual.
+    def jugador_actual(self) -> int:
+        """Obtiene el userid del jugador actual.
 
         Returns:
-            Jugador del turno.
+            userid (int), como `PrimerTurno.jugador_actual`.
 
         """
-        return self._jugador
+        j = self._jugador
+        if hasattr(j, "userid"):
+            return int(j.userid())
+        return id(j)
 
     def cant_unidades(self) -> int:
         """Obtiene la cantidad de unidades disponibles.
@@ -417,7 +422,7 @@ class ServerTaskTests(unittest.TestCase):
     def test_atacar_bloqueado_en_primer_turno(self) -> None:
         """Prueba que atacar está bloqueado en el primer turno."""
         # Usar PrimerTurno real para que el código detecte que es el primer turno
-        self.server.game.set_turno(PrimerTurno(self.client.username()))
+        self.server.game.set_turno(PrimerTurno(self.client.userid()))
         payload = {
             "origen": "Origen",
             "destino": "Enemigo",

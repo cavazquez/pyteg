@@ -18,8 +18,10 @@ class MsgResultadoBatalla(IMsg):
             batalla_data (dict): Diccionario con todos los datos de la batalla:
                 - origen (str): País atacante
                 - destino (str): País defensor
-                - atacante (str): Nombre del jugador atacante
-                - defensor (str): Nombre del jugador defensor
+                - atacante_id (int|None): userid del jugador atacante
+                - defensor_id (int|None): userid del jugador defensor
+                - atacante (str): Nombre del jugador atacante (UI/chat)
+                - defensor (str): Nombre del jugador defensor (UI/chat)
                 - dados_atacante (list): Lista de dados del atacante
                 - dados_defensor (list): Lista de dados del defensor
                 - resultado (dict): Resultado de la batalla con pérdidas
@@ -29,8 +31,10 @@ class MsgResultadoBatalla(IMsg):
         self._tipo = "resultado_batalla"
         self._origen = batalla_data["origen"]
         self._destino = batalla_data["destino"]
-        self._atacante = batalla_data["atacante"]
-        self._defensor = batalla_data["defensor"]
+        self._atacante_id = batalla_data.get("atacante_id")
+        self._defensor_id = batalla_data.get("defensor_id")
+        self._atacante = batalla_data.get("atacante", "")
+        self._defensor = batalla_data.get("defensor", "")
         self._dados_atacante = batalla_data["dados_atacante"]
         self._dados_defensor = batalla_data["dados_defensor"]
         self._resultado = batalla_data["resultado"]
@@ -43,10 +47,12 @@ class MsgResultadoBatalla(IMsg):
             Representación JSON del mensaje como cadena.
 
         """
-        data = {
+        data: dict[str, Any] = {
             "mensaje": self._tipo,
             "origen": self._origen,
             "destino": self._destino,
+            "atacante_id": self._atacante_id,
+            "defensor_id": self._defensor_id,
             "atacante": self._atacante,
             "defensor": self._defensor,
             "dados_atacante": self._dados_atacante,
@@ -90,12 +96,12 @@ class MsgError(IMsg):
 class MsgVictoria(IMsg):
     """Mensaje para notificar la victoria de un jugador."""
 
-    def __init__(self, ganador_id: str, ganador_nombre: str) -> None:
+    def __init__(self, ganador_id: int, ganador_nombre: str) -> None:
         """Inicializa un mensaje de victoria.
 
         Args:
-            ganador_id (str): ID del jugador ganador
-            ganador_nombre (str): Nombre del jugador ganador
+            ganador_id: userid (int) del jugador ganador.
+            ganador_nombre: Nombre del jugador ganador (UI/chat).
 
         """
         self._tipo = "victoria"
@@ -109,7 +115,7 @@ class MsgVictoria(IMsg):
             Representación JSON del mensaje como cadena.
 
         """
-        data = {
+        data: dict[str, Any] = {
             "mensaje": self._tipo,
             "ganador_id": self._ganador_id,
             "ganador_nombre": self._ganador_nombre,

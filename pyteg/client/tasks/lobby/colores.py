@@ -28,12 +28,13 @@ class ClientTaskColorAsignado(IClientTask):
     def run(self, main_window: GameWindowProtocol) -> None:
         """Ejecuta la tarea asignando el color al jugador."""
         try:
-            id_user = self._msg.get("id")
-            if not id_user:
+            id_user_raw = self._msg.get("id")
+            if not id_user_raw:
                 CLIENT_TASKS_LOG.warning(
                     "No se proporcionó ID de usuario en el mensaje de color asignado"
                 )
                 return
+            id_user = int(id_user_raw)
 
             r = self._msg.get("r", 0)
             g = self._msg.get("g", 0)

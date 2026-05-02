@@ -6,6 +6,7 @@ import unittest
 from pyteg.server.tasks import (
     ServerTaskChat,
     ServerTaskNull,
+    ServerTaskSeleccionarColor,
 )
 from pyteg.server.tasks.manager import ServerTaskManager
 
@@ -24,3 +25,9 @@ class TestClientTaskManager(unittest.TestCase):
         data_json = json.loads('{"mensaje": "chat", "msg":"hola mundo!"}')
         res = ServerTaskManager.msg_to_task(data_json)
         self.assertIsInstance(res, ServerTaskChat)
+
+    def test_task_seleccionar_color(self) -> None:
+        """seleccionar_color debe mapear a la tarea de lobby, no a null."""
+        data_json = json.loads('{"mensaje": "seleccionar_color", "color": "#00ff00"}')
+        res = ServerTaskManager.msg_to_task(data_json)
+        self.assertIsInstance(res, ServerTaskSeleccionarColor)

@@ -75,14 +75,14 @@ class IMapProtocol(Protocol):
         """
         ...
 
-    def ocupado_por(self, pais: str) -> str:
-        """Obtiene el jugador que ocupa un país.
+    def ocupado_por(self, pais: str) -> int | None:
+        """Obtiene el userid del jugador que ocupa un país.
 
         Args:
             pais: Nombre del país.
 
         Returns:
-            ID del jugador que ocupa el país.
+            userid (int) del jugador que ocupa el país, o None si no tiene dueño.
 
         """
         ...
@@ -96,21 +96,21 @@ class IMapProtocol(Protocol):
         """
         ...
 
-    def asignar_pais(self, jugador: str, pais: str) -> None:
+    def asignar_pais(self, jugador: int, pais: str) -> None:
         """Asigna un país a un jugador.
 
         Args:
-            jugador: ID del jugador.
+            jugador: userid (int) del jugador.
             pais: Nombre del país.
 
         """
         ...
 
-    def jugador_posee_pais(self, jugador: str, pais: str) -> bool:
+    def jugador_posee_pais(self, jugador: int, pais: str) -> bool:
         """Verifica si un jugador específico posee un país determinado.
 
         Args:
-            jugador: ID del jugador.
+            jugador: userid (int) del jugador.
             pais: Nombre del país.
 
         Returns:
@@ -119,11 +119,11 @@ class IMapProtocol(Protocol):
         """
         ...
 
-    def jugador_controla_continente(self, jugador: str, continente: str) -> bool:
+    def jugador_controla_continente(self, jugador: int, continente: str) -> bool:
         """Verifica si un jugador controla completamente un continente.
 
         Args:
-            jugador: ID del jugador.
+            jugador: userid (int) del jugador.
             continente: Nombre del continente.
 
         Returns:

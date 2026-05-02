@@ -91,18 +91,17 @@ class Mapa:
         """
         return self._mapa[pais].continente
 
-    def ocupado_por(self, pais: str) -> str:
-        """Obtiene el jugador que ocupa un país.
+    def ocupado_por(self, pais: str) -> int | None:
+        """Obtiene el userid del jugador que ocupa un país.
 
         Args:
             pais: Nombre del país.
 
         Returns:
-            ID del jugador que ocupa el país.
+            userid (int) del jugador que ocupa el país, o None si no tiene dueño.
 
         """
-        jugador = self._mapa[pais].jugador
-        return str(jugador) if jugador is not None else ""
+        return self._mapa[pais].jugador
 
     def paises(self) -> list[str]:
         """Obtiene la lista de todos los países del mapa.
@@ -115,11 +114,11 @@ class Mapa:
             return list(self._mapa.keys())
         return []
 
-    def asignar_paises(self, jugadores: list[str]) -> None:
+    def asignar_paises(self, jugadores: list[int]) -> None:
         """Asigna países aleatoriamente a los jugadores.
 
         Args:
-            jugadores: Lista de IDs de jugadores.
+            jugadores: Lista de userids (int) de jugadores.
 
         """
         paises = self.paises()
@@ -165,7 +164,7 @@ class Mapa:
         pais_defensor = resultado["defensor"]
         pais_atacante = resultado["atacante"]
         atacante = self.ocupado_por(pais_atacante)
-        if self.cantidad_unidades(pais_defensor) == 0:
+        if self.cantidad_unidades(pais_defensor) == 0 and atacante is not None:
             self.agregar_una_unidad(pais_defensor)
             self.asignar_pais(atacante, pais_defensor)
 
@@ -183,21 +182,21 @@ class Mapa:
             [pais for pais in self.paises() if self.continente(pais) == continente],
         )
 
-    def asignar_pais(self, jugador: str, pais: str) -> None:
+    def asignar_pais(self, jugador: int, pais: str) -> None:
         """Asigna un país a un jugador.
 
         Args:
-            jugador: ID del jugador.
+            jugador: userid (int) del jugador.
             pais: Nombre del país.
 
         """
         self._mapa[pais].jugador = jugador
 
-    def cantidad_de_paises_del_jugador(self, jugador: str) -> int:
+    def cantidad_de_paises_del_jugador(self, jugador: int) -> int:
         """Obtiene la cantidad de países que posee un jugador.
 
         Args:
-            jugador: ID del jugador.
+            jugador: userid (int) del jugador.
 
         Returns:
             Cantidad de países del jugador.
@@ -207,8 +206,12 @@ class Mapa:
             [pais for pais in self.paises() if self.ocupado_por(pais) == jugador],
         )
 
-    def jugador_posee_pais(self, jugador: str, pais: str) -> bool:
+    def jugador_posee_pais(self, jugador: int, pais: str) -> bool:
         """Verifica si un jugador específico posee un país determinado.
+
+        Args:
+            jugador: userid (int) del jugador.
+            pais: Nombre del país.
 
         Returns:
             True si el jugador posee el país, False en caso contrario.
@@ -217,12 +220,12 @@ class Mapa:
         return self.ocupado_por(pais) == jugador
 
     def cantidad_de_paises_del_jugador_por_continente(
-        self, jugador: str, continente: str
+        self, jugador: int, continente: str
     ) -> int:
         """Obtiene la cantidad de países de un jugador en un continente.
 
         Args:
-            jugador: ID del jugador.
+            jugador: userid (int) del jugador.
             continente: Nombre del continente.
 
         Returns:
@@ -238,15 +241,15 @@ class Mapa:
             ],
         )
 
-    def jugador_controla_continente(self, jugador: str, continente: str) -> bool:
+    def jugador_controla_continente(self, jugador: int, continente: str) -> bool:
         """Verifica si un jugador controla completamente un continente.
 
         Args:
-            jugador (str): ID del jugador
-            continente (str): Nombre del continente
+            jugador: userid (int) del jugador.
+            continente: Nombre del continente.
 
         Returns:
-            bool: True si el jugador controla todo el continente
+            True si el jugador controla todo el continente.
 
         """
         return self.cantidad_de_paises_del_jugador_por_continente(

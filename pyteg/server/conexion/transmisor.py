@@ -164,12 +164,13 @@ class ServerTransmisor:
         msg = MsgUnidadesDisponibles(unidades)
         self._send_message(msg)
 
-    def enviar_pais(self, pais: str, userid: int, unidades: int) -> None:
+    def enviar_pais(self, pais: str, userid: int | None, unidades: int) -> None:
         """Envía información de un país al cliente.
 
         Args:
             pais: Nombre del país.
-            userid: ID del jugador que ocupa el país.
+            userid: userid (int) del jugador que ocupa el país, o None si no tiene
+                dueño.
             unidades: Cantidad de unidades en el país.
 
         """
@@ -216,41 +217,20 @@ class ServerTransmisor:
         msg = MsgActualizarListaJugadores(jugadores)
         self._send_message(msg)
 
-    def enviar_mapa(self, mapa: Any, game: Any) -> None:
+    def enviar_mapa(self, mapa: Any, game: Any) -> None:  # noqa: ARG002
         """Envía el estado actual del mapa al cliente.
 
         Args:
-            mapa: Instancia del mapa del juego
-            game: Instancia del juego actual
+            mapa: Instancia del mapa del juego.
+            game: Instancia del juego actual (sin uso aquí, las unidades
+                disponibles se envían vía `enviar_unidades_disponibles`).
 
         """
-        # Enviar información de cada país
         for pais in mapa.paises():
             unidades = mapa.cantidad_unidades(pais)
             userid = mapa.ocupado_por(pais)
             print(f"{pais} {userid} {unidades}")
             self.enviar_pais(pais, userid, unidades)
-
-        # Enviar unidades disponibles si el juego ha comenzado
-        if game is not None and hasattr(game, "turno_actual"):
-            # Buscar el turno del jugador actual
-            turno_jugador = None
-            for turno in game.turnos():
-                if (
-                    hasattr(turno, "jugador_actual")
-                    and turno.jugador_actual() == self._conn
-                ):
-                    turno_jugador = turno
-                    break
-
-            if turno_jugador is not None:
-                unidades_disponibles = {
-                    "infanteria": turno_jugador.cant_unidades(),
-                    "misiles": turno_jugador.cant_misiles()
-                    if hasattr(turno_jugador, "cant_misiles")
-                    else 0,
-                }
-                self.enviar_unidades_disponibles(unidades_disponibles)
 
     def enviar_resultado_batalla(self, batalla_data: dict[str, Any]) -> None:
         """Envía el resultado de una batalla al cliente.
@@ -281,12 +261,12 @@ class ServerTransmisor:
         msg = MsgError(error_type, message)
         self._send_message(msg)
 
-    def enviar_victoria(self, ganador_id: str, ganador_nombre: str) -> None:
+    def enviar_victoria(self, ganador_id: int, ganador_nombre: str) -> None:
         """Envía un mensaje de victoria al cliente.
 
         Args:
-            ganador_id (str): ID del jugador ganador
-            ganador_nombre (str): Nombre del jugador ganador
+            ganador_id: userid (int) del jugador ganador.
+            ganador_nombre: Nombre del jugador ganador (UI/chat).
 
         """
         msg = MsgVictoria(ganador_id, ganador_nombre)

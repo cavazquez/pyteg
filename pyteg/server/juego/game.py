@@ -74,13 +74,10 @@ class Game:
     def empezar(self) -> None:
         """Inicia el juego asignando países y creando los primeros turnos."""
         jugadores = self.lista_jugadores()
-        # Manejar tanto objetos Client como strings (para tests)
-        jugadores_nombres = [
-            j.username() if hasattr(j, "username") else str(j) for j in jugadores
-        ]
-        self._turn_manager.inicializar_turnos(jugadores_nombres)
-        self._mapa.asignar_paises(jugadores_nombres)
-        self._card_manager.inicializar_canjes(jugadores_nombres)
+        jugadores_userids = [int(j.userid()) for j in jugadores]
+        self._turn_manager.inicializar_turnos(jugadores_userids)
+        self._mapa.asignar_paises(jugadores_userids)
+        self._card_manager.inicializar_canjes(jugadores_userids)
         self._start = True
 
     def empezo(self) -> bool:
@@ -146,11 +143,11 @@ class Game:
         """
         return self._turn_manager.num_ronda()
 
-    def cant_canjes(self, jugador: Client | str) -> int:
+    def cant_canjes(self, jugador: Client | int) -> int:
         """Obtiene la cantidad de canjes realizados por un jugador.
 
         Args:
-            jugador: Jugador o nombre del jugador.
+            jugador: Cliente o userid (int) del jugador.
 
         Returns:
             Cantidad de canjes realizados.
@@ -158,11 +155,11 @@ class Game:
         """
         return self._card_manager.cant_canjes(jugador)
 
-    def canjear(self, jugador: Client | str, tarjetas: list[TarjetaDePais]) -> None:
+    def canjear(self, jugador: Client | int, tarjetas: list[TarjetaDePais]) -> None:
         """Realiza un canje de tarjetas por unidades.
 
         Args:
-            jugador: Jugador o nombre del jugador.
+            jugador: Cliente o userid (int) del jugador.
             tarjetas: Lista de tarjetas a canjear.
 
         """
@@ -193,34 +190,26 @@ class Game:
         cant_jugadores = self.cant_jugadores()
 
         if num == cant_jugadores or ronda_completada:
-            # Verificar condición de victoria al final de la ronda
             ganador = self._victory_checker.verificar_condicion_victoria(
                 self.lista_jugadores()
             )
             if ganador:
-                # Alguien ganó la partida
-                ganador_id = (
-                    ganador.user_id() if hasattr(ganador, "user_id") else str(ganador)
-                )
+                ganador_id = int(ganador.userid())
                 ganador_nombre = (
                     ganador.username() if hasattr(ganador, "username") else str(ganador)
                 )
                 self._server.enviar_victoria(ganador_id, ganador_nombre)
-                return  # No continuar con la siguiente ronda
+                return
 
-            # Rotar la lista de jugadores para la nueva ronda
             jugadores = self.lista_jugadores()
             jugadores_rotados = self._turn_manager.rotar_jugadores(jugadores)
 
-            jugadores_nombres = [
-                j.username() if hasattr(j, "username") else str(j)
-                for j in jugadores_rotados
-            ]
+            jugadores_userids = [int(j.userid()) for j in jugadores_rotados]
             es_segundo_turno = isinstance(
                 self._turn_manager.turno_actual(), PrimerTurno
             )
             self._turn_manager.iniciar_nueva_ronda(
-                jugadores_nombres, es_segundo_turno=es_segundo_turno
+                jugadores_userids, es_segundo_turno=es_segundo_turno
             )
 
             # Notificar al servidor que se completó una ronda
@@ -245,11 +234,11 @@ class Game:
         """
         return self.jugadores()
 
-    def lista_jugadores_orden_turno(self) -> list[str]:
-        """Devuelve la lista de jugadores en el orden actual de los turnos.
+    def lista_jugadores_orden_turno(self) -> list[int]:
+        """Devuelve la lista de userids en el orden actual de los turnos.
 
         Returns:
-            Lista de nombres de jugadores en el orden de los turnos.
+            Lista de userids (int) en el orden de los turnos.
 
         """
         return self._turn_manager.lista_jugadores_orden_turno(self.lista_jugadores())
@@ -302,31 +291,33 @@ class Game:
             reverse=True,
         )
 
-        # Obtener nombres de los jugadores
-        atacante_nombre = self.mapa().ocupado_por(pais_atacante)
-        defensor_nombre = self.mapa().ocupado_por(pais_defensor)
+        # Obtener userids de los jugadores que ocupan cada país (canónico, int|None)
+        atacante_id = self.mapa().ocupado_por(pais_atacante)
+        defensor_id = self.mapa().ocupado_por(pais_defensor)
+        # Resolver nombres solo para presentación (chat / log)
+        atacante_nombre = self._username_de(atacante_id)
+        defensor_nombre = self._username_de(defensor_id)
 
-        # Realizar la batalla
         print(f"Dados atacante ({atacante_nombre}): {dados_atacante}")
         print(f"Dados defensor ({defensor_nombre}): {dados_defensor}")
 
+        # Batalla.ataquen identifica al perdedor por el mismo valor que se le
+        # pasa como atacante/defensor, así que pasamos los userids canónicos.
         resultado = Batalla.ataquen(
-            atacante_nombre, defensor_nombre, dados_atacante, dados_defensor
+            str(atacante_id), str(defensor_id), dados_atacante, dados_defensor
         )
 
         print(f"Resultado batalla: {resultado}")
         print(f"Pérdidas: {resultado['restar']}")
 
-        # Aplicar las pérdidas
         for perdedor in resultado["restar"]:
-            if perdedor == atacante_nombre:
+            if perdedor == str(atacante_id):
                 print(f"Restando 1 unidad a {atacante_nombre} en {pais_atacante}")
                 self.mapa().restar_una_unidad(pais_atacante)
             else:
                 print(f"Restando 1 unidad a {defensor_nombre} en {pais_defensor}")
                 self.mapa().restar_una_unidad(pais_defensor)
 
-        # Verificar si el país defensor fue conquistado
         conquistado = False
         unidades_defensor_post_batalla = self.mapa().cantidad_unidades(pais_defensor)
         print(
@@ -334,13 +325,10 @@ class Game:
             f"{unidades_defensor_post_batalla}"
         )
 
-        if unidades_defensor_post_batalla == 0:
-            # El atacante conquista el país
+        if unidades_defensor_post_batalla == 0 and atacante_id is not None:
             print("=== CONQUISTA ===")
-            atacante = self.mapa().ocupado_por(pais_atacante)
             print(f"Asignando {pais_defensor} a {atacante_nombre}")
-            self.mapa().asignar_pais(atacante, pais_defensor)
-            # Mover una unidad del atacante al país conquistado
+            self.mapa().asignar_pais(atacante_id, pais_defensor)
             print(f"Moviendo 1 unidad de {pais_atacante} a {pais_defensor}")
             self.mapa().restar_una_unidad(pais_atacante)
             self.mapa().agregar_una_unidad(pais_defensor)
@@ -354,10 +342,11 @@ class Game:
         print(f"Dados atacante: {dados_atacante}, Dados defensor: {dados_defensor}")
         print(f"Resultado: {resultado}")
 
-        # Retornar información completa de la batalla
         return {
             "origen": pais_atacante,
             "destino": pais_defensor,
+            "atacante_id": atacante_id,
+            "defensor_id": defensor_id,
             "atacante": atacante_nombre,
             "defensor": defensor_nombre,
             "dados_atacante": dados_atacante,
@@ -365,6 +354,23 @@ class Game:
             "resultado": resultado,
             "conquistado": conquistado,
         }
+
+    def _username_de(self, userid: int | None) -> str:
+        """Resuelve el username de un userid usando los jugadores conectados.
+
+        Args:
+            userid: userid (int) del jugador, o None si el país no tiene dueño.
+
+        Returns:
+            Nombre del jugador para presentación, o cadena vacía si no se resuelve.
+
+        """
+        if userid is None:
+            return ""
+        for j in self.lista_jugadores():
+            if int(j.userid()) == int(userid):
+                return j.username() if hasattr(j, "username") else str(j)
+        return ""
 
     def marcar_jugador_puede_reclamar(self, jugador: Client) -> None:
         """Marca a un jugador como elegible para reclamar tarjeta.

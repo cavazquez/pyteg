@@ -33,6 +33,7 @@ dict_task: dict[str, TaskFactory] = {
     "chat": ServerTaskChat,
     "empezar": ServerTaskEmpezar,
     "empezar_partida": ServerTaskEmpezarPartida,
+    "seleccionar_color": ServerTaskSeleccionarColor,
     "set_username": ServerTaskSetUsername,
     "agregar_unidad": ServerTaskAgregarUnidad,
     "mover_unidad": ServerTaskMoverUnidad,

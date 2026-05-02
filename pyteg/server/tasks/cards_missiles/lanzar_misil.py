@@ -174,6 +174,7 @@ class ServerTaskLanzarMisil(IServerTask):
         unidades_restantes = client.server.mapa.cantidad_unidades(self._pais_destino)
 
         resultado_data = {
+            "jugador_id": int(client.userid()),
             "jugador": client.username(),
             "pais_origen": self._pais_origen,
             "pais_destino": self._pais_destino,

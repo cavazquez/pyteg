@@ -28,6 +28,9 @@ Todos los mensajes siguen un formato JSON con un campo `mensaje` que identifica 
 
 5. [Acciones de Juego](#acciones-de-juego)
    - [pais](#pais)
+   - [resultado_batalla](#resultado_batalla)
+   - [victoria](#victoria)
+   - [resultado_misil](#resultado_misil)
    - [agregar_unidad](#agregar_unidad)
    - [mover_unidad](#mover_unidad)
    - [unidades_disponibles](#unidades_disponibles)
@@ -55,14 +58,14 @@ Informa al cliente que tiene privilegios de administrador.
 Informa al cliente su color asignado.
 
 **Parámetros:**
-- `id` (str): ID del usuario
+- `id` (int): `userid` del usuario
 - `r`, `g`, `b` (int): Componentes RGB del color asignado
 
 **Formato JSON:**
 ```json
 {
   "mensaje": "color_asignado",
-  "id": "usuario123",
+  "id": 7,
   "r": 255,
   "g": 0,
   "b": 0
@@ -75,13 +78,13 @@ Informa al cliente su color asignado.
 Envía al cliente su ID único de usuario.
 
 **Parámetros:**
-- `userid` (str): ID único del usuario
+- `user_id` (int): ID único del usuario (`userid`)
 
 **Formato JSON:**
 ```json
 {
   "mensaje": "user_id",
-  "userid": "usuario123"
+  "user_id": 7
 }
 ```
 
@@ -91,14 +94,14 @@ Envía al cliente su ID único de usuario.
 Confirma el nombre de usuario establecido.
 
 **Parámetros:**
-- `userid` (str): ID del usuario
+- `user_id` (int): `userid` del usuario
 - `username` (str): Nombre de usuario confirmado
 
 **Formato JSON:**
 ```json
 {
   "mensaje": "username",
-  "userid": "usuario123",
+  "user_id": 7,
   "username": "Jugador1"
 }
 ```
@@ -130,14 +133,14 @@ Envía un mensaje de chat a los jugadores.
 
 **Parámetros:**
 - `msg` (str): Contenido del mensaje
-- `userid` (str, opcional): ID del remitente
+- `msg_type` (str): `normal` \| `error` \| `system`
 
 **Formato JSON:**
 ```json
 {
   "mensaje": "chat",
   "msg": "¡Hola a todos!",
-  "userid": "usuario123"
+  "msg_type": "normal"
 }
 ```
 
@@ -171,15 +174,15 @@ Informa sobre el estado actual del juego.
 Envía información sobre el tiempo restante del turno actual.
 
 **Parámetros:**
-- `userid_turno` (str): ID del usuario que tiene el turno actual
-- `tiempo_restante` (int): Tiempo restante en segundos
+- `user_id` (int): `userid` del jugador en turno
+- `tiempo` (int): Tiempo restante en segundos
 
 **Formato JSON:**
 ```json
 {
   "mensaje": "tiempo",
-  "userid_turno": "usuario123",
-  "tiempo_restante": 60
+  "user_id": 7,
+  "tiempo": 60
 }
 ```
 
@@ -191,13 +194,19 @@ Informa sobre el turno y ronda actual.
 **Parámetros:**
 - `num_turno` (int): Número del turno actual
 - `num_ronda` (int): Número de la ronda actual
+- `jugador_actual_id` (int, opcional): `userid` del jugador en turno
+- `jugador_actual_nombre` (str, opcional): nombre para UI
+- `jugador_actual_color` (str, opcional): color para UI
 
 **Formato JSON:**
 ```json
 {
   "mensaje": "turno",
   "num_turno": 1,
-  "num_ronda": 1
+  "num_ronda": 1,
+  "jugador_actual_id": 7,
+  "jugador_actual_nombre": "Jugador1",
+  "jugador_actual_color": "#ff0000"
 }
 ```
 
@@ -210,8 +219,8 @@ Actualiza la lista de jugadores conectados.
 
 **Parámetros:**
 - `jugadores` (array): Lista de objetos con información de jugadores
-  - `userid` (str): ID del jugador
-  - `r`, `g`, `b` (int): Componentes RGB del color del jugador
+  - `userid` (int): `userid` del jugador
+  - `color` (object): `{ "r": int, "g": int, "b": int }`
 
 **Formato JSON:**
 ```json
@@ -219,16 +228,12 @@ Actualiza la lista de jugadores conectados.
   "mensaje": "actualizar_lista_jugadores",
   "jugadores": [
     {
-      "userid": "usuario123",
-      "r": 255,
-      "g": 0,
-      "b": 0
+      "userid": 7,
+      "color": { "r": 255, "g": 0, "b": 0 }
     },
     {
-      "userid": "usuario456",
-      "r": 0,
-      "g": 0,
-      "b": 255
+      "userid": 8,
+      "color": { "r": 0, "g": 0, "b": 255 }
     }
   ]
 }
@@ -243,7 +248,7 @@ Actualiza la información de un país.
 
 **Parámetros:**
 - `pais` (str): Nombre del país
-- `userid` (str): ID del jugador que controla el país
+- `userid` (int \| null): `userid` del jugador que controla el país; `null` si no hay dueño
 - `unidades` (int): Cantidad de unidades en el país
 
 **Formato JSON:**
@@ -251,8 +256,81 @@ Actualiza la información de un país.
 {
   "mensaje": "pais",
   "pais": "Argentina",
-  "userid": "usuario123",
+  "userid": 7,
   "unidades": 5
+}
+```
+
+---
+
+### resultado_batalla
+Publica el resultado de un ataque (dados, bajas, conquista).
+
+**Parámetros (entre otros):**
+- `origen` / `destino` (str): países
+- `atacante_id` / `defensor_id` (int \| null): `userid` de cada bando
+- `atacante` / `defensor` (str): nombres para UI/chat
+- `dados_atacante` / `dados_defensor` (array): dados
+- `resultado` (object): pérdidas por país
+- `conquistado` (bool)
+
+**Formato JSON (ejemplo):**
+```json
+{
+  "mensaje": "resultado_batalla",
+  "origen": "Argentina",
+  "destino": "Brasil",
+  "atacante_id": 7,
+  "defensor_id": 8,
+  "atacante": "Ana",
+  "defensor": "Luis",
+  "dados_atacante": [6, 5],
+  "dados_defensor": [4],
+  "resultado": { "restar": ["Brasil"] },
+  "conquistado": true
+}
+```
+
+---
+
+### victoria
+Notifica el fin de partida con un ganador.
+
+**Parámetros:**
+- `ganador_id` (int): `userid` del ganador
+- `ganador_nombre` (str): nombre para UI/chat
+
+**Formato JSON:**
+```json
+{
+  "mensaje": "victoria",
+  "ganador_id": 7,
+  "ganador_nombre": "Ana"
+}
+```
+
+---
+
+### resultado_misil
+Notifica el resultado de un lanzamiento de misil.
+
+**Parámetros (entre otros):**
+- `jugador_id` (int): `userid` de quien lanzó
+- `jugador` (str, opcional): nombre para UI/chat
+- `pais_origen` / `pais_destino` (str)
+- `distancia` / `dano` / `unidades_restantes` (int)
+
+**Formato JSON (ejemplo):**
+```json
+{
+  "mensaje": "resultado_misil",
+  "jugador_id": 7,
+  "jugador": "Ana",
+  "pais_origen": "Argentina",
+  "pais_destino": "Brasil",
+  "distancia": 2,
+  "dano": 1,
+  "unidades_restantes": 3
 }
 ```
 

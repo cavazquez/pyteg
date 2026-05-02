@@ -68,13 +68,22 @@ class TestMap(unittest.TestCase):
         self.assertEqual(mapa.continente("Argentina"), "Pangea")
 
     def test_ocupado_por(self) -> None:
-        """Prueba consultar quién ocupa un país."""
+        """Prueba consultar qué userid ocupa un país."""
 
-        def build_mapa() -> dict[str, list[int | str | list[str] | None]]:
-            return {"Argentina": [1, "Pangea", "Fulano"]}
+        def build_mapa() -> dict[str, list[int | str | list[int] | None]]:
+            return {"Argentina": [1, "Pangea", 1]}
 
         mapa = Mapa(build_mapa)
-        self.assertEqual(mapa.ocupado_por("Argentina"), "Fulano")
+        self.assertEqual(mapa.ocupado_por("Argentina"), 1)
+
+    def test_ocupado_por_sin_dueno(self) -> None:
+        """Si el país no tiene dueño, `ocupado_por` retorna None."""
+
+        def build_mapa() -> dict[str, list[int | str | list[str] | None]]:
+            return {"Argentina": [1, "Pangea", None]}
+
+        mapa = Mapa(build_mapa)
+        self.assertIsNone(mapa.ocupado_por("Argentina"))
 
     def test_paises(self) -> None:
         """Prueba obtener la lista de países."""
@@ -111,10 +120,10 @@ class TestMap(unittest.TestCase):
             }
 
         mapa = Mapa(build_mapa)
-        jugadores = ["Fulano", "Mengano"]
+        jugadores = [1, 2]
         mapa.asignar_paises(jugadores)
-        self.assertEqual(mapa.cantidad_de_paises_del_jugador("Fulano"), 2)
-        self.assertEqual(mapa.cantidad_de_paises_del_jugador("Mengano"), 2)
+        self.assertEqual(mapa.cantidad_de_paises_del_jugador(1), 2)
+        self.assertEqual(mapa.cantidad_de_paises_del_jugador(2), 2)
 
     def test_asignar_paises_2_jugadores_5_paises(self) -> None:
         """Prueba asignar países con 2 jugadores y 5 países."""
@@ -129,24 +138,24 @@ class TestMap(unittest.TestCase):
             }
 
         mapa = Mapa(build_mapa)
-        jugadores = ["Fulano", "Mengano"]
+        jugadores = [1, 2]
         mapa.asignar_paises(jugadores)
-        cant_fulano = mapa.cantidad_de_paises_del_jugador("Fulano")
-        cant_mengano = mapa.cantidad_de_paises_del_jugador("Mengano")
+        cant_1 = mapa.cantidad_de_paises_del_jugador(1)
+        cant_2 = mapa.cantidad_de_paises_del_jugador(2)
 
-        self.assertEqual(cant_fulano + cant_mengano, 5)
-        self.assertGreaterEqual(cant_fulano, 5 // 2)
-        self.assertGreaterEqual(cant_mengano, 5 // 2)
+        self.assertEqual(cant_1 + cant_2, 5)
+        self.assertGreaterEqual(cant_1, 5 // 2)
+        self.assertGreaterEqual(cant_2, 5 // 2)
 
     def test_asignar_pais(self) -> None:
         """Prueba asignar un país a un jugador."""
 
-        def build_mapa() -> dict[str, list[int | str | list[str] | None]]:
-            return {"Argentina": [1, "Pangea", "Fulano"]}
+        def build_mapa() -> dict[str, list[int | str | list[int] | None]]:
+            return {"Argentina": [1, "Pangea", 1]}
 
         mapa = Mapa(build_mapa)
-        mapa.asignar_pais("Mengano", "Argentina")
-        self.assertEqual(mapa.ocupado_por("Argentina"), "Mengano")
+        mapa.asignar_pais(2, "Argentina")
+        self.assertEqual(mapa.ocupado_por("Argentina"), 2)
 
     def test_cant_paises_de_jugador(self) -> None:
         """Prueba contar países de un jugador."""
@@ -159,10 +168,10 @@ class TestMap(unittest.TestCase):
             }
 
         mapa = Mapa(build_mapa)
-        mapa.asignar_pais("Mengano", "Argentina")
-        mapa.asignar_pais("Mengano", "Chile")
-        self.assertEqual(mapa.cantidad_de_paises_del_jugador("Mengano"), 2)
-        self.assertEqual(mapa.cantidad_de_paises_del_jugador("Fulano"), 0)
+        mapa.asignar_pais(2, "Argentina")
+        mapa.asignar_pais(2, "Chile")
+        self.assertEqual(mapa.cantidad_de_paises_del_jugador(2), 2)
+        self.assertEqual(mapa.cantidad_de_paises_del_jugador(1), 0)
 
     def test_cant_paises_del_jugador_por_continente(self) -> None:
         """Prueba contar países de un jugador por continente."""
@@ -175,14 +184,14 @@ class TestMap(unittest.TestCase):
             }
 
         mapa = Mapa(build_mapa)
-        mapa.asignar_pais("Mengano", "Argentina")
-        mapa.asignar_pais("Mengano", "Uruguay")
+        mapa.asignar_pais(2, "Argentina")
+        mapa.asignar_pais(2, "Uruguay")
         self.assertEqual(
-            mapa.cantidad_de_paises_del_jugador_por_continente("Mengano", "Pangea"),
+            mapa.cantidad_de_paises_del_jugador_por_continente(2, "Pangea"),
             2,
         )
         self.assertEqual(
-            mapa.cantidad_de_paises_del_jugador_por_continente("Mengano", "America"),
+            mapa.cantidad_de_paises_del_jugador_por_continente(2, "America"),
             0,
         )
 
@@ -191,106 +200,107 @@ class TestMap(unittest.TestCase):
 
         def build_mapa() -> dict[str, list[int | str | list[str] | None]]:
             return {
-                "Argentina": [1, "Europa", "Mengano"],
+                "Argentina": [1, "Europa", 2],
                 "Uruguay": [10, "Europa", None],
                 "Chile": [1, "America", None],
             }
 
         mapa = Mapa(build_mapa)
-        self.assertFalse(mapa.jugador_controla_continente("Mengano", "Europa"))
-        mapa.asignar_pais("Mengano", "Uruguay")
-        self.assertTrue(mapa.jugador_controla_continente("Mengano", "Europa"))
+        self.assertFalse(mapa.jugador_controla_continente(2, "Europa"))
+        mapa.asignar_pais(2, "Uruguay")
+        self.assertTrue(mapa.jugador_controla_continente(2, "Europa"))
 
     def test_jugador_controla_continente_asia(self) -> None:
         """Prueba verificar si un jugador controla toda Asia."""
 
         def build_mapa() -> dict[str, list[int | str | list[str] | None]]:
             return {
-                "Argentina": [1, "Asia", "Mengano"],
+                "Argentina": [1, "Asia", 2],
                 "Uruguay": [10, "Asia", None],
                 "Chile": [1, "America", None],
             }
 
         mapa = Mapa(build_mapa)
-        self.assertFalse(mapa.jugador_controla_continente("Mengano", "Asia"))
-        mapa.asignar_pais("Mengano", "Uruguay")
-        self.assertTrue(mapa.jugador_controla_continente("Mengano", "Asia"))
+        self.assertFalse(mapa.jugador_controla_continente(2, "Asia"))
+        mapa.asignar_pais(2, "Uruguay")
+        self.assertTrue(mapa.jugador_controla_continente(2, "Asia"))
 
     def test_jugador_controla_continente_oceania(self) -> None:
         """Prueba verificar si un jugador controla toda Oceanía."""
 
         def build_mapa() -> dict[str, list[int | str | list[str] | None]]:
             return {
-                "Argentina": [1, "Oceania", "Mengano"],
+                "Argentina": [1, "Oceania", 2],
                 "Uruguay": [10, "Oceania", None],
                 "Chile": [1, "America", None],
             }
 
         mapa = Mapa(build_mapa)
-        self.assertFalse(mapa.jugador_controla_continente("Mengano", "Oceania"))
-        mapa.asignar_pais("Mengano", "Uruguay")
-        self.assertTrue(mapa.jugador_controla_continente("Mengano", "Oceania"))
+        self.assertFalse(mapa.jugador_controla_continente(2, "Oceania"))
+        mapa.asignar_pais(2, "Uruguay")
+        self.assertTrue(mapa.jugador_controla_continente(2, "Oceania"))
 
     def test_jugador_controla_continente_sudamerica(self) -> None:
         """Prueba verificar si un jugador controla toda América del Sur."""
 
         def build_mapa() -> dict[str, list[int | str | list[str] | None]]:
             return {
-                "Argentina": [1, "Sudamerica", "Mengano"],
+                "Argentina": [1, "Sudamerica", 2],
                 "Uruguay": [10, "Sudamerica", None],
                 "Chile": [1, "America", None],
             }
 
         mapa = Mapa(build_mapa)
-        self.assertFalse(mapa.jugador_controla_continente("Mengano", "Sudamerica"))
-        mapa.asignar_pais("Mengano", "Uruguay")
-        self.assertTrue(mapa.jugador_controla_continente("Mengano", "Sudamerica"))
+        self.assertFalse(mapa.jugador_controla_continente(2, "Sudamerica"))
+        mapa.asignar_pais(2, "Uruguay")
+        self.assertTrue(mapa.jugador_controla_continente(2, "Sudamerica"))
 
     def test_jugador_controla_continente_norteamerica(self) -> None:
         """Prueba verificar si un jugador controla toda América del Norte."""
 
         def build_mapa() -> dict[str, list[int | str | list[str] | None]]:
             return {
-                "Argentina": [1, "Norteamerica", "Mengano"],
+                "Argentina": [1, "Norteamerica", 2],
                 "Uruguay": [10, "Norteamerica", None],
                 "Chile": [1, "America", None],
             }
 
         mapa = Mapa(build_mapa)
-        self.assertFalse(mapa.jugador_controla_continente("Mengano", "Norteamerica"))
-        mapa.asignar_pais("Mengano", "Uruguay")
-        self.assertTrue(mapa.jugador_controla_continente("Mengano", "Norteamerica"))
+        self.assertFalse(mapa.jugador_controla_continente(2, "Norteamerica"))
+        mapa.asignar_pais(2, "Uruguay")
+        self.assertTrue(mapa.jugador_controla_continente(2, "Norteamerica"))
 
     def test_jugador_controla_continente_africa(self) -> None:
         """Prueba verificar si un jugador controla toda África."""
 
         def build_mapa() -> dict[str, list[int | str | list[str] | None]]:
             return {
-                "Argentina": [1, "Africa", "Mengano"],
+                "Argentina": [1, "Africa", 2],
                 "Uruguay": [10, "Africa", None],
                 "Chile": [1, "America", None],
             }
 
         mapa = Mapa(build_mapa)
-        self.assertFalse(mapa.jugador_controla_continente("Mengano", "Africa"))
-        mapa.asignar_pais("Mengano", "Uruguay")
-        self.assertTrue(mapa.jugador_controla_continente("Mengano", "Africa"))
+        self.assertFalse(mapa.jugador_controla_continente(2, "Africa"))
+        mapa.asignar_pais(2, "Uruguay")
+        self.assertTrue(mapa.jugador_controla_continente(2, "Africa"))
 
     def test_str(self) -> None:
         """Prueba la representación en string del mapa."""
 
         def build_mapa() -> dict[str, list[int | str | list[str] | None]]:
             return {
-                "Argentina": [1, "Africa", "Mengano"],
+                "Argentina": [1, "Africa", 2],
                 "Uruguay": [10, "Africa", None],
             }
 
         mapa = Mapa(build_mapa)
         # Ahora incluye el campo de misiles (índice 4) inicializado en 0
+        # y el dueño se almacena como int.
         self.assertEqual(
             str(mapa),
             (
-                '{"Argentina": [1, "Africa", "Mengano", [], 0], '
+                '{"Argentina": [1, "Africa", 2, [], 0], '
                 '"Uruguay": [10, "Africa", null, [], 0]}'
             ),
         )
@@ -300,8 +310,8 @@ class TestMap(unittest.TestCase):
 
         def build_mapa() -> dict[str, list[int | str | list[str] | None]]:
             return {
-                "Argentina": [4, "Africa", "Mengano"],
-                "Uruguay": [2, "Africa", "Fulano"],
+                "Argentina": [4, "Africa", 2],
+                "Uruguay": [2, "Africa", 1],
                 "Chile": [1, "America", None],
             }
 
@@ -319,8 +329,8 @@ class TestMap(unittest.TestCase):
 
         def build_mapa() -> dict[str, list[int | str | list[str] | None]]:
             return {
-                "Argentina": [4, "Africa", "Mengano"],
-                "Uruguay": [2, "Africa", "Fulano"],
+                "Argentina": [4, "Africa", 2],
+                "Uruguay": [2, "Africa", 1],
                 "Chile": [1, "America", None],
             }
 
@@ -332,4 +342,4 @@ class TestMap(unittest.TestCase):
         mapa = Mapa(build_mapa)
         mapa.aplicar_resultado_batalla(resultado)
         self.assertEqual(mapa.cantidad_unidades("Uruguay"), 1)
-        self.assertEqual(mapa.ocupado_por("Uruguay"), "Mengano")
+        self.assertEqual(mapa.ocupado_por("Uruguay"), 2)

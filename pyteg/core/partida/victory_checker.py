@@ -90,17 +90,16 @@ class VictoryChecker:
             return None
 
         for jugador in jugadores:
+            jugador_id = int(jugador.userid())
             if self._objetivos_secretos.verificar_condicion_victoria(
-                str(jugador.userid()),
+                jugador_id,
                 self._mapa._mapa,  # noqa: SLF001
                 self._color_manager,
             ):
                 jugador_nombre = (
                     jugador.username() if hasattr(jugador, "username") else str(jugador)
                 )
-                objetivo = self._objetivos_secretos.get_objetivo_jugador(
-                    str(jugador.userid())
-                )
+                objetivo = self._objetivos_secretos.get_objetivo_jugador(jugador_id)
                 print(f"¡{jugador_nombre} ha ganado cumpliendo su objetivo secreto!")
                 if objetivo:
                     print(f"Objetivo cumplido: {objetivo['descripcion']}")
@@ -122,12 +121,11 @@ class VictoryChecker:
 
         """
         for jugador in jugadores:
+            jugador_id = int(jugador.userid())
             jugador_nombre = (
                 jugador.username() if hasattr(jugador, "username") else str(jugador)
             )
-            paises_controlados = self._mapa.cantidad_de_paises_del_jugador(
-                jugador_nombre
-            )
+            paises_controlados = self._mapa.cantidad_de_paises_del_jugador(jugador_id)
 
             if self._paises_para_victoria == 0:
                 objetivo_paises = total_paises

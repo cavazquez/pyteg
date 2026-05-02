@@ -92,12 +92,12 @@ class MsgTurno(IMsg):
 class MsgPais(IMsg):
     """Mensaje para asignar un país a un jugador."""
 
-    def __init__(self, pais: str, userid: int, unidades: int) -> None:
+    def __init__(self, pais: str, userid: int | None, unidades: int) -> None:
         """Inicializa el mensaje de país.
 
         Args:
             pais: Nombre del país.
-            userid: ID del usuario propietario.
+            userid: userid (int) del propietario, o None si el país no tiene dueño.
             unidades: Cantidad de unidades en el país.
 
         """
@@ -113,7 +113,7 @@ class MsgPais(IMsg):
             Representación JSON del mensaje como cadena.
 
         """
-        data = {
+        data: dict[str, object] = {
             "mensaje": self._tipo,
             "pais": self._pais,
             "userid": self._userid,

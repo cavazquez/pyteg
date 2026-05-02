@@ -216,41 +216,42 @@ class ServerGameCoordinator:
         """
         return self._turno_timer
 
+    def _clientes_por_id(self) -> dict[int, Client]:
+        """Mapeo userid -> Client de los clientes conectados.
+
+        Returns:
+            Diccionario con clave `userid` (int) y valor `Client`.
+
+        """
+        return {int(c.userid()): c for c in self._get_clients()}
+
     def _enviar_colores_asignados(self) -> None:
         """Envía los colores asignados a todos los clientes.
 
         Los envía en el orden de los turnos.
         """
-        # Obtener la lista de clientes en el orden de los turnos
-        # si el juego ha comenzado
+        clientes_ordenados: list[Client]
         if self._game is not None:
-            # Usar el orden de los turnos del juego (devuelve nombres de jugadores)
-            jugadores_orden_nombres = self._game.lista_jugadores_orden_turno()
-            # Convertir nombres a objetos Client
-            clientes_ordenados: list[Client] = []
-            for nombre in jugadores_orden_nombres:
-                for client in self._get_clients():
-                    if client.username() == nombre:
-                        clientes_ordenados.append(client)
-                        break
-            # Asegurarse de que todos los clientes estén incluidos,
-            # incluso si no están en los turnos
+            jugadores_orden_ids = self._game.lista_jugadores_orden_turno()
+            clientes_por_id = self._clientes_por_id()
+            clientes_ordenados = [
+                clientes_por_id[uid]
+                for uid in jugadores_orden_ids
+                if uid in clientes_por_id
+            ]
             clientes_restantes = [
                 c for c in self._get_clients() if c not in clientes_ordenados
             ]
             clientes_ordenados.extend(clientes_restantes)
         else:
-            # Si no hay juego, usar el orden original
             clientes_ordenados = self._get_clients()
 
-        # Enviar los colores asignados a todos los clientes
         for client in self._get_clients():
             for otro_client in clientes_ordenados:
                 color = otro_client.color_actual()
                 if color is not None:
                     client.transmisor.color_asignado(otro_client.userid(), color)
 
-        # Actualizar la lista de jugadores en la interfaz de usuario
         if self._game is not None:
             self._actualizar_lista_jugadores_ui()
 
@@ -262,19 +263,17 @@ class ServerGameCoordinator:
         if self._game is None:
             return
 
-        # Obtener la lista de jugadores en el orden de los turnos
-        jugadores_ordenados = self._game.lista_jugadores_orden_turno()
+        jugadores_orden_ids = self._game.lista_jugadores_orden_turno()
+        clientes_por_id = self._clientes_por_id()
 
-        # Enviar la lista actualizada a todos los clientes
         for client in self._get_clients():
-            # Crear una lista de tuplas (userid, color) en el orden correcto
-            jugadores_con_colores = [
-                (jugador.userid(), jugador.color_actual())
-                for jugador in jugadores_ordenados
-                if hasattr(jugador, "userid") and hasattr(jugador, "color_actual")
-            ]
-
-            # Enviar la lista de jugadores al cliente
+            jugadores_con_colores: list[tuple[int, Any]] = []
+            for uid in jugadores_orden_ids:
+                cliente = clientes_por_id.get(int(uid))
+                if cliente is None:
+                    continue
+                color = cliente.color_actual()
+                jugadores_con_colores.append((cliente.userid(), color))
             client.transmisor.actualizar_lista_jugadores(jugadores_con_colores)
 
     def _enviar_turno_actual(self) -> None:
@@ -284,27 +283,24 @@ class ServerGameCoordinator:
 
         turno_actual = self._game.id_turno_actual()
 
-        # Obtener información del jugador actual
-        jugador_actual_id = None
-        jugador_actual_nombre = None
-        jugador_actual_color = None
+        jugador_actual_id: int | None = None
+        jugador_actual_nombre: str | None = None
+        jugador_actual_color: str | None = None
 
         try:
             turno_obj = self._game.turno_actual()
             if turno_obj and hasattr(turno_obj, "jugador_actual"):
-                jugador_nombre = turno_obj.jugador_actual()
+                jugador_id = turno_obj.jugador_actual()
 
-                if jugador_nombre:
-                    # Buscar el cliente correspondiente al nombre
-                    for client in self._get_clients():
-                        if client.username() == jugador_nombre:
-                            jugador_actual_id = client.userid()
-                            jugador_actual_nombre = client.username()
-                            color_obj = client.color_actual()
-                            jugador_actual_color = (
-                                color_obj.to_hex() if color_obj else None
-                            )
-                            break
+                if jugador_id:
+                    cliente = self._clientes_por_id().get(int(jugador_id))
+                    if cliente is not None:
+                        jugador_actual_id = cliente.userid()
+                        jugador_actual_nombre = cliente.username()
+                        color_obj = cliente.color_actual()
+                        jugador_actual_color = (
+                            color_obj.to_hex() if color_obj else None
+                        )
 
         except (AttributeError, KeyError) as e:
             print(f"Error obteniendo información del jugador actual: {e}")
@@ -318,10 +314,8 @@ class ServerGameCoordinator:
                 jugador_actual_color,
             )
 
-        # Enviar las unidades disponibles al jugador del turno actual
         self._enviar_unidades_disponibles()
 
-        # Enviar el mapa actualizado para actualizar las unidades disponibles
         self._broadcaster.enviar_mapa(self._mapa, self._game)
 
     def _enviar_unidades_disponibles(self) -> None:
@@ -333,12 +327,10 @@ class ServerGameCoordinator:
         if not turno_actual:
             return
 
-        jugador_actual = turno_actual.jugador_actual()
+        jugador_actual_id = turno_actual.jugador_actual()
 
-        # Crear diccionario con las unidades disponibles
         unidades = {"infanteria": turno_actual.cant_unidades()}
 
-        # Agregar unidades de continentes si existen
         if (
             hasattr(turno_actual, "cant_unidades_africa")
             and turno_actual.cant_unidades_africa() > 0
@@ -370,10 +362,6 @@ class ServerGameCoordinator:
         ):
             unidades["Oceanía"] = turno_actual.cant_unidades_oceania()
 
-        # Enviar solo al jugador del turno actual
-        # jugador_actual es un string (nombre),
-        # necesitamos encontrar el Client correspondiente
-        for client in self._get_clients():
-            if client.username() == jugador_actual:
-                client.transmisor.enviar_unidades_disponibles(unidades)
-                break
+        cliente = self._clientes_por_id().get(int(jugador_actual_id))
+        if cliente is not None:
+            cliente.transmisor.enviar_unidades_disponibles(unidades)
