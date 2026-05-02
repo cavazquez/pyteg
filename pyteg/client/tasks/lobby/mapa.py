@@ -75,5 +75,4 @@ class ClientTaskUnidadesDisponibles(IClientTask):
     def run(self, main_window: GameWindowProtocol) -> None:
         """Ejecuta la tarea actualizando las unidades disponibles."""
         CLIENT_TASKS_LOG.debug("Recibidas unidades disponibles: %s", self._unidades)
-        if hasattr(main_window, "update_unidades_disponibles"):
-            main_window.update_unidades_disponibles(self._unidades)
+        main_window.update_unidades_disponibles(self._unidades)

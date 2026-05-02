@@ -35,14 +35,12 @@ class ClientTaskVictoria(IClientTask):
     def run(self, main_window: GameWindowProtocol) -> None:
         """Muestra un mensaje de victoria cuando alguien gana la partida."""
         try:
-            if hasattr(main_window, "sound_manager"):
-                main_window.sound_manager.play_victory()
+            main_window.sound_manager.play_victory()
 
-            if hasattr(main_window, "update_status_bar"):
-                main_window.update_status_bar(
-                    _("🏆 ¡{} ha ganado la partida!").format(self._ganador_nombre),
-                    "green",
-                )
+            main_window.update_status_bar(
+                _("🏆 ¡{} ha ganado la partida!").format(self._ganador_nombre),
+                "green",
+            )
 
             msg_box = QMessageBox(cast("QWidget", main_window))
             msg_box.setWindowTitle(_("¡Partida Terminada!"))
@@ -56,7 +54,7 @@ class ClientTaskVictoria(IClientTask):
             msg_box.setStandardButtons(QMessageBox.StandardButton.Ok)
             msg_box.exec()
 
-            if hasattr(main_window, "chat"):
+            if main_window.chat is not None:
                 main_window.chat.append(
                     _("🏆 ¡{} ha ganado la partida!").format(self._ganador_nombre),
                     "system",
@@ -90,25 +88,23 @@ class ClientTaskConfiguracionPartida(IClientTask):
         Almacena la configuración en la ventana principal.
         """
         try:
-            if hasattr(main_window, "set_configuracion_partida"):
-                main_window.set_configuracion_partida(
-                    self._segundos_por_turno,
-                    self._paises_para_victoria,
-                    objetivos_secretos=self._objetivos_secretos,
-                    misiles_habilitados=self._misiles_habilitados,
-                )
+            main_window.set_configuracion_partida(
+                self._segundos_por_turno,
+                self._paises_para_victoria,
+                objetivos_secretos=self._objetivos_secretos,
+                misiles_habilitados=self._misiles_habilitados,
+            )
 
-            if hasattr(main_window, "update_status_bar"):
-                if self._paises_para_victoria == 0:
-                    objetivo_texto = _("todos los países")
-                else:
-                    objetivo_texto = _("{} países").format(self._paises_para_victoria)
-                main_window.update_status_bar(
-                    _("Objetivo: {} | Turno: {}s").format(
-                        objetivo_texto, self._segundos_por_turno
-                    ),
-                    "blue",
-                )
+            if self._paises_para_victoria == 0:
+                objetivo_texto = _("todos los países")
+            else:
+                objetivo_texto = _("{} países").format(self._paises_para_victoria)
+            main_window.update_status_bar(
+                _("Objetivo: {} | Turno: {}s").format(
+                    objetivo_texto, self._segundos_por_turno
+                ),
+                "blue",
+            )
 
         except (AttributeError, RuntimeError) as e:
             CLIENT_TASKS_LOG.warning(
@@ -142,18 +138,12 @@ class ClientTaskObjetivoSecreto(IClientTask):
                 self._descripcion,
             )
 
-            if hasattr(main_window, "set_objetivo_secreto"):
-                main_window.set_objetivo_secreto(self._objetivo_id, self._descripcion)
-                CLIENT_TASKS_LOG.debug(
-                    "ClientTaskObjetivoSecreto: objetivo almacenado en main_window"
-                )
-            else:
-                CLIENT_TASKS_LOG.warning(
-                    "ClientTaskObjetivoSecreto: main_window carece de "
-                    "set_objetivo_secreto"
-                )
+            main_window.set_objetivo_secreto(self._objetivo_id, self._descripcion)
+            CLIENT_TASKS_LOG.debug(
+                "ClientTaskObjetivoSecreto: objetivo almacenado en main_window"
+            )
 
-            if hasattr(main_window, "chat"):
+            if main_window.chat is not None:
                 main_window.chat.append(
                     _("Objetivo secreto asignado: {}").format(self._descripcion),
                     "system",

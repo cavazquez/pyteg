@@ -35,7 +35,7 @@ class ClientTaskEstado(IClientTask):
             main_window.ventana_esperar_jugadores()
         elif self._msg == "JUGANDO":
             CLIENT_TASKS_LOG.debug("Cambiando a estado JUGANDO")
-            if hasattr(main_window, "w") and main_window.w is not None:
+            if main_window.w is not None:
                 CLIENT_TASKS_LOG.debug("Cerrando ventana de espera...")
                 try:
                     main_window.w.close()
@@ -56,8 +56,7 @@ class ClientTaskEstado(IClientTask):
                     "Error al actualizar lista de jugadores: %s", e
                 )
 
-            if hasattr(main_window, "update"):
-                main_window.update()
+            main_window.update()
 
     def actualizar_lista_jugadores(self, main_window: Any) -> None:
         """Actualiza la lista de jugadores en la interfaz de usuario."""

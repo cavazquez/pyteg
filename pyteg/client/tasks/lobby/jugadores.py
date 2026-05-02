@@ -41,8 +41,7 @@ class ClientTaskUserId(IClientTask):
                 "ClientTaskUserId: Estableciendo %s como MI user_id", userid
             )
             main_window.client.set_userid(userid)
-            if hasattr(main_window, "update_mi_jugador_info"):
-                main_window.update_mi_jugador_info()
+            main_window.update_mi_jugador_info()
         else:
             CLIENT_TASKS_LOG.debug(
                 "ClientTaskUserId: Ya tengo user_id %s, agregando %s a la lista",
@@ -80,12 +79,10 @@ class ClientTaskUsername(IClientTask):
 
         self.actualizar_lista_jugadores(main_window)
 
-        if main_window.client.userid() == userid and hasattr(
-            main_window, "update_mi_jugador_info"
-        ):
+        if main_window.client.userid() == userid:
             main_window.update_mi_jugador_info()
 
-        if hasattr(main_window, "w") and main_window.w is not None:
+        if main_window.w is not None:
             main_window.w.cargar_colores_asignados()
 
     def actualizar_lista_jugadores(self, main_window: Any) -> None:
@@ -130,10 +127,7 @@ class ClientTaskActualizarListaJugadores(IClientTask):
                 color_data = jugador.get("color", {})
 
                 nombre = _("Jugador {}").format(userid)
-                if (
-                    hasattr(main_window, "client_by_id")
-                    and userid in main_window.client_by_id
-                ):
+                if userid in main_window.client_by_id:
                     cliente = main_window.client_by_id[userid]
                     if hasattr(cliente, "username") and cliente.username():
                         nombre = cliente.username()
@@ -146,8 +140,7 @@ class ClientTaskActualizarListaJugadores(IClientTask):
 
                 jugadores_actualizados.append((nombre, color))
 
-            if hasattr(main_window, "update_player_list"):
-                main_window.update_player_list(jugadores_actualizados)
+            main_window.update_player_list(jugadores_actualizados)
 
         except (AttributeError, KeyError, TypeError) as e:
             CLIENT_TASKS_LOG.warning("Error al actualizar la lista de jugadores: %s", e)

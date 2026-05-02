@@ -52,14 +52,12 @@ class ClientTaskColorAsignado(IClientTask):
 
             self.actualizar_lista_jugadores(main_window)
 
-            tiene_w = hasattr(main_window, "w") and main_window.w
-            tiene_cargar_colores_asignados = hasattr(
+            if main_window.w is not None and hasattr(
                 main_window.w, "cargar_colores_asignados"
-            )
-            if tiene_w and tiene_cargar_colores_asignados:
+            ):
                 main_window.w.cargar_colores_asignados()
 
-            if hasattr(main_window, "client") and main_window.client:
+            if main_window.client:
                 mi_user_id = main_window.client.userid()
                 CLIENT_TASKS_LOG.debug(
                     "ClientTaskColorAsignado: Mi user_id: %s, Color asignado a: %s",
@@ -70,8 +68,7 @@ class ClientTaskColorAsignado(IClientTask):
                     CLIENT_TASKS_LOG.debug(
                         "ClientTaskColorAsignado: ES MI COLOR, actualizando mi info"
                     )
-                    if hasattr(main_window, "update_mi_jugador_info"):
-                        main_window.update_mi_jugador_info()
+                    main_window.update_mi_jugador_info()
                 else:
                     CLIENT_TASKS_LOG.debug(
                         "ClientTaskColorAsignado: NO es mi color, no actualizo"
@@ -94,8 +91,7 @@ class ClientTaskColorAsignado(IClientTask):
                         color.getRgb(),
                     )
 
-            if hasattr(main_window, "update_player_list"):
-                main_window.update_player_list(jugadores)
+            main_window.update_player_list(jugadores)
         except (AttributeError, KeyError, TypeError) as e:
             CLIENT_TASKS_LOG.warning("Error al actualizar lista de jugadores: %s", e)
 
