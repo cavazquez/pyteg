@@ -75,7 +75,7 @@ class Gui(QMainWindow):
     def _gui_init_core_state(self, client: Client) -> None:
         self._vivo = True
         self.client = client
-        self._theme = "light"
+        self.theme: str = "light"
         self.client_by_id: dict[int, Any] = {}
         self.transmisor = ClientNullTransmisor()
         self.conexion: Any = None
@@ -106,10 +106,10 @@ class Gui(QMainWindow):
         self.setMouseTracking(True)
 
     def _gui_init_turn_tracking(self) -> None:
-        self._turno_actual = 0
-        self._jugador_actual_id = None
-        self._jugador_actual_nombre = None
-        self._jugador_actual_color = None
+        self.turno_actual: int = 0
+        self.jugador_actual_id: int | None = None
+        self.jugador_actual_nombre: str | None = None
+        self.jugador_actual_color: str | None = None
         self.colores = Colores()
 
     def vivo(self) -> bool:

@@ -32,8 +32,8 @@ def setup_continent_values(main_window: Any, layout: QVBoxLayout) -> None:
     section_layout.addWidget(title)
 
     main_window.value_labels = {}
-    main_window._row_widgets = {}  # noqa: SLF001
-    main_window._last_units = {}  # noqa: SLF001
+    main_window.row_widgets = {}
+    main_window.last_units = {}
 
     _create_unit_row(
         main_window,
@@ -54,7 +54,7 @@ def setup_continent_values(main_window: Any, layout: QVBoxLayout) -> None:
         glyph="M",
         tooltip="Misiles disponibles",
     )
-    main_window._row_widgets["Misiles"].setVisible(False)  # noqa: SLF001
+    main_window.row_widgets["Misiles"].setVisible(False)
 
     for cont in [
         "América del Sur",
@@ -110,7 +110,7 @@ def _create_unit_row(  # noqa: PLR0913, PLR0917
 
     parent_layout.addWidget(row)
     main_window.value_labels[key] = label
-    main_window._row_widgets[key] = row  # noqa: SLF001
+    main_window.row_widgets[key] = row
     row.setToolTip(tooltip)
 
 
