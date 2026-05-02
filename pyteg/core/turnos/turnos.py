@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from pyteg.calculos import Calculos
+from pyteg.core.combate.calculos import Calculos
 
 if TYPE_CHECKING:
     from pyteg.server.juego.mapa import Mapa
