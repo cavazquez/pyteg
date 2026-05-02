@@ -5,26 +5,17 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 from PySide6.QtCore import QSize, Qt
-from PySide6.QtWidgets import (
-    QFrame,
-    QHBoxLayout,
-    QLabel,
-    QMainWindow,
-    QSizePolicy,
-    QStatusBar,
-    QWidget,
-)
+from PySide6.QtWidgets import QMainWindow, QWidget
 
 from pyteg.client_transmisor import ClientNullTransmisor
 from pyteg.cliente_colores import Colores
+from pyteg.gui.status_bar import build_status_bar
 from pyteg.gui_card_manager import CardManager
 from pyteg.gui_config_manager import ConfigManager
 from pyteg.gui_game_actions import GameActionsManager
 from pyteg.gui_language_manager import LanguageManager
-from pyteg.gui_language_selector import LanguageSelector
 from pyteg.gui_layout_manager import LayoutManager
 from pyteg.gui_players_manager import PlayersManager
-from pyteg.gui_sound_control import SoundControlWidget
 from pyteg.gui_status_manager import StatusManager
 from pyteg.gui_theme_manager import ThemeManager
 from pyteg.gui_units_manager import UnitsManager
@@ -36,8 +27,11 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
 
     from PySide6.QtGui import QCloseEvent, QColor, QKeyEvent
+    from PySide6.QtWidgets import QHBoxLayout, QLabel, QStatusBar
 
     from pyteg.client import Client
+    from pyteg.gui.widgets.language_selector import LanguageSelector
+    from pyteg.gui.widgets.sound_control import SoundControlWidget
     from pyteg.gui_chat import Chat
     from pyteg.gui_conectar import VentanaConectar
     from pyteg.gui_scene import QCustomGraphicsScene
@@ -47,6 +41,21 @@ if TYPE_CHECKING:
 
 class Gui(QMainWindow):
     """Ventana principal de la interfaz gráfica del juego."""
+
+    status_bar: QStatusBar
+    jugador_actual_widget: QWidget
+    jugador_actual_layout: QHBoxLayout
+    turno_label: QLabel
+    mi_jugador_widget: QWidget
+    mi_jugador_layout: QHBoxLayout
+    mi_jugador_text: QLabel
+    mi_color_indicator: QLabel
+    mi_username_label: QLabel
+    estado_label: QLabel
+    seleccion_label: QLabel
+    language_selector: LanguageSelector
+    sound_control: SoundControlWidget
+    timer_label: QLabel
 
     def __init__(self, client: Client) -> None:
         """Inicializa la ventana principal de la GUI.
@@ -60,7 +69,7 @@ class Gui(QMainWindow):
         self._gui_init_window_and_managers()
         self._gui_init_turn_tracking()
         self.layout_manager.setup_graphics_view()
-        self._gui_build_status_bar()
+        build_status_bar(self)
         self.show()
 
     def _gui_init_core_state(self, client: Client) -> None:
@@ -100,87 +109,6 @@ class Gui(QMainWindow):
         self._jugador_actual_nombre = None
         self._jugador_actual_color = None
         self.colores = Colores()
-
-    def _gui_build_status_bar(self) -> None:
-        self.status_bar = QStatusBar()
-        self.status_bar.setFixedHeight(26)
-        self.theme_manager._apply_statusbar_theme()  # noqa: SLF001
-        self._gui_status_bar_turn_and_local_player()
-        self._gui_status_bar_pills_and_controls()
-        self.setStatusBar(self.status_bar)
-
-    def _gui_status_bar_add_vseparator(self) -> None:
-        sep = QFrame()
-        sep.setFrameShape(QFrame.Shape.VLine)
-        sep.setFrameShadow(QFrame.Shadow.Sunken)
-        self.status_bar.addPermanentWidget(sep)
-
-    def _gui_status_bar_turn_and_local_player(self) -> None:
-        self.jugador_actual_widget = QWidget()
-        self.jugador_actual_layout = QHBoxLayout(self.jugador_actual_widget)
-        self.jugador_actual_layout.setContentsMargins(4, 0, 4, 0)
-        self.jugador_actual_layout.setSpacing(6)
-        self.turno_label = QLabel("Turno: 0")
-        self.turno_label.setStyleSheet("font-weight: 600;")
-        self.jugador_actual_layout.addWidget(self.turno_label)
-        self.status_bar.addPermanentWidget(self.jugador_actual_widget)
-        self._gui_status_bar_add_vseparator()
-
-        self.mi_jugador_widget = QWidget()
-        self.mi_jugador_layout = QHBoxLayout(self.mi_jugador_widget)
-        self.mi_jugador_layout.setContentsMargins(4, 0, 4, 0)
-        self.mi_jugador_layout.setSpacing(6)
-        self.mi_jugador_text = QLabel(_("Mi jugador:"))
-        self.mi_jugador_text.setStyleSheet("color: #555;")
-        self.mi_jugador_layout.addWidget(self.mi_jugador_text)
-        self.mi_color_indicator = QLabel()
-        self.mi_color_indicator.setFixedSize(16, 16)
-        self.mi_color_indicator.setStyleSheet("""
-            background-color: #cccccc;
-            border: 1px solid #999999;
-            border-radius: 2px;
-        """)
-        self.mi_jugador_layout.addWidget(self.mi_color_indicator)
-        self.mi_username_label = QLabel(_("[No conectado]"))
-        self.mi_username_label.setStyleSheet("font-weight: 600;")
-        self.mi_jugador_layout.addWidget(self.mi_username_label)
-        self.status_bar.addPermanentWidget(self.mi_jugador_widget)
-        self._gui_status_bar_add_vseparator()
-
-    def _gui_status_bar_pills_and_controls(self) -> None:
-        self.estado_label = QLabel(_("Estado: Desconectado"))
-        self.estado_label.setObjectName("estadoLabel")
-        self.estado_label.setProperty("class", "pill")
-        self.status_bar.addPermanentWidget(self.estado_label)
-        self._gui_status_bar_add_vseparator()
-
-        self.seleccion_label = QLabel(_("Selección: Ninguna"))
-        self.seleccion_label.setProperty("class", "pill")
-        self.status_bar.addPermanentWidget(self.seleccion_label)
-        self._gui_status_bar_add_vseparator()
-
-        self.language_selector = LanguageSelector()
-        self.language_selector.language_changed.connect(
-            self.language_manager.on_language_changed
-        )
-        self.status_bar.addPermanentWidget(self.language_selector)
-        self._gui_status_bar_add_vseparator()
-
-        self.sound_control = SoundControlWidget(self.sound_manager)
-        self.status_bar.addPermanentWidget(self.sound_control)
-        self._gui_status_bar_add_vseparator()
-
-        self.timer_label = QLabel("")
-        self.timer_label.setStyleSheet("font-weight: bold; padding: 2px 8px;")
-        self.timer_label.setMinimumWidth(120)
-        self.status_bar.addPermanentWidget(self.timer_label)
-
-        spacer = QWidget()
-        spacer.setSizePolicy(
-            QSizePolicy.Policy.Expanding,
-            QSizePolicy.Policy.Preferred,
-        )
-        self.status_bar.addPermanentWidget(spacer)
 
     def vivo(self) -> bool:
         """Verifica si la ventana está activa.
