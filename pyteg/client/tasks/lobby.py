@@ -8,9 +8,9 @@ from PySide6.QtGui import QColor
 from PySide6.QtWidgets import QMessageBox
 
 from pyteg.client.app import Client
+from pyteg.client.colores.color import Color
 from pyteg.client.tasks.base import IClientTask
 from pyteg.client.tasks.logging_helper import CLIENT_TASKS_LOG
-from pyteg.client_color import Color
 from pyteg.i18n import translate as _
 
 
