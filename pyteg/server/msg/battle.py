@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from pyteg.server_msg.base import IMsg
+from pyteg.server.msg.base import IMsg
 
 
 class MsgResultadoBatalla(IMsg):

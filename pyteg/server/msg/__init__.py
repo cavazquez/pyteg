@@ -1,8 +1,8 @@
 """Mensajes tipados que el servidor envía a los clientes."""
 
-from pyteg.server_msg.base import IMsg
-from pyteg.server_msg.battle import MsgError, MsgResultadoBatalla, MsgVictoria
-from pyteg.server_msg.cards_missiles import (
+from pyteg.server.msg.base import IMsg
+from pyteg.server.msg.battle import MsgError, MsgResultadoBatalla, MsgVictoria
+from pyteg.server.msg.cards_missiles import (
     MsgCanjeEspecial,
     MsgMisilAgregado,
     MsgReclamarTarjeta,
@@ -10,8 +10,8 @@ from pyteg.server_msg.cards_missiles import (
     MsgSolicitarTarjetas,
     MsgTarjetasJugador,
 )
-from pyteg.server_msg.config import MsgConfiguracionPartida, MsgObjetivoSecreto
-from pyteg.server_msg.connection import (
+from pyteg.server.msg.config import MsgConfiguracionPartida, MsgObjetivoSecreto
+from pyteg.server.msg.connection import (
     MsgChat,
     MsgColor,
     MsgColorAsignado,
@@ -20,7 +20,7 @@ from pyteg.server_msg.connection import (
     MsgUserId,
     MsgUsername,
 )
-from pyteg.server_msg.map_turn import (
+from pyteg.server.msg.map_turn import (
     MsgAgregarUnidad,
     MsgMoverUnidad,
     MsgPais,
@@ -28,7 +28,7 @@ from pyteg.server_msg.map_turn import (
     MsgTurno,
     MsgUnidadesDisponibles,
 )
-from pyteg.server_msg.players import MsgActualizarListaJugadores
+from pyteg.server.msg.players import MsgActualizarListaJugadores
 
 __all__ = [
     "IMsg",
