@@ -15,6 +15,9 @@ from pyteg.i18n import (
 from pyteg.i18n import (
     translate as _,
 )
+from pyteg.logger import get_logger
+
+_LOG = get_logger("gui.language_selector")
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -128,5 +131,5 @@ class LanguageSelector(QWidget):
             set_language(lang_code)
             # Emitir señal para que toda la GUI se actualice
             self.language_changed.emit(lang_code)
-            print(f"Idioma cambiado a: {lang_code}")
+            _LOG.debug("Idioma cambiado a: %s", lang_code)
         # Si el idioma es el mismo, no hacer nada para evitar bucles

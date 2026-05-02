@@ -21,6 +21,9 @@ from pyteg.config import (
 )
 from pyteg.gui_tarjeta_widget import TarjetaWidget
 from pyteg.i18n import translate as _
+from pyteg.logger import get_logger
+
+_LOG = get_logger("gui.tarjetas_dialog")
 
 
 class TarjetasDialog(QDialog):
@@ -465,7 +468,7 @@ class TarjetasDialog(QDialog):
 
         transmisor = self._get_transmisor()
         if transmisor is None:
-            print("Error: No se puede acceder al transmisor")
+            _LOG.warning("No se puede acceder al transmisor (canje)")
             return
 
         try:
@@ -477,20 +480,20 @@ class TarjetasDialog(QDialog):
 
             self.deseleccionar_todas()
         except (AttributeError, RuntimeError) as e:
-            print(f"Error al realizar canje: {e}")
+            _LOG.warning("Error al realizar canje: %s", e)
 
     def reclamar_tarjeta(self) -> None:
         """Reclama una tarjeta del servidor."""
         transmisor = self._get_transmisor()
         if transmisor is None:
-            print("Error: No se puede acceder al transmisor")
+            _LOG.warning("No se puede acceder al transmisor (canje)")
             return
 
         try:
             transmisor.reclamar_tarjeta()
             transmisor.solicitar_tarjetas()
         except (AttributeError, RuntimeError) as e:
-            print(f"Error al reclamar tarjeta: {e}")
+            _LOG.warning("Error al reclamar tarjeta: %s", e)
 
     def set_objetivo_secreto(
         self, objetivo_id: str | None, descripcion: str | None

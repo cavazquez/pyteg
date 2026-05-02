@@ -3,24 +3,25 @@
 from __future__ import annotations
 
 import pathlib
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from PySide6.QtCore import QPropertyAnimation, Qt, QTimer
 from PySide6.QtGui import QColor, QPixmap
 from PySide6.QtWidgets import (
     QGraphicsColorizeEffect,
-    QGraphicsOpacityEffect,
     QGraphicsPixmapItem,
-    QGraphicsSceneMouseEvent,
     QGraphicsTextItem,
 )
 
 from pyteg.exception import ImagenNoEncontradaError
 from pyteg.gui_circulo import Circulo
 from pyteg.gui_pais_battle_fx import PaisBattleFxMixin
+from pyteg.gui_pais_selection import PaisSelectionMixin
+
+if TYPE_CHECKING:
+    from PySide6.QtCore import QPropertyAnimation, QTimer
 
 
-class Pais(PaisBattleFxMixin, QGraphicsPixmapItem):
+class Pais(PaisBattleFxMixin, PaisSelectionMixin, QGraphicsPixmapItem):
     """Widget gráfico que representa un país en el mapa."""
 
     def __init__(
@@ -125,39 +126,3 @@ class Pais(PaisBattleFxMixin, QGraphicsPixmapItem):
     def set_main_window(self, main_window: Any) -> None:
         """Establece la referencia a la ventana principal."""
         self._main_window = main_window
-
-    def mousePressEvent(self, event: QGraphicsSceneMouseEvent) -> None:  # noqa: N802
-        """Maneja los clics del mouse en el país."""
-        if event.button() == Qt.MouseButton.LeftButton:
-            # Clic izquierdo: seleccionar país usando el selection_manager
-            if (
-                self._main_window
-                and hasattr(self._main_window, "scene")
-                and hasattr(self._main_window.scene, "selection_manager")
-            ):
-                self._main_window.scene.selection_manager.seleccionar_pais(self._nombre)
-        else:
-            # Otros clics (como clic derecho) se manejan normalmente
-            super().mousePressEvent(event)
-
-    def set_seleccion_visual(self, tipo: str) -> None:
-        """Establece el indicador visual de selección usando oscurecimiento."""
-        # Limpiar efecto anterior si existe
-        self.limpiar_seleccion_visual()
-
-        # Aplicar efecto de oscurecimiento según el tipo
-        if tipo == "origen":
-            # Origen: ligeramente más oscuro (opacidad 0.7)
-            effect = QGraphicsOpacityEffect()
-            effect.setOpacity(0.7)
-            self.setGraphicsEffect(effect)
-        elif tipo == "destino":
-            # Destino: más oscuro (opacidad 0.5)
-            effect = QGraphicsOpacityEffect()
-            effect.setOpacity(0.5)
-            self.setGraphicsEffect(effect)
-
-    def limpiar_seleccion_visual(self) -> None:
-        """Elimina el indicador visual de selección."""
-        if self.graphicsEffect():
-            self.setGraphicsEffect(None)  # type: ignore[arg-type]

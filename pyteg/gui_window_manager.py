@@ -12,6 +12,9 @@ from typing import Any
 from pyteg.gui_admin import VentanaAdmin
 from pyteg.gui_conectar import VentanaConectar
 from pyteg.gui_esperar_jugadores import VentanaEsperarJugadores
+from pyteg.logger import get_logger
+
+_LOG = get_logger("gui.window_manager")
 
 
 class WindowManager:
@@ -56,13 +59,12 @@ class WindowManager:
 
     def ventana_esperar_jugadores(self) -> None:
         """Abre la ventana de espera de jugadores."""
-        print("=== Iniciando ventana_esperar_jugadores ===")
-        print("Creando nueva ventana de espera...")
+        _LOG.debug("Iniciando ventana_esperar_jugadores")
         self.main_window.w = VentanaEsperarJugadores(self.main_window)
 
         # Conectar la señal de cierre para limpiar la referencia
         def limpiar_ventana() -> None:
-            print("Limpiando referencia a la ventana de espera")
+            _LOG.debug("Limpiando referencia a la ventana de espera")
             if hasattr(self.main_window, "w") and self.main_window.w is not None:
                 with contextlib.suppress(Exception):
                     # Desconectar todas las señales para evitar llamadas duplicadas
@@ -75,4 +77,4 @@ class WindowManager:
 
         # Mostrar la ventana
         self.main_window.w.show()
-        print("Ventana de espera mostrada")
+        _LOG.debug("Ventana de espera mostrada")

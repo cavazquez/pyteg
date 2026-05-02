@@ -9,6 +9,9 @@ from PySide6.QtWidgets import QDialog, QMenu, QWidget
 
 from pyteg.config import MISSILE_UNIT_COST
 from pyteg.gui_attack_dialog import AttackDialog
+from pyteg.logger import get_logger
+
+_LOG = get_logger("gui.menu")
 
 
 class Menu(QMenu):
@@ -220,9 +223,11 @@ class Menu(QMenu):
                     cantidad_unidades = dialog.get_cantidad_unidades()
                     # Realizar ataque usando el método específico
                     self.transmisor.atacar(origen, destino, cantidad_unidades)
-                    print(
-                        f"Atacando de {origen} a {destino} con "
-                        f"{cantidad_unidades} unidades"
+                    _LOG.debug(
+                        "Atacando de %s a %s con %s unidades",
+                        origen,
+                        destino,
+                        cantidad_unidades,
                     )
                     # Mostrar mensaje en la barra de estado
                     self.main_window.update_status_bar(
@@ -245,7 +250,7 @@ class Menu(QMenu):
             if origen and destino and self.transmisor is not None:
                 # Realizar movimiento de 1 unidad
                 self.transmisor.mover_unidad(origen=origen, destino=destino, cantidad=1)
-                print(f"Moviendo 1 unidad de {origen} a {destino}")
+                _LOG.debug("Moviendo 1 unidad de %s a %s", origen, destino)
                 # Mostrar mensaje en la barra de estado
                 status_bar = getattr(self.main_window, "status_bar", None)
                 if status_bar is not None:

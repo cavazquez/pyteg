@@ -21,6 +21,9 @@ from PySide6.QtWidgets import (
 from pyteg.client_connection import ConnectionClient
 from pyteg.client_transmisor import ClientTransmisor
 from pyteg.i18n import translate as _
+from pyteg.logger import get_logger
+
+_LOG = get_logger("gui.conectar")
 
 
 class VentanaConectar(QDialog):
@@ -340,7 +343,7 @@ class VentanaConectar(QDialog):
                 )
 
         except (AttributeError, TypeError, RuntimeError) as e:
-            print(f"DEBUG: Error conectando al selector de idioma: {e}")
+            _LOG.debug("Error conectando al selector de idioma: %s", e)
 
     def update_language(self) -> None:
         """Actualiza todos los textos de la interfaz al cambiar el idioma."""
