@@ -13,10 +13,10 @@ Este proyecto implementa una versión cliente-servidor con interfaz
 gráfica en Python.
 
 ## Características clave
-- Cliente gráfico con PySide6 y animación de dados en las batallas
+- Cliente gráfico con 🖥️ PySide6 y animación de dados en las batallas
 - **Efectos visuales inmersivos**: Atacante ve animación completa, espectadores ven titilación de países y pérdidas flotantes
 - **Sistema de sonidos**: Efectos de audio para batallas, movimientos, turnos y eventos del juego con controles de volumen
-- Modo multijugador con servidor TCP y validación de estados (sin cifrado; pensado para redes de confianza, p. ej. LAN). Detalle del modelo de amenaza: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#seguridad-y-modelo-de-amenaza) y [ADR-009](docs/DECISIONS.md#adr-009-tcp-sin-cifrado-y-red-de-confianza).
+- Modo multijugador con servidor 🔌 TCP y validación de estados (sin cifrado; pensado para redes de confianza, p. ej. LAN). Detalle del modelo de amenaza: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#seguridad-y-modelo-de-amenaza) y [ADR-009](docs/DECISIONS.md#adr-009-tcp-sin-cifrado-y-red-de-confianza).
 - Restricción de ataques en los dos primeros turnos
 - Elección de cantidad de unidades para atacar (1 a 3)
 - Validación de nombres de usuario duplicados (con desconexión)
@@ -26,15 +26,15 @@ gráfica en Python.
 - **Objetivos secretos**: Sistema opcional de objetivos secretos del TEG clásico
 - **Ventana de configuración**: Muestra duración de turno, objetivo de países y objetivos secretos
 - **Verificación automática de condición de victoria al final de cada ronda**
-- **Soporte multiidioma (i18n)**: Español e inglés con selector en la interfaz
-- Suite `unittest` (~175 casos con `python -m unittest discover`), Ruff, mypy estricto y cobertura en CI y en `./run_tests.sh`
+- **Soporte multiidioma 🌍 (i18n)**: Español e inglés con selector en la interfaz
+- Suite 🧪 `unittest` (~175 casos con `python -m unittest discover`), 🪶 Ruff, 📐 mypy estricto y 📊 cobertura en CI y en `./run_tests.sh`
 
 ## Requisitos
-- Python 3.11 o superior
-- [UV](https://github.com/astral-sh/uv) para dependencias
-- Docker (opcional)
+- 🐍 Python 3.11 o superior
+- ⚡ [UV](https://github.com/astral-sh/uv) para dependencias
+- 🐳 Docker (opcional)
 
-## Instalación rápida
+## ⚡ Instalación rápida
 ```bash
 git clone https://github.com/cavazquez/pyteg.git
 cd pyteg
@@ -68,7 +68,7 @@ Consejos:
 - Primero inicia el servidor. Luego abre uno o más clientes.
 - Si el juego ya está en curso, el servidor rechazará nuevas conexiones.
 
-## Build de binarios (Hatch + Nuitka)
+## Build de binarios (🥚 Hatch + ⚙️ Nuitka)
 Requiere dependencias de desarrollo:
 ```bash
 uv sync --group dev
@@ -76,6 +76,7 @@ uv sync --group dev
 
 Compilar binarios (modo onefile + standalone) para servidor y cliente:
 ```bash
+# 🥚 Hatch + ⚙️ Nuitka
 uv run hatch build -t nuitka
 ```
 
@@ -83,6 +84,7 @@ Los ejecutables quedarán en `dist/`.
 
 Build de wheel/sdist (empaquetado Python estándar):
 ```bash
+# 🥚 Hatch (wheel / sdist)
 uv run hatch build -t wheel -t sdist
 ```
 
@@ -124,11 +126,11 @@ Esta arquitectura modular reduce la complejidad del archivo principal en un 65% 
 ## Desarrollo
 Formateo y estilo:
 - Límite de línea: 88 caracteres (en todo el proyecto)
-- Ruff para lint y formato
+- 🪶 Ruff para lint y formato
 
 Comandos útiles (tras `uv sync --group dev`; detalle en `docs/CONTRIBUTING.md`):
 ```bash
-# Lint / formato / mypy / tests (versiones fijadas en el proyecto)
+# 🪶 Lint / formato · 📐 mypy · 🧪 tests (versiones fijadas en el proyecto)
 uv run ruff check .
 uv run ruff format --check .
 uv run mypy
@@ -142,13 +144,13 @@ uv run coverage report -m
 ## Logs y retención
 Los logs se guardan en `logs/` con rotación automática y limpieza periódica. Puedes ajustar límites mediante variables de entorno (tamaño por archivo, cantidad de backups, tamaño total, días de retención y cantidad de logs de cliente). Consulta la sección correspondiente en `docs/CONTRIBUTING.md` para ver los nombres de variables y ejemplos.
 
-## Docker (opcional)
+## 🐳 Docker (opcional)
 Puedes levantar un entorno de desarrollo con:
 ```bash
 ./ejecutar_docker.sh
 ```
 
-## Soporte multiidioma (i18n)
+## 🌍 Soporte multiidioma (i18n)
 
 PyTeg incluye soporte completo para múltiples idiomas usando gettext:
 
@@ -229,7 +231,7 @@ Para crear un nuevo release con binarios compilados:
    git push origin v1.0.0
    ```
 
-4. **GitHub Actions automáticamente**:
+4. **🔄 GitHub Actions automáticamente**:
    - Construirá binarios para todas las plataformas
    - Ejecutará los tests en cada plataforma
    - Creará un **borrador de release privado** con los binarios adjuntos
