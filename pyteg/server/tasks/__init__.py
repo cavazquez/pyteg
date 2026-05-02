@@ -5,21 +5,21 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import Any
 
-from pyteg.server_tasks.base import LOGGER, IServerTask, ServerTaskNull
-from pyteg.server_tasks.cards_missiles import (
+from pyteg.server.tasks.base import LOGGER, IServerTask, ServerTaskNull
+from pyteg.server.tasks.cards_missiles import (
     ServerTaskCanjearMisil,
     ServerTaskCanjeEspecial,
     ServerTaskLanzarMisil,
     ServerTaskReclamarTarjeta,
     ServerTaskSolicitarTarjetas,
 )
-from pyteg.server_tasks.game_actions import (
+from pyteg.server.tasks.game_actions import (
     ServerTaskAgregarUnidad,
     ServerTaskAtacar,
     ServerTaskFinalizarTurno,
     ServerTaskMoverUnidad,
 )
-from pyteg.server_tasks.lobby import (
+from pyteg.server.tasks.lobby import (
     ServerTaskChat,
     ServerTaskEmpezar,
     ServerTaskEmpezarPartida,

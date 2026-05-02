@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-from pyteg.server_tasks.base import LOGGER, IServerTask
+from pyteg.server.tasks.base import LOGGER, IServerTask
 
 if TYPE_CHECKING:
     from pyteg.game_context import GameContext

@@ -19,7 +19,7 @@ from pyteg.exception import (
     MissingFieldError,
     NoMissilesAvailableError,
 )
-from pyteg.server_tasks.base import LOGGER, IServerTask
+from pyteg.server.tasks.base import LOGGER, IServerTask
 from pyteg.server_validators import (
     CountryOwnershipValidator,
     GameStateValidator,
