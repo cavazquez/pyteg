@@ -63,9 +63,9 @@ class TarjetasDialog(QDialog):
         layout = QVBoxLayout()
 
         # Título
-        titulo = QLabel(_("Tarjetas Asignadas"))
-        titulo.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        titulo.setStyleSheet("""
+        self.titulo = QLabel(_("Tarjetas Asignadas"))
+        self.titulo.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.titulo.setStyleSheet("""
             QLabel {
                 font-size: 18px;
                 font-weight: bold;
@@ -73,7 +73,7 @@ class TarjetasDialog(QDialog):
                 padding: 10px;
             }
         """)
-        layout.addWidget(titulo)
+        layout.addWidget(self.titulo)
 
         # Área de tarjetas
         self.tarjetas_widget = self._create_tarjetas_area()
@@ -115,6 +115,26 @@ class TarjetasDialog(QDialog):
 
         layout.addLayout(cerrar_layout)
         self.setLayout(layout)
+
+    def update_language(self, lang_code: str) -> None:
+        """Re-aplica las traducciones a las etiquetas y botones del diálogo.
+
+        Hoy el diálogo es modal, así que en la práctica no se invoca con el diálogo
+        abierto; el método queda definido por simetría con el resto de los widgets
+        y para soportar un eventual modo no-modal sin tocar `LanguageManager`.
+        """
+        del lang_code
+        self.setWindowTitle(_("Mis Tarjetas"))
+        self.titulo.setText(_("Tarjetas Asignadas"))
+        self.titulo_objetivo.setText(_("Objetivo Secreto"))
+        self.button_cerrar.setText(_("Cerrar"))
+        self.button_seleccionar_todas.setText(_("Seleccionar Todas"))
+        self.button_deseleccionar_todas.setText(_("Deseleccionar Todas"))
+        self.button_reclamar.setText(_("Reclamar Tarjeta"))
+        self.button_canje.setText(_("Canje"))
+        self._actualizar_info_seleccion()
+        if not self.objetivo_secreto_descripcion:
+            self.label_objetivo.setText(_("No hay objetivo secreto asignado"))
 
     def _create_tarjetas_area(self) -> QWidget:
         """Crea el área donde se muestran las tarjetas.
@@ -171,9 +191,9 @@ class TarjetasDialog(QDialog):
         layout = QVBoxLayout()
 
         # Título de objetivo secreto
-        titulo_objetivo = QLabel(_("Objetivo Secreto"))
-        titulo_objetivo.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        titulo_objetivo.setStyleSheet("""
+        self.titulo_objetivo = QLabel(_("Objetivo Secreto"))
+        self.titulo_objetivo.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.titulo_objetivo.setStyleSheet("""
             QLabel {
                 font-size: 14px;
                 font-weight: bold;
@@ -184,7 +204,7 @@ class TarjetasDialog(QDialog):
                 margin-bottom: 5px;
             }
         """)
-        layout.addWidget(titulo_objetivo)
+        layout.addWidget(self.titulo_objetivo)
 
         # Descripción del objetivo secreto
         self.label_objetivo = QLabel(_("No hay objetivo secreto asignado"))

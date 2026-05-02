@@ -7,12 +7,18 @@ from __future__ import annotations
 
 import gettext
 import locale
+import logging
 from pathlib import Path
 from typing import Protocol
 
 # Directorio base del proyecto
 BASE_DIR = Path(__file__).parent.parent
 LOCALES_DIR = BASE_DIR / "locales"
+
+# Usamos `logging.getLogger` directamente (no `pyteg.logger.get_logger`) porque
+# `i18n` se importa muy temprano y queremos evitar arrastrar la configuración
+# completa del logger del proyecto durante la inicialización del módulo.
+_LOG = logging.getLogger("i18n")
 
 
 class _TranslationsProtocol(Protocol):
@@ -43,7 +49,10 @@ class I18nManager:
         """
         try:
             if language not in get_available_languages():
-                print(f"Idioma '{language}' no disponible. Usando español por defecto.")
+                _LOG.warning(
+                    "Idioma '%s' no disponible. Usando español por defecto.",
+                    language,
+                )
                 language = "es"
 
             # Configurar gettext
@@ -60,17 +69,18 @@ class I18nManager:
                         fallback=True,
                     )
                 except FileNotFoundError:
-                    print(
-                        f"Archivo de traducción no encontrado para '{language}', "
-                        "usando fallback"
+                    _LOG.warning(
+                        "Archivo de traducción no encontrado para '%s', "
+                        "usando fallback",
+                        language,
                     )
                     self._translation = gettext.NullTranslations()
 
             self.current_language = language
-            print(f"Idioma establecido: {language}")
+            _LOG.info("Idioma establecido: %s", language)
 
-        except (OSError, ValueError) as e:
-            print(f"Error al establecer idioma '{language}': {e}")
+        except (OSError, ValueError):
+            _LOG.exception("Error al establecer idioma '%s'", language)
             # Fallback a español
             self._translation = gettext.NullTranslations()
             self.current_language = "es"

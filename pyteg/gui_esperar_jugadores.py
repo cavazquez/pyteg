@@ -14,6 +14,7 @@ from PySide6.QtWidgets import (
 )
 
 from pyteg.gui_radio_color import GuiRadioButtonColor
+from pyteg.i18n import translate as _
 from pyteg.logger import get_logger
 
 _LOG = get_logger("gui.esperar_jugadores")
@@ -33,6 +34,7 @@ class VentanaEsperarJugadores(QWidget):
         self._main_window = main_window
         self._main_layout: QVBoxLayout | None = None
         self.radio_por_colores: dict[str, GuiRadioButtonColor] = {}
+        self._empezar_button: QPushButton | None = None
         self._initialized = False
         self.inicializar_ui()
         self._initialized = True
@@ -43,7 +45,7 @@ class VentanaEsperarJugadores(QWidget):
 
     def inicializar_ui(self) -> None:
         """Inicializa la interfaz de usuario de la ventana."""
-        self.setWindowTitle("Esperando jugadores")
+        self.setWindowTitle(_("Esperando jugadores"))
         self.setFixedSize(QSize(500, 400))
 
         # Crear el layout principal
@@ -64,17 +66,24 @@ class VentanaEsperarJugadores(QWidget):
         # Añadir botón de "Empezar" si es admin
         client = getattr(self._main_window, "client", None)
         if client is not None and hasattr(client, "es_admin") and client.es_admin():
-            empezar_button = QPushButton("Empezar")
-            empezar_button.setFixedSize(100, 50)
-            empezar_button.clicked.connect(self.empezar_juego)
+            self._empezar_button = QPushButton(_("Empezar"))
+            self._empezar_button.setFixedSize(100, 50)
+            self._empezar_button.clicked.connect(self.empezar_juego)
 
             # Crear un layout horizontal para centrar el botón
             button_layout = QHBoxLayout()
             button_layout.addStretch()
-            button_layout.addWidget(empezar_button)
+            button_layout.addWidget(self._empezar_button)
             button_layout.addStretch()
 
             self._main_layout.addLayout(button_layout)
+
+    def update_language(self, lang_code: str) -> None:
+        """Re-aplica las traducciones a las etiquetas estáticas de la ventana."""
+        del lang_code
+        self.setWindowTitle(_("Esperando jugadores"))
+        if self._empezar_button is not None:
+            self._empezar_button.setText(_("Empezar"))
 
     def empezar_juego(self) -> None:
         """Inicia el juego enviando el mensaje al servidor."""

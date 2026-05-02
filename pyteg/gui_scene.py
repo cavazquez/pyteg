@@ -19,6 +19,7 @@ from PySide6.QtWidgets import (
 from pyteg.gui_menu import Menu
 from pyteg.gui_pais import Pais
 from pyteg.gui_toolbar import ToolBar
+from pyteg.i18n import translate as _
 from pyteg.toml_reader import TomlReader
 from pyteg.utils import get_resource_path
 
@@ -92,27 +93,44 @@ class CountrySelectionManager:
             )
             # Mostrar mensaje en la barra de estado
             self.main_window.status_bar.showMessage(
-                f"Moviendo 1 unidad de {self._pais_origen} a {self._pais_destino}",
+                _("Moviendo 1 unidad de {} a {}").format(
+                    self._pais_origen, self._pais_destino
+                ),
                 3000,  # 3 segundos
             )
             # Cancelar selección después de la acción
             self.cancelar_seleccion()
+
+    def refresh_labels(self) -> None:
+        """Re-aplica las traducciones del label de selección y notifica a la toolbar.
+
+        Invocable desde `LanguageManager.on_language_changed` para refrescar el texto
+        sin esperar a la próxima acción del usuario.
+        """
+        self._actualizar_seleccion_label()
 
     def _actualizar_seleccion_label(self) -> None:
         """Actualiza el label de selección en la barra de estado."""
         if hasattr(self.main_window, "seleccion_label"):
             if self._pais_origen is None:
                 self.main_window.seleccion_label.setText(
-                    "Selección: Haz clic en un país para seleccionar origen"
+                    _("Selección: Haz clic en un país para seleccionar origen")
                 )
             elif self._pais_destino is None:
                 self.main_window.seleccion_label.setText(
-                    f"Origen: {self._pais_origen} | Haz clic en otro país para destino"
+                    _("Origen: {} | Haz clic en otro país para destino").format(
+                        self._pais_origen
+                    )
                 )
             else:
                 self.main_window.seleccion_label.setText(
-                    f"Origen: {self._pais_origen} | Destino: {self._pais_destino} | "
-                    f"Clic derecho: Atacar/Mover"
+                    _(
+                        "Origen: {origen} | Destino: {destino} | "
+                        "Clic derecho: Atacar/Mover"
+                    ).format(
+                        origen=self._pais_origen,
+                        destino=self._pais_destino,
+                    )
                 )
 
         # Notificar a la toolbar sobre el cambio de selección
@@ -183,7 +201,7 @@ class QCustomGraphicsScene(QGraphicsScene):
         # Mostrar las coordenadas en el Status Bar
         scene_pos = event.scenePos()
         self.main_window.update_status_bar(
-            f"Coordenadas: ({scene_pos.x()}, {scene_pos.y()})",
+            _("Coordenadas: ({}, {})").format(scene_pos.x(), scene_pos.y()),
         )
         # Llamar al evento original
         super().mouseMoveEvent(event)

@@ -43,6 +43,10 @@ class Menu(QMenu):
         self.main_window = main_window
         self.transmisor = getattr(main_window, "transmisor", None)
 
+        # i18n: este menú es efímero. `QCustomGraphicsScene.contextMenuEvent` lo
+        # reconstruye en cada clic derecho, por lo que las etiquetas siempre se
+        # crean con el idioma vigente y no se necesita un `refresh_labels()`
+        # conectado a `LanguageManager` (a diferencia de la toolbar, que sí persiste).
         # Configurar acciones del menú
         self.action_pais = QAction(pais, self)
         self.action_pais.setEnabled(False)
