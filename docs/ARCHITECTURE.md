@@ -44,6 +44,19 @@ La barra de herramientas y el sprite de cada país se dividieron por responsabil
 
 Otros módulos voluminosos de la GUI pueden seguir el mismo patrón cuando una nueva función los haga crecer de forma desordenada.
 
+### Diálogo de tarjetas (`gui_tarjetas/`)
+
+El diálogo modal de tarjetas se agrupa en un paquete (no se usa la carpeta `gui/` para no chocar con el módulo `gui.py`):
+
+| Módulo | Rol |
+|--------|-----|
+| `gui_tarjetas/dialog.py` | Clase `TarjetasDialog`: layout, objetivo secreto, botones y `actualizar_tarjetas`. |
+| `gui_tarjetas/styles.py` | Cadenas QSS y helper para el color del contador de selección. |
+| `gui_tarjetas/protocols.py` | `Protocol` para tipar `self` en los mixins sin import circular. |
+| `gui_tarjetas/selection_mixin.py` | Grilla 2×2, selección, contador y reglas locales de canje. |
+| `gui_tarjetas/exchange_mixin.py` | Canje y reclamo vía `transmisor` del padre. |
+| `gui_tarjetas_dialog.py` | Shim de compatibilidad: reexporta `TarjetasDialog`. |
+
 - turno_protocol.py: define la interfaz `ITurno` para desacoplar el servidor de las clases de turno.
 - turnos.py: implementaciones de turnos (PrimerTurno, SegundoTurno, SiguientesTurnos).
 - run_client.py: punto de entrada del cliente.
