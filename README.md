@@ -23,6 +23,8 @@ Juego de estrategia por turnos en Python.
 [![🔄 GitHub Actions](https://img.shields.io/badge/🔄_GitHub_Actions-CI-2088FF?style=flat&logo=githubactions&logoColor=white)](https://github.com/cavazquez/pyteg/actions)
 [![📜 Licencia](https://img.shields.io/badge/📜_Licencia-GPL--3.0-2980B9?style=flat)](LICENSE)
 
+Organización modular del **cliente GUI** (toolbar, mapa/país, internacionalización): ver la tabla en [**docs/ARCHITECTURE.md**](docs/ARCHITECTURE.md#toolbar-y-país-en-el-mapa-descomposición).
+
 ## ¿Qué es Pyteg?
 Pyteg es un juego de estrategia por turnos en el que
 los jugadores conquistan países, atacan con dados y cumplen objetivos.

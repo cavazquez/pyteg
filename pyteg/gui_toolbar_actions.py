@@ -70,22 +70,6 @@ class ToolBarActionsMixin:
         if self.button_mover:
             self.button_mover.setEnabled(False)
 
-    def _atacar_paises_seleccionados(self) -> None:
-        """Ejecuta ataque entre los países seleccionados."""
-        if hasattr(self.main_window, "scene") and self.main_window.scene:
-            selection_manager = self.main_window.scene.selection_manager
-            origen = selection_manager.get_pais_origen()
-            destino = selection_manager.get_pais_destino()
-
-            if origen and destino and hasattr(self.main_window, "transmisor"):
-                self.main_window.transmisor.mover_unidad(
-                    origen=origen, destino=destino, cantidad=1
-                )
-                self.main_window.status_bar.showMessage(
-                    _("Atacando desde {} hacia {}").format(origen, destino), 3000
-                )
-                selection_manager.cancelar_seleccion()
-
     def _mover_paises_seleccionados(self) -> None:
         """Ejecuta movimiento entre los países seleccionados."""
         if hasattr(self.main_window, "scene") and self.main_window.scene:

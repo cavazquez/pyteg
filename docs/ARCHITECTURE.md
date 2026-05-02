@@ -34,13 +34,16 @@ La barra de herramientas y el sprite de cada país se dividieron por responsabil
 | Módulo | Rol |
 |--------|-----|
 | `gui_toolbar.py` | Clase `ToolBar`: QAction, textos, `update_language`, cableado con la ventana principal. |
-| `gui_toolbar_actions.py` | Mixin: estado de conexión, habilitar atacar/mover, envío vía transmisor desde la selección del mapa. |
+| `gui_toolbar_actions.py` | Mixin: estado de conexión, habilitar atacar/mover, mover desde la selección del mapa (el ataque va por `main_window.atacar`). |
 | `gui_toolbar_window.py` | Mixin: tamaño de ventana, pantalla completa, centrado, reset de zoom del mapa. |
 | `gui_toolbar_size.py` | Menú de tamaños predefinidos, estilos del menú/botón, `center_window_on_screen`. |
 | `gui_toolbar_icons.py` | Carga de íconos con validación de recurso (`ImagenNoEncontradaError`). |
 | `gui_pais.py` | `Pais`: pixmap, círculo de unidades, color y datos base. |
 | `gui_pais_selection.py` | Mixin: clic → `selection_manager`, oscurecimiento origen/destino. |
 | `gui_pais_battle_fx.py` | Mixin: titilación en batalla, pérdidas flotantes, contador de misiles. |
+
+Otros módulos voluminosos de la GUI pueden seguir el mismo patrón cuando una nueva función los haga crecer de forma desordenada.
+
 - turno_protocol.py: define la interfaz `ITurno` para desacoplar el servidor de las clases de turno.
 - turnos.py: implementaciones de turnos (PrimerTurno, SegundoTurno, SiguientesTurnos).
 - run_client.py: punto de entrada del cliente.

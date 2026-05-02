@@ -9,6 +9,8 @@ from PySide6.QtWidgets import QDialog, QMenu, QWidget
 
 from pyteg.config import MISSILE_UNIT_COST
 from pyteg.gui_attack_dialog import AttackDialog
+from pyteg.i18n import ngettext
+from pyteg.i18n import translate as _
 from pyteg.logger import get_logger
 
 _LOG = get_logger("gui.menu")
@@ -46,23 +48,23 @@ class Menu(QMenu):
         self.action_pais.setEnabled(False)
 
         # Acciones para agregar unidades
-        self.action_agregar_infanteria = QAction("Agregar Infantería", self)
-        self.action_agregar_misil = QAction("Agregar Misil", self)
+        self.action_agregar_infanteria = QAction(_("Agregar Infantería"), self)
+        self.action_agregar_misil = QAction(_("Agregar Misil"), self)
 
         # Acciones para mover unidades (sistema antiguo)
-        self.action_mover_1_unidad = QAction("Mover 1 unidad", self)
-        self.action_mover_3_unidades = QAction("Mover 3 unidades", self)
-        self.action_mover_5_unidades = QAction("Mover 5 unidades", self)
-        self.action_cancelar_movimiento = QAction("Cancelar movimiento", self)
+        self.action_mover_1_unidad = QAction(_("Mover 1 unidad"), self)
+        self.action_mover_3_unidades = QAction(_("Mover 3 unidades"), self)
+        self.action_mover_5_unidades = QAction(_("Mover 5 unidades"), self)
+        self.action_cancelar_movimiento = QAction(_("Cancelar movimiento"), self)
 
         # Acciones para el nuevo sistema de selección
-        self.action_atacar = QAction("Atacar", self)
-        self.action_mover_seleccion = QAction("Mover", self)
-        self.action_cancelar_seleccion = QAction("Cancelar Selección", self)
+        self.action_atacar = QAction(_("Atacar"), self)
+        self.action_mover_seleccion = QAction(_("Mover"), self)
+        self.action_cancelar_seleccion = QAction(_("Cancelar selección"), self)
 
         # Acción para canjear misil
         self.action_canjear_misil = QAction(
-            f"Canjear Misil ({MISSILE_UNIT_COST} unidades)", self
+            _("Canjear Misil ({} unidades)").format(MISSILE_UNIT_COST), self
         )
 
         # Conectar acciones a sus respectivos manejadores
@@ -213,7 +215,10 @@ class Menu(QMenu):
 
                 if max_unidades < 1:
                     self.main_window.update_status_bar(
-                        f"No hay suficientes unidades en {origen} para atacar", "orange"
+                        _("No hay suficientes unidades en {} para atacar").format(
+                            origen
+                        ),
+                        "orange",
                     )
                     return
 
@@ -229,10 +234,14 @@ class Menu(QMenu):
                         destino,
                         cantidad_unidades,
                     )
-                    # Mostrar mensaje en la barra de estado
+                    unidad_txt = ngettext("unidad", "unidades", cantidad_unidades)
                     self.main_window.update_status_bar(
-                        f"Atacando de {origen} a {destino} con {cantidad_unidades} "
-                        f"unidad{'es' if cantidad_unidades > 1 else ''}...",
+                        _("Atacando de {} a {} con {} {}…").format(
+                            origen,
+                            destino,
+                            cantidad_unidades,
+                            unidad_txt,
+                        ),
                         "blue",
                     )
 
@@ -255,7 +264,9 @@ class Menu(QMenu):
                 status_bar = getattr(self.main_window, "status_bar", None)
                 if status_bar is not None:
                     status_bar.showMessage(
-                        f"Moviendo 1 unidad de {origen} a {destino}",
+                        _("Moviendo {} unidad(es) de {} a {}").format(
+                            1, origen, destino
+                        ),
                         3000,
                     )
 

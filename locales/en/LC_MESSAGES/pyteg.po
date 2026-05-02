@@ -259,6 +259,42 @@ msgstr "Attacking from {} to {}"
 msgid "Moviendo {} unidad(es) de {} a {}"
 msgstr "Moving {} unit(s) from {} to {}"
 
+# Country context menu
+msgid "Agregar Infantería"
+msgstr "Add Infantry"
+
+msgid "Agregar Misil"
+msgstr "Add Missile"
+
+msgid "Mover 1 unidad"
+msgstr "Move 1 unit"
+
+msgid "Mover 3 unidades"
+msgstr "Move 3 units"
+
+msgid "Mover 5 unidades"
+msgstr "Move 5 units"
+
+msgid "Cancelar movimiento"
+msgstr "Cancel movement"
+
+msgid "Cancelar selección"
+msgstr "Cancel selection"
+
+msgid "Canjear Misil ({} unidades)"
+msgstr "Exchange missile ({} units)"
+
+msgid "No hay suficientes unidades en {} para atacar"
+msgstr "Not enough units in {} to attack"
+
+msgid "Atacando de {} a {} con {} {}…"
+msgstr "Attacking from {} to {} with {} {}…"
+
+msgid "unidad"
+msgid_plural "unidades"
+msgstr[0] "unit"
+msgstr[1] "units"
+
 # Battle results
 msgid "El ataque de {} a {} fue repelido"
 msgstr "The attack from {} to {} was repelled"
