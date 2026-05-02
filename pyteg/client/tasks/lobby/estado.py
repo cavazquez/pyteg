@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from pyteg.client.tasks.base import IClientTask
 from pyteg.client.tasks.logging_helper import CLIENT_TASKS_LOG
+
+if TYPE_CHECKING:
+    from pyteg.client.tasks.protocols import GameWindowProtocol
 
 
 class ClientTaskEstado(IClientTask):
@@ -19,9 +22,9 @@ class ClientTaskEstado(IClientTask):
 
         """
         super().__init__(data)
-        self._msg = data.get("estado")
+        self._msg: str = str(data.get("estado", ""))
 
-    def run(self, main_window: Any) -> None:
+    def run(self, main_window: GameWindowProtocol) -> None:
         """Ejecuta la tarea actualizando el estado del juego."""
         CLIENT_TASKS_LOG.debug("Recibido cambio de estado: %s", self._msg)
 

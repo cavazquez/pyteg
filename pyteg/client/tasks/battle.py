@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from PySide6.QtCore import QTimer
 
 from pyteg.client.tasks.base import IClientTask
 from pyteg.client.tasks.logging_helper import CLIENT_TASKS_LOG
+
+if TYPE_CHECKING:
+    from pyteg.client.tasks.protocols import GameWindowProtocol
 
 
 class ClientTaskResultadoBatalla(IClientTask):
@@ -30,7 +33,7 @@ class ClientTaskResultadoBatalla(IClientTask):
         self._resultado = data.get("resultado", {})
         self._conquistado = data.get("conquistado", False)
 
-    def run(self, main_window: Any) -> None:
+    def run(self, main_window: GameWindowProtocol) -> None:
         """Muestra el resultado de una batalla.
 
         Muestra el resultado de una batalla con comportamiento diferenciado:

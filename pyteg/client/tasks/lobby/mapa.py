@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from pyteg.client.tasks.base import IClientTask
 from pyteg.client.tasks.logging_helper import CLIENT_TASKS_LOG
+
+if TYPE_CHECKING:
+    from pyteg.client.tasks.protocols import GameWindowProtocol
 
 
 class ClientTaskAsignarPais(IClientTask):
@@ -21,7 +24,7 @@ class ClientTaskAsignarPais(IClientTask):
         super().__init__(data)
         self._msg = data
 
-    def run(self, main_window: Any) -> None:
+    def run(self, main_window: GameWindowProtocol) -> None:
         """Ejecuta la tarea asignando el país al jugador."""
         try:
             nombre_pais = self._msg.get("pais")
@@ -69,7 +72,7 @@ class ClientTaskUnidadesDisponibles(IClientTask):
         super().__init__(data)
         self._unidades = data.get("unidades", {})
 
-    def run(self, main_window: Any) -> None:
+    def run(self, main_window: GameWindowProtocol) -> None:
         """Ejecuta la tarea actualizando las unidades disponibles."""
         CLIENT_TASKS_LOG.debug("Recibidas unidades disponibles: %s", self._unidades)
         if hasattr(main_window, "update_unidades_disponibles"):

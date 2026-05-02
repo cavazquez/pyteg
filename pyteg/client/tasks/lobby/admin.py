@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from pyteg.client.tasks.base import IClientTask
+
+if TYPE_CHECKING:
+    from pyteg.client.tasks.protocols import GameWindowProtocol
 
 
 class ClientTaskSerAdmin(IClientTask):
@@ -19,7 +22,7 @@ class ClientTaskSerAdmin(IClientTask):
         """
         super().__init__(data)
 
-    def run(self, main_window: Any) -> None:
+    def run(self, main_window: GameWindowProtocol) -> None:
         """Ejecuta la tarea convirtiendo al cliente en administrador."""
         main_window.client.ahora_es_admin()
         main_window.ventana_admin()

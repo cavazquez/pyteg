@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any, cast
 
-from PySide6.QtWidgets import QMessageBox
+from PySide6.QtWidgets import QMessageBox, QWidget
 
 from pyteg.client.tasks.base import IClientTask
 from pyteg.client.tasks.logging_helper import CLIENT_TASKS_LOG
@@ -13,6 +13,9 @@ from pyteg.config import (
     DEFAULT_VICTORY_COUNTRIES,
 )
 from pyteg.i18n import _
+
+if TYPE_CHECKING:
+    from pyteg.client.tasks.protocols import GameWindowProtocol
 
 
 class ClientTaskVictoria(IClientTask):
@@ -29,7 +32,7 @@ class ClientTaskVictoria(IClientTask):
         self._ganador_id = data.get("ganador_id")
         self._ganador_nombre = data.get("ganador_nombre")
 
-    def run(self, main_window: Any) -> None:
+    def run(self, main_window: GameWindowProtocol) -> None:
         """Muestra un mensaje de victoria cuando alguien gana la partida."""
         try:
             if hasattr(main_window, "sound_manager"):
@@ -41,7 +44,7 @@ class ClientTaskVictoria(IClientTask):
                     "green",
                 )
 
-            msg_box = QMessageBox(main_window)
+            msg_box = QMessageBox(cast("QWidget", main_window))
             msg_box.setWindowTitle(_("¡Partida Terminada!"))
             msg_box.setIcon(QMessageBox.Icon.Information)
             msg_box.setText(_("🏆 ¡Felicitaciones!"))
@@ -81,7 +84,7 @@ class ClientTaskConfiguracionPartida(IClientTask):
         self._objetivos_secretos = data.get("objetivos_secretos", False)
         self._misiles_habilitados = data.get("misiles_habilitados", False)
 
-    def run(self, main_window: Any) -> None:
+    def run(self, main_window: GameWindowProtocol) -> None:
         """Procesa la configuración de la partida.
 
         Almacena la configuración en la ventana principal.
@@ -127,7 +130,7 @@ class ClientTaskObjetivoSecreto(IClientTask):
         self._objetivo_id = data.get("objetivo_id", "")
         self._descripcion = data.get("descripcion", "")
 
-    def run(self, main_window: Any) -> None:
+    def run(self, main_window: GameWindowProtocol) -> None:
         """Procesa el objetivo secreto asignado.
 
         Lo almacena en la ventana principal.
