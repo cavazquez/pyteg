@@ -6,7 +6,7 @@ from functools import partial
 from typing import Any
 
 from PySide6.QtCore import QSize, Qt
-from PySide6.QtGui import QAction, QIcon
+from PySide6.QtGui import QAction
 from PySide6.QtWidgets import (
     QApplication,
     QMenu,
@@ -17,8 +17,8 @@ from PySide6.QtWidgets import (
 )
 
 from pyteg.exception import ImagenNoEncontradaError
+from pyteg.gui_toolbar_icons import cargar_icono_toolbar
 from pyteg.i18n import translate as _
-from pyteg.utils import get_resource_path
 
 
 class ToolBar(QToolBar):
@@ -135,30 +135,12 @@ class ToolBar(QToolBar):
             for text, width, height, icon_path in size_actions:
                 action = QAction(text, self)
                 try:
-                    icono = self._validar_icono(icon_path, f"tamaño {text}")
+                    icono = cargar_icono_toolbar(icon_path, f"tamaño {text}")
                     action.setIcon(icono)
-                except (FileNotFoundError, OSError):
+                except ImagenNoEncontradaError:
                     pass  # Continuar sin ícono si no se encuentra
                 action.triggered.connect(partial(self.resize_window, width, height))
                 self.size_menu.addAction(action)
-
-    def _validar_icono(self, ruta_icono: str, contexto: str = "") -> QIcon:
-        """Valida que un archivo de icono existe y se puede cargar.
-
-        Returns:
-            QIcon con el icono cargado.
-
-        Raises:
-            ImagenNoEncontradaError: Si el archivo de icono no existe.
-
-        """
-        ruta_completa = get_resource_path(ruta_icono)
-        if not ruta_completa.exists():
-            contexto_msg = f" ({contexto})" if contexto else ""
-            raise ImagenNoEncontradaError(
-                str(ruta_completa), f"icono de la barra de herramientas{contexto_msg}"
-            )
-        return QIcon(str(ruta_completa))
 
     def _setup_spacers_right(self) -> None:
         """Añade un expansor a la derecha para empujar elementos finales."""
@@ -176,7 +158,7 @@ class ToolBar(QToolBar):
         self._toolbar_add_view_options_group()
 
     def _toolbar_add_connection_group(self) -> None:
-        icono_conectar = self._validar_icono("icons/conectar.png", "conectar")
+        icono_conectar = cargar_icono_toolbar("icons/conectar.png", "conectar")
         self.button_conectar = QAction(icono_conectar, _("Conectar"), self)
         self.button_conectar.triggered.connect(self.main_window.abrir_ventana_conectar)
         self.button_conectar.setToolTip(_("Conectar al servidor"))
@@ -185,14 +167,14 @@ class ToolBar(QToolBar):
         self.addSeparator()
 
     def _toolbar_add_game_actions_group(self) -> None:
-        icono_atacar = self._validar_icono("icons/atacar.png", "atacar")
+        icono_atacar = cargar_icono_toolbar("icons/atacar.png", "atacar")
         self.button_atacar = QAction(icono_atacar, _("Atacar"), self)
         self.button_atacar.triggered.connect(self.main_window.atacar)
         self.button_atacar.setToolTip(_("Atacar país seleccionado"))
         self.button_atacar.setStatusTip(_("Ejecutar ataque entre países seleccionados"))
         self.addAction(self.button_atacar)
 
-        icono_mover = self._validar_icono("icons/mover.png", "mover")
+        icono_mover = cargar_icono_toolbar("icons/mover.png", "mover")
         self.button_mover = QAction(icono_mover, _("Mover"), self)
         self.button_mover.setEnabled(False)
         self.button_mover.triggered.connect(self._mover_paises_seleccionados)
@@ -203,7 +185,7 @@ class ToolBar(QToolBar):
         self.addAction(self.button_mover)
         self.addSeparator()
 
-        icono_tarjetas = self._validar_icono("icons/default_size.png", "tarjetas")
+        icono_tarjetas = cargar_icono_toolbar("icons/default_size.png", "tarjetas")
         self.button_tarjetas = QAction(icono_tarjetas, _("Tarjetas"), self)
         self.button_tarjetas.setEnabled(True)
         self.button_tarjetas.triggered.connect(self.main_window.mostrar_tarjetas)
@@ -211,7 +193,7 @@ class ToolBar(QToolBar):
         self.button_tarjetas.setStatusTip(_("Mostrar tarjetas asignadas al jugador"))
         self.addAction(self.button_tarjetas)
 
-        icono_finalizar = self._validar_icono("icons/finish.png", "finalizar turno")
+        icono_finalizar = cargar_icono_toolbar("icons/finish.png", "finalizar turno")
         self.button_finalizar_turno = QAction(
             icono_finalizar, _("Finalizar Turno"), self
         )
@@ -225,7 +207,7 @@ class ToolBar(QToolBar):
         self.addSeparator()
 
     def _toolbar_add_view_options_group(self) -> None:
-        icono_config = self._validar_icono("icons/resize.png", "configuración")
+        icono_config = cargar_icono_toolbar("icons/resize.png", "configuración")
         self.button_configuracion = QAction(icono_config, _("Configuración"), self)
         self.button_configuracion.setEnabled(True)
         self.button_configuracion.triggered.connect(
@@ -237,7 +219,7 @@ class ToolBar(QToolBar):
         )
         self.addAction(self.button_configuracion)
 
-        icono_zoom = self._validar_icono("icons/default_size.png", "resetear zoom")
+        icono_zoom = cargar_icono_toolbar("icons/default_size.png", "resetear zoom")
         self.button_reset_zoom = QAction(icono_zoom, _("Ajustar Mapa"), self)
         self.button_reset_zoom.setEnabled(True)
         self.button_reset_zoom.triggered.connect(self._reset_map_zoom)
@@ -257,7 +239,7 @@ class ToolBar(QToolBar):
 
         # Botón Pantalla Completa (toggle)
         self.button_fullscreen = QAction(self)
-        icono_full = self._validar_icono(
+        icono_full = cargar_icono_toolbar(
             "icons/fullscreen.png", "pantalla completa (toggle)"
         )
         self.button_fullscreen.setIcon(icono_full)
@@ -319,7 +301,7 @@ class ToolBar(QToolBar):
 
         for text, width, height, icon_path in size_actions:
             action = QAction(text, self)
-            icono = self._validar_icono(icon_path, f"tamaño {text}")
+            icono = cargar_icono_toolbar(icon_path, f"tamaño {text}")
             action.setIcon(icono)
             action.triggered.connect(partial(self.resize_window, width, height))
             menu.addAction(action)
@@ -329,7 +311,7 @@ class ToolBar(QToolBar):
 
         # Opciones de pantalla completa
         fullscreen_action = QAction("Pantalla Completa", self)
-        icono_fullscreen = self._validar_icono(
+        icono_fullscreen = cargar_icono_toolbar(
             "icons/fullscreen.png", "pantalla completa"
         )
         fullscreen_action.setIcon(icono_fullscreen)
@@ -338,7 +320,7 @@ class ToolBar(QToolBar):
 
         # Opción para ajustar al tamaño de la pantalla
         fit_screen_action = QAction("Ajustar a la pantalla", self)
-        icono_fit = self._validar_icono("icons/fit_screen.png", "ajustar pantalla")
+        icono_fit = cargar_icono_toolbar("icons/fit_screen.png", "ajustar pantalla")
         fit_screen_action.setIcon(icono_fit)
         fit_screen_action.triggered.connect(self.fit_to_screen)
         menu.addAction(fit_screen_action)
@@ -348,7 +330,7 @@ class ToolBar(QToolBar):
 
         # Opción para restaurar tamaño por defecto
         default_action = QAction("Tamaño por defecto", self)
-        icono_default = self._validar_icono(
+        icono_default = cargar_icono_toolbar(
             "icons/default_size.png", "tamaño por defecto"
         )
         default_action.setIcon(icono_default)
@@ -365,7 +347,9 @@ class ToolBar(QToolBar):
 
         """
         size_button = QToolButton(self)
-        icono_resize = self._validar_icono("icons/resize.png", "botón de redimensionar")
+        icono_resize = cargar_icono_toolbar(
+            "icons/resize.png", "botón de redimensionar"
+        )
         size_button.setIcon(icono_resize)
         size_button.setToolTip("Cambiar tamaño de la ventana")
         size_button.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)

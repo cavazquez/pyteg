@@ -6,6 +6,10 @@ import json
 from abc import ABC, abstractmethod
 from typing import Any
 
+from pyteg.logger import get_logger
+
+_LOG = get_logger("client.msg")
+
 
 class IMsg(ABC):
     """Interfaz base para todos los mensajes del cliente."""
@@ -30,7 +34,7 @@ class MsgSeleccionarColor(IMsg):
             color: Color a seleccionar.
 
         """
-        print("MsgSeleccionarColor")
+        _LOG.debug("MsgSeleccionarColor")
         self._tipo = "seleccionar_color"
         self._color = color
 
@@ -42,7 +46,7 @@ class MsgSeleccionarColor(IMsg):
 
         """
         data = {"mensaje": self._tipo, "color": self._color.name()}
-        print(f"{data=}")
+        _LOG.debug("MsgSeleccionarColor to_json: %s", data)
         return json.dumps(data)
 
 

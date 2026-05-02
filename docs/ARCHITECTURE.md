@@ -17,13 +17,13 @@ El transporte entre cliente y servidor es **TCP en claro**, sin TLS ni autentica
 
 ## Módulos principales (pyteg/)
 - server.py: servidor y loop principal (acepta conexiones, dirige mensajes a tareas).
-- server_tasks.py: tareas validadas del servidor (AgregarUnidad, Atacar, MoverUnidad, FinalizarTurno, etc.).
+- server_tasks/: paquete de tareas validadas del servidor (`lobby`, `game_actions`, `cards_missiles`; mismo API público que antes).
 - server_game.py: reglas del juego, batallas y cálculo de conquistas.
 - server_mapa.py: representación del mapa, países y propietarios.
 - server_transmisor.py: envío tipificado de mensajes a clientes.
-- server_msg.py: definición de mensajes (chat, mapa, turnos, resultados de batalla, etc.).
+- server_msg/: paquete de mensajes servidor→cliente (`connection`, `map_turn`, `battle`, `cards_missiles`, etc.).
 - client_connection.py: manejo de conexión y estado conectado/desconectado.
-- client_tasks.py: procesamiento de mensajes en el cliente y actualización de UI.
+- client_tasks/: paquete de tareas de cliente (`lobby`, `game_flow`, `battle`, `cards_missiles`).
 - gui.py: ventana principal refactorizada modularmente con gestores especializados.
 - gui_*: módulos especializados de la interfaz gráfica (layout, temas, jugadores, status, unidades, acciones).
 - turno_protocol.py: define la interfaz `ITurno` para desacoplar el servidor de las clases de turno.

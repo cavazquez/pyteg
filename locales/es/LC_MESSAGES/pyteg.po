@@ -77,6 +77,21 @@ msgstr "¡Partida Terminada!"
 msgid "🏆 ¡Felicitaciones!"
 msgstr "🏆 ¡Felicitaciones!"
 
+msgid "🏆 ¡{} ha ganado la partida!"
+msgstr "🏆 ¡{} ha ganado la partida!"
+
+msgid "{} ha ganado la partida controlando el número objetivo de países."
+msgstr "{} ha ganado la partida controlando el número objetivo de países."
+
+msgid "todos los países"
+msgstr "todos los países"
+
+msgid "{} países"
+msgstr "{} países"
+
+msgid "Objetivo secreto asignado: {}"
+msgstr "Objetivo secreto asignado: {}"
+
 # Connection messages
 msgid "Advertencia"
 msgstr "Advertencia"
