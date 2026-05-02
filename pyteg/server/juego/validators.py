@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING
 
 from pyteg.config import FIRST_TURNS_NO_ATTACK
 from pyteg.core.turnos.turnos import PrimerTurno, SegundoTurno
-from pyteg.exception import (
+from pyteg.exceptions import (
     CountryNotOwnedError,
     GameNotStartedError,
     GameRuleViolationError,

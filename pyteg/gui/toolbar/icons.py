@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from PySide6.QtGui import QIcon
 
-from pyteg.exception import ImagenNoEncontradaError
+from pyteg.exceptions import ImagenNoEncontradaError
 from pyteg.utils import get_resource_path
 
 

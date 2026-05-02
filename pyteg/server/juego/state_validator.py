@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Protocol
 
-from pyteg.exception import EstadoInvalidoError
+from pyteg.exceptions import EstadoInvalidoError
 from pyteg.server.juego.estado import Estado
 
 

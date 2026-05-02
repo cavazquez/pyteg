@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 from pyteg.config import MIN_UNITS_TO_LEAVE, MISSILE_MAX_DISTANCE
-from pyteg.exception import (
+from pyteg.exceptions import (
     InsufficientUnitsError,
     InvalidActionError,
     MissileOutOfRangeError,
