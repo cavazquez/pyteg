@@ -2,7 +2,7 @@
 
 import unittest
 
-from pyteg.mazo import Mazo
+from pyteg.core.cartas.mazo import Mazo
 from pyteg.server.app import Server
 from pyteg.server.juego.game import Game
 from pyteg.server.juego.mapa import Mapa

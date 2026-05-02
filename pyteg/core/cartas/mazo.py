@@ -8,7 +8,7 @@ from random import sample
 from typing import TYPE_CHECKING, Any
 
 from pyteg.config import CARDS_FOR_EXCHANGE, MIN_CARDS_SAME_SYMBOL_FOR_EXCHANGE
-from pyteg.tarjeta_de_pais import TarjetaDePais
+from pyteg.core.cartas.tarjeta_de_pais import TarjetaDePais
 
 if TYPE_CHECKING:
     from collections.abc import Callable

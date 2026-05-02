@@ -15,11 +15,11 @@ from pyteg.game_victory_checker import VictoryChecker
 from pyteg.turnos import PrimerTurno, SegundoTurno, SiguientesTurnos
 
 if TYPE_CHECKING:
-    from pyteg.mazo import Mazo
+    from pyteg.core.cartas.mazo import Mazo
+    from pyteg.core.cartas.tarjeta_de_pais import TarjetaDePais
     from pyteg.server.app import Server
     from pyteg.server.conexion.cliente import Client
     from pyteg.server.juego.mapa import Mapa
-    from pyteg.tarjeta_de_pais import TarjetaDePais
 
 TurnoType = PrimerTurno | SegundoTurno | SiguientesTurnos
 

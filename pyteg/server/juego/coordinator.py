@@ -13,7 +13,7 @@ from pyteg.server.juego.game import Game
 from pyteg.turno_timer import TurnoTimer
 
 if TYPE_CHECKING:
-    from pyteg.mazo import Mazo
+    from pyteg.core.cartas.mazo import Mazo
     from pyteg.objetivos_secretos import ObjetivosSecretos
     from pyteg.server.conexion.cliente import Client
     from pyteg.server.juego.estado import Estado
