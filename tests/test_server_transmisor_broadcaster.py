@@ -9,8 +9,8 @@ from unittest.mock import MagicMock, patch
 
 from pyteg.event_types import EVENT_CHAT, EVENT_ESTADO_CAMBIADO
 from pyteg.message_bus import EventHandler, MessageBus, reset_message_bus
-from pyteg.server_message_broadcaster import ServerMessageBroadcaster
-from pyteg.server_transmisor import ServerTransmisor
+from pyteg.server.conexion.broadcaster import ServerMessageBroadcaster
+from pyteg.server.conexion.transmisor import ServerTransmisor
 
 
 class _RecordingConn:
@@ -82,7 +82,7 @@ class TestServerMessageBroadcaster(unittest.TestCase):
         c2 = MagicMock()
         br = ServerMessageBroadcaster(lambda: [c1, c2])
         with patch(
-            "pyteg.server_message_broadcaster.get_message_bus", return_value=bus
+            "pyteg.server.conexion.broadcaster.get_message_bus", return_value=bus
         ):
             br.enviar_estado("jugando")
         c1.transmisor.enviar_estado.assert_called_once_with("jugando")
@@ -101,7 +101,7 @@ class TestServerMessageBroadcaster(unittest.TestCase):
         client = MagicMock()
         br = ServerMessageBroadcaster(lambda: [client])
         with patch(
-            "pyteg.server_message_broadcaster.get_message_bus", return_value=bus
+            "pyteg.server.conexion.broadcaster.get_message_bus", return_value=bus
         ):
             br.enviar_chat("ana", "hola")
         client.transmisor.enviar_chat.assert_called_once()
@@ -111,7 +111,7 @@ class TestServerMessageBroadcaster(unittest.TestCase):
         """_dame_clientes tolera retorno no-lista."""
         br = ServerMessageBroadcaster(lambda: None)
         with patch(
-            "pyteg.server_message_broadcaster.get_message_bus",
+            "pyteg.server.conexion.broadcaster.get_message_bus",
             return_value=MessageBus(),
         ):
             br.enviar_estado("x")  # no debe lanzar

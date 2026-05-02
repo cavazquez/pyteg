@@ -26,7 +26,7 @@ from pyteg.server_state_validator import HasEstado
 
 if TYPE_CHECKING:
     from pyteg.colores import IColor
-    from pyteg.server_transmisor import ServerTransmisor
+    from pyteg.server.conexion.transmisor import ServerTransmisor
     from pyteg.turno_protocol import ITurno
 
 

@@ -7,8 +7,8 @@ from typing import TYPE_CHECKING, Any
 
 from pyteg.exception import EstadoInvalidoError, MensajeNoValidoError
 from pyteg.logger import get_logger
+from pyteg.server.conexion.transmisor import ServerTransmisor
 from pyteg.server.tasks.manager import ServerTaskManager
-from pyteg.server_transmisor import ServerTransmisor
 
 if TYPE_CHECKING:
     from pyteg.colores import IColor

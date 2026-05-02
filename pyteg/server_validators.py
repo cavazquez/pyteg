@@ -18,7 +18,7 @@ from pyteg.turnos import PrimerTurno, SegundoTurno
 
 if TYPE_CHECKING:
     from pyteg.protocols import IClientProtocol, IGameProtocol, IMapProtocol
-    from pyteg.server_client import Client
+    from pyteg.server.conexion.cliente import Client
     from pyteg.server_game import Game
     from pyteg.server_mapa import Mapa
 
