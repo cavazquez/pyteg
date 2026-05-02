@@ -2,7 +2,7 @@
 
 import unittest
 
-from pyteg.country import Country
+from pyteg.core.mapa.country import Country
 
 
 class TestCountry(unittest.TestCase):
