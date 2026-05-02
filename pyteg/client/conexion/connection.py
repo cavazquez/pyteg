@@ -8,8 +8,8 @@ from typing import Any
 from PySide6.QtNetwork import QAbstractSocket, QTcpSocket
 from PySide6.QtWidgets import QMessageBox, QWidget
 
+from pyteg.client.conexion.transmisor import ClientTransmisor
 from pyteg.client.tasks.manager import ClientTaskManager
-from pyteg.client_transmisor import ClientTransmisor
 from pyteg.codecs_utils import Utf8
 from pyteg.i18n import translate as _
 from pyteg.logger import get_logger

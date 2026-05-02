@@ -19,7 +19,7 @@ from PySide6.QtWidgets import (
 )
 
 from pyteg.client.conexion.connection import ConnectionClient
-from pyteg.client_transmisor import ClientTransmisor
+from pyteg.client.conexion.transmisor import ClientTransmisor
 from pyteg.gui.dialogs.conectar import styles
 from pyteg.gui.dialogs.conectar.validation import ValidationError, validate
 from pyteg.i18n import translate as _
