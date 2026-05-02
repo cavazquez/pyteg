@@ -8,18 +8,15 @@ from __future__ import annotations
 from typing import Any
 
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QColor, QFont, QPainter, QPixmap
 from PySide6.QtWidgets import (
-    QFrame,
     QGridLayout,
-    QHBoxLayout,
     QLabel,
-    QSizePolicy,
     QSplitter,
     QVBoxLayout,
     QWidget,
 )
 
+from pyteg.gui.managers.units_panel import setup_continent_values as _build_units_panel
 from pyteg.gui_chat import Chat
 from pyteg.gui_scene import QCustomGraphicsScene
 from pyteg.gui_toolbar import ToolBar
@@ -119,137 +116,8 @@ class LayoutManager:
         self._setup_continent_values(layout)
 
     def _setup_continent_values(self, layout: QVBoxLayout) -> None:
-        """Crea la sección UNIDADES con filas ordenadas e íconos."""
-        # Contenedor principal de la sección
-        section = QFrame()
-        section.setFrameShape(QFrame.Shape.StyledPanel)
-        section.setObjectName("unitsSection")
-        # Se aplicará stylesheet en _apply_units_theme()
-
-        section_layout = QVBoxLayout(section)
-        section_layout.setContentsMargins(10, 10, 10, 10)
-        section_layout.setSpacing(6)
-
-        title = QLabel("UNIDADES")
-        title.setAlignment(Qt.AlignmentFlag.AlignLeft)
-        title.setObjectName("unitsTitle")
-        section_layout.addWidget(title)
-
-        # Diccionario de labels reutilizable en updates
-        self.main_window.value_labels = {}
-        self.main_window._row_widgets = {}  # noqa: SLF001
-        self.main_window._last_units = {}  # noqa: SLF001
-
-        # Fila: Generales
-        self._create_unit_row(
-            section_layout,
-            key="Generales",
-            value=0,
-            icon_color="#2E7D32",
-            glyph="G",
-            tooltip="Unidades generales disponibles para colocar",
-        )
-
-        # Fila: Misiles (inicialmente 0 y oculta si no hay)
-        self._create_unit_row(
-            section_layout,
-            key="Misiles",
-            value=0,
-            icon_color="#D32F2F",
-            glyph="M",
-            tooltip="Misiles disponibles",
-        )
-        # Se ocultará por defecto hasta que haya valor > 0
-        self.main_window._row_widgets["Misiles"].setVisible(False)  # noqa: SLF001
-
-        # Filas de continentes (incluye Oceanía)
-        for cont in [
-            "América del Sur",
-            "América del Norte",
-            "Europa",
-            "Asia",
-            "África",
-            "Oceanía",
-        ]:
-            self._create_unit_row(
-                section_layout,
-                key=cont,
-                value=0,
-                icon_color="#1565C0",
-                glyph="C",
-                tooltip=f"Refuerzos por control de {cont}",
-            )
-
-        layout.addWidget(section)
-        self.main_window.theme_manager._apply_units_theme(section)  # noqa: SLF001
-
-    def _create_unit_row(  # noqa: PLR0913, PLR0917
-        self,
-        parent_layout: QVBoxLayout,
-        key: str,
-        value: int,
-        icon_color: str,
-        glyph: str,
-        tooltip: str,
-    ) -> None:
-        """Crea una fila (ícono dibujado + etiqueta) y la registra en value_labels."""
-        row = QFrame()
-        row.setObjectName("unitRow")
-        row_layout = QHBoxLayout(row)
-        row_layout.setContentsMargins(4, 4, 4, 4)
-        row_layout.setSpacing(6)
-
-        icon_label = self._make_circle_icon(icon_color, glyph)
-        row_layout.addWidget(icon_label)
-
-        label = QLabel(f"{key}: {value}")
-        label.setObjectName("unitRowLabel")
-        row_layout.addWidget(label)
-
-        # Empujar contenido a la izquierda
-        spacer = QWidget()
-        spacer.setSizePolicy(
-            QSizePolicy.Policy.Expanding,
-            QSizePolicy.Policy.Preferred,
-        )
-        row_layout.addWidget(spacer)
-
-        parent_layout.addWidget(row)
-        self.main_window.value_labels[key] = label
-        self.main_window._row_widgets[key] = row  # noqa: SLF001
-        # Tooltip de toda la fila
-        row.setToolTip(tooltip)
-
-    def _make_circle_icon(self, color_hex: str, glyph: str | None) -> QLabel:
-        """Crea un QLabel con un QPixmap de círculo y opcional glifo.
-
-        Returns:
-            QLabel con el icono de círculo creado.
-
-        """
-        size = 16
-        pm = QPixmap(size, size)
-        pm.fill(QColor(0, 0, 0, 0))
-        painter = QPainter(pm)
-        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-        painter.setBrush(QColor(color_hex))
-        painter.setPen(QColor(color_hex))
-        painter.drawEllipse(0, 0, size - 1, size - 1)
-        if glyph:
-            painter.setPen(QColor("white"))
-            font = QFont()
-            font.setPointSize(8)
-            font.setBold(True)
-            painter.setFont(font)
-            painter.drawText(
-                pm.rect(),
-                Qt.AlignmentFlag.AlignCenter,
-                glyph,
-            )
-        painter.end()
-        label = QLabel()
-        label.setPixmap(pm)
-        return label
+        """Delega la construcción del panel UNIDADES en `units_panel`."""
+        _build_units_panel(self.main_window, layout)
 
     def _add_players_title(self, layout: QVBoxLayout) -> None:
         """Agregar título de la sección de jugadores."""
