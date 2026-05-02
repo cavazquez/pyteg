@@ -58,7 +58,7 @@ class ClientTaskEstado(IClientTask):
 
             main_window.update()
 
-    def actualizar_lista_jugadores(self, main_window: Any) -> None:
+    def actualizar_lista_jugadores(self, main_window: GameWindowProtocol) -> None:
         """Actualiza la lista de jugadores en la interfaz de usuario."""
         jugadores: list[tuple[str, Any]] = []
         for user_id, color in main_window.colores.colores_asignados().items():

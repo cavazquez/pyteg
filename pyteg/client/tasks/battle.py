@@ -76,7 +76,7 @@ class ClientTaskResultadoBatalla(IClientTask):
                 "red",
             )
 
-    def _mostrar_animacion_completa(self, main_window: Any) -> None:
+    def _mostrar_animacion_completa(self, main_window: GameWindowProtocol) -> None:
         """Muestra la animación completa de dados para el atacante."""
         batalla_data = {
             "origen": self._origen,
@@ -101,7 +101,7 @@ class ClientTaskResultadoBatalla(IClientTask):
 
         main_window.show_battle_result_dialog(batalla_data, on_animation_finished)
 
-    def _mostrar_efectos_batalla(self, main_window: Any) -> None:
+    def _mostrar_efectos_batalla(self, main_window: GameWindowProtocol) -> None:
         """Muestra efectos visuales para espectadores (titilación + pérdidas)."""
         try:
             # 1. Iniciar titilación en países origen y destino
@@ -119,7 +119,7 @@ class ClientTaskResultadoBatalla(IClientTask):
         except (AttributeError, RuntimeError) as e:
             CLIENT_TASKS_LOG.warning("Error mostrando efectos de batalla: %s", e)
 
-    def _iniciar_titilacion_paises(self, main_window: Any) -> None:
+    def _iniciar_titilacion_paises(self, main_window: GameWindowProtocol) -> None:
         """Inicia la titilación en los países origen y destino."""
         try:
             if main_window.scene is not None and hasattr(main_window.scene, "paises"):
@@ -137,7 +137,7 @@ class ClientTaskResultadoBatalla(IClientTask):
         except (AttributeError, RuntimeError) as e:
             CLIENT_TASKS_LOG.warning("Error iniciando titilación: %s", e)
 
-    def _mostrar_perdidas_flotantes(self, main_window: Any) -> None:
+    def _mostrar_perdidas_flotantes(self, main_window: GameWindowProtocol) -> None:
         """Muestra las pérdidas flotantes y detiene la titilación."""
         try:
             # Detener titilación
@@ -172,7 +172,7 @@ class ClientTaskResultadoBatalla(IClientTask):
         except (AttributeError, RuntimeError) as e:
             CLIENT_TASKS_LOG.warning("Error mostrando pérdidas flotantes: %s", e)
 
-    def _detener_titilacion_paises(self, main_window: Any) -> None:
+    def _detener_titilacion_paises(self, main_window: GameWindowProtocol) -> None:
         """Detiene la titilación en los países origen y destino."""
         try:
             if main_window.scene is not None and hasattr(main_window.scene, "paises"):
@@ -189,7 +189,7 @@ class ClientTaskResultadoBatalla(IClientTask):
             CLIENT_TASKS_LOG.warning("Error deteniendo titilación: %s", e)
 
     def _mostrar_perdida_flotante(
-        self, main_window: Any, nombre_pais: str, perdidas: int
+        self, main_window: GameWindowProtocol, nombre_pais: str, perdidas: int
     ) -> None:
         """Muestra una pérdida flotante sobre un país específico."""
         try:
