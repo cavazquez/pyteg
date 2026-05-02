@@ -7,8 +7,8 @@ from typing import TYPE_CHECKING, Any
 from PySide6.QtCore import QSize, Qt
 from PySide6.QtWidgets import QMainWindow, QWidget
 
+from pyteg.client.colores.paleta import Colores
 from pyteg.client.conexion.transmisor import ClientNullTransmisor
-from pyteg.cliente_colores import Colores
 from pyteg.gui.managers.cards import CardManager
 from pyteg.gui.managers.config import ConfigManager
 from pyteg.gui.managers.game_actions import GameActionsManager
