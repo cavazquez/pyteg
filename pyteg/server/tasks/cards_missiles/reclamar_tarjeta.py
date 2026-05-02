@@ -9,7 +9,7 @@ from pyteg.server.juego.validators import GameStateValidator, TurnValidator
 from pyteg.server.tasks.base import LOGGER, IServerTask
 
 if TYPE_CHECKING:
-    from pyteg.game_context import GameContext
+    from pyteg.core.partida.context import GameContext
 
 
 class ServerTaskReclamarTarjeta(IServerTask):

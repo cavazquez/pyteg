@@ -9,10 +9,10 @@ from pyteg.config import (
     DEFAULT_VICTORY_COUNTRIES,
 )
 from pyteg.core.combate.batalla import Batalla
+from pyteg.core.partida.card_manager import CardManager
+from pyteg.core.partida.turn_manager import TurnManager
+from pyteg.core.partida.victory_checker import VictoryChecker
 from pyteg.core.turnos.turnos import PrimerTurno, SegundoTurno, SiguientesTurnos
-from pyteg.game_card_manager import CardManager
-from pyteg.game_turn_manager import TurnManager
-from pyteg.game_victory_checker import VictoryChecker
 
 if TYPE_CHECKING:
     from pyteg.core.cartas.mazo import Mazo

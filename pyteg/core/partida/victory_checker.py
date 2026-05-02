@@ -9,7 +9,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from pyteg.objetivos_secretos import ObjetivosSecretos
+    from pyteg.core.partida.objetivos_secretos import ObjetivosSecretos
     from pyteg.server.conexion.cliente import Client
     from pyteg.server.juego.color import ServerColor
     from pyteg.server.juego.mapa import Mapa

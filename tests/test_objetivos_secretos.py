@@ -4,7 +4,7 @@ import unittest
 from typing import cast
 from unittest.mock import Mock, patch
 
-from pyteg.objetivos_secretos import ObjetivosSecretos
+from pyteg.core.partida.objetivos_secretos import ObjetivosSecretos
 
 
 class TestObjetivosSecretos(unittest.TestCase):
