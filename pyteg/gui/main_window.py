@@ -24,7 +24,7 @@ from pyteg.i18n import translate as _
 from pyteg.sound_manager import SoundManager
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Callable, Sequence
 
     from PySide6.QtGui import QCloseEvent, QColor, QKeyEvent
     from PySide6.QtWidgets import QHBoxLayout, QLabel, QStatusBar
@@ -330,3 +330,23 @@ class Gui(QMainWindow):
     def mostrar_tarjetas(self) -> None:
         """Muestra la ventana de tarjetas del jugador."""
         self.card_manager.mostrar_tarjetas()
+
+    def show_battle_result_dialog(
+        self,
+        batalla_data: dict[str, Any],
+        on_finished: Callable[[], None],
+    ) -> None:
+        """Muestra el diálogo modal con la animación de resultado de batalla.
+
+        Args:
+            batalla_data: Datos de la batalla (origen, destino, dados, etc.).
+            on_finished: Callback ejecutado al terminar la animación.
+
+        """
+        from pyteg.gui.dialogs.dice_animation import (  # noqa: PLC0415
+            BattleResultDialog,
+        )
+
+        dialog = BattleResultDialog(batalla_data, self)
+        dialog.animation_finished.connect(on_finished)
+        dialog.exec()
