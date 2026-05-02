@@ -6,7 +6,6 @@ from typing import Any
 
 from pyteg.client.tasks.base import IClientTask
 from pyteg.client.tasks.logging_helper import CLIENT_TASKS_LOG
-from pyteg.gui.tarjetas import TarjetasDialog
 
 
 class ClientTaskTarjetasJugador(IClientTask):
@@ -44,13 +43,8 @@ class ClientTaskTarjetasJugador(IClientTask):
                 "ClientTaskTarjetasJugador: tarjetas=%s", self._tarjetas
             )
 
-            # Si hay un diálogo de tarjetas abierto, actualizarlo
-            for widget in main_window.findChildren(TarjetasDialog):
-                if widget.isVisible():
-                    widget.actualizar_tarjetas(self._tarjetas)
-                    CLIENT_TASKS_LOG.info(
-                        "Diálogo de tarjetas actualizado automáticamente"
-                    )
+            if hasattr(main_window, "refresh_open_tarjetas_dialogs"):
+                main_window.refresh_open_tarjetas_dialogs(self._tarjetas)
 
         except (AttributeError, RuntimeError) as e:
             CLIENT_TASKS_LOG.warning("Error al procesar tarjetas del jugador: %s", e)
