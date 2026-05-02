@@ -6,8 +6,8 @@ from typing import Any
 
 from PySide6.QtWidgets import QMessageBox
 
-from pyteg.client_tasks.base import IClientTask
-from pyteg.client_tasks.logging_helper import CLIENT_TASKS_LOG
+from pyteg.client.tasks.base import IClientTask
+from pyteg.client.tasks.logging_helper import CLIENT_TASKS_LOG
 from pyteg.config import (
     DEFAULT_TURN_SECONDS,
     DEFAULT_VICTORY_COUNTRIES,

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from pyteg.client_tasks import ClientTaskNull, IClientTask, dict_task
+from pyteg.client.tasks import ClientTaskNull, IClientTask, dict_task
 
 
 class ClientTaskManager:
