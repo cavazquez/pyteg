@@ -31,7 +31,7 @@ class TestToolBarWindowMixin(unittest.TestCase):
         h.main_window.showFullScreen.assert_called_once()
         cast("MagicMock", h.button_fullscreen.setChecked).assert_called_once_with(True)
 
-    @patch("pyteg.gui_toolbar_window.center_window_on_screen")
+    @patch("pyteg.gui.toolbar.window_mixin.center_window_on_screen")
     def test_resize_window_modo_normal(self, mock_center: MagicMock) -> None:
         """Tamaño explícito: ventana normal, resize y centrado."""
         h = _Host()
