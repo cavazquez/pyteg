@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-from pyteg.exception import InvalidActionError
+from pyteg.exceptions import InvalidActionError
 from pyteg.server.juego.validators import GameStateValidator, TurnValidator
 from pyteg.server.tasks.base import LOGGER, IServerTask
 

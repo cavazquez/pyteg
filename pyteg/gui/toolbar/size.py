@@ -10,7 +10,7 @@ from PySide6.QtCore import QSize
 from PySide6.QtGui import QAction
 from PySide6.QtWidgets import QApplication, QMenu, QToolButton, QWidget
 
-from pyteg.exception import ImagenNoEncontradaError
+from pyteg.exceptions import ImagenNoEncontradaError
 from pyteg.gui.toolbar.icons import cargar_icono_toolbar
 from pyteg.i18n import translate as _
 

@@ -12,7 +12,7 @@ from PySide6.QtWidgets import (
     QGraphicsTextItem,
 )
 
-from pyteg.exception import ImagenNoEncontradaError
+from pyteg.exceptions import ImagenNoEncontradaError
 from pyteg.gui.mapa.pais_battle_fx_mixin import PaisBattleFxMixin
 from pyteg.gui.mapa.pais_selection_mixin import PaisSelectionMixin
 from pyteg.gui.widgets.circulo import Circulo

@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 from pyteg.config import MIN_UNITS_FOR_ATTACK
-from pyteg.exception import MissingFieldError
+from pyteg.exceptions import MissingFieldError
 from pyteg.server.juego.validators import (
     AdjacencyValidator,
     AttackRestrictionValidator,

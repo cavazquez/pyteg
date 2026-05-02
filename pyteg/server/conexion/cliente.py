@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from typing import TYPE_CHECKING, Any
 
-from pyteg.exception import EstadoInvalidoError, MensajeNoValidoError
+from pyteg.exceptions import EstadoInvalidoError, MensajeNoValidoError
 from pyteg.logger import get_logger
 from pyteg.server.conexion.transmisor import ServerTransmisor
 from pyteg.server.tasks.manager import ServerTaskManager

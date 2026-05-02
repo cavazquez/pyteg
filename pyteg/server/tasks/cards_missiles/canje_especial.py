@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 from pyteg.config import SPECIAL_EXCHANGE_UNITS
-from pyteg.exception import (
+from pyteg.exceptions import (
     CountryNotOwnedError,
     InvalidActionError,
     MissingFieldError,
