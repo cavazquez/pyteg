@@ -350,3 +350,16 @@ class Gui(QMainWindow):
         dialog = BattleResultDialog(batalla_data, self)
         dialog.animation_finished.connect(on_finished)
         dialog.exec()
+
+    def refresh_open_tarjetas_dialogs(self, tarjetas: list[Any]) -> None:
+        """Actualiza los diálogos de tarjetas abiertos con la lista provista.
+
+        Args:
+            tarjetas: Lista actualizada de tarjetas del jugador.
+
+        """
+        from pyteg.gui.tarjetas import TarjetasDialog  # noqa: PLC0415
+
+        for widget in self.findChildren(TarjetasDialog):
+            if widget.isVisible():
+                widget.actualizar_tarjetas(tarjetas)
