@@ -5,15 +5,18 @@ Maneja la aplicación y gestión de temas claro/oscuro en toda la aplicación.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING
 
 from PySide6.QtWidgets import QApplication, QFrame, QWidget
+
+if TYPE_CHECKING:
+    from pyteg.gui.managers.protocols import MainWindowProtocol
 
 
 class ThemeManager:
     """Gestor de temas para la ventana principal."""
 
-    def __init__(self, main_window: Any):
+    def __init__(self, main_window: MainWindowProtocol):
         """Inicializar el gestor de temas.
 
         Args:

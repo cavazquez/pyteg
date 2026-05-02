@@ -7,12 +7,15 @@ en la interfaz gráfica principal.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING
 
 from PySide6.QtWidgets import QLabel
 
 from pyteg.debug_logger import debug_logger
 from pyteg.logger import get_logger
+
+if TYPE_CHECKING:
+    from pyteg.gui.managers.protocols import MainWindowProtocol
 
 _LOG = get_logger("gui.status_manager")
 
@@ -24,7 +27,7 @@ class StatusManager:
     gestionar el estado del juego y mantener la información del jugador actual.
     """
 
-    def __init__(self, main_window: Any):
+    def __init__(self, main_window: MainWindowProtocol):
         """Inicializa el gestor de estado.
 
         Args:

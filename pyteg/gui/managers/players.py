@@ -7,7 +7,7 @@ en la interfaz gráfica principal.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor, QFont, QPainter, QPixmap
@@ -15,6 +15,8 @@ from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
+
+    from pyteg.gui.managers.protocols import MainWindowProtocol
 
 
 class PlayersManager:
@@ -24,7 +26,7 @@ class PlayersManager:
     que muestran la información de los jugadores en la interfaz.
     """
 
-    def __init__(self, main_window: Any):
+    def __init__(self, main_window: MainWindowProtocol):
         """Inicializa el gestor de jugadores.
 
         Args:

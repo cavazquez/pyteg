@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 from PySide6.QtCore import QSize, Qt
 from PySide6.QtWidgets import QMainWindow, QWidget
@@ -31,6 +31,7 @@ if TYPE_CHECKING:
 
     from pyteg.client.app import Client
     from pyteg.gui.dialogs.conectar import VentanaConectar
+    from pyteg.gui.managers.protocols import MainWindowProtocol
     from pyteg.gui.mapa.scene import QCustomGraphicsScene
     from pyteg.gui.toolbar import ToolBar
     from pyteg.gui.widgets.chat import Chat
@@ -56,6 +57,21 @@ class Gui(QMainWindow):
     language_selector: LanguageSelector
     sound_control: SoundControlWidget
     timer_label: QLabel
+
+    layout_manager: LayoutManager
+    theme_manager: ThemeManager
+    players_manager: PlayersManager
+    status_manager: StatusManager
+    units_manager: UnitsManager
+    game_actions_manager: GameActionsManager
+    config_manager: ConfigManager
+    card_manager: CardManager
+    window_manager: WindowManager
+    language_manager: LanguageManager
+
+    row_widgets: dict[str, Any]
+    last_units: dict[str, Any]
+    status_temp_label: Any
 
     def __init__(self, client: Client) -> None:
         """Inicializa la ventana principal de la GUI.
@@ -87,20 +103,24 @@ class Gui(QMainWindow):
         self.toolbar: ToolBar | None = None
         self.tarjetas_jugador: list[Any] = []
         self.misiles_habilitados: bool = False
+        self.row_widgets: dict[str, Any] = {}
+        self.last_units: dict[str, Any] = {}
+        self.status_temp_label: Any = None
 
     def _gui_init_window_and_managers(self) -> None:
         self.setWindowTitle(_("PyTeg"))
         self.resize(QSize(1280, 800))
-        self.layout_manager = LayoutManager(self)
-        self.theme_manager = ThemeManager(self)
-        self.players_manager = PlayersManager(self)
-        self.status_manager = StatusManager(self)
-        self.units_manager = UnitsManager(self)
-        self.game_actions_manager = GameActionsManager(self)
-        self.config_manager = ConfigManager(self)
-        self.card_manager = CardManager(self)
-        self.window_manager = WindowManager(self)
-        self.language_manager = LanguageManager(self)
+        mw = cast("MainWindowProtocol", self)
+        self.layout_manager = LayoutManager(mw)
+        self.theme_manager = ThemeManager(mw)
+        self.players_manager = PlayersManager(mw)
+        self.status_manager = StatusManager(mw)
+        self.units_manager = UnitsManager(mw)
+        self.game_actions_manager = GameActionsManager(mw)
+        self.config_manager = ConfigManager(mw)
+        self.card_manager = CardManager(mw)
+        self.window_manager = WindowManager(mw)
+        self.language_manager = LanguageManager(mw)
         self.sound_manager = SoundManager()
         self.setMinimumSize(QSize(800, 600))
         self.setMouseTracking(True)

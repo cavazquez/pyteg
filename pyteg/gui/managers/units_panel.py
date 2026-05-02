@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor, QFont, QPainter, QPixmap
@@ -15,8 +15,13 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+if TYPE_CHECKING:
+    from pyteg.gui.managers.protocols import MainWindowProtocol
 
-def setup_continent_values(main_window: Any, layout: QVBoxLayout) -> None:
+
+def setup_continent_values(
+    main_window: MainWindowProtocol, layout: QVBoxLayout
+) -> None:
     """Crea la sección UNIDADES con filas ordenadas e íconos."""
     section = QFrame()
     section.setFrameShape(QFrame.Shape.StyledPanel)
@@ -79,7 +84,7 @@ def setup_continent_values(main_window: Any, layout: QVBoxLayout) -> None:
 
 
 def _create_unit_row(  # noqa: PLR0913, PLR0917
-    main_window: Any,
+    main_window: MainWindowProtocol,
     parent_layout: QVBoxLayout,
     key: str,
     value: int,

@@ -7,12 +7,15 @@ relacionada con la apertura y gestión de ventanas secundarias.
 from __future__ import annotations
 
 import contextlib
-from typing import Any
+from typing import TYPE_CHECKING
 
 from pyteg.gui.dialogs.conectar import VentanaConectar
 from pyteg.gui.windows.admin import VentanaAdmin
 from pyteg.gui.windows.esperar_jugadores import VentanaEsperarJugadores
 from pyteg.logger import get_logger
+
+if TYPE_CHECKING:
+    from pyteg.gui.managers.protocols import MainWindowProtocol
 
 _LOG = get_logger("gui.window_manager")
 
@@ -24,7 +27,7 @@ class WindowManager:
     de las ventanas secundarias como conexión, admin y espera de jugadores.
     """
 
-    def __init__(self, main_window: Any) -> None:
+    def __init__(self, main_window: MainWindowProtocol) -> None:
         """Inicializa el gestor de ventanas.
 
         Args:

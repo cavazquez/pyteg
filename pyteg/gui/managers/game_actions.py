@@ -7,12 +7,15 @@ cálculos de unidades disponibles para ataques.
 
 from __future__ import annotations
 
-from typing import Any, cast
+from typing import TYPE_CHECKING, cast
 
-from PySide6.QtWidgets import QDialog
+from PySide6.QtWidgets import QDialog, QWidget
 
 from pyteg.gui.dialogs.attack import AttackDialog
 from pyteg.logger import get_logger
+
+if TYPE_CHECKING:
+    from pyteg.gui.managers.protocols import MainWindowProtocol
 
 _LOG = get_logger("gui.game_actions")
 
@@ -25,7 +28,7 @@ class GameActionsManager:
     comunicación con el servidor.
     """
 
-    def __init__(self, main_window: Any):
+    def __init__(self, main_window: MainWindowProtocol):
         """Inicializa el gestor de acciones de juego.
 
         Args:
@@ -72,7 +75,9 @@ class GameActionsManager:
                 return
 
             # Mostrar diálogo para seleccionar cantidad de unidades
-            dialog = AttackDialog(origen, destino, max_unidades, self.main_window)
+            dialog = AttackDialog(
+                origen, destino, max_unidades, cast("QWidget", self.main_window)
+            )
             if dialog.exec() == QDialog.DialogCode.Accepted:
                 cantidad_unidades = dialog.get_cantidad_unidades()
                 self.main_window.transmisor.atacar(origen, destino, cantidad_unidades)

@@ -6,9 +6,14 @@ relacionada con las tarjetas del jugador.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, cast
 
 from pyteg.gui.tarjetas import TarjetasDialog
+
+if TYPE_CHECKING:
+    from PySide6.QtWidgets import QWidget
+
+    from pyteg.gui.managers.protocols import MainWindowProtocol
 
 
 class CardManager:
@@ -18,7 +23,7 @@ class CardManager:
     incluyendo la solicitud de tarjetas al servidor.
     """
 
-    def __init__(self, main_window: Any) -> None:
+    def __init__(self, main_window: MainWindowProtocol) -> None:
         """Inicializa el gestor de tarjetas.
 
         Args:
@@ -33,7 +38,7 @@ class CardManager:
         if self.main_window.transmisor:
             self.main_window.transmisor.solicitar_tarjetas()
 
-        dialog = TarjetasDialog(self.main_window)
+        dialog = TarjetasDialog(cast("QWidget", self.main_window))
 
         # Si tenemos tarjetas del servidor, usarlas inmediatamente
         if (
