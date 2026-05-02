@@ -16,15 +16,26 @@ El transporte entre cliente y servidor es **TCP en claro**, sin TLS ni autentica
 **Posibles extensiones futuras** (cambian el protocolo y el despliegue): TLS u otro canal cifrado, contraseña o token de sala, lista de permitidos. No hay hoja de ruta fijada; ver [DECISIONS.md](DECISIONS.md) (ADR-009).
 
 ## Módulos principales (pyteg/)
-- server.py: servidor y loop principal (acepta conexiones, dirige mensajes a tareas).
-- server_tasks/: paquete de tareas validadas del servidor (`lobby`, `game_actions`, `cards_missiles`; mismo API público que antes).
-- server_game.py: reglas del juego, batallas y cálculo de conquistas.
-- server_mapa.py: representación del mapa, países y propietarios.
-- server_transmisor.py: envío tipificado de mensajes a clientes.
-- server_msg/: paquete de mensajes servidor→cliente (`connection`, `map_turn`, `battle`, `cards_missiles`, etc.).
-- client_connection.py: manejo de conexión y estado conectado/desconectado.
-- client_tasks/: paquete de tareas de cliente (`lobby`, `game_flow`, `battle`, `cards_missiles`).
-- pyteg/gui/: paquete de la GUI del cliente (`main_window`, `managers/`, `widgets/`, `dialogs/`, `mapa/`, etc.).
+- `pyteg/server/app.py`: servidor y loop principal (acepta conexiones, dirige mensajes a tareas). Entry point: `uv run pyteg-server`.
+- `pyteg/server/tasks/`: paquete de tareas validadas del servidor (`lobby`, `game_actions/`, `cards_missiles/`; mismo API público que antes).
+- `pyteg/server/juego/game.py`: reglas del juego, batallas y cálculo de conquistas.
+- `pyteg/server/juego/mapa.py`: representación del mapa, países y propietarios.
+- `pyteg/server/conexion/transmisor.py`: envío tipificado de mensajes a clientes.
+- `pyteg/server/conexion/broadcaster.py`: difusión de mensajes a todos los clientes conectados.
+- `pyteg/server/msg/`: paquete de mensajes servidor→cliente (`connection`, `map_turn`, `battle`, `cards_missiles`, etc.).
+- `pyteg/client/app.py`: cliente del juego (estado de usuario, transmisor, etc.).
+- `pyteg/client/run.py`: punto de entrada del cliente. Entry point: `uv run pyteg-client`.
+- `pyteg/client/conexion/connection.py`: manejo de conexión y estado conectado/desconectado.
+- `pyteg/client/conexion/transmisor/`: paquete con `ClientTransmisor` y `ClientNullTransmisor`.
+- `pyteg/client/msg/`: paquete de mensajes cliente→servidor (`lobby`, `actions`, `cards`, `missiles`).
+- `pyteg/client/tasks/`: paquete de tareas de cliente (`lobby/`, `game_flow/`, `battle`, `cards_missiles`).
+- `pyteg/core/`: dominio puro reutilizable.
+  - `core/mapa/`: `Country`, datos de países y constructor del mapa (`build_mapa`).
+  - `core/cartas/`: mazo y tarjeta de país.
+  - `core/turnos/`: protocolo `ITurno`, implementaciones (`turnos.py`) y temporizador.
+  - `core/combate/`: `batalla`, `dados`, `calculos` y sistema de misiles. `core/combate/protocols.py` define `MapaCalculos` (Protocol estructural usado por `calculos`).
+  - `core/partida/`: contexto, manager de cartas/turnos, comprobador de victoria, configuración y objetivos secretos.
+- `pyteg/gui/`: paquete de la GUI del cliente (`main_window`, `managers/`, `widgets/`, `dialogs/`, `mapa/`, `tarjetas/`, `toolbar/`, `status_bar/`).
 
 ### Toolbar y país en el mapa (descomposición)
 
@@ -53,16 +64,12 @@ Otros módulos voluminosos de la GUI pueden seguir el mismo patrón cuando una n
 | `pyteg/gui/tarjetas/selection_mixin.py` | Grilla 2x2, selección, contador y reglas locales de canje. |
 | `pyteg/gui/tarjetas/exchange_mixin.py` | Canje y reclamo vía `transmisor` del padre. |
 
-- turno_protocol.py: define la interfaz `ITurno` para desacoplar el servidor de las clases de turno.
-- turnos.py: implementaciones de turnos (PrimerTurno, SegundoTurno, SiguientesTurnos).
-- run_client.py: punto de entrada del cliente.
-
 ## Flujo de mensajes
-1) Cliente realiza acción (UI) -> client_transmisor envía mensaje al servidor.
-2) server.py enruta -> ServerTask correspondiente valida precondiciones.
-3) Si es válido, aplica cambios en server_game / server_mapa.
-4) El servidor emite mensajes de resultado/estado a clientes mediante server_transmisor.
-5) client_tasks procesa y actualiza GUI.
+1) Cliente realiza acción (UI) → `pyteg/client/conexion/transmisor/` envía mensaje al servidor.
+2) `pyteg/server/app.py` enruta → `ServerTask` correspondiente valida precondiciones.
+3) Si es válido, aplica cambios en `pyteg/server/juego/game.py` / `pyteg/server/juego/mapa.py`.
+4) El servidor emite mensajes de resultado/estado a clientes mediante `pyteg/server/conexion/transmisor.py` y `broadcaster.py`.
+5) `pyteg/client/tasks/` procesa y actualiza GUI mediante la API pública de `Gui` (sin importar widgets directamente).
 
 ### Diagrama de flujo
 Para una vista visual del intercambio de mensajes, ver el diagrama de secuencia en:

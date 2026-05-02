@@ -75,12 +75,12 @@ uv sync
 
 - Terminal 1 (servidor):
 ```bash
-uv run python pyteg/server.py
+uv run pyteg-server
 ```
 
 - Terminal 2..8 (clientes):
 ```bash
-uv run python pyteg/run_client.py
+uv run pyteg-client
 ```
 
 Consejos:

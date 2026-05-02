@@ -3,7 +3,7 @@
 title Diagrama de Secuencia - Cliente TEG
 
 actor Usuario
-participant "run_client.py" as main
+participant "client/run.py" as main
 participant "Client" as client
 participant "QApplication" as qt_app
 participant "Gui" as gui

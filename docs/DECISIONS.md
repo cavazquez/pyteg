@@ -4,7 +4,7 @@ Este documento registra decisiones de arquitectura y sus motivaciones.
 
 ## ADR-001: Cliente-Servidor con mensajes tipificados
 - Contexto: Necesidad de multijugador y UI reactiva.
-- Decisión: Arquitectura TCP cliente-servidor. Mensajes tipificados en `server_msg.py` y transmisores `server_transmisor.py`/`client_transmisor.py`.
+- Decisión: Arquitectura TCP cliente-servidor. Mensajes tipificados en `pyteg/server/msg/` y `pyteg/client/msg/`, con transmisores `pyteg/server/conexion/transmisor.py` y `pyteg/client/conexion/transmisor/transmisor.py`.
 - Consecuencias: Facilita validaciones centralizadas y broadcast selectivo. Exige mantener compatibilidad de protocolo.
 
 ## ADR-002: Validación estricta de turnos en el servidor

@@ -18,7 +18,7 @@ sequenceDiagram
         U->>C: Click agregar unidad (UI)
         C->>S: MsgAgregarUnidad(pais, tipo)
         alt Validación OK
-            S->>S: Aplica cambio (server_game / server_mapa)
+            S->>S: Aplica cambio (server/juego/game.py + server/juego/mapa.py)
             S->>C: MsgMapaActualizado (broadcast)
             S->>C: MsgUnidadesDisponibles (al jugador activo)
         else Error de validación
@@ -30,7 +30,7 @@ sequenceDiagram
         U->>C: Click atacar (UI)
         C->>S: MsgAtacar(origen, destino, dados)
         alt Validación OK
-            S->>S: Ejecuta batalla (server_game)
+            S->>S: Ejecuta batalla (server/juego/game.py)
             S->>C: MsgResultadoBatalla (broadcast)
             S->>C: MsgMapaActualizado (broadcast)
         else Error de validación
@@ -42,7 +42,7 @@ sequenceDiagram
         U->>C: Click mover (UI)
         C->>S: MsgMoverUnidad(origen, destino, cantidad)
         alt Validación OK
-            S->>S: Aplica movimiento (server_game / server_mapa)
+            S->>S: Aplica movimiento (server/juego/game.py + server/juego/mapa.py)
             S->>C: MsgMapaActualizado (broadcast)
         else Error de validación
             S->>C: MsgChat(tipo=error, detalle)

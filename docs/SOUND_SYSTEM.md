@@ -21,7 +21,7 @@ Se ha implementado un sistema completo de efectos de sonido para PyTeg que propo
    - Slider de volumen (0-100%)
    - Indicador de porcentaje
 
-3. **Integración en GUI** (`pyteg/gui.py`)
+3. **Integración en GUI** (`pyteg/gui/main_window.py`)
    - Instancia de `SoundManager` creada al inicializar
    - Widget de control agregado a la barra de estado
    - Limpieza de recursos al cerrar la aplicación
@@ -32,12 +32,12 @@ Se ha implementado un sistema completo de efectos de sonido para PyTeg que propo
 
 | Evento | Sonido | Ubicación |
 |--------|--------|-----------|
-| **Ataque/Batalla** | `attack.wav` | `client_tasks.py` - `ClientTaskResultadoBatalla` |
-| **Movimiento de unidades** | `move.wav` | `client_transmisor.py` - `mover_unidad()` |
-| **Cambio de turno** | `turn.wav` | `client_tasks.py` - `ClientTaskTurno` |
-| **Victoria** | `victory.wav` | `client_tasks.py` - `ClientTaskVictoria` |
-| **Conexión** | `connect.wav` | `client_connection.py` - `on_connected()` |
-| **Desconexión** | `disconnect.wav` | `client_connection.py` - `on_state_changed()` |
+| **Ataque/Batalla** | `attack.wav` | `pyteg/client/tasks/battle.py` - `ClientTaskResultadoBatalla` |
+| **Movimiento de unidades** | `move.wav` | `pyteg/client/conexion/transmisor/transmisor.py` - `mover_unidad()` |
+| **Cambio de turno** | `turn.wav` | `pyteg/client/tasks/game_flow/turno.py` - `ClientTaskTurno` |
+| **Victoria** | `victory.wav` | `pyteg/client/tasks/game_flow/partida.py` - `ClientTaskVictoria` |
+| **Conexión** | `connect.wav` | `pyteg/client/conexion/connection.py` - `on_connected()` |
+| **Desconexión** | `disconnect.wav` | `pyteg/client/conexion/connection.py` - `on_state_changed()` |
 
 ### Preparados (sin archivos de audio aún)
 
@@ -145,10 +145,11 @@ sound_manager.play("attack")
 - `docs/SOUND_SYSTEM.md` - Esta documentación
 
 ### Archivos modificados
-- `pyteg/gui.py` - Integración del SoundManager
-- `pyteg/client_tasks.py` - Sonidos en eventos (ataque, turno, victoria)
-- `pyteg/client_transmisor.py` - Sonido de movimiento
-- `pyteg/client_connection.py` - Sonidos de conexión/desconexión
+- `pyteg/gui/main_window.py` - Integración del SoundManager
+- `pyteg/client/tasks/battle.py`, `pyteg/client/tasks/game_flow/turno.py`,
+  `pyteg/client/tasks/game_flow/partida.py` - Sonidos en eventos (ataque, turno, victoria)
+- `pyteg/client/conexion/transmisor/transmisor.py` - Sonido de movimiento
+- `pyteg/client/conexion/connection.py` - Sonidos de conexión/desconexión
 - `README.md` - Actualizada lista de características
 
 ## Testing
