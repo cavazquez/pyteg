@@ -8,7 +8,7 @@ dependencies = [
 ]
 
 [project.scripts]
-pyteg-client = "pyteg.run_client:main"
+pyteg-client = "pyteg.client.run:main"
 pyteg-server = "pyteg.server.app:main"
 
 [tool.ruff.format]

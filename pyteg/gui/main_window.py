@@ -29,7 +29,7 @@ if TYPE_CHECKING:
     from PySide6.QtGui import QCloseEvent, QColor, QKeyEvent
     from PySide6.QtWidgets import QHBoxLayout, QLabel, QStatusBar
 
-    from pyteg.client import Client
+    from pyteg.client.app import Client
     from pyteg.gui.dialogs.conectar import VentanaConectar
     from pyteg.gui.mapa.scene import QCustomGraphicsScene
     from pyteg.gui.toolbar import ToolBar

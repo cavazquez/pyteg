@@ -6,7 +6,7 @@ import sys
 
 from PySide6.QtWidgets import QApplication
 
-from pyteg.client import Client
+from pyteg.client.app import Client
 from pyteg.gui import Gui
 from pyteg.version import NAME, VERSION
 
