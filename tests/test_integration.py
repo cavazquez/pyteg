@@ -15,7 +15,7 @@ import time
 import unittest
 from typing import Any
 
-from pyteg.server import Server
+from pyteg.server.app import Server
 from pyteg.server_build_client import ServerBuildClient
 from pyteg.server_client_connection import ConnectionServer
 

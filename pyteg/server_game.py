@@ -16,7 +16,7 @@ from pyteg.turnos import PrimerTurno, SegundoTurno, SiguientesTurnos
 
 if TYPE_CHECKING:
     from pyteg.mazo import Mazo
-    from pyteg.server import Server
+    from pyteg.server.app import Server
     from pyteg.server_client import Client
     from pyteg.server_mapa import Mapa
     from pyteg.tarjeta_de_pais import TarjetaDePais
