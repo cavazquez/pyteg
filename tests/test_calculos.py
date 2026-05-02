@@ -2,7 +2,7 @@
 
 import unittest
 
-from pyteg.calculos import Calculos
+from pyteg.core.combate.calculos import Calculos
 from pyteg.server.juego.mapa import Mapa
 
 

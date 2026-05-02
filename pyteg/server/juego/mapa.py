@@ -5,8 +5,8 @@ from collections.abc import Callable
 from random import shuffle
 from typing import Any
 
+from pyteg.core.combate.missile_system import MissileSystem
 from pyteg.core.mapa.country_data import CountryData
-from pyteg.missile_system import MissileSystem
 
 
 class Mapa:

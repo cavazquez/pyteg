@@ -5,10 +5,10 @@ from __future__ import annotations
 import secrets
 from typing import TYPE_CHECKING, Any
 
-from pyteg.batalla import Batalla
 from pyteg.config import (
     DEFAULT_VICTORY_COUNTRIES,
 )
+from pyteg.core.combate.batalla import Batalla
 from pyteg.core.turnos.turnos import PrimerTurno, SegundoTurno, SiguientesTurnos
 from pyteg.game_card_manager import CardManager
 from pyteg.game_turn_manager import TurnManager
