@@ -18,7 +18,7 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
 )
 
-from pyteg.client_connection import ConnectionClient
+from pyteg.client.conexion.connection import ConnectionClient
 from pyteg.client_transmisor import ClientTransmisor
 from pyteg.gui.dialogs.conectar import styles
 from pyteg.gui.dialogs.conectar.validation import ValidationError, validate
