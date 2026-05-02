@@ -26,7 +26,7 @@ class ThemeManager:
         """Cambia el tema de la interfaz ("light" o "dark")."""
         if theme not in {"light", "dark"}:
             return
-        self.main_window._theme = theme  # noqa: SLF001
+        self.main_window.theme = theme
         # Aplicar tema global a toda la app (fondos, textos, menús, etc.)
         self._apply_global_theme()
         self._apply_statusbar_theme()
@@ -41,17 +41,17 @@ class ThemeManager:
         # Notificar a la toolbar para actualizar el botón de tema
         toolbar = getattr(self.main_window, "toolbar", None)
         if toolbar is not None and hasattr(toolbar, "on_theme_changed"):
-            toolbar.on_theme_changed(self.main_window._theme)  # noqa: SLF001
+            toolbar.on_theme_changed(self.main_window.theme)
 
     def toggle_theme(self) -> None:
         """Alterna entre tema claro y oscuro y aplica el cambio."""
-        current = getattr(self.main_window, "_theme", "light")
+        current = getattr(self.main_window, "theme", "light")
         new_theme = "dark" if current != "dark" else "light"
         self.set_theme(new_theme)
 
     def _apply_statusbar_theme(self) -> None:
         """Aplica el tema a la barra de estado."""
-        if self.main_window._theme == "dark":  # noqa: SLF001
+        if self.main_window.theme == "dark":
             self.main_window.status_bar.setStyleSheet(
                 """
                 QStatusBar { background: #2b2f36; border-top: 1px solid #3a3f47; }
@@ -81,7 +81,7 @@ class ThemeManager:
         app = QApplication.instance()
         if app is None or not isinstance(app, QApplication):
             return
-        if getattr(self.main_window, "_theme", "light") == "dark":
+        if getattr(self.main_window, "theme", "light") == "dark":
             app.setStyleSheet(
                 "QWidget { background-color: #1e1f23; color: #e6e6e6; }\n"
                 "QToolBar { background-color: #2b2f36; "
@@ -107,7 +107,7 @@ class ThemeManager:
     def _apply_units_theme(self, root: QWidget | None = None) -> None:
         """Aplica el tema a la sección de unidades."""
         root = root or getattr(self.main_window, "centralWidget", lambda: None)()
-        theme = getattr(self.main_window, "_theme", "light")
+        theme = getattr(self.main_window, "theme", "light")
         if theme == "dark":
             ss = (
                 "#unitsSection { background: #21252b; border: 1px solid #3a3f47;"
@@ -132,7 +132,7 @@ class ThemeManager:
 
     def _apply_players_theme(self, player_widget: QFrame) -> None:
         """Aplica el tema a un widget de jugador específico."""
-        if self.main_window._theme == "dark":  # noqa: SLF001
+        if self.main_window.theme == "dark":
             player_widget.setStyleSheet(
                 "#playerCard { background: #272b33; border-radius: 6px;"
                 " border: 1px solid #3a3f47; }"

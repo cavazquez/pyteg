@@ -44,10 +44,10 @@ class StatusManager:
         # Apply color styling if provided
         if color:
             # Create a temporary label to apply color styling
-            temp_label = getattr(self.main_window, "_status_temp_label", None)
+            temp_label = getattr(self.main_window, "status_temp_label", None)
             if temp_label is None:
                 temp_label = QLabel()
-                self.main_window._status_temp_label = temp_label  # noqa: SLF001
+                self.main_window.status_temp_label = temp_label
                 status_bar = self.main_window.status_bar
                 status_bar.addWidget(temp_label)
 
@@ -57,7 +57,7 @@ class StatusManager:
             self.main_window.status_bar.clearMessage()
         else:
             # Use default status bar message
-            temp_label = getattr(self.main_window, "_status_temp_label", None)
+            temp_label = getattr(self.main_window, "status_temp_label", None)
             if temp_label is not None:
                 temp_label.setText("")
             self.main_window.status_bar.showMessage(text)
@@ -66,7 +66,7 @@ class StatusManager:
         """Clear the status bar message, but keep the turn number."""
         self.main_window.status_bar.clearMessage()
         # Also clear the temporary colored label if it exists
-        temp_label = getattr(self.main_window, "_status_temp_label", None)
+        temp_label = getattr(self.main_window, "status_temp_label", None)
         if temp_label is not None:
             temp_label.setText("")
 
@@ -167,10 +167,10 @@ class StatusManager:
 
         """
         # Almacenar información del turno (usando atributos públicos)
-        self.main_window._turno_actual = num_turno  # noqa: SLF001
-        self.main_window._jugador_actual_id = jugador_actual_id  # noqa: SLF001
-        self.main_window._jugador_actual_nombre = jugador_actual_nombre  # noqa: SLF001
-        self.main_window._jugador_actual_color = jugador_actual_color  # noqa: SLF001
+        self.main_window.turno_actual = num_turno
+        self.main_window.jugador_actual_id = jugador_actual_id
+        self.main_window.jugador_actual_nombre = jugador_actual_nombre
+        self.main_window.jugador_actual_color = jugador_actual_color
 
         # Actualizar el texto del turno
         self.main_window.turno_label.setText(

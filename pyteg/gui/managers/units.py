@@ -49,7 +49,7 @@ class UnitsManager:
         # Actualizar unidades generales (infantería)
         if "infanteria" in unidades:
             cantidad = unidades["infanteria"]
-            prev = self.main_window._last_units.get("Generales", None)  # noqa: SLF001
+            prev = self.main_window.last_units.get("Generales", None)
             # Estilo con color verde si hay unidades disponibles
             if cantidad > 0:
                 style = (
@@ -69,13 +69,13 @@ class UnitsManager:
             self.main_window.value_labels["Generales"].setStyleSheet(style)
             if prev is None or prev != cantidad:
                 self._flash_row("Generales")
-            self.main_window._last_units["Generales"] = cantidad  # noqa: SLF001
+            self.main_window.last_units["Generales"] = cantidad
 
         # Actualizar unidades de continentes
         for server_name, gui_name in continent_mapping.items():
             if server_name in unidades and gui_name in self.main_window.value_labels:
                 cantidad = unidades[server_name]
-                prev = self.main_window._last_units.get(gui_name, None)  # noqa: SLF001
+                prev = self.main_window.last_units.get(gui_name, None)
                 if cantidad > 0:
                     # Estilo destacado para continentes con unidades disponibles
                     style = (
@@ -96,7 +96,7 @@ class UnitsManager:
                 self.main_window.value_labels[gui_name].setStyleSheet(style)
                 if prev is None or prev != cantidad:
                     self._flash_row(gui_name)
-                self.main_window._last_units[gui_name] = cantidad  # noqa: SLF001
+                self.main_window.last_units[gui_name] = cantidad
             elif gui_name in self.main_window.value_labels:
                 # Resetear continentes que no tienen unidades disponibles
                 self.main_window.value_labels[gui_name].setText(f"{gui_name}: 0")
@@ -118,24 +118,24 @@ class UnitsManager:
             self.main_window.value_labels["Misiles"].setText(text)
             self.main_window.value_labels["Misiles"].setStyleSheet(style)
             # Mostrar fila completa (parent del label)
-            self.main_window._row_widgets["Misiles"].setVisible(True)  # noqa: SLF001
-            prev = self.main_window._last_units.get("Misiles", None)  # noqa: SLF001
+            self.main_window.row_widgets["Misiles"].setVisible(True)
+            prev = self.main_window.last_units.get("Misiles", None)
             if prev is None or prev != unidades["misiles"]:
                 self._flash_row("Misiles")
-            self.main_window._last_units["Misiles"] = unidades["misiles"]  # noqa: SLF001
+            self.main_window.last_units["Misiles"] = unidades["misiles"]
         else:
             # Ocultar y resetear
             self.main_window.value_labels["Misiles"].setText("Misiles: 0")
             self.main_window.value_labels["Misiles"].setStyleSheet(
                 "font-weight: bold; color: #666666;"
             )
-            self.main_window._row_widgets["Misiles"].setVisible(False)  # noqa: SLF001
-            self.main_window._last_units["Misiles"] = 0  # noqa: SLF001
+            self.main_window.row_widgets["Misiles"].setVisible(False)
+            self.main_window.last_units["Misiles"] = 0
 
     def _flash_row(self, key: str) -> None:
         """Aplica un efecto de flash a una fila de unidades cuando cambia el valor."""
-        if key in self.main_window._row_widgets:  # noqa: SLF001
-            widget = self.main_window._row_widgets[key]  # noqa: SLF001
+        if key in self.main_window.row_widgets:
+            widget = self.main_window.row_widgets[key]
             original_style = widget.styleSheet()
             widget.setStyleSheet("background-color: #FFEB3B; border-radius: 4px;")
             # Restaurar estilo original después de 500ms
