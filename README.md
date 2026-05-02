@@ -6,6 +6,25 @@
 
 Implementación del juego Teg en Python
 
+## 🧰 Herramientas y tecnologías
+
+[![🐍 Python](https://img.shields.io/badge/🐍_Python-3.11%2B-3776AB?style=flat&logo=python&logoColor=white)](https://www.python.org/)
+[![⚡ uv](https://img.shields.io/badge/⚡_uv-gestor_deps-7048B8?style=flat&logo=uv&logoColor=white)](https://github.com/astral-sh/uv)
+[![🪶 Ruff](https://img.shields.io/badge/🪶_Ruff-lint_y_formato-261230?style=flat&logo=ruff&logoColor=white)](https://github.com/astral-sh/ruff)
+[![📐 mypy](https://img.shields.io/badge/📐_mypy-tipos_estrictos-2C5282?style=flat)](https://github.com/python/mypy)
+[![🧪 unittest](https://img.shields.io/badge/🧪_unittest-suite_tests-0F9D58?style=flat)](https://docs.python.org/3/library/unittest.html)
+
+[![📊 coverage](https://img.shields.io/badge/📊_coverage-ramas-00796B?style=flat)](https://coverage.readthedocs.io/)
+[![🖥️ PySide6](https://img.shields.io/badge/🖥️_PySide6-Qt_6-41CD52?style=flat&logo=qt&logoColor=white)](https://wiki.qt.io/Qt_for_Python)
+[![🔌 TCP](https://img.shields.io/badge/🔌_TCP-LAN_cliente_servidor-E65100?style=flat)](docs/ARCHITECTURE.md#seguridad-y-modelo-de-amenaza)
+[![🥚 Hatch](https://img.shields.io/badge/🥚_Hatch-build_paquetes-3775A9?style=flat)](https://github.com/pypa/hatch)
+[![⚙️ Nuitka](https://img.shields.io/badge/⚙️_Nuitka-binario_onefile-303030?style=flat)](https://nuitka.net/)
+
+[![🐳 Docker](https://img.shields.io/badge/🐳_Docker-opcional-2496ED?style=flat&logo=docker&logoColor=white)](https://www.docker.com/)
+[![🌍 gettext](https://img.shields.io/badge/🌍_gettext-es_y_en-2980B9?style=flat)](https://www.gnu.org/software/gettext/)
+[![🔄 GitHub Actions](https://img.shields.io/badge/🔄_GitHub_Actions-CI-2088FF?style=flat&logo=githubactions&logoColor=white)](https://github.com/cavazquez/pyteg/actions)
+[![📜 Licencia](https://img.shields.io/badge/📜_Licencia-GPL--3.0-2980B9?style=flat)](LICENSE)
+
 ## ¿Qué es Teg?
 T.E.G. es un juego de estrategia por turnos (similar a Risk) en el que
 los jugadores conquistan países, atacan con dados y cumplen objetivos.
