@@ -5,10 +5,10 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, Protocol
 
 from pyteg.debug_logger import debug_logger
-from pyteg.server_client import Client
+from pyteg.server.conexion.cliente import Client
 
 if TYPE_CHECKING:
-    from pyteg.server_client_connection import ConnectionServer
+    from pyteg.server.conexion.connection import ConnectionServer
     from pyteg.server_estado import Estado
 
 

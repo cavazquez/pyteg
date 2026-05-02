@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from pyteg.objetivos_secretos import ObjetivosSecretos
-    from pyteg.server_client import Client
+    from pyteg.server.conexion.cliente import Client
     from pyteg.server_color import ServerColor
     from pyteg.server_mapa import Mapa
 

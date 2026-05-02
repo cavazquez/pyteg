@@ -21,7 +21,7 @@ from pyteg.event_types import (
 from pyteg.message_bus import get_message_bus
 
 if TYPE_CHECKING:
-    from pyteg.server_client import Client
+    from pyteg.server.conexion.cliente import Client
 
 
 class ServerMessageBroadcaster:

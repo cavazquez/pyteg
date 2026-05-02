@@ -15,7 +15,7 @@ from pyteg.turno_timer import TurnoTimer
 if TYPE_CHECKING:
     from pyteg.mazo import Mazo
     from pyteg.objetivos_secretos import ObjetivosSecretos
-    from pyteg.server_client import Client
+    from pyteg.server.conexion.cliente import Client
     from pyteg.server_estado import Estado
     from pyteg.server_mapa import Mapa
 

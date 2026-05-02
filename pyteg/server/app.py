@@ -9,19 +9,19 @@ from typing import TYPE_CHECKING, Any
 from pyteg.build_mapa import build_mapa
 from pyteg.mazo import Mazo
 from pyteg.objetivos_secretos import ObjetivosSecretos
-from pyteg.server_client_registry import ServerClientRegistry
+from pyteg.server.conexion.broadcaster import ServerMessageBroadcaster
+from pyteg.server.conexion.registrar_jugadores import registrar_jugadores
+from pyteg.server.conexion.registry import ServerClientRegistry
 from pyteg.server_color import ServerColor
 from pyteg.server_estado import Estado
 from pyteg.server_game_coordinator import ServerGameCoordinator
 from pyteg.server_mapa import Mapa
-from pyteg.server_message_broadcaster import ServerMessageBroadcaster
-from pyteg.server_registrar_jugadores import registrar_jugadores
 from pyteg.toml_reader import TomlReader
 from pyteg.utils import get_resource_path
 from pyteg.version import NAME, VERSION
 
 if TYPE_CHECKING:
-    from pyteg.server_client import Client
+    from pyteg.server.conexion.cliente import Client
     from pyteg.server_game import Game
 
 

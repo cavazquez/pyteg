@@ -7,8 +7,8 @@ import threading
 from typing import TYPE_CHECKING, Any, Protocol
 
 from pyteg.logger import get_logger
-from pyteg.server_build_client import ServerBuildClient
-from pyteg.server_client_connection import ConnectionServer
+from pyteg.server.conexion.build_cliente import ServerBuildClient
+from pyteg.server.conexion.connection import ConnectionServer
 
 if TYPE_CHECKING:
     from pyteg.server_estado import Estado

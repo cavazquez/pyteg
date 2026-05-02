@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING
 from pyteg.turnos import PrimerTurno, SegundoTurno, SiguientesTurnos
 
 if TYPE_CHECKING:
-    from pyteg.server_client import Client
+    from pyteg.server.conexion.cliente import Client
     from pyteg.server_mapa import Mapa
 
 TurnoType = PrimerTurno | SegundoTurno | SiguientesTurnos
