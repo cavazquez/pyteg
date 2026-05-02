@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from pyteg.client.conexion.transmisor.protocol import IClientTransmisor
-from pyteg.client_msg import (
+from pyteg.client.msg import (
     MsgAgregarUnidad,
     MsgAtacar,
     MsgCanjearMisil,
