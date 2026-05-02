@@ -8,7 +8,6 @@ from PySide6.QtCore import QTimer
 
 from pyteg.client.tasks.base import IClientTask
 from pyteg.client.tasks.logging_helper import CLIENT_TASKS_LOG
-from pyteg.gui.dialogs.dice_animation import BattleResultDialog
 
 
 class ClientTaskResultadoBatalla(IClientTask):
@@ -84,7 +83,6 @@ class ClientTaskResultadoBatalla(IClientTask):
 
     def _mostrar_animacion_completa(self, main_window: Any) -> None:
         """Muestra la animación completa de dados para el atacante."""
-        # Preparar datos de la batalla para el diálogo
         batalla_data = {
             "origen": self._origen,
             "destino": self._destino,
@@ -96,10 +94,6 @@ class ClientTaskResultadoBatalla(IClientTask):
             "conquistado": self._conquistado,
         }
 
-        # Mostrar diálogo de animación de dados
-        dialog = BattleResultDialog(batalla_data, main_window)
-
-        # Conectar señal para actualizar barra de estado cuando termine
         def on_animation_finished() -> None:
             if self._conquistado:
                 mensaje = f"¡Has conquistado {self._destino}!"
@@ -111,8 +105,7 @@ class ClientTaskResultadoBatalla(IClientTask):
             if hasattr(main_window, "update_status_bar"):
                 main_window.update_status_bar(mensaje, color)
 
-        dialog.animation_finished.connect(on_animation_finished)
-        dialog.exec()  # Mostrar diálogo modal
+        main_window.show_battle_result_dialog(batalla_data, on_animation_finished)
 
     def _mostrar_efectos_batalla(self, main_window: Any) -> None:
         """Muestra efectos visuales para espectadores (titilación + pérdidas)."""
