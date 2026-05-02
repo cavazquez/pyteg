@@ -9,7 +9,7 @@ from __future__ import annotations
 from typing import Any
 
 from pyteg.config import DEFAULT_TURN_SECONDS, DEFAULT_VICTORY_COUNTRIES
-from pyteg.gui_configuracion_dialog import ConfiguracionDialog
+from pyteg.gui.dialogs.configuracion import ConfiguracionDialog
 
 
 class ConfigManager:
@@ -114,7 +114,7 @@ class ConfigManager:
         self._objetivo_secreto_descripcion = descripcion
 
         # Si hay un diálogo de tarjetas abierto, actualizarlo
-        from pyteg.gui_tarjetas_dialog import TarjetasDialog  # noqa: PLC0415
+        from pyteg.gui.tarjetas import TarjetasDialog  # noqa: PLC0415
 
         for widget in self.main_window.findChildren(TarjetasDialog):
             if widget.isVisible():

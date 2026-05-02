@@ -8,7 +8,7 @@ from PySide6.QtCore import QTimer
 
 from pyteg.client_tasks.base import IClientTask
 from pyteg.client_tasks.logging_helper import CLIENT_TASKS_LOG
-from pyteg.gui_dice_animation import BattleResultDialog
+from pyteg.gui.dialogs.dice_animation import BattleResultDialog
 
 
 class ClientTaskResultadoBatalla(IClientTask):

@@ -21,7 +21,7 @@ from .exchange_mixin import TarjetasExchangeMixin
 from .selection_mixin import TarjetasSelectionMixin
 
 if TYPE_CHECKING:
-    from pyteg.gui_tarjeta_widget import TarjetaWidget
+    from pyteg.gui.widgets.tarjeta import TarjetaWidget
 
 
 class TarjetasDialog(TarjetasExchangeMixin, TarjetasSelectionMixin, QDialog):

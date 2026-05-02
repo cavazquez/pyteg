@@ -10,7 +10,7 @@ if TYPE_CHECKING:
     from PySide6.QtCore import QObject
     from PySide6.QtWidgets import QLabel, QPushButton
 
-    from pyteg.gui_tarjeta_widget import TarjetaWidget
+    from pyteg.gui.widgets.tarjeta import TarjetaWidget
 
 
 class TarjetasSelectionHost(Protocol):

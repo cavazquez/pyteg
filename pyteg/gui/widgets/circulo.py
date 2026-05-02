@@ -6,7 +6,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QBrush, QColor, QPen
 from PySide6.QtWidgets import QGraphicsEllipseItem
 
-from pyteg.gui_unidades import Unidades
+from pyteg.gui.widgets.unidades import Unidades
 from pyteg.logger import get_logger
 
 _LOG = get_logger("gui.circulo")

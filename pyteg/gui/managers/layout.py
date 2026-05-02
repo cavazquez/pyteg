@@ -17,10 +17,10 @@ from PySide6.QtWidgets import (
 )
 
 from pyteg.gui.managers.units_panel import setup_continent_values as _build_units_panel
-from pyteg.gui_chat import Chat
-from pyteg.gui_scene import QCustomGraphicsScene
-from pyteg.gui_toolbar import ToolBar
-from pyteg.gui_view import QCustomGraphicsView
+from pyteg.gui.mapa.scene import QCustomGraphicsScene
+from pyteg.gui.toolbar import ToolBar
+from pyteg.gui.widgets.chat import Chat
+from pyteg.gui.widgets.view import QCustomGraphicsView
 
 
 class LayoutManager:

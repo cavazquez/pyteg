@@ -73,18 +73,18 @@ uv run pyteg-server
 
 La interfaz gráfica sigue una arquitectura modular con gestores especializados:
 
-### Estructura de archivos GUI
-- **`gui.py`**: Ventana principal y coordinación de gestores
-- **`gui_layout_manager.py`**: Gestión de layout y estructura visual
-- **`gui_theme_manager.py`**: Gestión de temas y estilos
-- **`gui_players_manager.py`**: Gestión de jugadores y widgets
-- **`gui_status_manager.py`**: Gestión de barra de estado
-- **`gui_units_manager.py`**: Gestión de unidades disponibles
-- **`gui_game_actions.py`**: Acciones del juego (atacar, finalizar turno)
+### Estructura de archivos GUI (paquete `pyteg/gui/`)
+- **`pyteg/gui/main_window.py`**: Ventana principal (`Gui`) y coordinación de gestores
+- **`pyteg/gui/managers/layout.py`**: Layout y estructura visual
+- **`pyteg/gui/managers/theme.py`**: Temas y estilos
+- **`pyteg/gui/managers/players.py`**: Jugadores y widgets
+- **`pyteg/gui/managers/status.py`**: Barra de estado
+- **`pyteg/gui/managers/units.py`**: Unidades disponibles
+- **`pyteg/gui/managers/game_actions.py`**: Acciones del juego (atacar, finalizar turno)
 
 ### Principios de diseño
 - **Separación de responsabilidades**: Cada gestor tiene una función específica
-- **Coordinación centralizada**: `gui.py` orquesta todos los gestores
+- **Coordinación centralizada**: `Gui` en `main_window.py` orquesta los gestores
 - **Referencias compartidas**: Los gestores acceden al main window para UI y estado
 - **Modularidad**: Nuevas funcionalidades se agregan en el gestor apropiado
 

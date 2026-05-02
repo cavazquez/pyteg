@@ -8,7 +8,7 @@ import unittest
 from types import SimpleNamespace
 from unittest.mock import MagicMock
 
-from pyteg.gui_esperar_jugadores import VentanaEsperarJugadores
+from pyteg.gui.windows.esperar_jugadores import VentanaEsperarJugadores
 
 
 class TestVentanaEsperarJugadoresUpdateLanguage(unittest.TestCase):

@@ -130,17 +130,12 @@ El juego utiliza archivos TOML para la configuración:
 - `themes/classic/objetivos_secretos.toml`: Configuración de objetivos secretos del TEG clásico
 
 ### Arquitectura modular de la GUI
-La interfaz gráfica ha sido refactorizada en módulos especializados para mejorar mantenibilidad:
+La interfaz vive en el paquete **`pyteg/gui/`** (subdominios: `managers/`, `widgets/`, `dialogs/`, `windows/`, `mapa/`, `toolbar/`, `tarjetas/`, `status_bar/`):
 
-- **`gui.py`** (366 líneas): Ventana principal y coordinación de gestores
-- **`gui_layout_manager.py`**: Gestión de layout y estructura visual
-- **`gui_theme_manager.py`**: Gestión de temas claro/oscuro
-- **`gui_players_manager.py`**: Gestión de lista y widgets de jugadores
-- **`gui_status_manager.py`**: Gestión de barra de estado y mensajes
-- **`gui_units_manager.py`**: Gestión de unidades y efectos visuales
-- **`gui_game_actions.py`**: Acciones del juego (atacar, finalizar turno)
+- **`pyteg/gui/main_window.py`**: clase `Gui` (ventana principal) y coordinación de gestores
+- **`pyteg/gui/managers/layout.py`**, **`theme.py`**, **`players.py`**, **`status.py`**, **`units.py`**, **`game_actions.py`**, etc.: gestores especializados
 
-Esta arquitectura modular reduce la complejidad del archivo principal en un 65% (de ~1039 a 366 líneas) mientras mantiene toda la funcionalidad intacta.
+El código histórico importaba módulos planos `pyteg/gui_*`; esos shims se eliminaron: usar siempre rutas bajo `pyteg.gui.<dominio>`.
 
 ## Desarrollo
 Formateo y estilo:

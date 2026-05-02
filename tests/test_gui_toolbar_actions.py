@@ -9,7 +9,7 @@ from types import SimpleNamespace
 from typing import Any, cast
 from unittest.mock import MagicMock
 
-from pyteg.gui_toolbar_actions import ToolBarActionsMixin
+from pyteg.gui.toolbar.actions_mixin import ToolBarActionsMixin
 
 
 class ClientNullTransmisor:

@@ -6,7 +6,7 @@ from typing import Any
 
 from pyteg.client_tasks.base import IClientTask
 from pyteg.client_tasks.logging_helper import CLIENT_TASKS_LOG
-from pyteg.gui_tarjetas_dialog import TarjetasDialog
+from pyteg.gui.tarjetas import TarjetasDialog
 
 
 class ClientTaskTarjetasJugador(IClientTask):

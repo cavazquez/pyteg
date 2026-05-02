@@ -8,7 +8,7 @@ import unittest
 from typing import cast
 from unittest.mock import MagicMock, patch
 
-from pyteg.gui_toolbar_window import ToolBarWindowMixin
+from pyteg.gui.toolbar.window_mixin import ToolBarWindowMixin
 
 
 class _Host(ToolBarWindowMixin):
