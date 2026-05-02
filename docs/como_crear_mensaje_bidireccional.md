@@ -1,7 +1,10 @@
 # Enviar un mensaje desde el servidor al cliente
 
 ## 1. Crear la clase del mensaje
-Crear una nueva clase que herede de IMsg en el archivo `/pyteg/server_msg.py`:
+Crear una nueva clase que herede de `IMsg` dentro del paquete `pyteg/server/msg/`
+(elegí el módulo de dominio adecuado: `connection.py`, `map_turn.py`,
+`battle.py`, `cards_missiles.py`, etc., o creá uno nuevo y reexportalo en
+`pyteg/server/msg/__init__.py`):
 
 ```python
 class MsgMiMensajeServidor(IMsg):
@@ -18,7 +21,8 @@ class MsgMiMensajeServidor(IMsg):
 ```
 
 ## 2. Implementar el mensaje en el ServerTransmisor
-Añadir el método en la clase ServerTransmisor en el archivo `/pyteg/server_transmisor.py`:
+Añadir el método en la clase `ServerTransmisor` en
+`pyteg/server/conexion/transmisor.py`:
 
 ```python
 def enviar_mi_mensaje_servidor(self, datos):
@@ -34,7 +38,9 @@ client.transmisor.enviar_mi_mensaje_servidor(datos)
 ```
 
 ## 4. Crear la tarea del cliente
-Crear una nueva clase que herede de IClientTask en el archivo `/pyteg/client_tasks.py`:
+Crear una nueva clase que herede de `IClientTask` dentro del paquete
+`pyteg/client/tasks/` (en el sub-paquete que corresponda al dominio:
+`lobby/`, `game_flow/`, `battle.py`, `cards_missiles.py`, etc.):
 
 ```python
 class ClientTaskMiMensajeServidor(IClientTask):
@@ -48,7 +54,9 @@ class ClientTaskMiMensajeServidor(IClientTask):
 ```
 
 ## 5. Registrar la tarea
-Registrar la tarea en el diccionario de tareas en el archivo `/pyteg/client_tasks_manager.py`:
+Registrar la tarea en el diccionario de tareas en
+`pyteg/client/tasks/__init__.py` (importando la clase del módulo elegido en
+el paso 4 y agregándola al `dict_task`):
 
 ```python
 dict_task["mi_mensaje_servidor"] = ClientTaskMiMensajeServidor
