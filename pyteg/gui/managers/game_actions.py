@@ -39,14 +39,14 @@ class GameActionsManager:
 
     def atacar(self) -> None:
         """Método llamado cuando se hace clic en el botón Atacar de la toolbar."""
-        # Verificar que tenemos un selection_manager
-        if not hasattr(self.main_window.scene, "selection_manager"):
+        scene = self.main_window.scene
+        if scene is None or not hasattr(scene, "selection_manager"):
             self.main_window.update_status_bar(
                 "Error: No hay sistema de selección disponible", "red"
             )
             return
 
-        selection_manager = self.main_window.scene.selection_manager
+        selection_manager = scene.selection_manager
         origen = selection_manager.get_pais_origen()
         destino = selection_manager.get_pais_destino()
 
@@ -62,9 +62,8 @@ class GameActionsManager:
             return
 
         transmisor = self.main_window.transmisor
-        has_transmisor = hasattr(self.main_window, "transmisor")
-        has_atacar = hasattr(transmisor, "atacar") if has_transmisor else False
-        if has_transmisor and has_atacar:
+        has_atacar = hasattr(transmisor, "atacar")
+        if has_atacar:
             # Obtener información del país atacante para determinar unidades disponibles
             max_unidades = self.get_max_attack_units(origen)
 
@@ -97,15 +96,11 @@ class GameActionsManager:
         # Aquí puedes agregar la lógica para finalizar el turno actual
         # Por ejemplo, notificar al servidor que el turno ha terminado
         transmisor = self.main_window.transmisor
-        has_transmisor = hasattr(self.main_window, "transmisor")
-        has_finalizar = (
-            hasattr(transmisor, "finalizar_turno") if has_transmisor else False
-        )
-        if has_transmisor and has_finalizar:
+        if hasattr(transmisor, "finalizar_turno"):
             self.main_window.transmisor.finalizar_turno()
-            # Cancelar selección después de finalizar turno
-            if hasattr(self.main_window.scene, "selection_manager"):
-                self.main_window.scene.selection_manager.cancelar_seleccion()
+            scene = self.main_window.scene
+            if scene is not None and hasattr(scene, "selection_manager"):
+                scene.selection_manager.cancelar_seleccion()
         else:
             _LOG.warning("No se pudo finalizar el turno: transmisor no disponible")
 
@@ -119,8 +114,7 @@ class GameActionsManager:
             int: Máximo número de unidades disponibles (1-3)
 
         """
-        # Buscar el país en la escena para obtener sus unidades
-        scene = getattr(self.main_window, "scene", None)
+        scene = self.main_window.scene
         if scene is None or not hasattr(scene, "paises"):
             return 0
 
