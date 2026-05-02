@@ -26,8 +26,12 @@ from pyteg.server.tasks.lobby import (
     ServerTaskSeleccionarColor,
     ServerTaskSetUsername,
 )
+from pyteg.server.tasks.types import BaseTaskData
 
-TaskFactory = Callable[[dict[str, Any]], IServerTask]
+# Cada factory acepta `BaseTaskData` (el TypedDict mínimo) y devuelve una
+# tarea concreta. Las subclases tipan internamente su propio TypedDict via
+# `IServerTask[XTaskData]` y un cast en su `__init__`.
+TaskFactory = Callable[[Any], IServerTask[Any]]
 
 dict_task: dict[str, TaskFactory] = {
     "chat": ServerTaskChat,
@@ -48,6 +52,7 @@ dict_task: dict[str, TaskFactory] = {
 
 __all__ = [
     "LOGGER",
+    "BaseTaskData",
     "IServerTask",
     "ServerTaskAgregarUnidad",
     "ServerTaskAtacar",

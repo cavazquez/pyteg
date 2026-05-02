@@ -2,20 +2,21 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 from pyteg.client.colores.color import Color
 from pyteg.client.tasks.base import IClientTask
 from pyteg.client.tasks.logging_helper import CLIENT_TASKS_LOG
+from pyteg.client.tasks.types import ColorAsignadoTaskData, ColorTaskData
 
 if TYPE_CHECKING:
     from pyteg.client.tasks.protocols import GameWindowProtocol
 
 
-class ClientTaskColorAsignado(IClientTask):
+class ClientTaskColorAsignado(IClientTask[ColorAsignadoTaskData]):
     """Tarea para asignar un color a un jugador."""
 
-    def __init__(self, data: dict[str, Any]) -> None:
+    def __init__(self, data: ColorAsignadoTaskData) -> None:
         """Inicializa la tarea de asignación de color.
 
         Args:
@@ -84,23 +85,27 @@ class ClientTaskColorAsignado(IClientTask):
             jugadores: list[tuple[str, Any]] = []
             for user_id, color in main_window.colores.colores_asignados().items():
                 client = main_window.client_by_id.get(user_id)
-                if client and hasattr(client, "username"):
-                    jugadores.append((client.username(), color))
-                    CLIENT_TASKS_LOG.debug(
-                        "Jugador %s tiene color %s",
-                        client.username(),
-                        color.getRgb(),
-                    )
+                if client is None:
+                    continue
+                username = client.username()
+                if username is None:
+                    continue
+                jugadores.append((username, color))
+                CLIENT_TASKS_LOG.debug(
+                    "Jugador %s tiene color %s",
+                    username,
+                    color.getRgb(),
+                )
 
             main_window.update_player_list(jugadores)
         except (AttributeError, KeyError, TypeError) as e:
             CLIENT_TASKS_LOG.warning("Error al actualizar lista de jugadores: %s", e)
 
 
-class ClientTaskColor(IClientTask):
+class ClientTaskColor(IClientTask[ColorTaskData]):
     """Tarea para agregar un color disponible."""
 
-    def __init__(self, data: dict[str, Any]) -> None:
+    def __init__(self, data: ColorTaskData) -> None:
         """Inicializa la tarea de color.
 
         Args:
@@ -112,5 +117,6 @@ class ClientTaskColor(IClientTask):
 
     def run(self, main_window: GameWindowProtocol) -> None:
         """Ejecuta la tarea agregando el color a la lista de colores disponibles."""
-        self._msg.pop("mensaje")
-        main_window.colores.agregar_color(Color(**self._msg))
+        rgb = cast("dict[str, int]", dict(self._msg))
+        rgb.pop("mensaje", None)
+        main_window.colores.agregar_color(Color(**rgb))

@@ -15,10 +15,12 @@ from pyteg.core.partida.victory_checker import VictoryChecker
 from pyteg.core.turnos.turnos import PrimerTurno, SegundoTurno, SiguientesTurnos
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from pyteg.core.cartas.mazo import Mazo
     from pyteg.core.cartas.tarjeta_de_pais import TarjetaDePais
+    from pyteg.protocols import IClientProtocol
     from pyteg.server.app import Server
-    from pyteg.server.conexion.cliente import Client
     from pyteg.server.juego.mapa import Mapa
 
 TurnoType = PrimerTurno | SegundoTurno | SiguientesTurnos
@@ -31,7 +33,7 @@ class Game:
         self,
         mapa: Mapa,
         mazo: Mazo,
-        jugadores: list[Client],
+        jugadores: Sequence[IClientProtocol],
         server: Server,
         paises_para_victoria: int | None = None,
     ) -> None:
@@ -49,7 +51,7 @@ class Game:
             paises_para_victoria = DEFAULT_VICTORY_COUNTRIES
         self._mapa = mapa
         self._start = False
-        self._jugadores = jugadores
+        self._jugadores: list[IClientProtocol] = list(jugadores)
         self._server = server  # Referencia al servidor para notificar cambios
         self._paises_para_victoria = paises_para_victoria
 
@@ -98,7 +100,7 @@ class Game:
         """
         return self._card_manager.mazo()
 
-    def dame_una_tarjeta(self, jugador: Client) -> None:
+    def dame_una_tarjeta(self, jugador: IClientProtocol) -> None:
         """Asigna una tarjeta a un jugador. Si tiene 5, fuerza un canje.
 
         Args:
@@ -143,7 +145,7 @@ class Game:
         """
         return self._turn_manager.num_ronda()
 
-    def cant_canjes(self, jugador: Client | int) -> int:
+    def cant_canjes(self, jugador: IClientProtocol | int) -> int:
         """Obtiene la cantidad de canjes realizados por un jugador.
 
         Args:
@@ -155,7 +157,9 @@ class Game:
         """
         return self._card_manager.cant_canjes(jugador)
 
-    def canjear(self, jugador: Client | int, tarjetas: list[TarjetaDePais]) -> None:
+    def canjear(
+        self, jugador: IClientProtocol | int, tarjetas: list[TarjetaDePais]
+    ) -> None:
         """Realiza un canje de tarjetas por unidades.
 
         Args:
@@ -216,7 +220,7 @@ class Game:
             # para que actualice los colores de los jugadores
             self._server.enviar_colores_asignados()
 
-    def jugadores(self) -> list[Client]:
+    def jugadores(self) -> list[IClientProtocol]:
         """Obtiene la lista de jugadores.
 
         Returns:
@@ -225,7 +229,7 @@ class Game:
         """
         return self._jugadores
 
-    def lista_jugadores(self) -> list[Client]:
+    def lista_jugadores(self) -> list[IClientProtocol]:
         """Obtiene la lista de jugadores.
 
         Returns:
@@ -372,7 +376,7 @@ class Game:
                 return j.username() if hasattr(j, "username") else str(j)
         return ""
 
-    def marcar_jugador_puede_reclamar(self, jugador: Client) -> None:
+    def marcar_jugador_puede_reclamar(self, jugador: IClientProtocol) -> None:
         """Marca a un jugador como elegible para reclamar tarjeta.
 
         Args:
@@ -381,7 +385,7 @@ class Game:
         """
         self._card_manager.marcar_jugador_puede_reclamar(jugador)
 
-    def puede_reclamar_tarjeta(self, jugador: Client) -> bool:
+    def puede_reclamar_tarjeta(self, jugador: IClientProtocol) -> bool:
         """Verifica si un jugador puede reclamar tarjeta.
 
         Args:
@@ -393,7 +397,7 @@ class Game:
         """
         return self._card_manager.puede_reclamar_tarjeta(jugador)
 
-    def reclamar_tarjeta_jugador(self, jugador: Client) -> None:
+    def reclamar_tarjeta_jugador(self, jugador: IClientProtocol) -> None:
         """Remueve al jugador de la lista de elegibles tras reclamar.
 
         Args:

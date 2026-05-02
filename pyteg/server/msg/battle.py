@@ -3,15 +3,18 @@
 from __future__ import annotations
 
 import json
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from pyteg.server.msg.base import IMsg
+
+if TYPE_CHECKING:
+    from pyteg.server.msg.types import BattleResultPayload
 
 
 class MsgResultadoBatalla(IMsg):
     """Mensaje para enviar el resultado de una batalla."""
 
-    def __init__(self, batalla_data: dict[str, Any]) -> None:
+    def __init__(self, batalla_data: BattleResultPayload) -> None:
         """Inicializa un mensaje con el resultado de una batalla.
 
         Args:

@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 import unittest
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, TypeVar, cast
+from unittest.mock import MagicMock
 
 from pyteg.core.cartas.mazo import Mazo
 from pyteg.core.turnos.turnos import PrimerTurno, SegundoTurno, SiguientesTurnos
@@ -12,12 +13,40 @@ from pyteg.server.juego.game import Game
 from pyteg.server.juego.mapa import Mapa
 
 if TYPE_CHECKING:
+    from pyteg.colores import IColor
     from pyteg.core.cartas.tarjeta_de_pais import TarjetaDePais
-    from pyteg.server.conexion.cliente import Client
+    from pyteg.protocols.server import ServerLikeProtocol
+    from pyteg.server.conexion.transmisor import ServerTransmisor
+
+T = TypeVar("T")
+
+
+def _no_none(value: T | None) -> T:
+    """Devuelve `value` si no es `None`, levantando si lo es.
+
+    Helper de estrechamiento de tipo para tests: evita `cast` y `assert`
+    inline sin perder el chequeo en runtime.
+
+    Returns:
+        El valor recibido cuando no es `None`.
+
+    Raises:
+        AssertionError: si `value` es `None`.
+
+    """
+    if value is None:
+        msg = "Se esperaba un valor no nulo"
+        raise AssertionError(msg)
+    return value
 
 
 class FakePlayer:
-    """Sustituto mínimo de `Client` para tests de `Game` y `Mazo`."""
+    """Sustituto mínimo de `Client` para tests de `Game` y `Mazo`.
+
+    Cumple estructuralmente con `IClientProtocol`: expone `userid()`,
+    `username()`, mutadores y propiedades dummy, suficientes para que
+    `Game` y `CardManager` lo acepten sin `cast`.
+    """
 
     def __init__(
         self,
@@ -28,7 +57,9 @@ class FakePlayer:
         """Crea un jugador falso con `userid` y nombre."""
         self._user_id = user_id
         self._username = username
-        self.server = server
+        self._color: IColor | None = None
+        self._server: ServerLikeProtocol = cast("ServerLikeProtocol", server)
+        self._transmisor: ServerTransmisor = cast("ServerTransmisor", MagicMock())
 
     def userid(self) -> int:
         """Devuelve el userid (int) del jugador falso.
@@ -47,6 +78,46 @@ class FakePlayer:
 
         """
         return self._username
+
+    def set_username(self, username: str) -> None:
+        """Cambia el nombre de usuario del jugador falso."""
+        self._username = username
+
+    def cambiar_color(self, color: str) -> None:
+        """No-op: los tests no necesitan el color."""
+
+    def asignar_color(self, color: IColor | None) -> None:
+        """Guarda el color asignado para que `color_actual` lo devuelva."""
+        self._color = color
+
+    def color_actual(self) -> IColor | None:
+        """Devuelve el color asignado, si lo hay.
+
+        Returns:
+            Color asignado o `None`.
+
+        """
+        return self._color
+
+    @property
+    def transmisor(self) -> ServerTransmisor:
+        """Transmisor dummy (mock) compatible con `IClientProtocol`.
+
+        Returns:
+            Mock tipado estructuralmente como `ServerTransmisor`.
+
+        """
+        return self._transmisor
+
+    @property
+    def server(self) -> ServerLikeProtocol:
+        """Servidor dummy compatible con `IClientProtocol`.
+
+        Returns:
+            Servidor inyectado en el constructor (puede ser un mock).
+
+        """
+        return self._server
 
     def __eq__(self, other: object) -> bool:
         """Compara jugadores falsos por `userid`.
@@ -90,7 +161,7 @@ class TestGame(unittest.TestCase):
         game = Game(
             self.mapa,
             self.mazo_placeholder,
-            cast("list[Client]", []),
+            [],
             self.server,
         )
         self.assertTrue(game)
@@ -103,7 +174,7 @@ class TestGame(unittest.TestCase):
         game = Game(
             self.mapa,
             self.mazo_placeholder,
-            cast("list[Client]", [jugador]),
+            [jugador],
             self.server,
         )
         self.assertEqual(game.cant_jugadores(), 1)
@@ -114,7 +185,7 @@ class TestGame(unittest.TestCase):
         game = Game(
             self.mapa,
             self.mazo_placeholder,
-            cast("list[Client]", [jugador]),
+            [jugador],
             self.server,
         )
         self.assertEqual(game.jugadores(), [jugador])
@@ -125,7 +196,7 @@ class TestGame(unittest.TestCase):
         game = Game(
             self.mapa,
             self.mazo_placeholder,
-            cast("list[Client]", [jugador]),
+            [jugador],
             self.server,
         )
         self.assertListEqual(game.lista_jugadores(), [jugador])
@@ -135,7 +206,7 @@ class TestGame(unittest.TestCase):
         game = Game(
             self.mapa,
             self.mazo_placeholder,
-            cast("list[Client]", self.default_jugadores),
+            self.default_jugadores,
             self.server,
         )
         game.empezar()
@@ -147,7 +218,7 @@ class TestGame(unittest.TestCase):
         game = Game(
             self.mapa,
             self.mazo_placeholder,
-            cast("list[Client]", self.default_jugadores),
+            self.default_jugadores,
             self.server,
         )
         game.empezar()
@@ -159,7 +230,7 @@ class TestGame(unittest.TestCase):
         game = Game(
             self.mapa,
             self.mazo_placeholder,
-            cast("list[Client]", self.default_jugadores),
+            self.default_jugadores,
             self.server,
         )
         game.empezar()
@@ -174,7 +245,7 @@ class TestGame(unittest.TestCase):
         game = Game(
             self.mapa,
             self.mazo_placeholder,
-            cast("list[Client]", self.default_jugadores),
+            self.default_jugadores,
             self.server,
         )
         game.empezar()
@@ -191,7 +262,7 @@ class TestGame(unittest.TestCase):
         game = Game(
             self.mapa,
             self.mazo_placeholder,
-            cast("list[Client]", self.default_jugadores),
+            self.default_jugadores,
             self.server,
         )
         game.empezar()
@@ -223,31 +294,29 @@ class TestGame(unittest.TestCase):
         game = Game(
             mapa,
             mazo,
-            cast("list[Client]", [jugador]),
+            [jugador],
             self.server,
         )
         game.empezar()
 
-        tarjeta1 = mazo.asignar_tarjeta(jugador)
-        tarjeta2 = mazo.asignar_tarjeta(jugador)
-        tarjeta3 = mazo.asignar_tarjeta(jugador)
+        tarjetas = self._tres_tarjetas(mazo, jugador)
         turno_actual = game.turno_actual()
 
         cant_unidades = turno_actual.cant_unidades()
-        self.assertIsNotNone(tarjeta1)
-        self.assertIsNotNone(tarjeta2)
-        self.assertIsNotNone(tarjeta3)
-        game.canjear(
-            cast("Client", jugador),
-            [
-                cast("TarjetaDePais", tarjeta1),
-                cast("TarjetaDePais", tarjeta2),
-                cast("TarjetaDePais", tarjeta3),
-            ],
-        )
+        game.canjear(jugador, tarjetas)
 
         self.assertEqual(turno_actual.cant_unidades(), cant_unidades + 4)
         self.assertEqual(mazo.cant_tarjetas_asignadas(jugador), 0)
+
+    @staticmethod
+    def _tres_tarjetas(mazo: Mazo, jugador: FakePlayer) -> list[TarjetaDePais]:
+        """Asigna y devuelve 3 tarjetas (no `None`) para canjear en un test.
+
+        Returns:
+            Lista de tres tarjetas asignadas al jugador.
+
+        """
+        return [_no_none(mazo.asignar_tarjeta(jugador)) for _ in range(3)]
 
     def test_segundo_canje(self) -> None:
         """Prueba canjear tarjetas por segunda vez."""
@@ -265,43 +334,18 @@ class TestGame(unittest.TestCase):
         game = Game(
             mapa,
             mazo,
-            cast("list[Client]", [jugador]),
+            [jugador],
             self.server,
         )
         game.empezar()
 
-        t1 = mazo.asignar_tarjeta(jugador)
-        t2 = mazo.asignar_tarjeta(jugador)
-        t3 = mazo.asignar_tarjeta(jugador)
-        self.assertIsNotNone(t1)
-        self.assertIsNotNone(t2)
-        self.assertIsNotNone(t3)
-        game.canjear(
-            cast("Client", jugador),
-            [
-                cast("TarjetaDePais", t1),
-                cast("TarjetaDePais", t2),
-                cast("TarjetaDePais", t3),
-            ],
-        )
-        t1 = mazo.asignar_tarjeta(jugador)
-        t2 = mazo.asignar_tarjeta(jugador)
-        t3 = mazo.asignar_tarjeta(jugador)
+        game.canjear(jugador, self._tres_tarjetas(mazo, jugador))
+        tarjetas = self._tres_tarjetas(mazo, jugador)
         turno_actual = game.turno_actual()
 
         cant_unidades = turno_actual.cant_unidades()
 
-        self.assertIsNotNone(t1)
-        self.assertIsNotNone(t2)
-        self.assertIsNotNone(t3)
-        game.canjear(
-            cast("Client", jugador),
-            [
-                cast("TarjetaDePais", t1),
-                cast("TarjetaDePais", t2),
-                cast("TarjetaDePais", t3),
-            ],
-        )
+        game.canjear(jugador, tarjetas)
 
         self.assertEqual(turno_actual.cant_unidades(), cant_unidades + 7)
         self.assertEqual(mazo.cant_tarjetas_asignadas(jugador), 0)
@@ -322,44 +366,19 @@ class TestGame(unittest.TestCase):
         game = Game(
             mapa,
             mazo,
-            cast("list[Client]", [jugador]),
+            [jugador],
             self.server,
         )
         game.empezar()
 
         for _ in range(2):
-            t1 = mazo.asignar_tarjeta(jugador)
-            t2 = mazo.asignar_tarjeta(jugador)
-            t3 = mazo.asignar_tarjeta(jugador)
-            self.assertIsNotNone(t1)
-            self.assertIsNotNone(t2)
-            self.assertIsNotNone(t3)
-            game.canjear(
-                cast("Client", jugador),
-                [
-                    cast("TarjetaDePais", t1),
-                    cast("TarjetaDePais", t2),
-                    cast("TarjetaDePais", t3),
-                ],
-            )
-        t1 = mazo.asignar_tarjeta(jugador)
-        t2 = mazo.asignar_tarjeta(jugador)
-        t3 = mazo.asignar_tarjeta(jugador)
+            game.canjear(jugador, self._tres_tarjetas(mazo, jugador))
+        tarjetas = self._tres_tarjetas(mazo, jugador)
         turno_actual = game.turno_actual()
 
         cant_unidades = turno_actual.cant_unidades()
 
-        self.assertIsNotNone(t1)
-        self.assertIsNotNone(t2)
-        self.assertIsNotNone(t3)
-        game.canjear(
-            cast("Client", jugador),
-            [
-                cast("TarjetaDePais", t1),
-                cast("TarjetaDePais", t2),
-                cast("TarjetaDePais", t3),
-            ],
-        )
+        game.canjear(jugador, tarjetas)
 
         self.assertEqual(turno_actual.cant_unidades(), cant_unidades + 10)
         self.assertEqual(mazo.cant_tarjetas_asignadas(jugador), 0)
@@ -380,12 +399,12 @@ class TestGame(unittest.TestCase):
         game = Game(
             mapa,
             mazo,
-            cast("list[Client]", [jugador]),
+            [jugador],
             self.server,
         )
         game.empezar()
 
-        game.dame_una_tarjeta(cast("Client", jugador))
+        game.dame_una_tarjeta(jugador)
         self.assertEqual(mazo.cant_tarjetas_asignadas(jugador), 1)
 
     def test_canje_defensivo_mismo_simbolo(self) -> None:
@@ -407,7 +426,7 @@ class TestGame(unittest.TestCase):
         game = Game(
             mapa,
             mazo,
-            cast("list[Client]", [jugador]),
+            [jugador],
             self.server,
         )
         game.empezar()
@@ -415,7 +434,7 @@ class TestGame(unittest.TestCase):
         turno_actual = game.turno_actual()
         cant_unidades = turno_actual.cant_unidades()
         for _ in range(6):
-            game.dame_una_tarjeta(cast("Client", jugador))
+            game.dame_una_tarjeta(jugador)
         self.assertEqual(mazo.cant_tarjetas_asignadas(jugador), 3)
         self.assertEqual(turno_actual.cant_unidades(), cant_unidades + 4)
 
@@ -438,7 +457,7 @@ class TestGame(unittest.TestCase):
         game = Game(
             mapa,
             mazo,
-            cast("list[Client]", [jugador]),
+            [jugador],
             self.server,
         )
         game.empezar()
@@ -446,8 +465,8 @@ class TestGame(unittest.TestCase):
         turno_actual = game.turno_actual()
         cant_unidades = turno_actual.cant_unidades()
         for _ in range(5):
-            game.dame_una_tarjeta(cast("Client", jugador))
+            game.dame_una_tarjeta(jugador)
         self.assertEqual(mazo.cant_tarjetas_asignadas(jugador), 5)
-        game.dame_una_tarjeta(cast("Client", jugador))
+        game.dame_una_tarjeta(jugador)
         self.assertEqual(mazo.cant_tarjetas_asignadas(jugador), 3)
         self.assertEqual(turno_actual.cant_unidades(), cant_unidades + 4)

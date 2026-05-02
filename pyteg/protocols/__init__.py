@@ -22,12 +22,14 @@ from __future__ import annotations
 
 from pyteg.protocols.client import IClientProtocol
 from pyteg.protocols.game import IGameProtocol
+from pyteg.protocols.jugador import IJugador
 from pyteg.protocols.mapa import IMapProtocol
 from pyteg.protocols.server import ServerLikeProtocol
 
 __all__ = [
     "IClientProtocol",
     "IGameProtocol",
+    "IJugador",
     "IMapProtocol",
     "ServerLikeProtocol",
 ]

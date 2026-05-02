@@ -5,13 +5,15 @@ from __future__ import annotations
 from collections import Counter
 from itertools import cycle
 from random import sample
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from pyteg.config import CARDS_FOR_EXCHANGE, MIN_CARDS_SAME_SYMBOL_FOR_EXCHANGE
-from pyteg.core.cartas.tarjeta_de_pais import TarjetaDePais
+from pyteg.core.cartas.tarjeta_de_pais import TarjetaDePais, _to_userid
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+
+    from pyteg.protocols import IJugador
 
 
 class Mazo:
@@ -81,23 +83,24 @@ class Mazo:
         """
         return list(self.mazo.values())
 
-    def tarjetas_asignadas(self, jugador: Any) -> list[TarjetaDePais]:
+    def tarjetas_asignadas(self, jugador: IJugador | int) -> list[TarjetaDePais]:
         """Obtiene las tarjetas asignadas a un jugador.
 
         Args:
-            jugador: Jugador del que obtener las tarjetas.
+            jugador: Jugador (con `userid()`) o `userid` (int).
 
         Returns:
             Lista de tarjetas asignadas al jugador.
 
         """
-        return [tarjeta for tarjeta in self.tarjetas() if tarjeta.jugador() == jugador]
+        userid = _to_userid(jugador)
+        return [tarjeta for tarjeta in self.tarjetas() if tarjeta.jugador() == userid]
 
-    def cant_tarjetas_asignadas(self, jugador: Any) -> int:
+    def cant_tarjetas_asignadas(self, jugador: IJugador | int) -> int:
         """Obtiene la cantidad de tarjetas asignadas a un jugador.
 
         Args:
-            jugador: Jugador del que contar las tarjetas.
+            jugador: Jugador (con `userid()`) o `userid` (int).
 
         Returns:
             Cantidad de tarjetas asignadas al jugador.
@@ -106,12 +109,12 @@ class Mazo:
         return sum(1 for tarjeta in self.tarjetas_asignadas(jugador))
 
     def simbolo_asignado_almenos_3_tarjetas(
-        self, jugador: Any
+        self, jugador: IJugador | int
     ) -> list[tuple[str, int]]:
         """Obtiene el símbolo más común de las tarjetas del jugador.
 
         Args:
-            jugador: Jugador del que obtener el símbolo.
+            jugador: Jugador (con `userid()`) o `userid` (int).
 
         Returns:
             Lista con tupla (símbolo, cantidad) del símbolo más común.
@@ -121,14 +124,16 @@ class Mazo:
             [tarjeta.simbolo for tarjeta in self.tarjetas_asignadas(jugador)],
         ).most_common(1)
 
-    def dame_3_tarjetas_para_canje(self, jugador: Any) -> list[TarjetaDePais]:
+    def dame_3_tarjetas_para_canje(
+        self, jugador: IJugador | int
+    ) -> list[TarjetaDePais]:
         """Obtiene 3 tarjetas para canje de un jugador.
 
         Si tiene 3 o más del mismo símbolo, retorna 3 de ese símbolo.
         Si no, retorna 3 tarjetas con símbolos diferentes.
 
         Args:
-            jugador: Jugador del que obtener las tarjetas.
+            jugador: Jugador (con `userid()`) o `userid` (int).
 
         Returns:
             Lista de 3 tarjetas para canje.
@@ -167,13 +172,13 @@ class Mazo:
 
     def asignar_tarjeta(
         self,
-        jugador: Any,
+        jugador: IJugador | int,
         mezclar: Callable[[list[TarjetaDePais], int], list[TarjetaDePais]] = sample,
     ) -> TarjetaDePais | None:
         """Asigna una tarjeta disponible a un jugador.
 
         Args:
-            jugador: Jugador al que asignar la tarjeta.
+            jugador: Jugador (con `userid()`) o `userid` (int).
             mezclar: Función para mezclar las tarjetas (por defecto sample).
 
         Returns:

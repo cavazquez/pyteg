@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from pyteg.server.juego.validators import (
     AdjacencyValidator,
@@ -11,15 +11,17 @@ from pyteg.server.juego.validators import (
     ValidationError,
 )
 from pyteg.server.tasks.base import LOGGER, IServerTask
+from pyteg.server.tasks.types import MoverUnidadTaskData
 
 if TYPE_CHECKING:
     from pyteg.core.partida.context import GameContext
+    from pyteg.protocols import IClientProtocol
 
 
-class ServerTaskMoverUnidad(IServerTask):
+class ServerTaskMoverUnidad(IServerTask[MoverUnidadTaskData]):
     """Tarea para mover unidades entre países."""
 
-    def __init__(self, data: dict[str, Any]) -> None:
+    def __init__(self, data: MoverUnidadTaskData) -> None:
         """Inicializa la tarea de mover unidad.
 
         Args:
@@ -46,7 +48,7 @@ class ServerTaskMoverUnidad(IServerTask):
             error_msg = "País de destino no especificado"
             raise ValidationError(error_msg)
 
-    def _execute(self, client: Any, context: GameContext) -> None:
+    def _execute(self, client: IClientProtocol, context: GameContext) -> None:
         self._validate_required_fields()
 
         if self._origen is None or self._destino is None:

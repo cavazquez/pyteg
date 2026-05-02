@@ -5,7 +5,7 @@ from __future__ import annotations
 import contextlib
 import secrets
 from copy import copy
-from typing import Any
+from typing import TYPE_CHECKING
 
 from pyteg.colores import (
     Amarillo,
@@ -18,6 +18,9 @@ from pyteg.colores import (
     Rojo,
     Verde,
 )
+
+if TYPE_CHECKING:
+    from pyteg.protocols import IClientProtocol
 
 
 class ServerColor:
@@ -37,7 +40,7 @@ class ServerColor:
         ]
         self._usados: list[IColor] = []
 
-    def asignar_color_aleatorio(self, client: Any) -> None:
+    def asignar_color_aleatorio(self, client: IClientProtocol) -> None:
         """Asigna un color aleatorio disponible a un cliente.
 
         Args:
@@ -70,7 +73,7 @@ class ServerColor:
         """
         self.colores_usados().append(color)
 
-    def asignar_color(self, client: Any, color_hexrgb: str) -> None:
+    def asignar_color(self, client: IClientProtocol, color_hexrgb: str) -> None:
         """Asigna un color específico a un cliente por su valor hexadecimal.
 
         Args:

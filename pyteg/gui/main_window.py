@@ -30,6 +30,9 @@ if TYPE_CHECKING:
     from PySide6.QtWidgets import QHBoxLayout, QLabel, QStatusBar
 
     from pyteg.client.app import Client
+    from pyteg.client.conexion.connection import ConnectionClient
+    from pyteg.client.tasks.protocols import LobbyWindowProtocol
+    from pyteg.client.tasks.types import TarjetaItem
     from pyteg.gui.dialogs.conectar import VentanaConectar
     from pyteg.gui.managers.protocols import MainWindowProtocol
     from pyteg.gui.mapa.scene import QCustomGraphicsScene
@@ -90,18 +93,18 @@ class Gui(QMainWindow):
 
     def _gui_init_core_state(self, client: Client) -> None:
         self._vivo = True
-        self.client = client
+        self.client: Client = client
         self.theme: str = "light"
-        self.client_by_id: dict[int, Any] = {}
+        self.client_by_id: dict[int, Client] = {}
         self.transmisor = ClientNullTransmisor()
-        self.conexion: Any = None
-        self.w: QWidget | None = None
+        self.conexion: ConnectionClient | None = None
+        self.w: LobbyWindowProtocol | None = None
         self.ventana_conectar: VentanaConectar | None = None
         self.scene: QCustomGraphicsScene | None = None
         self.view: QCustomGraphicsView | None = None
         self.chat: Chat | None = None
         self.toolbar: ToolBar | None = None
-        self.tarjetas_jugador: list[Any] = []
+        self.tarjetas_jugador: list[TarjetaItem] = []
         self.misiles_habilitados: bool = False
         self.row_widgets: dict[str, Any] = {}
         self.last_units: dict[str, Any] = {}

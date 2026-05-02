@@ -2,18 +2,26 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from pyteg.server.tasks.base import LOGGER, IServerTask
+from pyteg.server.tasks.types import (
+    BaseTaskData,
+    ChatTaskData,
+    EmpezarTaskData,
+    SeleccionarColorTaskData,
+    SetUsernameTaskData,
+)
 
 if TYPE_CHECKING:
     from pyteg.core.partida.context import GameContext
+    from pyteg.protocols import IClientProtocol
 
 
-class ServerTaskChat(IServerTask):
+class ServerTaskChat(IServerTask[ChatTaskData]):
     """Tarea para procesar mensajes de chat."""
 
-    def __init__(self, data: dict[str, Any]) -> None:
+    def __init__(self, data: ChatTaskData) -> None:
         """Inicializa la tarea de chat.
 
         Args:
@@ -24,14 +32,18 @@ class ServerTaskChat(IServerTask):
         self._msg = data.get("msg")
         self._action_name = "chat"
 
-    def _execute(self, client: Any, context: GameContext) -> None:  # noqa: ARG002
+    def _execute(
+        self,
+        client: IClientProtocol,
+        context: GameContext,  # noqa: ARG002
+    ) -> None:
         client.server.enviar_chat(client.username(), self._msg)
 
 
-class ServerTaskEmpezar(IServerTask):
+class ServerTaskEmpezar(IServerTask[EmpezarTaskData]):
     """Tarea para configurar e iniciar la partida."""
 
-    def __init__(self, data: dict[str, Any]) -> None:
+    def __init__(self, data: EmpezarTaskData) -> None:
         """Inicializa la tarea de empezar partida.
 
         Args:
@@ -45,7 +57,11 @@ class ServerTaskEmpezar(IServerTask):
         self._misiles_habilitados = data.get("misiles_habilitados", False)
         self._action_name = "empezar"
 
-    def _execute(self, client: Any, context: GameContext) -> None:  # noqa: ARG002
+    def _execute(
+        self,
+        client: IClientProtocol,
+        context: GameContext,  # noqa: ARG002
+    ) -> None:
         # Configurar segundos por turno si se envió desde el cliente
         if self._segundos is not None:
             try:
@@ -81,10 +97,10 @@ class ServerTaskEmpezar(IServerTask):
             )
 
 
-class ServerTaskSeleccionarColor(IServerTask):
+class ServerTaskSeleccionarColor(IServerTask[SeleccionarColorTaskData]):
     """Tarea para seleccionar el color de un jugador."""
 
-    def __init__(self, data: dict[str, Any]) -> None:
+    def __init__(self, data: SeleccionarColorTaskData) -> None:
         """Inicializa la tarea de seleccionar color.
 
         Args:
@@ -95,15 +111,20 @@ class ServerTaskSeleccionarColor(IServerTask):
         self._color = data.get("color")
         self._action_name = "seleccionar_color"
 
-    def _execute(self, client: Any, context: GameContext) -> None:  # noqa: ARG002
-        client.cambiar_color(self._color)
+    def _execute(
+        self,
+        client: IClientProtocol,
+        context: GameContext,  # noqa: ARG002
+    ) -> None:
+        if self._color is not None:
+            client.cambiar_color(self._color)
         client.server.enviar_colores_asignados()
 
 
-class ServerTaskEmpezarPartida(IServerTask):
+class ServerTaskEmpezarPartida(IServerTask[BaseTaskData]):
     """Tarea para iniciar la partida después de la configuración."""
 
-    def __init__(self, data: dict[str, Any]) -> None:
+    def __init__(self, data: BaseTaskData) -> None:
         """Inicializa la tarea de empezar partida.
 
         Args:
@@ -113,7 +134,11 @@ class ServerTaskEmpezarPartida(IServerTask):
         super().__init__(data)
         self._action_name = "empezar_partida"
 
-    def _execute(self, client: Any, context: GameContext) -> None:  # noqa: ARG002
+    def _execute(
+        self,
+        client: IClientProtocol,
+        context: GameContext,  # noqa: ARG002
+    ) -> None:
         if client.server.estado.empezar_partida():
             client.server.enviar_estado()
             client.server.empezar_partida()
@@ -124,10 +149,10 @@ class ServerTaskEmpezarPartida(IServerTask):
             )
 
 
-class ServerTaskSetUsername(IServerTask):
+class ServerTaskSetUsername(IServerTask[SetUsernameTaskData]):
     """Tarea para establecer el nombre de usuario de un cliente."""
 
-    def __init__(self, data: dict[str, Any]) -> None:
+    def __init__(self, data: SetUsernameTaskData) -> None:
         """Inicializa la tarea de establecer username.
 
         Args:
@@ -138,7 +163,7 @@ class ServerTaskSetUsername(IServerTask):
         self._username = data.get("username")
         self._action_name = "set_username"
 
-    def _execute(self, client: Any, context: GameContext) -> None:
+    def _execute(self, client: IClientProtocol, context: GameContext) -> None:
         if self._username and isinstance(self._username, str):
             # Verificar si el username ya está en uso por otro cliente
             for other_client in context.dame_clientes():

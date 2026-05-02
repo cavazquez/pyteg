@@ -6,15 +6,16 @@ from typing import TYPE_CHECKING, Any
 
 from pyteg.client.tasks.base import IClientTask
 from pyteg.client.tasks.logging_helper import CLIENT_TASKS_LOG
+from pyteg.client.tasks.types import EstadoTaskData
 
 if TYPE_CHECKING:
     from pyteg.client.tasks.protocols import GameWindowProtocol
 
 
-class ClientTaskEstado(IClientTask):
+class ClientTaskEstado(IClientTask[EstadoTaskData]):
     """Tarea para actualizar el estado del juego."""
 
-    def __init__(self, data: dict[str, Any]) -> None:
+    def __init__(self, data: EstadoTaskData) -> None:
         """Inicializa la tarea de estado.
 
         Args:
@@ -63,7 +64,9 @@ class ClientTaskEstado(IClientTask):
         jugadores: list[tuple[str, Any]] = []
         for user_id, color in main_window.colores.colores_asignados().items():
             client = main_window.client_by_id.get(user_id)
-            if client:
-                jugadores.append((client.username(), color))
+            if client is not None:
+                username = client.username()
+                if username is not None:
+                    jugadores.append((username, color))
 
         main_window.update_player_list(jugadores)

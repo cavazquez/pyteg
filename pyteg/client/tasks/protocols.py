@@ -1,12 +1,12 @@
 """Protocolo estructural de la ventana del juego visto por las tareas del cliente.
 
-Permite reemplazar `main_window: GameWindowProtocol` en `IClientTask.run` por un tipo
-explícito que documenta el API que las tasks consumen del `Gui`. Sub-objetos
-cuyos tipos requieren imports cruzados con el paquete GUI (scene, chat,
-transmisor, client, colores, sound_manager, status_bar, w, conexion) se
-exponen como `Any` para evitar dependencias pesadas; `Gui` mantiene los
-tipos concretos en su declaración de clase y satisface estructuralmente
-este protocolo por duck typing.
+Permite reemplazar `main_window: GameWindowProtocol` en `IClientTask.run` por
+un tipo explícito que documenta el API que las tasks consumen del `Gui`.
+
+Los sub-objetos relevantes (cliente local, paleta de colores, transmisor,
+escena, chat, sound manager, etc.) se exponen con tipos concretos. Todos los
+imports están en `TYPE_CHECKING` para evitar dependencias pesadas en runtime
+y romper ciclos.
 """
 
 from __future__ import annotations
@@ -16,23 +16,59 @@ from typing import TYPE_CHECKING, Any, Protocol
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
 
+    from PySide6.QtCore import SignalInstance
     from PySide6.QtGui import QColor
+    from PySide6.QtWidgets import QStatusBar
+
+    from pyteg.client.app import Client
+    from pyteg.client.colores.paleta import Colores
+    from pyteg.client.conexion.connection import ConnectionClient
+    from pyteg.client.conexion.transmisor.protocol import IClientTransmisor
+    from pyteg.client.tasks.types import TarjetaItem
+    from pyteg.gui.mapa.scene import QCustomGraphicsScene
+    from pyteg.gui.widgets.chat.widget import Chat
+    from pyteg.sound_manager import SoundManager
+
+
+class LobbyWindowProtocol(Protocol):
+    """Interfaz mínima de la ventana secundaria (admin / esperar jugadores).
+
+    Es lo que `Gui.w` referencia mientras la partida no comenzó.
+    """
+
+    destroyed: SignalInstance
+
+    def cargar_colores_asignados(self) -> None:
+        """Refresca la lista de colores en la ventana de lobby."""
+        ...
+
+    def close(self) -> bool:
+        """Cierra la ventana (heredado de Qt)."""
+        ...
+
+    def show(self) -> None:
+        """Muestra la ventana (heredado de Qt)."""
+        ...
+
+    def deleteLater(self) -> None:  # noqa: N802 (Qt naming)
+        """Programa la eliminación diferida (heredado de Qt)."""
+        ...
 
 
 class GameWindowProtocol(Protocol):
     """Interfaz mínima del `Gui` requerida por las tareas del cliente."""
 
-    client: Any
-    client_by_id: dict[int, Any]
-    colores: Any
-    scene: Any
-    chat: Any
-    conexion: Any
-    w: Any
-    transmisor: Any
-    sound_manager: Any
-    status_bar: Any
-    tarjetas_jugador: list[Any]
+    client: Client
+    client_by_id: dict[int, Client]
+    colores: Colores
+    scene: QCustomGraphicsScene | None
+    chat: Chat | None
+    conexion: ConnectionClient | None
+    w: LobbyWindowProtocol | None
+    transmisor: IClientTransmisor
+    sound_manager: SoundManager
+    status_bar: QStatusBar
+    tarjetas_jugador: list[TarjetaItem]
     misiles_habilitados: bool
 
     def update_unidades_disponibles(self, unidades: dict[str, int]) -> None:
@@ -111,6 +147,6 @@ class GameWindowProtocol(Protocol):
         """Muestra el diálogo modal con la animación de resultado de batalla."""
         ...
 
-    def refresh_open_tarjetas_dialogs(self, tarjetas: list[Any]) -> None:
+    def refresh_open_tarjetas_dialogs(self, tarjetas: list[TarjetaItem]) -> None:
         """Actualiza los diálogos de tarjetas abiertos."""
         ...

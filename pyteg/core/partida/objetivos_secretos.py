@@ -138,11 +138,7 @@ class ObjetivosSecretos:
                 )
                 if client_color == color_objetivo:
                     jugador_objetivo_existe = True
-                    cid = (
-                        int(client.userid())
-                        if hasattr(client, "userid")
-                        else None
-                    )
+                    cid = int(client.userid()) if hasattr(client, "userid") else None
                     if cid is not None and any(
                         pais_data[2] == cid for pais_data in mapa.values()
                     ):

@@ -142,11 +142,14 @@ class Client:
                 continue
 
             for data in datas:
+                # split("\0") deja un fragmento "" tras cada mensaje bien cerrado con \0
+                if not data:
+                    continue
                 try:
                     data_json = json.loads(data)
                     self.ejecutar_mensaje(data_json)
                 except json.JSONDecodeError:
-                    print(f"Mensaje no JSON recibido: {data}")
+                    print(f"Mensaje no JSON recibido: {data!r}")
 
         # Cuando el cliente se desconecta, quitarlo del servidor
         self._logger.info(

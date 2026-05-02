@@ -123,7 +123,7 @@ class GameActionsManager:
             return 0
 
         pais_widget = paises[pais]
-        unidades_totales = cast("int", pais_widget.get_unidades())
+        unidades_totales = pais_widget.get_unidades()
         # Se necesita dejar al menos 1 unidad en el país
         unidades_disponibles = max(0, unidades_totales - 1)
         # Máximo 3 unidades para atacar

@@ -13,12 +13,14 @@ from pyteg.server.juego.validators import (
     ValidationError,
 )
 from pyteg.server.tasks.base import LOGGER, IServerTask
+from pyteg.server.tasks.types import AgregarUnidadTaskData
 
 if TYPE_CHECKING:
     from pyteg.core.partida.context import GameContext
+    from pyteg.protocols import IClientProtocol
 
 
-class ServerTaskAgregarUnidad(IServerTask):
+class ServerTaskAgregarUnidad(IServerTask[AgregarUnidadTaskData]):
     """Tarea para agregar unidades a un país."""
 
     def _validate_field_not_none(self, field_value: Any, field_name: str) -> None:
@@ -36,7 +38,7 @@ class ServerTaskAgregarUnidad(IServerTask):
             error_msg = f"{field_name} no especificado"
             raise ValidationError(error_msg)
 
-    def __init__(self, data: dict[str, Any]) -> None:
+    def __init__(self, data: AgregarUnidadTaskData) -> None:
         """Inicializa la tarea de agregar unidad.
 
         Args:
@@ -70,7 +72,7 @@ class ServerTaskAgregarUnidad(IServerTask):
             )
             raise ValidationError(msg)
 
-    def _execute(self, client: Any, context: GameContext) -> None:
+    def _execute(self, client: IClientProtocol, context: GameContext) -> None:
         self._validate_field_not_none(self._pais, "País")
         self._validate_field_not_none(self._tipo_unidad, "Tipo de unidad")
 

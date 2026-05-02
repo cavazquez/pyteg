@@ -3,25 +3,33 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Generic, TypeVar
 
 from pyteg.client.tasks.logging_helper import CLIENT_TASKS_LOG
+from pyteg.client.tasks.types import BaseClientTaskData
 
 if TYPE_CHECKING:
     from pyteg.client.tasks.protocols import GameWindowProtocol
 
+TData = TypeVar("TData", bound=BaseClientTaskData)
 
-class IClientTask(ABC):
-    """Interfaz base para todas las tareas del cliente."""
 
-    def __init__(self, data: dict[str, Any]) -> None:
+class IClientTask(ABC, Generic[TData]):
+    """Interfaz base para todas las tareas del cliente.
+
+    Parametrizada por `TData` (subtipo de `BaseClientTaskData`) para que
+    cada subclase declare la forma exacta del payload que recibe.
+    """
+
+    def __init__(self, data: TData) -> None:
         """Inicializa la tarea con los datos recibidos.
 
         Args:
-            data: Diccionario con los datos de la tarea.
+            data: Diccionario con los datos de la tarea (tipados por la
+                subclase).
 
         """
-        self._raw_data = data
+        self._raw_data: TData = data
 
     @abstractmethod
     def run(self, main_window: GameWindowProtocol) -> None:
@@ -33,10 +41,10 @@ class IClientTask(ABC):
         """
 
 
-class ClientTaskNull(IClientTask):
+class ClientTaskNull(IClientTask[BaseClientTaskData]):
     """Tarea para manejar mensajes desconocidos."""
 
-    def __init__(self, data: dict[str, Any]) -> None:
+    def __init__(self, data: BaseClientTaskData) -> None:
         """Inicializa la tarea con un mensaje desconocido.
 
         Args:

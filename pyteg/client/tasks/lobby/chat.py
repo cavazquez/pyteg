@@ -2,21 +2,22 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, cast
 
 from PySide6.QtWidgets import QMessageBox, QWidget
 
 from pyteg.client.tasks.base import IClientTask
+from pyteg.client.tasks.types import ChatClientTaskData, ErrorTaskData
 from pyteg.i18n import translate as _
 
 if TYPE_CHECKING:
     from pyteg.client.tasks.protocols import GameWindowProtocol
 
 
-class ClientTaskChat(IClientTask):
+class ClientTaskChat(IClientTask[ChatClientTaskData]):
     """Tarea para mostrar mensajes de chat."""
 
-    def __init__(self, data: dict[str, Any]) -> None:
+    def __init__(self, data: ChatClientTaskData) -> None:
         """Inicializa la tarea de chat.
 
         Args:
@@ -29,13 +30,15 @@ class ClientTaskChat(IClientTask):
 
     def run(self, main_window: GameWindowProtocol) -> None:
         """Ejecuta la tarea agregando el mensaje al chat."""
+        if main_window.chat is None or self._msg is None:
+            return
         main_window.chat.append(self._msg, self._msg_type)
 
 
-class ClientTaskError(IClientTask):
+class ClientTaskError(IClientTask[ErrorTaskData]):
     """Tarea para manejar errores enviados por el servidor."""
 
-    def __init__(self, data: dict[str, Any]) -> None:
+    def __init__(self, data: ErrorTaskData) -> None:
         """Inicializa la tarea de error.
 
         Args:

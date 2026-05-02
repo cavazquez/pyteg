@@ -2,12 +2,17 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, cast
 
 from PySide6.QtWidgets import QMessageBox, QWidget
 
 from pyteg.client.tasks.base import IClientTask
 from pyteg.client.tasks.logging_helper import CLIENT_TASKS_LOG
+from pyteg.client.tasks.types import (
+    ConfiguracionPartidaTaskData,
+    ObjetivoSecretoTaskData,
+    VictoriaTaskData,
+)
 from pyteg.config import (
     DEFAULT_TURN_SECONDS,
     DEFAULT_VICTORY_COUNTRIES,
@@ -18,10 +23,10 @@ if TYPE_CHECKING:
     from pyteg.client.tasks.protocols import GameWindowProtocol
 
 
-class ClientTaskVictoria(IClientTask):
+class ClientTaskVictoria(IClientTask[VictoriaTaskData]):
     """Tarea para mostrar el mensaje de victoria."""
 
-    def __init__(self, data: dict[str, Any]) -> None:
+    def __init__(self, data: VictoriaTaskData) -> None:
         """Inicializa la tarea de victoria.
 
         Args:
@@ -64,10 +69,10 @@ class ClientTaskVictoria(IClientTask):
             CLIENT_TASKS_LOG.warning("Error al mostrar mensaje de victoria: %s", e)
 
 
-class ClientTaskConfiguracionPartida(IClientTask):
+class ClientTaskConfiguracionPartida(IClientTask[ConfiguracionPartidaTaskData]):
     """Tarea para procesar la configuración de la partida."""
 
-    def __init__(self, data: dict[str, Any]) -> None:
+    def __init__(self, data: ConfiguracionPartidaTaskData) -> None:
         """Inicializa la tarea de configuración de partida.
 
         Args:
@@ -112,10 +117,10 @@ class ClientTaskConfiguracionPartida(IClientTask):
             )
 
 
-class ClientTaskObjetivoSecreto(IClientTask):
+class ClientTaskObjetivoSecreto(IClientTask[ObjetivoSecretoTaskData]):
     """Tarea para procesar el objetivo secreto asignado."""
 
-    def __init__(self, data: dict[str, Any]) -> None:
+    def __init__(self, data: ObjetivoSecretoTaskData) -> None:
         """Inicializa la tarea de objetivo secreto.
 
         Args:

@@ -12,6 +12,7 @@ if TYPE_CHECKING:
     from pyteg.protocols import IGameProtocol, IMapProtocol
     from pyteg.server.juego.game import Game
     from pyteg.server.juego.mapa import Mapa
+    from pyteg.server.msg.types import BattleResultPayload
 
 
 class ServerLike(Protocol):
@@ -25,7 +26,7 @@ class ServerLike(Protocol):
         """Envía las unidades disponibles al jugador actual."""
         ...
 
-    def enviar_resultado_batalla(self, resultado: dict[str, Any]) -> None:
+    def enviar_resultado_batalla(self, resultado: BattleResultPayload) -> None:
         """Envía el resultado de una batalla a todos los clientes."""
         ...
 
@@ -104,11 +105,11 @@ class GameContext:
         """Envía las unidades disponibles al jugador actual."""
         self._server.enviar_unidades_disponibles()
 
-    def enviar_resultado_batalla(self, resultado: dict[str, Any]) -> None:
+    def enviar_resultado_batalla(self, resultado: BattleResultPayload) -> None:
         """Envía el resultado de una batalla a todos los clientes.
 
         Args:
-            resultado: Diccionario con el resultado de la batalla.
+            resultado: Payload tipado con el resultado de la batalla.
 
         """
         self._server.enviar_resultado_batalla(resultado)

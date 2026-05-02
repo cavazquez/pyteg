@@ -9,16 +9,21 @@ from PySide6.QtGui import QColor
 from pyteg.client.app import Client
 from pyteg.client.tasks.base import IClientTask
 from pyteg.client.tasks.logging_helper import CLIENT_TASKS_LOG
+from pyteg.client.tasks.types import (
+    ActualizarListaJugadoresTaskData,
+    UserIdTaskData,
+    UsernameTaskData,
+)
 from pyteg.i18n import translate as _
 
 if TYPE_CHECKING:
     from pyteg.client.tasks.protocols import GameWindowProtocol
 
 
-class ClientTaskUserId(IClientTask):
+class ClientTaskUserId(IClientTask[UserIdTaskData]):
     """Tarea para asignar un ID de usuario al cliente."""
 
-    def __init__(self, data: dict[str, Any]) -> None:
+    def __init__(self, data: UserIdTaskData) -> None:
         """Inicializa la tarea de ID de usuario.
 
         Args:
@@ -53,10 +58,10 @@ class ClientTaskUserId(IClientTask):
         main_window.client_by_id[userid].set_userid(userid)
 
 
-class ClientTaskUsername(IClientTask):
+class ClientTaskUsername(IClientTask[UsernameTaskData]):
     """Tarea para actualizar el nombre de usuario de un jugador."""
 
-    def __init__(self, data: dict[str, Any]) -> None:
+    def __init__(self, data: UsernameTaskData) -> None:
         """Inicializa la tarea de nombre de usuario.
 
         Args:
@@ -70,6 +75,9 @@ class ClientTaskUsername(IClientTask):
         """Ejecuta la tarea actualizando el nombre de usuario."""
         username = self._msg.get("username")
         userid = self._msg.get("user_id")
+
+        if username is None or userid is None:
+            return
 
         if main_window.client.userid() == userid:
             main_window.client.set_username(username)
@@ -90,16 +98,20 @@ class ClientTaskUsername(IClientTask):
         jugadores: list[tuple[str, Any]] = []
         for user_id, color in main_window.colores.colores_asignados().items():
             client = main_window.client_by_id.get(user_id)
-            if client and client.username():
-                jugadores.append((client.username(), color))
+            if client is None:
+                continue
+            username = client.username()
+            if username is None:
+                continue
+            jugadores.append((username, color))
 
         main_window.update_player_list(jugadores)
 
 
-class ClientTaskActualizarListaJugadores(IClientTask):
+class ClientTaskActualizarListaJugadores(IClientTask[ActualizarListaJugadoresTaskData]):
     """Tarea para actualizar la lista de jugadores con el orden actualizado."""
 
-    def __init__(self, data: dict[str, Any]) -> None:
+    def __init__(self, data: ActualizarListaJugadoresTaskData) -> None:
         """Inicializa la tarea de actualización de lista de jugadores.
 
         Args:
@@ -120,17 +132,20 @@ class ClientTaskActualizarListaJugadores(IClientTask):
 
         """
         try:
-            jugadores_actualizados = []
+            jugadores_actualizados: list[tuple[str, QColor]] = []
 
             for jugador in self._jugadores:
                 userid = jugador.get("userid")
                 color_data = jugador.get("color", {})
+                if userid is None:
+                    continue
 
-                nombre = _("Jugador {}").format(userid)
+                nombre: str = _("Jugador {}").format(userid)
                 if userid in main_window.client_by_id:
                     cliente = main_window.client_by_id[userid]
-                    if hasattr(cliente, "username") and cliente.username():
-                        nombre = cliente.username()
+                    cliente_username = cliente.username()
+                    if cliente_username is not None:
+                        nombre = cliente_username
 
                 color = QColor(
                     color_data.get("r", 200),

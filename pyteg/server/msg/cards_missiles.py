@@ -3,9 +3,12 @@
 from __future__ import annotations
 
 import json
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from pyteg.server.msg.base import IMsg
+
+if TYPE_CHECKING:
+    from pyteg.server.msg.types import MissileResultPayload
 
 
 class MsgTarjetasJugador(IMsg):
@@ -105,7 +108,7 @@ class MsgCanjeEspecial(IMsg):
 class MsgResultadoMisil(IMsg):
     """Mensaje para enviar el resultado del lanzamiento de un misil."""
 
-    def __init__(self, resultado_data: dict[str, Any]) -> None:
+    def __init__(self, resultado_data: MissileResultPayload) -> None:
         """Inicializa un mensaje con el resultado del lanzamiento de un misil.
 
         Args:

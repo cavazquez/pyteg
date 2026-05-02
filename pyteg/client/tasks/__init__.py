@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from pyteg.client.tasks.base import ClientTaskNull, IClientTask
 from pyteg.client.tasks.battle import ClientTaskResultadoBatalla
 from pyteg.client.tasks.cards_missiles import (
@@ -30,7 +32,7 @@ from pyteg.client.tasks.lobby import (
     ClientTaskUsername,
 )
 
-dict_task: dict[str, type[IClientTask]] = {
+dict_task: dict[str, type[IClientTask[Any]]] = {
     "chat": ClientTaskChat,
     "sosadmin": ClientTaskSerAdmin,
     "estado": ClientTaskEstado,

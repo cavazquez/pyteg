@@ -9,8 +9,10 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from pyteg.core.partida.objetivos_secretos import ObjetivosSecretos
-    from pyteg.server.conexion.cliente import Client
+    from pyteg.protocols import IClientProtocol
     from pyteg.server.juego.color import ServerColor
     from pyteg.server.juego.mapa import Mapa
 
@@ -48,7 +50,9 @@ class VictoryChecker:
         self._objetivos_secretos_activados = objetivos_secretos_activados
         self._color_manager = color_manager
 
-    def verificar_condicion_victoria(self, jugadores: list[Client]) -> Client | None:
+    def verificar_condicion_victoria(
+        self, jugadores: Sequence[IClientProtocol]
+    ) -> IClientProtocol | None:
         """Verifica si algún jugador ha ganado la partida.
 
         Verifica si algún jugador ha ganado controlando el número objetivo
@@ -76,7 +80,9 @@ class VictoryChecker:
         # Verificar condición de victoria tradicional (por países)
         return self._verificar_victoria_por_paises(jugadores, total_paises)
 
-    def _verificar_objetivos_secretos(self, jugadores: list[Client]) -> Client | None:
+    def _verificar_objetivos_secretos(
+        self, jugadores: Sequence[IClientProtocol]
+    ) -> IClientProtocol | None:
         """Verifica si algún jugador cumplió su objetivo secreto.
 
         Args:
@@ -108,8 +114,8 @@ class VictoryChecker:
         return None
 
     def _verificar_victoria_por_paises(
-        self, jugadores: list[Client], total_paises: int
-    ) -> Client | None:
+        self, jugadores: Sequence[IClientProtocol], total_paises: int
+    ) -> IClientProtocol | None:
         """Verifica si algún jugador ganó por países controlados.
 
         Args:

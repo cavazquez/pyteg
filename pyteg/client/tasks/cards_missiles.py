@@ -2,19 +2,24 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from pyteg.client.tasks.base import IClientTask
 from pyteg.client.tasks.logging_helper import CLIENT_TASKS_LOG
+from pyteg.client.tasks.types import (
+    MisilAgregadoTaskData,
+    ResultadoMisilTaskData,
+    TarjetasJugadorTaskData,
+)
 
 if TYPE_CHECKING:
     from pyteg.client.tasks.protocols import GameWindowProtocol
 
 
-class ClientTaskTarjetasJugador(IClientTask):
+class ClientTaskTarjetasJugador(IClientTask[TarjetasJugadorTaskData]):
     """Tarea para actualizar las tarjetas del jugador."""
 
-    def __init__(self, data: dict[str, Any]) -> None:
+    def __init__(self, data: TarjetasJugadorTaskData) -> None:
         """Inicializa la tarea de tarjetas del jugador.
 
         Args:
@@ -47,10 +52,10 @@ class ClientTaskTarjetasJugador(IClientTask):
             CLIENT_TASKS_LOG.warning("Error al procesar tarjetas del jugador: %s", e)
 
 
-class ClientTaskResultadoMisil(IClientTask):
+class ClientTaskResultadoMisil(IClientTask[ResultadoMisilTaskData]):
     """Tarea para procesar el resultado del lanzamiento de un misil."""
 
-    def __init__(self, data: dict[str, Any]) -> None:
+    def __init__(self, data: ResultadoMisilTaskData) -> None:
         """Inicializa la tarea de resultado de misil.
 
         Args:
@@ -83,7 +88,8 @@ class ClientTaskResultadoMisil(IClientTask):
                 f"Daño: {self._dano} unidades. "
                 f"Unidades restantes: {self._unidades_restantes}"
             )
-            main_window.chat.append(mensaje, "system")
+            if main_window.chat is not None:
+                main_window.chat.append(mensaje, "system")
 
             status_mensaje = (
                 f"Misil: {self._pais_origen} → {self._pais_destino} "
@@ -95,10 +101,10 @@ class ClientTaskResultadoMisil(IClientTask):
             CLIENT_TASKS_LOG.warning("Error al procesar resultado de misil: %s", e)
 
 
-class ClientTaskMisilAgregado(IClientTask):
+class ClientTaskMisilAgregado(IClientTask[MisilAgregadoTaskData]):
     """Tarea para notificar que se agregó un misil a un país."""
 
-    def __init__(self, data: dict[str, Any]) -> None:
+    def __init__(self, data: MisilAgregadoTaskData) -> None:
         """Inicializa la tarea de misil agregado.
 
         Args:
@@ -112,7 +118,11 @@ class ClientTaskMisilAgregado(IClientTask):
     def run(self, main_window: GameWindowProtocol) -> None:
         """Ejecuta la tarea actualizando la cantidad de misiles en la interfaz."""
         try:
-            if main_window.scene is not None:
+            if (
+                main_window.scene is not None
+                and self._pais is not None
+                and self._cantidad_misiles is not None
+            ):
                 pais_widget = main_window.scene.obtener_pais(self._pais)
                 if pais_widget and hasattr(pais_widget, "actualizar_misiles"):
                     pais_widget.actualizar_misiles(self._cantidad_misiles)

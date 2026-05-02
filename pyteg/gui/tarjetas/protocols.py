@@ -10,13 +10,14 @@ if TYPE_CHECKING:
     from PySide6.QtCore import QObject
     from PySide6.QtWidgets import QLabel, QPushButton
 
+    from pyteg.client.tasks.types import TarjetaItem
     from pyteg.gui.widgets.tarjeta import TarjetaWidget
 
 
 class TarjetasSelectionHost(Protocol):
     """Contrato mínimo para `TarjetasSelectionMixin` (cumple `TarjetasDialog`)."""
 
-    tarjetas: list[dict[str, str]]
+    tarjetas: list[TarjetaItem]
     tarjetas_widgets: list[TarjetaWidget]
     tarjetas_seleccionadas: list[TarjetaWidget]
     label_info_seleccion: QLabel

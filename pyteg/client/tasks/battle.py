@@ -2,21 +2,22 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from PySide6.QtCore import QTimer
 
 from pyteg.client.tasks.base import IClientTask
 from pyteg.client.tasks.logging_helper import CLIENT_TASKS_LOG
+from pyteg.client.tasks.types import ResultadoBatallaTaskData
 
 if TYPE_CHECKING:
     from pyteg.client.tasks.protocols import GameWindowProtocol
 
 
-class ClientTaskResultadoBatalla(IClientTask):
+class ClientTaskResultadoBatalla(IClientTask[ResultadoBatallaTaskData]):
     """Tarea para mostrar el resultado de una batalla."""
 
-    def __init__(self, data: dict[str, Any]) -> None:
+    def __init__(self, data: ResultadoBatallaTaskData) -> None:
         """Inicializa la tarea de resultado de batalla.
 
         Args:
@@ -122,12 +123,15 @@ class ClientTaskResultadoBatalla(IClientTask):
     def _iniciar_titilacion_paises(self, main_window: GameWindowProtocol) -> None:
         """Inicia la titilación en los países origen y destino."""
         try:
-            if main_window.scene is not None and hasattr(main_window.scene, "paises"):
-                # Obtener países origen y destino
+            if (
+                main_window.scene is not None
+                and hasattr(main_window.scene, "paises")
+                and self._origen is not None
+                and self._destino is not None
+            ):
                 pais_origen = main_window.scene.paises.get(self._origen)
                 pais_destino = main_window.scene.paises.get(self._destino)
 
-                # Iniciar titilación si los países existen
                 if pais_origen and hasattr(pais_origen, "iniciar_titilacion_batalla"):
                     pais_origen.iniciar_titilacion_batalla()
 
@@ -145,8 +149,12 @@ class ClientTaskResultadoBatalla(IClientTask):
 
             # Calcular pérdidas
             perdedores = self._resultado.get("restar", [])
-            perdidas_atacante = perdedores.count(self._atacante)
-            perdidas_defensor = perdedores.count(self._defensor)
+            perdidas_atacante = (
+                perdedores.count(self._atacante) if self._atacante is not None else 0
+            )
+            perdidas_defensor = (
+                perdedores.count(self._defensor) if self._defensor is not None else 0
+            )
 
             # Mostrar pérdidas flotantes
             if perdidas_atacante > 0 and isinstance(self._origen, str):
@@ -175,7 +183,12 @@ class ClientTaskResultadoBatalla(IClientTask):
     def _detener_titilacion_paises(self, main_window: GameWindowProtocol) -> None:
         """Detiene la titilación en los países origen y destino."""
         try:
-            if main_window.scene is not None and hasattr(main_window.scene, "paises"):
+            if (
+                main_window.scene is not None
+                and hasattr(main_window.scene, "paises")
+                and self._origen is not None
+                and self._destino is not None
+            ):
                 pais_origen = main_window.scene.paises.get(self._origen)
                 pais_destino = main_window.scene.paises.get(self._destino)
 

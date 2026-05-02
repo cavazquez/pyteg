@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from pyteg.client.tasks.base import IClientTask
+from pyteg.client.tasks.types import TiempoTaskData, TurnoTaskData
 from pyteg.config import (
     TIMER_COLOR_GREEN_THRESHOLD,
     TIMER_COLOR_ORANGE_THRESHOLD,
@@ -14,10 +15,10 @@ if TYPE_CHECKING:
     from pyteg.client.tasks.protocols import GameWindowProtocol
 
 
-class ClientTaskTurno(IClientTask):
+class ClientTaskTurno(IClientTask[TurnoTaskData]):
     """Tarea para actualizar el turno actual del juego."""
 
-    def __init__(self, data: dict[str, Any]) -> None:
+    def __init__(self, data: TurnoTaskData) -> None:
         """Inicializa la tarea de turno.
 
         Args:
@@ -50,10 +51,10 @@ class ClientTaskTurno(IClientTask):
             main_window.chat.append(f"Turno {num_turno + 1} iniciado", "system")
 
 
-class ClientTaskTiempo(IClientTask):
+class ClientTaskTiempo(IClientTask[TiempoTaskData]):
     """Tarea para actualizar el tiempo restante del turno."""
 
-    def __init__(self, data: dict[str, Any]) -> None:
+    def __init__(self, data: TiempoTaskData) -> None:
         """Inicializa la tarea de tiempo.
 
         Args:
