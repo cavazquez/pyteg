@@ -41,19 +41,13 @@ class ClientTaskResultadoBatalla(IClientTask):
         - Espectadores: Ven efectos visuales (titilación + pérdidas flotantes).
         """
         try:
-            # Obtener nombre del jugador actual
             mi_nombre = None
-            if hasattr(main_window, "client") and hasattr(
-                main_window.client, "username"
-            ):
+            if hasattr(main_window.client, "username"):
                 mi_nombre = main_window.client.username()
 
-            # Verificar si soy el atacante
             soy_atacante = mi_nombre == self._atacante
 
-            # Reproducir sonido de ataque
-            if hasattr(main_window, "sound_manager"):
-                main_window.sound_manager.play_attack()
+            main_window.sound_manager.play_attack()
 
             if soy_atacante:
                 # SOY EL ATACANTE: Mostrar animación completa
@@ -77,12 +71,10 @@ class ClientTaskResultadoBatalla(IClientTask):
 
         except (AttributeError, KeyError, ValueError) as e:
             CLIENT_TASKS_LOG.warning("Error al mostrar resultado de batalla: %s", e)
-            # Fallback: mostrar mensaje simple en barra de estado
-            if hasattr(main_window, "update_status_bar"):
-                main_window.update_status_bar(
-                    f"Error mostrando batalla: {self._atacante} vs {self._defensor}",
-                    "red",
-                )
+            main_window.update_status_bar(
+                f"Error mostrando batalla: {self._atacante} vs {self._defensor}",
+                "red",
+            )
 
     def _mostrar_animacion_completa(self, main_window: Any) -> None:
         """Muestra la animación completa de dados para el atacante."""
@@ -105,8 +97,7 @@ class ClientTaskResultadoBatalla(IClientTask):
                 mensaje = f"Tu ataque a {self._destino} fue repelido"
                 color = "orange"
 
-            if hasattr(main_window, "update_status_bar"):
-                main_window.update_status_bar(mensaje, color)
+            main_window.update_status_bar(mensaje, color)
 
         main_window.show_battle_result_dialog(batalla_data, on_animation_finished)
 
@@ -118,8 +109,7 @@ class ClientTaskResultadoBatalla(IClientTask):
 
             # 2. Mostrar mensaje en barra de estado
             mensaje = f"Batalla: {self._atacante} ataca {self._destino}"
-            if hasattr(main_window, "update_status_bar"):
-                main_window.update_status_bar(mensaje, "blue")
+            main_window.update_status_bar(mensaje, "blue")
 
             # 3. Programar mostrar pérdidas flotantes después de 2.5 segundos
             QTimer.singleShot(
@@ -132,7 +122,7 @@ class ClientTaskResultadoBatalla(IClientTask):
     def _iniciar_titilacion_paises(self, main_window: Any) -> None:
         """Inicia la titilación en los países origen y destino."""
         try:
-            if hasattr(main_window, "scene") and hasattr(main_window.scene, "paises"):
+            if main_window.scene is not None and hasattr(main_window.scene, "paises"):
                 # Obtener países origen y destino
                 pais_origen = main_window.scene.paises.get(self._origen)
                 pais_destino = main_window.scene.paises.get(self._destino)
@@ -177,8 +167,7 @@ class ClientTaskResultadoBatalla(IClientTask):
                 mensaje = f"{self._defensor} defendió {self._destino}"
                 color = "orange"
 
-            if hasattr(main_window, "update_status_bar"):
-                main_window.update_status_bar(mensaje, color)
+            main_window.update_status_bar(mensaje, color)
 
         except (AttributeError, RuntimeError) as e:
             CLIENT_TASKS_LOG.warning("Error mostrando pérdidas flotantes: %s", e)
@@ -186,7 +175,7 @@ class ClientTaskResultadoBatalla(IClientTask):
     def _detener_titilacion_paises(self, main_window: Any) -> None:
         """Detiene la titilación en los países origen y destino."""
         try:
-            if hasattr(main_window, "scene") and hasattr(main_window.scene, "paises"):
+            if main_window.scene is not None and hasattr(main_window.scene, "paises"):
                 pais_origen = main_window.scene.paises.get(self._origen)
                 pais_destino = main_window.scene.paises.get(self._destino)
 
@@ -204,7 +193,7 @@ class ClientTaskResultadoBatalla(IClientTask):
     ) -> None:
         """Muestra una pérdida flotante sobre un país específico."""
         try:
-            if hasattr(main_window, "scene") and hasattr(main_window.scene, "paises"):
+            if main_window.scene is not None and hasattr(main_window.scene, "paises"):
                 pais = main_window.scene.paises.get(nombre_pais)
                 if pais and hasattr(pais, "mostrar_perdida_flotante"):
                     pais.mostrar_perdida_flotante(perdidas)

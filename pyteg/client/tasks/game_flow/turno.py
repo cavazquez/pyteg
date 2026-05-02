@@ -44,10 +44,10 @@ class ClientTaskTurno(IClientTask):
             jugador_actual_color,
         )
 
-        if hasattr(main_window, "sound_manager"):
-            main_window.sound_manager.play_turn()
+        main_window.sound_manager.play_turn()
 
-        main_window.chat.append(f"Turno {num_turno + 1} iniciado", "system")
+        if main_window.chat is not None:
+            main_window.chat.append(f"Turno {num_turno + 1} iniciado", "system")
 
 
 class ClientTaskTiempo(IClientTask):

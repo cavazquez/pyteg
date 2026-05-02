@@ -32,12 +32,7 @@ class ClientTaskTarjetasJugador(IClientTask):
 
         """
         try:
-            # Almacenar las tarjetas en la GUI para uso posterior
-            if hasattr(main_window, "tarjetas_jugador"):
-                main_window.tarjetas_jugador = self._tarjetas
-            else:
-                # Si no existe el atributo, crearlo
-                main_window.tarjetas_jugador = self._tarjetas
+            main_window.tarjetas_jugador = self._tarjetas
 
             CLIENT_TASKS_LOG.info(
                 "Tarjetas del jugador actualizadas: %s tarjetas", len(self._tarjetas)
@@ -46,8 +41,7 @@ class ClientTaskTarjetasJugador(IClientTask):
                 "ClientTaskTarjetasJugador: tarjetas=%s", self._tarjetas
             )
 
-            if hasattr(main_window, "refresh_open_tarjetas_dialogs"):
-                main_window.refresh_open_tarjetas_dialogs(self._tarjetas)
+            main_window.refresh_open_tarjetas_dialogs(self._tarjetas)
 
         except (AttributeError, RuntimeError) as e:
             CLIENT_TASKS_LOG.warning("Error al procesar tarjetas del jugador: %s", e)
@@ -83,13 +77,11 @@ class ClientTaskResultadoMisil(IClientTask):
             )
             main_window.chat.append(mensaje, "system")
 
-            # Mostrar mensaje temporal en barra de estado
-            if hasattr(main_window, "status_bar"):
-                status_mensaje = (
-                    f"Misil: {self._pais_origen} → {self._pais_destino} "
-                    f"(-{self._dano} unidades)"
-                )
-                main_window.status_bar.showMessage(status_mensaje, 5000)
+            status_mensaje = (
+                f"Misil: {self._pais_origen} → {self._pais_destino} "
+                f"(-{self._dano} unidades)"
+            )
+            main_window.status_bar.showMessage(status_mensaje, 5000)
 
         except (AttributeError, KeyError, TypeError) as e:
             CLIENT_TASKS_LOG.warning("Error al procesar resultado de misil: %s", e)
@@ -112,17 +104,13 @@ class ClientTaskMisilAgregado(IClientTask):
     def run(self, main_window: GameWindowProtocol) -> None:
         """Ejecuta la tarea actualizando la cantidad de misiles en la interfaz."""
         try:
-            # Actualizar visualmente el país en el mapa
-            # (Esto se implementará en la GUI cuando agregue el indicador visual)
-            if hasattr(main_window, "scene") and main_window.scene:
+            if main_window.scene is not None:
                 pais_widget = main_window.scene.obtener_pais(self._pais)
                 if pais_widget and hasattr(pais_widget, "actualizar_misiles"):
                     pais_widget.actualizar_misiles(self._cantidad_misiles)
 
-            # Mensaje en barra de estado
-            if hasattr(main_window, "status_bar"):
-                mensaje = f"{self._pais} ahora tiene {self._cantidad_misiles} misil(es)"
-                main_window.status_bar.showMessage(mensaje, 3000)
+            mensaje = f"{self._pais} ahora tiene {self._cantidad_misiles} misil(es)"
+            main_window.status_bar.showMessage(mensaje, 3000)
 
         except (AttributeError, KeyError, TypeError) as e:
             CLIENT_TASKS_LOG.warning(

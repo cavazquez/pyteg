@@ -63,10 +63,10 @@ class ClientTaskError(IClientTask):
             msg_box.setStandardButtons(QMessageBox.StandardButton.Ok)
             msg_box.exec()
 
-            if hasattr(main_window, "w") and main_window.w:
+            if main_window.w is not None:
                 main_window.w.close()
 
-            if hasattr(main_window, "conexion") and main_window.conexion:
+            if main_window.conexion is not None:
                 main_window.conexion.desconectar()
 
             main_window.abrir_ventana_conectar()

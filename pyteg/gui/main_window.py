@@ -85,6 +85,8 @@ class Gui(QMainWindow):
         self.view: QCustomGraphicsView | None = None
         self.chat: Chat | None = None
         self.toolbar: ToolBar | None = None
+        self.tarjetas_jugador: list[Any] = []
+        self.misiles_habilitados: bool = False
 
     def _gui_init_window_and_managers(self) -> None:
         self.setWindowTitle(_("PyTeg"))
