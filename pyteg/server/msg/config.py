@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 
-from pyteg.server_msg.base import IMsg
+from pyteg.server.msg.base import IMsg
 
 
 class MsgConfiguracionPartida(IMsg):
