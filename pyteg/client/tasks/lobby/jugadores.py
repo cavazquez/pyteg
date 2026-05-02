@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from PySide6.QtGui import QColor
 
@@ -10,6 +10,9 @@ from pyteg.client.app import Client
 from pyteg.client.tasks.base import IClientTask
 from pyteg.client.tasks.logging_helper import CLIENT_TASKS_LOG
 from pyteg.i18n import translate as _
+
+if TYPE_CHECKING:
+    from pyteg.client.tasks.protocols import GameWindowProtocol
 
 
 class ClientTaskUserId(IClientTask):
@@ -25,7 +28,7 @@ class ClientTaskUserId(IClientTask):
         super().__init__(data)
         self._msg = data
 
-    def run(self, main_window: Any) -> None:
+    def run(self, main_window: GameWindowProtocol) -> None:
         """Ejecuta la tarea asignando el ID de usuario al cliente."""
         user_id_raw = self._msg.get("user_id")
         if user_id_raw is None:
@@ -64,7 +67,7 @@ class ClientTaskUsername(IClientTask):
         super().__init__(data)
         self._msg = data
 
-    def run(self, main_window: Any) -> None:
+    def run(self, main_window: GameWindowProtocol) -> None:
         """Ejecuta la tarea actualizando el nombre de usuario."""
         username = self._msg.get("username")
         userid = self._msg.get("user_id")
@@ -109,7 +112,7 @@ class ClientTaskActualizarListaJugadores(IClientTask):
         super().__init__(data)
         self._jugadores = data.get("jugadores", [])
 
-    def run(self, main_window: Any) -> None:
+    def run(self, main_window: GameWindowProtocol) -> None:
         """Actualiza la lista de jugadores en la interfaz de usuario.
 
         Actualiza la lista de jugadores en la interfaz de usuario con el

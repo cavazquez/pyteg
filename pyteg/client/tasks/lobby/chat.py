@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any, cast
 
-from PySide6.QtWidgets import QMessageBox
+from PySide6.QtWidgets import QMessageBox, QWidget
 
 from pyteg.client.tasks.base import IClientTask
 from pyteg.i18n import translate as _
+
+if TYPE_CHECKING:
+    from pyteg.client.tasks.protocols import GameWindowProtocol
 
 
 class ClientTaskChat(IClientTask):
@@ -24,7 +27,7 @@ class ClientTaskChat(IClientTask):
         self._msg = data.get("msg")
         self._msg_type = data.get("msg_type", "normal")
 
-    def run(self, main_window: Any) -> None:
+    def run(self, main_window: GameWindowProtocol) -> None:
         """Ejecuta la tarea agregando el mensaje al chat."""
         main_window.chat.append(self._msg, self._msg_type)
 
@@ -43,14 +46,14 @@ class ClientTaskError(IClientTask):
         self._error_type = data.get("error_type")
         self._message = data.get("message")
 
-    def run(self, main_window: Any) -> None:
+    def run(self, main_window: GameWindowProtocol) -> None:
         """Maneja errores enviados por el servidor.
 
         Maneja errores enviados por el servidor mostrando un diálogo
         de error al usuario.
         """
         if self._error_type == "duplicate_username":
-            msg_box = QMessageBox(main_window)
+            msg_box = QMessageBox(cast("QWidget", main_window))
             msg_box.setIcon(QMessageBox.Icon.Warning)
             msg_box.setWindowTitle(_("Nombre de usuario duplicado"))
             msg_box.setText(_("El nombre de usuario que elegiste ya está en uso."))
@@ -68,7 +71,7 @@ class ClientTaskError(IClientTask):
 
             main_window.abrir_ventana_conectar()
         else:
-            msg_box = QMessageBox(main_window)
+            msg_box = QMessageBox(cast("QWidget", main_window))
             msg_box.setIcon(QMessageBox.Icon.Critical)
             msg_box.setWindowTitle(_("Error"))
             msg_box.setText(self._message or _("Ha ocurrido un error."))

@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from pyteg.client.tasks.base import IClientTask
 from pyteg.client.tasks.logging_helper import CLIENT_TASKS_LOG
+
+if TYPE_CHECKING:
+    from pyteg.client.tasks.protocols import GameWindowProtocol
 
 
 class ClientTaskTarjetasJugador(IClientTask):
@@ -21,7 +24,7 @@ class ClientTaskTarjetasJugador(IClientTask):
         super().__init__(data)
         self._tarjetas = data.get("tarjetas", [])
 
-    def run(self, main_window: Any) -> None:
+    def run(self, main_window: GameWindowProtocol) -> None:
         """Actualiza las tarjetas del jugador en la GUI.
 
         Args:
@@ -68,7 +71,7 @@ class ClientTaskResultadoMisil(IClientTask):
         self._dano = data.get("dano")
         self._unidades_restantes = data.get("unidades_restantes")
 
-    def run(self, main_window: Any) -> None:
+    def run(self, main_window: GameWindowProtocol) -> None:
         """Procesa el resultado del lanzamiento de un misil."""
         try:
             # Mostrar mensaje en el chat
@@ -106,7 +109,7 @@ class ClientTaskMisilAgregado(IClientTask):
         self._pais = data.get("pais")
         self._cantidad_misiles = data.get("cantidad_misiles")
 
-    def run(self, main_window: Any) -> None:
+    def run(self, main_window: GameWindowProtocol) -> None:
         """Ejecuta la tarea actualizando la cantidad de misiles en la interfaz."""
         try:
             # Actualizar visualmente el país en el mapa

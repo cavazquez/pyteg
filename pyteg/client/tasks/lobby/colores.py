@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from pyteg.client.colores.color import Color
 from pyteg.client.tasks.base import IClientTask
 from pyteg.client.tasks.logging_helper import CLIENT_TASKS_LOG
+
+if TYPE_CHECKING:
+    from pyteg.client.tasks.protocols import GameWindowProtocol
 
 
 class ClientTaskColorAsignado(IClientTask):
@@ -22,7 +25,7 @@ class ClientTaskColorAsignado(IClientTask):
         super().__init__(data)
         self._msg = data
 
-    def run(self, main_window: Any) -> None:
+    def run(self, main_window: GameWindowProtocol) -> None:
         """Ejecuta la tarea asignando el color al jugador."""
         try:
             id_user = self._msg.get("id")
@@ -110,7 +113,7 @@ class ClientTaskColor(IClientTask):
         super().__init__(data)
         self._msg = data
 
-    def run(self, main_window: Any) -> None:
+    def run(self, main_window: GameWindowProtocol) -> None:
         """Ejecuta la tarea agregando el color a la lista de colores disponibles."""
         self._msg.pop("mensaje")
         main_window.colores.agregar_color(Color(**self._msg))

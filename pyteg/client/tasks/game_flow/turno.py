@@ -2,13 +2,16 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from pyteg.client.tasks.base import IClientTask
 from pyteg.config import (
     TIMER_COLOR_GREEN_THRESHOLD,
     TIMER_COLOR_ORANGE_THRESHOLD,
 )
+
+if TYPE_CHECKING:
+    from pyteg.client.tasks.protocols import GameWindowProtocol
 
 
 class ClientTaskTurno(IClientTask):
@@ -24,7 +27,7 @@ class ClientTaskTurno(IClientTask):
         super().__init__(data)
         self._msg = data
 
-    def run(self, main_window: Any) -> None:
+    def run(self, main_window: GameWindowProtocol) -> None:
         """Ejecuta la tarea actualizando el turno en la interfaz."""
         num_turno = int(self._msg.get("num_turno", 0))
         num_ronda = int(self._msg.get("num_ronda", 1))
@@ -60,7 +63,7 @@ class ClientTaskTiempo(IClientTask):
         super().__init__(data)
         self._msg = data
 
-    def run(self, main_window: Any) -> None:
+    def run(self, main_window: GameWindowProtocol) -> None:
         """Ejecuta la tarea actualizando el display del tiempo."""
         tiempo = int(self._msg.get("tiempo", 0))
         if tiempo > 0:
