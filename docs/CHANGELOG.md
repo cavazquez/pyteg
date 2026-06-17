@@ -4,6 +4,8 @@ Todas las fechas en formato YYYY-MM-DD.
 
 ## [Unreleased]
 
+## [0.0.7] - 2026-06-17
+
 ### Changed
 - **Identidad canónica del jugador = `userid` (int)** (ADR-012): en dominio servidor (mapa, turnos, mazo, cartas, validadores, combate, objetivos) y en mensajes JSON que transportan identidad; `username` queda solo para UI y chat. **Rompe compatibilidad de protocolo** entre versiones mezcladas de cliente/servidor.
 - **Tipado por capas (Protocols y TypedDict)**:
@@ -32,8 +34,8 @@ Todas las fechas en formato YYYY-MM-DD.
 - **Sistema de versionado consistente**: Los binarios ahora incluyen la versión en el nombre del archivo y la muestran al ejecutarse
   - Nuevo módulo `pyteg/version.py` para gestión centralizada de versiones
   - Consistencia entre `pyproject.toml` y tags de Git
-  - Binarios nombrados con formato `pyteg-{server|client}-{version}` (ej: `pyteg-server-0.0.6`)
-  - Archivos comprimidos incluyen versión: `pyteg-{version}-{platform}-{arch}` (ej: `pyteg-0.0.6-linux-x86_64.tar.gz`)
+  - Binarios nombrados con formato `pyteg-{server|client}-{version}` (ej: `pyteg-server-0.0.7`)
+  - Archivos comprimidos incluyen versión: `pyteg-{version}-{platform}-{arch}` (ej: `pyteg-0.0.7-linux-x86_64.tar.gz`)
 - **Sistema automatizado de releases multiplataforma**:
   - Nuevo workflow de GitHub Actions (`build-release.yml`) que construye binarios para múltiples plataformas
   - Se activa automáticamente al pushear tags que comiencen con `v` (ej: `v1.0.0`)
