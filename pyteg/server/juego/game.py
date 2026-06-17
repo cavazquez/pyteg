@@ -258,15 +258,15 @@ class Game:
     ) -> dict[str, Any]:
         """Realiza un ataque entre dos países.
 
-        Returns:
-            Diccionario con el resultado del ataque.
-
         Args:
             pais_atacante (str): País que inicia el ataque
             pais_defensor (str): País que recibe el ataque
             cantidad_unidades (int, optional): Cantidad de unidades con las que
                                               atacar (1-3). Si es None, se usa el
                                               máximo posible.
+
+        Returns:
+            Diccionario con el resultado del ataque.
 
         """
         # Obtener las unidades de cada país

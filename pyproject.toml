@@ -33,6 +33,8 @@ ignore = [
 	"ERA001",  # commented-out-code
 	"D203",   # incompatible con D211 (blank line before class)
 	"D213",   # incompatible con D212 (summary en primera línea)
+	"PLW0717", # too-many-try-statements (legado en tasks/GUI)
+	"RUF067",  # __init__ con registro de tareas (patrón del proyecto)
 	]
 
 [dependency-groups]
