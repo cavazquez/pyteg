@@ -4,6 +4,9 @@ Todas las fechas en formato YYYY-MM-DD.
 
 ## [Unreleased]
 
+### Changed
+- **Logging del servidor**: reemplazo de `print` por el sistema `pyteg.logger`; flags CLI `--quiet`, `--log-level` y `-v` para controlar la salida en consola (tráfico de red y batallas en DEBUG).
+
 ## [0.0.7] - 2026-06-17
 
 ### Changed

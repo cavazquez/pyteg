@@ -13,6 +13,7 @@ from pyteg.core.partida.card_manager import CardManager
 from pyteg.core.partida.turn_manager import TurnManager
 from pyteg.core.partida.victory_checker import VictoryChecker
 from pyteg.core.turnos.turnos import PrimerTurno, SegundoTurno, SiguientesTurnos
+from pyteg.logger import get_logger
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -24,6 +25,8 @@ if TYPE_CHECKING:
     from pyteg.server.juego.mapa import Mapa
 
 TurnoType = PrimerTurno | SegundoTurno | SiguientesTurnos
+
+LOGGER = get_logger(__name__)
 
 
 class Game:
@@ -302,8 +305,8 @@ class Game:
         atacante_nombre = self._username_de(atacante_id)
         defensor_nombre = self._username_de(defensor_id)
 
-        print(f"Dados atacante ({atacante_nombre}): {dados_atacante}")
-        print(f"Dados defensor ({defensor_nombre}): {dados_defensor}")
+        LOGGER.debug("Dados atacante (%s): %s", atacante_nombre, dados_atacante)
+        LOGGER.debug("Dados defensor (%s): %s", defensor_nombre, dados_defensor)
 
         # Batalla.ataquen identifica al perdedor por el mismo valor que se le
         # pasa como atacante/defensor, así que pasamos los userids canónicos.
@@ -311,40 +314,53 @@ class Game:
             str(atacante_id), str(defensor_id), dados_atacante, dados_defensor
         )
 
-        print(f"Resultado batalla: {resultado}")
-        print(f"Pérdidas: {resultado['restar']}")
+        LOGGER.debug("Resultado batalla: %s", resultado)
+        LOGGER.debug("Pérdidas: %s", resultado["restar"])
 
         for perdedor in resultado["restar"]:
             if perdedor == str(atacante_id):
-                print(f"Restando 1 unidad a {atacante_nombre} en {pais_atacante}")
+                LOGGER.debug(
+                    "Restando 1 unidad a %s en %s", atacante_nombre, pais_atacante
+                )
                 self.mapa().restar_una_unidad(pais_atacante)
             else:
-                print(f"Restando 1 unidad a {defensor_nombre} en {pais_defensor}")
+                LOGGER.debug(
+                    "Restando 1 unidad a %s en %s", defensor_nombre, pais_defensor
+                )
                 self.mapa().restar_una_unidad(pais_defensor)
 
         conquistado = False
         unidades_defensor_post_batalla = self.mapa().cantidad_unidades(pais_defensor)
-        print(
-            f"Unidades en {pais_defensor} después de batalla: "
-            f"{unidades_defensor_post_batalla}"
+        LOGGER.debug(
+            "Unidades en %s después de batalla: %s",
+            pais_defensor,
+            unidades_defensor_post_batalla,
         )
 
         if unidades_defensor_post_batalla == 0 and atacante_id is not None:
-            print("=== CONQUISTA ===")
-            print(f"Asignando {pais_defensor} a {atacante_nombre}")
+            LOGGER.info("Asignando %s a %s", pais_defensor, atacante_nombre)
             self.mapa().asignar_pais(atacante_id, pais_defensor)
-            print(f"Moviendo 1 unidad de {pais_atacante} a {pais_defensor}")
+            LOGGER.debug("Moviendo 1 unidad de %s a %s", pais_atacante, pais_defensor)
             self.mapa().restar_una_unidad(pais_atacante)
             self.mapa().agregar_una_unidad(pais_defensor)
             conquistado = True
 
-            print(f"{atacante_nombre} ha conquistado {pais_defensor}")
+            LOGGER.info("%s ha conquistado %s", atacante_nombre, pais_defensor)
         else:
-            print(f"El ataque de {atacante_nombre} a {pais_defensor} fue repelido")
+            LOGGER.debug(
+                "El ataque de %s a %s fue repelido",
+                atacante_nombre,
+                pais_defensor,
+            )
 
-        print(f"Ataque: {atacante_nombre} vs {defensor_nombre}")
-        print(f"Dados atacante: {dados_atacante}, Dados defensor: {dados_defensor}")
-        print(f"Resultado: {resultado}")
+        LOGGER.debug(
+            "Ataque: %s vs %s | dados atacante=%s defensor=%s | resultado=%s",
+            atacante_nombre,
+            defensor_nombre,
+            dados_atacante,
+            dados_defensor,
+            resultado,
+        )
 
         return {
             "origen": pais_atacante,

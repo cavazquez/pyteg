@@ -149,7 +149,7 @@ class Client:
                     data_json = json.loads(data)
                     self.ejecutar_mensaje(data_json)
                 except json.JSONDecodeError:
-                    print(f"Mensaje no JSON recibido: {data!r}")
+                    self._logger.warning("Mensaje no JSON recibido: %r", data)
 
         # Cuando el cliente se desconecta, quitarlo del servidor
         self._logger.info(

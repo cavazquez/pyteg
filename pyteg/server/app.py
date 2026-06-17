@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Any
 from pyteg.core.cartas.mazo import Mazo
 from pyteg.core.mapa.build_mapa import build_mapa
 from pyteg.core.partida.objetivos_secretos import ObjetivosSecretos
+from pyteg.logger import get_logger
 from pyteg.server.conexion.broadcaster import ServerMessageBroadcaster
 from pyteg.server.conexion.registrar_jugadores import registrar_jugadores
 from pyteg.server.conexion.registry import ServerClientRegistry
@@ -16,6 +17,7 @@ from pyteg.server.juego.color import ServerColor
 from pyteg.server.juego.coordinator import ServerGameCoordinator
 from pyteg.server.juego.estado import Estado
 from pyteg.server.juego.mapa import Mapa
+from pyteg.server.logging_setup import LOG_LEVEL_CHOICES, configure_server_logging
 from pyteg.toml_reader import TomlReader
 from pyteg.utils import get_resource_path
 from pyteg.version import NAME, VERSION
@@ -24,6 +26,9 @@ if TYPE_CHECKING:
     from pyteg.server.conexion.cliente import Client
     from pyteg.server.juego.game import Game
     from pyteg.server.msg.types import BattleResultPayload, MissileResultPayload
+
+
+LOGGER = get_logger(__name__)
 
 
 class Server:
@@ -149,7 +154,7 @@ class Server:
             user_id: ID del cliente a desconectar.
 
         """
-        print(f"Quitando {user_id}")
+        LOGGER.info("Quitando cliente %s", user_id)
         self._client_registry.desconectar_cliente(user_id)
         # Notificar a todos los clientes restantes sobre la desconexión
         self.enviar_username()
@@ -269,7 +274,7 @@ class Server:
                         jugador_actual_color = color_obj.to_hex() if color_obj else None
 
         except (AttributeError, KeyError) as e:
-            print(f"Error obteniendo información del jugador actual: {e}")
+            LOGGER.warning("Error obteniendo información del jugador actual: %s", e)
 
         for client in self.dame_clientes():
             client.transmisor.enviar_turno(
@@ -372,19 +377,21 @@ class Server:
             {"pais": tarjeta.pais, "simbolo": tarjeta.simbolo}
             for tarjeta in tarjetas_jugador
         ]
-        print(
-            f"Enviando {len(tarjetas_data)} tarjetas a {client.username()}: "
-            f"{tarjetas_data}"
+        LOGGER.debug(
+            "Enviando %s tarjetas a %s: %s",
+            len(tarjetas_data),
+            client.username(),
+            tarjetas_data,
         )
         self._broadcaster.enviar_tarjetas_jugador(client, tarjetas_data)
 
     def enviar_objetivos_secretos(self) -> None:
         """Envía el objetivo secreto asignado a cada jugador."""
-        print("=== ENVIANDO OBJETIVOS SECRETOS ===")
+        LOGGER.debug("Enviando objetivos secretos a los jugadores")
         self._broadcaster.enviar_objetivos_secretos(
             self.objetivos_secretos.get_objetivo_jugador,
         )
-        print("=== FIN ENVÍO OBJETIVOS SECRETOS ===")
+        LOGGER.debug("Objetivos secretos enviados")
 
 
 def parse_arguments() -> argparse.Namespace:
@@ -413,7 +420,26 @@ def parse_arguments() -> argparse.Namespace:
 
     # Argumento para modo verboso
     parser.add_argument(
-        "-v", "--verbose", action="store_true", help="Habilita mensajes de depuración"
+        "-v",
+        "--verbose",
+        action="store_true",
+        help="Nivel DEBUG en consola (tráfico de red, batallas, mensajes)",
+    )
+    parser.add_argument(
+        "-q",
+        "--quiet",
+        action="store_true",
+        help="Solo errores en consola (nivel ERROR)",
+    )
+    parser.add_argument(
+        "--log-level",
+        choices=LOG_LEVEL_CHOICES,
+        default=None,
+        metavar="LEVEL",
+        help=(
+            "Nivel de log en consola "
+            f"({', '.join(LOG_LEVEL_CHOICES)}; predeterminado: INFO)"
+        ),
     )
 
     return parser.parse_args()
@@ -422,20 +448,23 @@ def parse_arguments() -> argparse.Namespace:
 def main() -> None:
     """Función principal del servidor."""
     args = parse_arguments()
+    logger = configure_server_logging(args)
 
-    print(f"{NAME} v{VERSION}")
-    print(f"Iniciando servidor en {args.host}:{args.port}")
+    logger.info("%s v%s", NAME, VERSION)
+    logger.info("Iniciando servidor en %s:%s", args.host, args.port)
     if args.verbose:
-        print("Modo verboso activado")
+        logger.debug("Modo verboso: tráfico de red y detalle de batallas en consola")
+    elif args.quiet:
+        logger.debug("Modo silencioso: solo errores en consola")
 
     try:
         server = Server()
         registrar_jugadores(server, host=args.host, port=args.port)
     except KeyboardInterrupt:
-        print("\nServidor detenido por el usuario")
+        logger.info("Servidor detenido por el usuario")
         sys.exit(0)
-    except (OSError, ValueError, RuntimeError) as e:
-        print(f"Error al iniciar el servidor: {e}", file=sys.stderr)
+    except (OSError, ValueError, RuntimeError):
+        logger.exception("Error al iniciar el servidor")
         sys.exit(1)
 
 

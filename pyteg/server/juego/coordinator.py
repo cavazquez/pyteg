@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Any
 
 from pyteg.config import DEFAULT_TURN_SECONDS, VICTORY_ALL_COUNTRIES
 from pyteg.core.turnos.timer import TurnoTimer
+from pyteg.logger import get_logger
 from pyteg.server.juego.game import Game
 
 if TYPE_CHECKING:
@@ -18,6 +19,9 @@ if TYPE_CHECKING:
     from pyteg.server.conexion.cliente import Client
     from pyteg.server.juego.estado import Estado
     from pyteg.server.juego.mapa import Mapa
+
+
+LOGGER = get_logger(__name__)
 
 
 class ServerGameCoordinator:
@@ -138,11 +142,14 @@ class ServerGameCoordinator:
             Instancia del juego creado.
 
         """
-        print("Iniciando partida...")
+        LOGGER.info("Iniciando partida...")
 
         # Obtener la lista de jugadores
         jugadores = self._get_clients()
-        print(f"Jugadores conectados: {[j.userid() for j in jugadores]}")
+        LOGGER.info(
+            "Jugadores conectados: %s",
+            [j.userid() for j in jugadores],
+        )
 
         # Crear e iniciar el juego, pasando la referencia al servidor
         self._game = Game(
@@ -155,25 +162,25 @@ class ServerGameCoordinator:
         self._game.empezar()
 
         # Enviar información de los jugadores y sus colores a todos los clientes
-        print("Enviando colores asignados a los jugadores...")
+        LOGGER.info("Enviando colores asignados a los jugadores...")
         self._enviar_colores_asignados()
 
         # Enviar el mapa con los países y sus propietarios
-        print("Enviando mapa a los jugadores...")
+        LOGGER.info("Enviando mapa a los jugadores...")
         self._broadcaster.enviar_mapa(self._mapa, self._game)
 
         # Notificar a los clientes que la partida ha comenzado
-        print("Notificando a los clientes que la partida ha comenzado...")
+        LOGGER.info("Notificando a los clientes que la partida ha comenzado...")
         # Cambiar el estado a EmpezarPartida
         self._estado.empezar_partida()
         self._broadcaster.enviar_estado(self._estado.estado_actual())
 
         # Enviar el número de turno inicial a todos los clientes
-        print("Enviando número de turno inicial a los clientes...")
+        LOGGER.info("Enviando número de turno inicial a los clientes...")
         self._enviar_turno_actual()
 
         # Enviar la configuración de la partida a todos los clientes
-        print("Enviando configuración de la partida a los clientes...")
+        LOGGER.info("Enviando configuración de la partida a los clientes...")
         self._broadcaster.enviar_configuracion_partida(
             self._segundos_por_turno,
             self._paises_para_victoria,
@@ -183,14 +190,14 @@ class ServerGameCoordinator:
 
         # Asignar y enviar objetivos secretos si están activados
         if self._objetivos_secretos_activados:
-            print("Asignando objetivos secretos a los jugadores...")
+            LOGGER.info("Asignando objetivos secretos a los jugadores...")
             self._objetivos_secretos.asignar_objetivos_aleatorios(jugadores)
             self._broadcaster.enviar_objetivos_secretos(
                 self._objetivos_secretos.get_objetivo_jugador
             )
 
         # Iniciar el temporizador de turnos
-        print("Iniciando temporizador de turnos...")
+        LOGGER.info("Iniciando temporizador de turnos...")
         self._turno_timer = TurnoTimer(
             server, segundos_por_turno=self._segundos_por_turno
         )
@@ -301,7 +308,7 @@ class ServerGameCoordinator:
                         jugador_actual_color = color_obj.to_hex() if color_obj else None
 
         except (AttributeError, KeyError) as e:
-            print(f"Error obteniendo información del jugador actual: {e}")
+            LOGGER.warning("Error obteniendo información del jugador actual: %s", e)
 
         for client in self._get_clients():
             client.transmisor.enviar_turno(

@@ -40,7 +40,6 @@ class MsgColorAsignado(IMsg):
         self._tipo = "color_asignado"
         self._id_user = id_user
         self._rgb_json = rgb_json
-        print(rgb_json)
 
     def to_json(self) -> str:
         """Convierte el mensaje a formato JSON.

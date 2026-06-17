@@ -5,6 +5,9 @@ from __future__ import annotations
 import socket
 
 from pyteg.codecs_utils import Utf8
+from pyteg.logger import get_logger
+
+LOGGER = get_logger(__name__)
 
 
 class ConnectionServer:
@@ -34,14 +37,14 @@ class ConnectionServer:
             if not encode_data:
                 return None
             data = Utf8.decode(encode_data)
-            print(f"Recibiendo {data}")
+            LOGGER.debug("Recibiendo %s", data)
         except ConnectionResetError:
             return None
         except BrokenPipeError as ex:
-            print("BrokenPipeError:", ex)
+            LOGGER.warning("BrokenPipeError al recibir: %s", ex)
             return None
         except (ConnectionError, OSError) as ex:
-            print("Exception:", ex)
+            LOGGER.warning("Error de socket al recibir: %s", ex)
             return None
         return data.split("\0")
 
@@ -52,14 +55,14 @@ class ConnectionServer:
             data: Datos a enviar.
 
         """
-        print(f"Enviando {data}")
+        LOGGER.debug("Enviando %s", data)
         encode_data = Utf8.encode(data + "\0")
         try:
             self._conn.sendall(encode_data)
         except BrokenPipeError as ex:
-            print("BrokenPipeError:", ex)
+            LOGGER.warning("BrokenPipeError al enviar: %s", ex)
         except (ConnectionError, OSError) as ex:
-            print("Exception:", ex)
+            LOGGER.warning("Error de socket al enviar: %s", ex)
 
     def close(self) -> None:
         """Cierra la conexión con el cliente."""
@@ -71,4 +74,4 @@ class ConnectionServer:
             try:
                 self._conn.close()
             except OSError as ex:
-                print("Exception:", ex)
+                LOGGER.warning("Error al cerrar conexión: %s", ex)
