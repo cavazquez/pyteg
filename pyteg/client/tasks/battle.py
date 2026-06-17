@@ -9,6 +9,7 @@ from PySide6.QtCore import QTimer
 from pyteg.client.tasks.base import IClientTask
 from pyteg.client.tasks.logging_helper import CLIENT_TASKS_LOG
 from pyteg.client.tasks.types import ResultadoBatallaTaskData
+from pyteg.i18n import _
 
 if TYPE_CHECKING:
     from pyteg.client.tasks.protocols import GameWindowProtocol
@@ -73,7 +74,9 @@ class ClientTaskResultadoBatalla(IClientTask[ResultadoBatallaTaskData]):
         except (AttributeError, KeyError, ValueError) as e:
             CLIENT_TASKS_LOG.warning("Error al mostrar resultado de batalla: %s", e)
             main_window.update_status_bar(
-                f"Error mostrando batalla: {self._atacante} vs {self._defensor}",
+                _("Error mostrando batalla: {} vs {}").format(
+                    self._atacante, self._defensor
+                ),
                 "red",
             )
 
@@ -92,10 +95,10 @@ class ClientTaskResultadoBatalla(IClientTask[ResultadoBatallaTaskData]):
 
         def on_animation_finished() -> None:
             if self._conquistado:
-                mensaje = f"¡Has conquistado {self._destino}!"
+                mensaje = _("¡Has conquistado {}!").format(self._destino)
                 color = "green"
             else:
-                mensaje = f"Tu ataque a {self._destino} fue repelido"
+                mensaje = _("Tu ataque a {} fue repelido").format(self._destino)
                 color = "orange"
 
             main_window.update_status_bar(mensaje, color)
@@ -109,7 +112,7 @@ class ClientTaskResultadoBatalla(IClientTask[ResultadoBatallaTaskData]):
             self._iniciar_titilacion_paises(main_window)
 
             # 2. Mostrar mensaje en barra de estado
-            mensaje = f"Batalla: {self._atacante} ataca {self._destino}"
+            mensaje = _("Batalla: {} ataca {}").format(self._atacante, self._destino)
             main_window.update_status_bar(mensaje, "blue")
 
             # 3. Programar mostrar pérdidas flotantes después de 2.5 segundos
@@ -169,10 +172,10 @@ class ClientTaskResultadoBatalla(IClientTask[ResultadoBatallaTaskData]):
 
             # Actualizar barra de estado con resultado final
             if self._conquistado:
-                mensaje = f"¡{self._atacante} conquistó {self._destino}!"
+                mensaje = _("¡{} conquistó {}!").format(self._atacante, self._destino)
                 color = "green"
             else:
-                mensaje = f"{self._defensor} defendió {self._destino}"
+                mensaje = _("{} defendió {}").format(self._defensor, self._destino)
                 color = "orange"
 
             main_window.update_status_bar(mensaje, color)

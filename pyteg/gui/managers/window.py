@@ -7,7 +7,7 @@ relacionada con la apertura y gestión de ventanas secundarias.
 from __future__ import annotations
 
 import contextlib
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, cast
 
 from pyteg.gui.dialogs.conectar import VentanaConectar
 from pyteg.gui.windows.admin import VentanaAdmin
@@ -15,6 +15,8 @@ from pyteg.gui.windows.esperar_jugadores import VentanaEsperarJugadores
 from pyteg.logger import get_logger
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from pyteg.gui.managers.protocols import MainWindowProtocol
 
 _LOG = get_logger("gui.window_manager")
@@ -78,3 +80,23 @@ class WindowManager:
         # Mostrar la ventana
         self.main_window.w.show()
         _LOG.debug("Ventana de espera mostrada")
+
+    def show_battle_result_dialog(
+        self,
+        batalla_data: dict[str, Any],
+        on_finished: Callable[[], None],
+    ) -> None:
+        """Muestra el diálogo modal con la animación de resultado de batalla.
+
+        Args:
+            batalla_data: Datos de la batalla (origen, destino, dados, etc.).
+            on_finished: Callback ejecutado al terminar la animación.
+
+        """
+        from pyteg.gui.dialogs.dice_animation import (  # noqa: PLC0415
+            BattleResultDialog,
+        )
+
+        dialog = BattleResultDialog(batalla_data, cast("Any", self.main_window))
+        dialog.animation_finished.connect(on_finished)
+        dialog.exec()

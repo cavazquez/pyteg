@@ -17,6 +17,7 @@ from PySide6.QtWidgets import (
 )
 
 from pyteg.gui.widgets.dice_widget import DiceWidget
+from pyteg.i18n import _
 
 
 class BattleResultDialog(QDialog):
@@ -38,7 +39,7 @@ class BattleResultDialog(QDialog):
         """
         super().__init__(parent)
         self.batalla_data = batalla_data
-        self.setWindowTitle("Resultado de Batalla")
+        self.setWindowTitle(_("Resultado de Batalla"))
         self.setModal(True)
         self.setFixedSize(600, 500)
 
@@ -105,7 +106,9 @@ class BattleResultDialog(QDialog):
     def _setup_attacker_dice(self, dice_layout: QVBoxLayout) -> None:
         """Configura los dados del atacante."""
         attacker_layout = QHBoxLayout()
-        attacker_label = QLabel(f"Atacante ({self.batalla_data['atacante']}):")
+        attacker_label = QLabel(
+            _("Atacante ({}):").format(self.batalla_data["atacante"])
+        )
         attacker_label.setFont(QFont("Arial", 10, QFont.Weight.Bold))
         attacker_label.setStyleSheet("color: #d32f2f;")
         attacker_layout.addWidget(attacker_label)
@@ -126,7 +129,9 @@ class BattleResultDialog(QDialog):
     def _setup_defender_dice(self, dice_layout: QVBoxLayout) -> None:
         """Configura los dados del defensor."""
         defender_layout = QHBoxLayout()
-        defender_label = QLabel(f"Defensor ({self.batalla_data['defensor']}):")
+        defender_label = QLabel(
+            _("Defensor ({}):").format(self.batalla_data["defensor"])
+        )
         defender_label.setFont(QFont("Arial", 10, QFont.Weight.Bold))
         defender_label.setStyleSheet("color: #1976d2;")
         defender_layout.addWidget(defender_label)
@@ -175,7 +180,7 @@ class BattleResultDialog(QDialog):
         button_layout = QHBoxLayout()
         button_layout.addStretch()
 
-        self.start_button = QPushButton("Lanzar Dados")
+        self.start_button = QPushButton(_("Lanzar Dados"))
         self.start_button.setFont(QFont("Arial", 10, QFont.Weight.Bold))
         self.start_button.setStyleSheet(
             "QPushButton { background-color: #4caf50; color: white; "
@@ -186,7 +191,7 @@ class BattleResultDialog(QDialog):
         self.start_button.clicked.connect(self._start_animation)
         button_layout.addWidget(self.start_button)
 
-        self.close_button = QPushButton("Cerrar")
+        self.close_button = QPushButton(_("Cerrar"))
         self.close_button.setFont(QFont("Arial", 10))
         self.close_button.setStyleSheet(
             "QPushButton { background-color: #f44336; color: white; "
@@ -207,7 +212,7 @@ class BattleResultDialog(QDialog):
 
         self._animation_started = True
         self.start_button.setEnabled(False)
-        self.start_button.setText("Lanzando...")
+        self.start_button.setText(_("Lanzando..."))
 
         # Iniciar animación de todos los dados
         all_dice = self.attacker_dice + self.defender_dice
@@ -230,20 +235,25 @@ class BattleResultDialog(QDialog):
 
         # Texto del resultado
         if self.batalla_data["conquistado"]:
-            result_text = f"¡{atacante} conquista {self.batalla_data['destino']}!"
+            result_text = _("¡{} conquista {}!").format(
+                atacante, self.batalla_data["destino"]
+            )
             self.result_label.setStyleSheet("color: #d32f2f;")
         elif perdidas_atacante > perdidas_defensor:
-            result_text = f"{defensor} defiende exitosamente"
+            result_text = _("{} defiende exitosamente").format(defensor)
             self.result_label.setStyleSheet("color: #1976d2;")
         else:
-            result_text = "Batalla reñida"
+            result_text = _("Batalla reñida")
             self.result_label.setStyleSheet("color: #ff9800;")
 
         self.result_label.setText(result_text)
 
-        # Texto de pérdidas
-        losses_text = f"Pérdidas: {atacante} (-{perdidas_atacante}), "
-        losses_text += f"{defensor} (-{perdidas_defensor})"
+        losses_text = _("Pérdidas: {} (-{}), {} (-{})").format(
+            atacante,
+            perdidas_atacante,
+            defensor,
+            perdidas_defensor,
+        )
         self.losses_label.setText(losses_text)
 
         # Mostrar resultado y botón cerrar

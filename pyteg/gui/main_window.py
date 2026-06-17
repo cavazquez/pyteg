@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, cast
 
-from PySide6.QtCore import QSize, Qt
+from PySide6.QtCore import QSize
 from PySide6.QtWidgets import QMainWindow, QWidget
 
 from pyteg.client.colores.paleta import Colores
 from pyteg.client.conexion.transmisor import ClientNullTransmisor
+from pyteg.gui.facades.main_window_delegates import MainWindowDelegatesMixin
 from pyteg.gui.managers.cards import CardManager
 from pyteg.gui.managers.config import ConfigManager
 from pyteg.gui.managers.game_actions import GameActionsManager
@@ -24,9 +25,6 @@ from pyteg.i18n import translate as _
 from pyteg.sound_manager import SoundManager
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Sequence
-
-    from PySide6.QtGui import QCloseEvent, QColor, QKeyEvent
     from PySide6.QtWidgets import QHBoxLayout, QLabel, QStatusBar
 
     from pyteg.client.app import Client
@@ -43,7 +41,7 @@ if TYPE_CHECKING:
     from pyteg.gui.widgets.view import QCustomGraphicsView
 
 
-class Gui(QMainWindow):
+class Gui(QMainWindow, MainWindowDelegatesMixin):
     """Ventana principal de la interfaz gráfica del juego."""
 
     status_bar: QStatusBar
@@ -72,9 +70,9 @@ class Gui(QMainWindow):
     window_manager: WindowManager
     language_manager: LanguageManager
 
-    row_widgets: dict[str, Any]
-    last_units: dict[str, Any]
-    status_temp_label: Any
+    row_widgets: dict[str, object]
+    last_units: dict[str, object]
+    status_temp_label: object
 
     def __init__(self, client: Client) -> None:
         """Inicializa la ventana principal de la GUI.
@@ -106,9 +104,9 @@ class Gui(QMainWindow):
         self.toolbar: ToolBar | None = None
         self.tarjetas_jugador: list[TarjetaItem] = []
         self.misiles_habilitados: bool = False
-        self.row_widgets: dict[str, Any] = {}
-        self.last_units: dict[str, Any] = {}
-        self.status_temp_label: Any = None
+        self.row_widgets: dict[str, object] = {}
+        self.last_units: dict[str, object] = {}
+        self.status_temp_label: object = None
 
     def _gui_init_window_and_managers(self) -> None:
         self.setWindowTitle(_("PyTeg"))
@@ -143,248 +141,3 @@ class Gui(QMainWindow):
 
         """
         return self._vivo
-
-    def update_player_list(self, players: Sequence[tuple[str, QColor]]) -> None:
-        """Actualiza la lista de jugadores.
-
-        Solo muestra los jugadores que están realmente jugando.
-
-        Args:
-            players: Lista de tuplas (nombre, color) donde color es un QColor.
-
-        """
-        self.players_manager.update_player_list(players)
-
-    def abrir_ventana_conectar(self) -> None:
-        """Abre la ventana de conexión al servidor."""
-        self.window_manager.abrir_ventana_conectar()
-
-    def ventana_admin(self) -> None:
-        """Abre la ventana de administración."""
-        self.window_manager.ventana_admin()
-
-    def ventana_esperar_jugadores(self) -> None:
-        """Abre la ventana de espera de jugadores."""
-        self.window_manager.ventana_esperar_jugadores()
-
-    def update_turno(
-        self,
-        num_turno: int,
-        num_ronda: int,
-        jugador_actual_id: int | None = None,
-        jugador_actual_nombre: str | None = None,
-        jugador_actual_color: str | None = None,
-    ) -> None:
-        """Update the turn and round number display.
-
-        Args:
-            num_turno (int): The current turn number
-            num_ronda (int): The current round number
-            jugador_actual_id (int, optional): ID del jugador actual
-            jugador_actual_nombre (str, optional): Nombre del jugador actual
-            jugador_actual_color (str, optional): Color del jugador actual
-
-        """
-        self.status_manager.update_turno(
-            num_turno,
-            num_ronda,
-            jugador_actual_id,
-            jugador_actual_nombre,
-            jugador_actual_color,
-        )
-
-    def update_status_bar(self, text: str, color: str | None = None) -> None:
-        """Update the status bar with the given text.
-
-        Args:
-            text (str): The message to display in the status bar
-            color (str, optional): Color for the text (e.g., 'green', 'red', '#ff0000')
-
-        """
-        self.status_manager.update_status_bar(text, color)
-
-    def update_timer_display(self, text: str, color: str | None = None) -> None:
-        """Update the timer display in the status bar.
-
-        Args:
-            text (str): The timer text to display
-            color (str, optional): Color for the text
-
-        """
-        self.status_manager.update_timer_display(text, color)
-
-    def clear_status_bar(self) -> None:
-        """Clear the status bar message, but keep the turn number."""
-        self.status_manager.clear_status_bar()
-
-    def update_game_state(self, estado: str) -> None:
-        """Update the game state display in the status bar.
-
-        Args:
-            estado (str): The current game state
-
-        """
-        self.status_manager.update_game_state(estado)
-
-    def update_mi_jugador_info(self) -> None:
-        """Actualiza la información del usuario actual (mi jugador).
-
-        Actualiza la información en la barra de estado.
-        """
-        self.status_manager.update_mi_jugador_info()
-
-    def update_unidades_disponibles(self, unidades: dict[str, int]) -> None:
-        """Actualiza el panel derecho con las unidades disponibles.
-
-        Args:
-            unidades (dict): Diccionario con el tipo de unidad y la cantidad disponible.
-                Ejemplo: {"infanteria": 5, "misiles": 2, "Africa": 3}
-
-        """
-        self.units_manager.update_unidades_disponibles(unidades)
-
-    def keyPressEvent(self, event: QKeyEvent) -> None:  # noqa: N802
-        """Maneja eventos de teclado.
-
-        Args:
-            event: Evento de teclado.
-
-        """
-        if event.key() in {Qt.Key.Key_Enter, Qt.Key.Key_Return} and self.chat:
-            self.chat.send_message()
-        elif (
-            event.key() == Qt.Key.Key_Escape
-            and self.scene
-            and hasattr(self.scene, "selection_manager")
-        ):
-            # Cancelar selección con tecla Escape usando selection_manager
-            self.scene.selection_manager.cancelar_seleccion()
-
-    def closeEvent(self, _: QCloseEvent) -> None:  # noqa: N802
-        """Maneja el evento de cierre de la ventana.
-
-        Args:
-            _: Evento de cierre (no usado).
-
-        """
-        self._vivo = False
-        # Limpiar recursos del gestor de sonidos
-        self.sound_manager.cleanup()
-
-    def finalizar_turno(self) -> None:
-        """Método llamado cuando se hace clic en el botón Finalizar Turno."""
-        self.game_actions_manager.finalizar_turno()
-
-    def atacar(self) -> None:
-        """Método llamado cuando se hace clic en el botón Atacar de la toolbar."""
-        self.game_actions_manager.atacar()
-
-    def get_max_attack_units(self, pais: str) -> int:
-        """Obtiene el máximo número de unidades disponibles para atacar desde un país.
-
-        Args:
-            pais (str): Nombre del país atacante
-
-        Returns:
-            int: Máximo número de unidades disponibles (1-3)
-
-        """
-        return self.game_actions_manager.get_max_attack_units(pais)
-
-    def canjear_misil(self, pais: str) -> None:
-        """Canjea unidades por 1 misil en el país especificado.
-
-        Args:
-            pais (str): Nombre del país donde canjear el misil
-
-        """
-        self.game_actions_manager.canjear_misil(pais)
-
-    def lanzar_misil(self, pais_origen: str, pais_destino: str) -> None:
-        """Lanza un misil desde un país hacia otro.
-
-        Args:
-            pais_origen (str): País desde donde se lanza el misil
-            pais_destino (str): País objetivo del misil
-
-        """
-        self.game_actions_manager.lanzar_misil(pais_origen, pais_destino)
-
-    def set_configuracion_partida(
-        self,
-        segundos_por_turno: int,
-        paises_para_victoria: int,
-        *,
-        objetivos_secretos: bool = False,
-        misiles_habilitados: bool = False,
-    ) -> None:
-        """Establece la configuración de la partida.
-
-        Args:
-            segundos_por_turno (int): Duración de cada turno en segundos
-            paises_para_victoria (int): Número de países necesarios para ganar
-            objetivos_secretos (bool): Si los objetivos secretos están activados
-            misiles_habilitados (bool): Si el sistema de misiles está habilitado
-
-        """
-        self.config_manager.set_configuracion_partida(
-            segundos_por_turno,
-            paises_para_victoria,
-            objetivos_secretos=objetivos_secretos,
-            misiles_habilitados=misiles_habilitados,
-        )
-        # Mantener compatibilidad con código que accede directamente
-        self.misiles_habilitados = misiles_habilitados
-
-    def mostrar_configuracion_partida(self) -> None:
-        """Muestra la ventana de configuración de la partida."""
-        self.config_manager.mostrar_configuracion_partida()
-
-    def set_objetivo_secreto(
-        self, objetivo_id: str | None, descripcion: str | None
-    ) -> None:
-        """Establece el objetivo secreto del jugador.
-
-        Args:
-            objetivo_id (str): ID del objetivo secreto
-            descripcion (str): Descripción del objetivo secreto
-
-        """
-        self.config_manager.set_objetivo_secreto(objetivo_id, descripcion)
-
-    def mostrar_tarjetas(self) -> None:
-        """Muestra la ventana de tarjetas del jugador."""
-        self.card_manager.mostrar_tarjetas()
-
-    def show_battle_result_dialog(
-        self,
-        batalla_data: dict[str, Any],
-        on_finished: Callable[[], None],
-    ) -> None:
-        """Muestra el diálogo modal con la animación de resultado de batalla.
-
-        Args:
-            batalla_data: Datos de la batalla (origen, destino, dados, etc.).
-            on_finished: Callback ejecutado al terminar la animación.
-
-        """
-        from pyteg.gui.dialogs.dice_animation import (  # noqa: PLC0415
-            BattleResultDialog,
-        )
-
-        dialog = BattleResultDialog(batalla_data, self)
-        dialog.animation_finished.connect(on_finished)
-        dialog.exec()
-
-    def refresh_open_tarjetas_dialogs(self, tarjetas: list[Any]) -> None:
-        """Actualiza los diálogos de tarjetas abiertos con la lista provista.
-
-        Args:
-            tarjetas: Lista actualizada de tarjetas del jugador.
-
-        """
-        from pyteg.gui.tarjetas import TarjetasDialog  # noqa: PLC0415
-
-        for widget in self.findChildren(TarjetasDialog):
-            if widget.isVisible():
-                widget.actualizar_tarjetas(tarjetas)

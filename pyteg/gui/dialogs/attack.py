@@ -16,6 +16,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from pyteg.i18n import _, ngettext
+
 
 class AttackDialog(QDialog):
     """Diálogo para seleccionar con cuántas unidades atacar."""
@@ -42,7 +44,7 @@ class AttackDialog(QDialog):
         self.max_unidades = min(max_unidades, 3)  # Máximo 3 unidades
         self.cantidad_seleccionada: int | None = None
 
-        self.setWindowTitle("Seleccionar Unidades de Ataque")
+        self.setWindowTitle(_("Seleccionar Unidades de Ataque"))
         self.setFixedSize(400, 280)
         self.setModal(True)
 
@@ -61,7 +63,7 @@ class AttackDialog(QDialog):
         layout.setSpacing(15)
 
         # Título
-        title_label = QLabel(f"Atacar de {self.origen} a {self.destino}")
+        title_label = QLabel(_("Atacar de {} a {}").format(self.origen, self.destino))
         title_label.setStyleSheet("font-weight: bold; font-size: 14px;")
         title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(title_label)
@@ -73,7 +75,7 @@ class AttackDialog(QDialog):
         layout.addWidget(line)
 
         # Etiqueta de instrucción
-        instruction_label = QLabel("Selecciona con cuántas unidades atacar:")
+        instruction_label = QLabel(_("Selecciona con cuántas unidades atacar:"))
         layout.addWidget(instruction_label)
 
         # Grupo de botones de radio para seleccionar cantidad
@@ -81,7 +83,9 @@ class AttackDialog(QDialog):
         radio_layout = QVBoxLayout()
 
         for i in range(1, self.max_unidades + 1):
-            radio_button = QRadioButton(f"{i} unidad{'es' if i > 1 else ''}")
+            radio_button = QRadioButton(
+                ngettext("1 unidad", "{} unidades", i).format(i)
+            )
             self.button_group.addButton(radio_button, i)
             radio_layout.addWidget(radio_button)
 
@@ -98,11 +102,11 @@ class AttackDialog(QDialog):
         # Botones de acción
         button_layout = QHBoxLayout()
 
-        cancel_button = QPushButton("Cancelar")
+        cancel_button = QPushButton(_("Cancelar"))
         cancel_button.clicked.connect(self.reject)
         button_layout.addWidget(cancel_button)
 
-        attack_button = QPushButton("Atacar")
+        attack_button = QPushButton(_("Atacar"))
         attack_button.setDefault(True)
         attack_button.clicked.connect(self.accept)
         button_layout.addWidget(attack_button)
