@@ -4,6 +4,8 @@ Todas las fechas en formato YYYY-MM-DD.
 
 ## [Unreleased]
 
+## [0.0.9] - 2026-06-17
+
 ### Added
 - **Mover con cantidad**: `MoveDialog` y envío centralizado desde `GameActionsManager`; toolbar y menú contextual usan el mismo flujo.
 - **Lanzar misil en menú**: acción contextual con confirmación; `get_cantidad_misiles()` en `Pais`.
@@ -18,6 +20,11 @@ Todas las fechas en formato YYYY-MM-DD.
 - **Fin de partida**: solo el ganador ve «Felicitaciones»; los demás reciben mensaje de derrota.
 - **CI**: dependencias Qt/audio en GitHub Actions y tests de i18n independientes del locale del runner.
 - **Layout classic (Norteamérica y Europa)**: ajustes conservadores en `themes/classic/paises.toml` para reducir solapamientos bbox (69 pares, umbral 75).
+- **Refactor C901**: helpers en combate (`game_actions`), panel de unidades y diálogo de conexión; `C901` ya no está en el ignore de Ruff.
+- **Dependencias**: PySide6 6.11.1, Ruff 0.15.17, mypy 2.1.0, coverage 7.14.1, hatch 1.17.0; acciones de GitHub Actions actualizadas.
+
+### Fixed
+- **Ruff 0.15**: reglas nuevas (`PLW0717`, `RUF067`) ignoradas en código legado; orden de secciones en docstrings (`D420`).
 
 ## [0.0.8] - 2026-06-17
 
