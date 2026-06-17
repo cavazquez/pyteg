@@ -129,6 +129,12 @@ msgstr "🏆 {} won the game!"
 msgid "{} ha ganado la partida controlando el número objetivo de países."
 msgstr "{} won the game by controlling the target number of countries."
 
+msgid "Has perdido la partida"
+msgstr "You lost the game"
+
+msgid "{} ha ganado la partida."
+msgstr "{} won the game."
+
 msgid "todos los países"
 msgstr "all countries"
 
@@ -337,6 +343,12 @@ msgstr "Place"
 
 msgid "Colocando {} {} en {}…"
 msgstr "Placing {} {} in {}…"
+
+msgid "Colocar {} {}"
+msgstr "Place {} {}"
+
+msgid "Colocar todas ({})"
+msgstr "Place all ({})"
 
 msgid "Colocada en {}: consumió refuerzo de {}"
 msgstr "Placed in {}: used {} reinforcement"

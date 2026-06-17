@@ -14,15 +14,19 @@ if TYPE_CHECKING:
 class MenuActionsMixin:
     """Colocar refuerzos, atacar, mover con `selection_manager`, canjear misil."""
 
-    def colocar_unidad(self: MenuHost) -> None:
-        """Coloca unidades en el país (el servidor elige el pool continental)."""
+    def colocar_unidades(self: MenuHost, cantidad: int) -> None:
+        """Coloca la cantidad indicada en el país."""
         if not es_mi_turno(self.main_window):
             avisar_fuera_de_turno(self.main_window)
             return
         if hasattr(self.main_window, "colocar_unidad_en_pais"):
-            self.main_window.colocar_unidad_en_pais(self.pais, self.continente_mapa)
+            self.main_window.colocar_unidad_en_pais(
+                self.pais, self.continente_mapa, cantidad
+            )
         elif cliente_esta_conectado(self.main_window) and self.transmisor is not None:
-            self.transmisor.agregar_unidad(pais=self.pais, tipo_unidad="infanteria")
+            self.transmisor.agregar_unidad(
+                pais=self.pais, tipo_unidad="infanteria", cantidad=cantidad
+            )
 
     def atacar(self: MenuHost) -> None:
         """Ataca del país origen al país destino."""
