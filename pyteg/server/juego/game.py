@@ -32,13 +32,15 @@ LOGGER = get_logger(__name__)
 class Game:
     """Maneja la lógica principal del juego."""
 
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         mapa: Mapa,
         mazo: Mazo,
         jugadores: Sequence[IClientProtocol],
         server: Server,
         paises_para_victoria: int | None = None,
+        *,
+        objetivos_secretos_activados: bool = False,
     ) -> None:
         """Inicializa el juego.
 
@@ -48,6 +50,7 @@ class Game:
             jugadores: Lista de jugadores.
             server: Referencia al servidor.
             paises_para_victoria: Cantidad de países necesarios para ganar.
+            objetivos_secretos_activados: Si la victoria por objetivos está activa.
 
         """
         if paises_para_victoria is None:
@@ -65,9 +68,6 @@ class Game:
         self._card_manager = CardManager(mazo, self._turn_manager)
 
         # Inicializar verificador de victoria
-        objetivos_secretos_activados = (
-            hasattr(server, "_objetivos_secretos") and server._objetivos_secretos  # noqa: SLF001
-        )
         self._victory_checker = VictoryChecker(
             mapa,
             paises_para_victoria,

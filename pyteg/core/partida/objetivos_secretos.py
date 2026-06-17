@@ -1,9 +1,14 @@
 """Módulo para gestionar objetivos secretos del juego."""
 
+from __future__ import annotations
+
 import random
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 
 from pyteg.logger import get_logger
+
+if TYPE_CHECKING:
+    from pyteg.server.juego.mapa import Mapa
 
 LOGGER = get_logger("server.objetivos_secretos")
 
@@ -36,6 +41,11 @@ class ObjetivosSecretos:
         self.objetivos_asignados.clear()
 
         objetivos_ids = list(self.objetivos_disponibles.keys())
+        if not objetivos_ids:
+            LOGGER.warning(
+                "No hay objetivos secretos definidos en el tema; omitiendo asignación"
+            )
+            return
 
         random.shuffle(objetivos_ids)
 
@@ -75,13 +85,13 @@ class ObjetivosSecretos:
         return None
 
     def verificar_condicion_victoria(
-        self, client_id: int, mapa: Any, colores: Any
+        self, client_id: int, mapa: Mapa, colores: Any
     ) -> bool:
         """Verifica si un jugador ha cumplido su objetivo secreto.
 
         Args:
             client_id: userid (int) del cliente
-            mapa: Estado actual del mapa
+            mapa: Instancia del mapa del juego
             colores: Sistema de colores para identificar jugadores
 
         Returns:
@@ -108,7 +118,7 @@ class ObjetivosSecretos:
         return False
 
     def _verificar_destruir_jugador(
-        self, client_id: int, objetivo: dict[str, Any], mapa: Any, colores: Any
+        self, client_id: int, objetivo: dict[str, Any], mapa: Mapa, colores: Any
     ) -> bool:
         """Verifica si se ha destruido completamente al jugador objetivo.
 
@@ -139,9 +149,7 @@ class ObjetivosSecretos:
                 if client_color == color_objetivo:
                     jugador_objetivo_existe = True
                     cid = int(client.userid()) if hasattr(client, "userid") else None
-                    if cid is not None and any(
-                        pais_data[2] == cid for pais_data in mapa.values()
-                    ):
+                    if cid is not None and self._jugador_tiene_paises(cid, mapa):
                         jugador_objetivo_eliminado = False
                     break
             except (AttributeError, RuntimeError):
@@ -157,13 +165,16 @@ class ObjetivosSecretos:
             mi_color = None
 
         if not jugador_objetivo_existe or mi_color == color_objetivo:
-            paises_count = self._contar_paises_jugador(client_id, mapa)
+            paises_count = mapa.cantidad_de_paises_del_jugador(client_id)
             return bool(paises_count >= paises_alternativos)
 
         return bool(jugador_objetivo_eliminado)
 
+    def _jugador_tiene_paises(self, jugador_id: int, mapa: Mapa) -> bool:
+        return mapa.cantidad_de_paises_del_jugador(jugador_id) > 0
+
     def _verificar_conquistar_continentes(
-        self, client_id: int, objetivo: dict[str, Any], mapa: Any
+        self, client_id: int, objetivo: dict[str, Any], mapa: Mapa
     ) -> bool:
         """Verifica si se han conquistado los continentes requeridos.
 
@@ -175,13 +186,13 @@ class ObjetivosSecretos:
         continentes_objetivo = objetivo.get("continentes", [])
 
         for continente in continentes_objetivo:
-            if not self._controla_continente_completo(client_id, continente, mapa):
+            if not mapa.jugador_controla_continente(client_id, continente):
                 return False
 
         return True
 
     def _verificar_conquistar_paises(
-        self, client_id: int, objetivo: dict[str, Any], mapa: Any
+        self, client_id: int, objetivo: dict[str, Any], mapa: Mapa
     ) -> bool:
         """Verifica si se ha conquistado la cantidad de países requerida.
 
@@ -190,11 +201,11 @@ class ObjetivosSecretos:
 
         """
         cantidad_objetivo = objetivo.get("cantidad_paises", 24)
-        paises_count = self._contar_paises_jugador(client_id, mapa)
+        paises_count = mapa.cantidad_de_paises_del_jugador(client_id)
         return bool(paises_count >= cantidad_objetivo)
 
     def _verificar_conquistar_paises_con_tropas(
-        self, client_id: int, objetivo: dict[str, Any], mapa: Any
+        self, client_id: int, objetivo: dict[str, Any], mapa: Mapa
     ) -> bool:
         """Verifica si se han conquistado países con tropas mínimas.
 
@@ -207,51 +218,13 @@ class ObjetivosSecretos:
 
         paises_con_tropas_suficientes = 0
 
-        for pais_data in mapa.values():
-            unidades, _, dueno, *_ = pais_data
+        for pais in mapa.paises():
+            dueno = mapa.ocupado_por(pais)
             if (
                 dueno is not None
                 and dueno == client_id
-                and isinstance(unidades, (int, float))
-                and unidades >= tropas_minimas
+                and mapa.cantidad_unidades(pais) >= tropas_minimas
             ):
                 paises_con_tropas_suficientes += 1
 
         return bool(paises_con_tropas_suficientes >= cantidad_paises)
-
-    def _contar_paises_jugador(self, client_id: int, mapa: Any) -> int:
-        """Cuenta la cantidad de países que controla un jugador.
-
-        Returns:
-            Cantidad de países controlados por el jugador.
-
-        """
-        contador = 0
-        for pais_data in mapa.values():
-            _, _, dueno, *_ = pais_data
-            if dueno is not None and dueno == client_id:
-                contador += 1
-        return contador
-
-    def _controla_continente_completo(
-        self, client_id: int, continente: str, mapa: Any
-    ) -> bool:
-        """Verifica si un jugador controla completamente un continente.
-
-        Returns:
-            True si el jugador controla completamente el continente,
-            False en caso contrario.
-
-        """
-        paises_continente = self.toml_reader.get_paises(continente)
-
-        for pais in paises_continente:
-            pais_data = mapa.get(pais)
-            if not pais_data:
-                return False
-
-            _, _, dueno, *_ = pais_data
-            if dueno is None or dueno != client_id:
-                return False
-
-        return True

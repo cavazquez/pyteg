@@ -69,7 +69,7 @@ class IClientTransmisor(ABC):
 
         Args:
             pais (str): Nombre del país donde se agregará la unidad
-            tipo_unidad (str): Tipo de unidad a agregar (ej: 'infanteria', 'misil')
+            tipo_unidad (str): Tipo de unidad a agregar (ej: 'infanteria')
             cantidad (int, optional): Cantidad de unidades a agregar. Defaults to 1.
 
         """
@@ -129,6 +129,24 @@ class IClientTransmisor(ABC):
 
         Args:
             pais (str): Nombre del país donde se agregaran las unidades
+
+        """
+
+    @abstractmethod
+    def esta_conectado(self) -> bool:
+        """Indica si hay una conexión activa al servidor.
+
+        Returns:
+            True si el cliente está conectado.
+
+        """
+
+    @abstractmethod
+    def canjear_tarjetas(self, tarjetas: list[dict[str, Any]]) -> None:
+        """Canjea tres tarjetas por unidades generales.
+
+        Args:
+            tarjetas: Lista de tarjetas con pais y simbolo.
 
         """
 

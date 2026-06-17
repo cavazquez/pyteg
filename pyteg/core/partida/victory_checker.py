@@ -104,7 +104,7 @@ class VictoryChecker:
             jugador_id = int(jugador.userid())
             if self._objetivos_secretos.verificar_condicion_victoria(
                 jugador_id,
-                self._mapa._mapa,  # noqa: SLF001
+                self._mapa,
                 self._color_manager,
             ):
                 jugador_nombre = (

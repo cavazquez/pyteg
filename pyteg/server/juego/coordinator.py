@@ -16,7 +16,6 @@ from pyteg.server.juego.game import Game
 if TYPE_CHECKING:
     from pyteg.core.cartas.mazo import Mazo
     from pyteg.core.partida.objetivos_secretos import ObjetivosSecretos
-    from pyteg.server.conexion.cliente import Client
     from pyteg.server.juego.estado import Estado
     from pyteg.server.juego.mapa import Mapa
 
@@ -158,16 +157,17 @@ class ServerGameCoordinator:
             jugadores,
             server,
             self._paises_para_victoria,
+            objetivos_secretos_activados=self._objetivos_secretos_activados,
         )
         self._game.empezar()
 
         # Enviar información de los jugadores y sus colores a todos los clientes
         LOGGER.info("Enviando colores asignados a los jugadores...")
-        self._enviar_colores_asignados()
+        server.enviar_colores_asignados()
 
         # Enviar el mapa con los países y sus propietarios
         LOGGER.info("Enviando mapa a los jugadores...")
-        self._broadcaster.enviar_mapa(self._mapa, self._game)
+        server.enviar_mapa()
 
         # Notificar a los clientes que la partida ha comenzado
         LOGGER.info("Notificando a los clientes que la partida ha comenzado...")
@@ -177,24 +177,17 @@ class ServerGameCoordinator:
 
         # Enviar el número de turno inicial a todos los clientes
         LOGGER.info("Enviando número de turno inicial a los clientes...")
-        self._enviar_turno_actual()
+        server.enviar_turno_actual()
 
         # Enviar la configuración de la partida a todos los clientes
         LOGGER.info("Enviando configuración de la partida a los clientes...")
-        self._broadcaster.enviar_configuracion_partida(
-            self._segundos_por_turno,
-            self._paises_para_victoria,
-            objetivos_secretos=self._objetivos_secretos_activados,
-            misiles_habilitados=self._misiles_habilitados,
-        )
+        server.enviar_configuracion_partida()
 
         # Asignar y enviar objetivos secretos si están activados
         if self._objetivos_secretos_activados:
             LOGGER.info("Asignando objetivos secretos a los jugadores...")
             self._objetivos_secretos.asignar_objetivos_aleatorios(jugadores)
-            self._broadcaster.enviar_objetivos_secretos(
-                self._objetivos_secretos.get_objetivo_jugador
-            )
+            server.enviar_objetivos_secretos()
 
         # Iniciar el temporizador de turnos
         LOGGER.info("Iniciando temporizador de turnos...")
@@ -222,151 +215,3 @@ class ServerGameCoordinator:
 
         """
         return self._turno_timer
-
-    def _clientes_por_id(self) -> dict[int, Client]:
-        """Mapeo userid -> Client de los clientes conectados.
-
-        Returns:
-            Diccionario con clave `userid` (int) y valor `Client`.
-
-        """
-        return {int(c.userid()): c for c in self._get_clients()}
-
-    def _enviar_colores_asignados(self) -> None:
-        """Envía los colores asignados a todos los clientes.
-
-        Los envía en el orden de los turnos.
-        """
-        clientes_ordenados: list[Client]
-        if self._game is not None:
-            jugadores_orden_ids = self._game.lista_jugadores_orden_turno()
-            clientes_por_id = self._clientes_por_id()
-            clientes_ordenados = [
-                clientes_por_id[uid]
-                for uid in jugadores_orden_ids
-                if uid in clientes_por_id
-            ]
-            clientes_restantes = [
-                c for c in self._get_clients() if c not in clientes_ordenados
-            ]
-            clientes_ordenados.extend(clientes_restantes)
-        else:
-            clientes_ordenados = self._get_clients()
-
-        for client in self._get_clients():
-            for otro_client in clientes_ordenados:
-                color = otro_client.color_actual()
-                if color is not None:
-                    client.transmisor.color_asignado(otro_client.userid(), color)
-
-        if self._game is not None:
-            self._actualizar_lista_jugadores_ui()
-
-    def _actualizar_lista_jugadores_ui(self) -> None:
-        """Actualiza la lista de jugadores en la interfaz de usuario.
-
-        Actualiza la lista para todos los clientes.
-        """
-        if self._game is None:
-            return
-
-        jugadores_orden_ids = self._game.lista_jugadores_orden_turno()
-        clientes_por_id = self._clientes_por_id()
-
-        for client in self._get_clients():
-            jugadores_con_colores: list[tuple[int, Any]] = []
-            for uid in jugadores_orden_ids:
-                cliente = clientes_por_id.get(int(uid))
-                if cliente is None:
-                    continue
-                color = cliente.color_actual()
-                jugadores_con_colores.append((cliente.userid(), color))
-            client.transmisor.actualizar_lista_jugadores(jugadores_con_colores)
-
-    def _enviar_turno_actual(self) -> None:
-        """Envía el número de turno y ronda actuales a todos los clientes."""
-        if not self._game:
-            return
-
-        turno_actual = self._game.id_turno_actual()
-
-        jugador_actual_id: int | None = None
-        jugador_actual_nombre: str | None = None
-        jugador_actual_color: str | None = None
-
-        try:
-            turno_obj = self._game.turno_actual()
-            if turno_obj and hasattr(turno_obj, "jugador_actual"):
-                jugador_id = turno_obj.jugador_actual()
-
-                if jugador_id:
-                    cliente = self._clientes_por_id().get(int(jugador_id))
-                    if cliente is not None:
-                        jugador_actual_id = cliente.userid()
-                        jugador_actual_nombre = cliente.username()
-                        color_obj = cliente.color_actual()
-                        jugador_actual_color = color_obj.to_hex() if color_obj else None
-
-        except (AttributeError, KeyError) as e:
-            LOGGER.warning("Error obteniendo información del jugador actual: %s", e)
-
-        for client in self._get_clients():
-            client.transmisor.enviar_turno(
-                turno_actual,
-                self._game.num_ronda(),
-                jugador_actual_id,
-                jugador_actual_nombre,
-                jugador_actual_color,
-            )
-
-        self._enviar_unidades_disponibles()
-
-        self._broadcaster.enviar_mapa(self._mapa, self._game)
-
-    def _enviar_unidades_disponibles(self) -> None:
-        """Envía las unidades disponibles al jugador del turno actual."""
-        if not self._game:
-            return
-
-        turno_actual = self._game.turno_actual()
-        if not turno_actual:
-            return
-
-        jugador_actual_id = turno_actual.jugador_actual()
-
-        unidades = {"infanteria": turno_actual.cant_unidades()}
-
-        if (
-            hasattr(turno_actual, "cant_unidades_africa")
-            and turno_actual.cant_unidades_africa() > 0
-        ):
-            unidades["Africa"] = turno_actual.cant_unidades_africa()
-        if (
-            hasattr(turno_actual, "cant_unidades_europa")
-            and turno_actual.cant_unidades_europa() > 0
-        ):
-            unidades["Europa"] = turno_actual.cant_unidades_europa()
-        if (
-            hasattr(turno_actual, "cant_unidades_asia")
-            and turno_actual.cant_unidades_asia() > 0
-        ):
-            unidades["Asia"] = turno_actual.cant_unidades_asia()
-        if (
-            hasattr(turno_actual, "cant_unidades_sudamerica")
-            and turno_actual.cant_unidades_sudamerica() > 0
-        ):
-            unidades["América del Sur"] = turno_actual.cant_unidades_sudamerica()
-        if (
-            hasattr(turno_actual, "cant_unidades_norteamerica")
-            and turno_actual.cant_unidades_norteamerica() > 0
-        ):
-            unidades["América del Norte"] = turno_actual.cant_unidades_norteamerica()
-        if (
-            hasattr(turno_actual, "cant_unidades_oceania")
-            and turno_actual.cant_unidades_oceania() > 0
-        ):
-            unidades["Oceanía"] = turno_actual.cant_unidades_oceania()
-
-        cliente = self._clientes_por_id().get(int(jugador_actual_id))
-        if cliente is not None:
-            cliente.transmisor.enviar_unidades_disponibles(unidades)

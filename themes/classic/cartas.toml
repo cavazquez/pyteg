@@ -1,5 +1,5 @@
 [Cartas]
-jocker = "tar_comodin.svg"
-ballon = "tar_globo.svg"
-cannon = "tar_canon.png"
-ship = "tar_galeon.png"
+Galeon = "classic/tar_galeon.png"
+Globo = "classic/tar_globo.svg"
+Canon = "classic/tar_canon.png"
+Comodin = "classic/tar_comodin.svg"

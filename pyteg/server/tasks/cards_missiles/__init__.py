@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from pyteg.server.tasks.cards_missiles.canje_especial import ServerTaskCanjeEspecial
 from pyteg.server.tasks.cards_missiles.canjear_misil import ServerTaskCanjearMisil
+from pyteg.server.tasks.cards_missiles.canjear_tarjetas import ServerTaskCanjearTarjetas
 from pyteg.server.tasks.cards_missiles.lanzar_misil import ServerTaskLanzarMisil
 from pyteg.server.tasks.cards_missiles.reclamar_tarjeta import ServerTaskReclamarTarjeta
 from pyteg.server.tasks.cards_missiles.solicitar_tarjetas import (
@@ -18,6 +19,7 @@ from pyteg.server.tasks.cards_missiles.solicitar_tarjetas import (
 __all__ = [
     "ServerTaskCanjeEspecial",
     "ServerTaskCanjearMisil",
+    "ServerTaskCanjearTarjetas",
     "ServerTaskLanzarMisil",
     "ServerTaskReclamarTarjeta",
     "ServerTaskSolicitarTarjetas",

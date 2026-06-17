@@ -8,6 +8,7 @@ from typing import Any
 from pyteg.server.tasks.base import LOGGER, IServerTask, ServerTaskNull
 from pyteg.server.tasks.cards_missiles import (
     ServerTaskCanjearMisil,
+    ServerTaskCanjearTarjetas,
     ServerTaskCanjeEspecial,
     ServerTaskLanzarMisil,
     ServerTaskReclamarTarjeta,
@@ -46,6 +47,7 @@ dict_task: dict[str, TaskFactory] = {
     "solicitar_tarjetas": ServerTaskSolicitarTarjetas,
     "reclamar_tarjeta": ServerTaskReclamarTarjeta,
     "canje_especial": ServerTaskCanjeEspecial,
+    "canjear_tarjetas": ServerTaskCanjearTarjetas,
     "canjear_misil": ServerTaskCanjearMisil,
     "lanzar_misil": ServerTaskLanzarMisil,
 }

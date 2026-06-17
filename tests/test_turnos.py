@@ -139,9 +139,11 @@ class TestSiguientesTurnos(unittest.TestCase):
 
         mapa = Mapa(build_mapa)
         siguientes_turnos = SiguientesTurnos(J_FULANO, mapa)
-        unidades = siguientes_turnos.cant_unidades_africa()
-        siguientes_turnos.usar_unidad_africa()
-        self.assertEqual(siguientes_turnos.cant_unidades_africa(), unidades - 1)
+        unidades = siguientes_turnos.cant_unidades_por_continente("Africa")
+        siguientes_turnos.usar_unidad_por_continente("Africa")
+        self.assertEqual(
+            siguientes_turnos.cant_unidades_por_continente("Africa"), unidades - 1
+        )
 
     def test_usar_unidad_toda_europa_en_europa(self) -> None:
         """Prueba usar unidad de Europa cuando se tiene toda Europa."""
@@ -155,9 +157,11 @@ class TestSiguientesTurnos(unittest.TestCase):
 
         mapa = Mapa(build_mapa)
         siguientes_turnos = SiguientesTurnos(J_FULANO, mapa)
-        unidades = siguientes_turnos.cant_unidades_europa()
-        siguientes_turnos.usar_unidad_europa()
-        self.assertEqual(siguientes_turnos.cant_unidades_europa(), unidades - 1)
+        unidades = siguientes_turnos.cant_unidades_por_continente("Europa")
+        siguientes_turnos.usar_unidad_por_continente("Europa")
+        self.assertEqual(
+            siguientes_turnos.cant_unidades_por_continente("Europa"), unidades - 1
+        )
 
     def test_usar_unidad_toda_oceania_en_oceania(self) -> None:
         """Prueba usar unidad de Oceanía cuando se tiene toda Oceanía."""
@@ -171,9 +175,11 @@ class TestSiguientesTurnos(unittest.TestCase):
 
         mapa = Mapa(build_mapa)
         siguientes_turnos = SiguientesTurnos(J_FULANO, mapa)
-        unidades = siguientes_turnos.cant_unidades_oceania()
-        siguientes_turnos.usar_unidad_oceania()
-        self.assertEqual(siguientes_turnos.cant_unidades_oceania(), unidades - 1)
+        unidades = siguientes_turnos.cant_unidades_por_continente("Oceania")
+        siguientes_turnos.usar_unidad_por_continente("Oceania")
+        self.assertEqual(
+            siguientes_turnos.cant_unidades_por_continente("Oceania"), unidades - 1
+        )
 
     def test_usar_unidad_toda_asia_en_asia(self) -> None:
         """Prueba usar unidad de Asia cuando se tiene toda Asia."""
@@ -187,9 +193,11 @@ class TestSiguientesTurnos(unittest.TestCase):
 
         mapa = Mapa(build_mapa)
         siguientes_turnos = SiguientesTurnos(J_FULANO, mapa)
-        unidades = siguientes_turnos.cant_unidades_asia()
-        siguientes_turnos.usar_unidad_asia()
-        self.assertEqual(siguientes_turnos.cant_unidades_asia(), unidades - 1)
+        unidades = siguientes_turnos.cant_unidades_por_continente("Asia")
+        siguientes_turnos.usar_unidad_por_continente("Asia")
+        self.assertEqual(
+            siguientes_turnos.cant_unidades_por_continente("Asia"), unidades - 1
+        )
 
     def test_usar_unidad_toda_sudamerica_en_sudamerica(self) -> None:
         """Prueba usar unidad de Sudamérica cuando se tiene toda Sudamérica."""
@@ -203,9 +211,11 @@ class TestSiguientesTurnos(unittest.TestCase):
 
         mapa = Mapa(build_mapa)
         siguientes_turnos = SiguientesTurnos(J_FULANO, mapa)
-        unidades = siguientes_turnos.cant_unidades_sudamerica()
-        siguientes_turnos.usar_unidad_sudamerica()
-        self.assertEqual(siguientes_turnos.cant_unidades_sudamerica(), unidades - 1)
+        unidades = siguientes_turnos.cant_unidades_por_continente("Sudamerica")
+        siguientes_turnos.usar_unidad_por_continente("Sudamerica")
+        self.assertEqual(
+            siguientes_turnos.cant_unidades_por_continente("Sudamerica"), unidades - 1
+        )
 
     def test_usar_unidad_toda_norteamerica_en_norteamerica(self) -> None:
         """Prueba usar unidad de Norteamérica cuando se tiene toda Norteamérica."""
@@ -219,9 +229,11 @@ class TestSiguientesTurnos(unittest.TestCase):
 
         mapa = Mapa(build_mapa)
         siguientes_turnos = SiguientesTurnos(J_FULANO, mapa)
-        unidades = siguientes_turnos.cant_unidades_norteamerica()
-        siguientes_turnos.usar_unidad_norteamerica()
-        self.assertEqual(siguientes_turnos.cant_unidades_norteamerica(), unidades - 1)
+        unidades = siguientes_turnos.cant_unidades_por_continente("Norteamerica")
+        siguientes_turnos.usar_unidad_por_continente("Norteamerica")
+        self.assertEqual(
+            siguientes_turnos.cant_unidades_por_continente("Norteamerica"), unidades - 1
+        )
 
 
 if __name__ == "__main__":

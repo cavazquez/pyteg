@@ -1,8 +1,9 @@
-"""Mensajes de tarjetas (solicitar, reclamar, canje especial)."""
+"""Mensajes de tarjetas (solicitar, reclamar, canje especial y canje triple)."""
 
 from __future__ import annotations
 
 import json
+from typing import Any
 
 from pyteg.client.msg.base import IMsg
 
@@ -64,4 +65,28 @@ class MsgCanjeEspecial(IMsg):
 
         """
         data = {"mensaje": self._tipo, "pais": self._pais}
+        return json.dumps(data)
+
+
+class MsgCanjearTarjetas(IMsg):
+    """Mensaje para canjear tres tarjetas del jugador."""
+
+    def __init__(self, tarjetas: list[dict[str, Any]]) -> None:
+        """Crea un mensaje de canje de tres tarjetas.
+
+        Args:
+            tarjetas: Lista con datos de cada tarjeta (pais, simbolo).
+
+        """
+        self._tipo = "canjear_tarjetas"
+        self._tarjetas = tarjetas
+
+    def to_json(self) -> str:
+        """Convierte el mensaje a formato JSON.
+
+        Returns:
+            Representación JSON del mensaje como cadena.
+
+        """
+        data = {"mensaje": self._tipo, "tarjetas": self._tarjetas}
         return json.dumps(data)

@@ -179,6 +179,7 @@ class VentanaConectar(QDialog):
         addr, port, username = result
         try:
             self._conexion = ConnectionClient(self._main_window, addr, port, username)
+            self._main_window.conexion = self._conexion
             self._conexion.conectar()
 
             self._main_window.transmisor = ClientTransmisor(self._conexion)

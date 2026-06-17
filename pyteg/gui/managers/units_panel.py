@@ -15,6 +15,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from pyteg.config import CONTINENT_PANEL_LABELS
 from pyteg.i18n import translate as _
 
 if TYPE_CHECKING:
@@ -78,14 +79,7 @@ def setup_continent_values(
     )
     main_window.row_widgets["Misiles"].setVisible(False)
 
-    for cont in [
-        "América del Sur",
-        "América del Norte",
-        "Europa",
-        "Asia",
-        "África",
-        "Oceanía",
-    ]:
+    for cont in CONTINENT_PANEL_LABELS:
         _create_unit_row(
             main_window,
             section_layout,

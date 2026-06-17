@@ -2,6 +2,7 @@
 
 import unittest
 
+from pyteg.exceptions import CountryNotFoundError
 from pyteg.server.juego.mapa import Mapa
 
 
@@ -46,6 +47,16 @@ class TestMap(unittest.TestCase):
         mapa = Mapa(build_mapa)
         mapa.set_unidades("Argentina", 5)
         self.assertEqual(mapa.cantidad_unidades("Argentina"), 5)
+
+    def test_pais_inexistente_lanza_country_not_found(self) -> None:
+        """Operaciones sobre un país inválido lanzan CountryNotFoundError."""
+
+        def build_mapa() -> dict[str, list[int | str | list[str] | None]]:
+            return {"Argentina": [1, "Pangea", None]}
+
+        mapa = Mapa(build_mapa)
+        with self.assertRaises(CountryNotFoundError):
+            mapa.cantidad_unidades("Atlantis")
 
     def test_mover_unidades(self) -> None:
         """Prueba mover unidades entre países."""

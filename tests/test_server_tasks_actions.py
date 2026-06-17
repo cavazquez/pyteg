@@ -62,6 +62,7 @@ class FakeMapa:
         self.owners: dict[str, object] = {}
         self.units: dict[str, int] = {}
         self.adyacentes: dict[str, list[str]] = {}
+        self.continentes: dict[str, str] = {}
         self._anon_owner_ids: dict[int, int] = {}
 
     def set_pais(
@@ -83,6 +84,16 @@ class FakeMapa:
         self.owners[nombre] = owner
         self.units[nombre] = unidades
         self.adyacentes[nombre] = list(adyacentes)
+        self.continentes[nombre] = "Generico"
+
+    def continente(self, pais: str) -> str:
+        """Obtiene el continente de un país.
+
+        Returns:
+            Nombre del continente configurado para el país.
+
+        """
+        return self.continentes.get(pais, "Generico")
 
     def ocupado_por(self, pais: str) -> int | None:
         """Obtiene el userid del propietario de un país.

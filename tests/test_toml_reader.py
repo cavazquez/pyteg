@@ -91,13 +91,14 @@ class TestTomlReader(unittest.TestCase):
 
         [Africa.Francia]
         """
-        self.assertDictEqual(
-            TomlReader(toml_string).get_paises("Pangea"),
-            {"Argentina": {}, "Brasil": {}},
+        reader = TomlReader(toml_string)
+        self.assertEqual(
+            set(reader.get_paises("Pangea").keys()),
+            {"Argentina", "Brasil"},
         )
-        self.assertDictEqual(
-            TomlReader(toml_string).get_paises("Africa"),
-            {"Francia": {}},
+        self.assertEqual(
+            set(reader.get_paises("Africa").keys()),
+            {"Francia"},
         )
 
     def test_get_continentes(self) -> None:

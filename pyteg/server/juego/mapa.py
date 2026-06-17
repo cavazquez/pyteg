@@ -7,6 +7,7 @@ from typing import Any
 
 from pyteg.core.combate.missile_system import MissileSystem
 from pyteg.core.mapa.country_data import CountryData
+from pyteg.exceptions import CountryNotFoundError
 
 
 class Mapa:
@@ -27,6 +28,29 @@ class Mapa:
         # Inicializar sistema de misiles
         self._missile_system = MissileSystem(self)
 
+    def pais_existe(self, pais: str) -> bool:
+        """Indica si un país está definido en el mapa.
+
+        Returns:
+            True si el país existe.
+
+        """
+        return pais in self._mapa
+
+    def _require_pais(self, pais: str) -> CountryData:
+        """Obtiene los datos de un país o lanza si no existe.
+
+        Raises:
+            CountryNotFoundError: Si el país no está en el mapa.
+
+        Returns:
+            Datos del país solicitado.
+
+        """
+        if pais not in self._mapa:
+            raise CountryNotFoundError(pais)
+        return self._mapa[pais]
+
     def agregar_una_unidad(self, pais: str) -> None:
         """Agrega una unidad al país especificado.
 
@@ -34,7 +58,7 @@ class Mapa:
             pais: Nombre del país.
 
         """
-        self._mapa[pais].unidades += 1
+        self._require_pais(pais).unidades += 1
 
     def restar_una_unidad(self, pais: str) -> None:
         """Resta una unidad del país especificado.
@@ -43,7 +67,7 @@ class Mapa:
             pais: Nombre del país.
 
         """
-        self._mapa[pais].unidades -= 1
+        self._require_pais(pais).unidades -= 1
 
     def cantidad_unidades(self, pais: str) -> int:
         """Obtiene la cantidad de unidades en un país.
@@ -55,7 +79,7 @@ class Mapa:
             Cantidad de unidades en el país.
 
         """
-        return self._mapa[pais].unidades
+        return self._require_pais(pais).unidades
 
     def set_unidades(self, pais: str, cant: int) -> None:
         """Establece la cantidad de unidades en un país.
@@ -65,7 +89,7 @@ class Mapa:
             cant: Cantidad de unidades a establecer.
 
         """
-        self._mapa[pais].unidades = cant
+        self._require_pais(pais).unidades = cant
 
     def mover(self, desde: str, hacia: str, cantidad: int) -> None:
         """Mueve unidades entre dos países.
@@ -76,8 +100,10 @@ class Mapa:
             cantidad: Cantidad de unidades a mover.
 
         """
-        self._mapa[desde].unidades -= cantidad
-        self._mapa[hacia].unidades += cantidad
+        origen_data = self._require_pais(desde)
+        destino_data = self._require_pais(hacia)
+        origen_data.unidades -= cantidad
+        destino_data.unidades += cantidad
 
     def continente(self, pais: str) -> str:
         """Obtiene el continente al que pertenece un país.
@@ -89,7 +115,7 @@ class Mapa:
             Nombre del continente.
 
         """
-        return self._mapa[pais].continente
+        return self._require_pais(pais).continente
 
     def ocupado_por(self, pais: str) -> int | None:
         """Obtiene el userid del jugador que ocupa un país.
@@ -101,7 +127,7 @@ class Mapa:
             userid (int) del jugador que ocupa el país, o None si no tiene dueño.
 
         """
-        return self._mapa[pais].jugador
+        return self._require_pais(pais).jugador
 
     def paises(self) -> list[str]:
         """Obtiene la lista de todos los países del mapa.
@@ -190,7 +216,7 @@ class Mapa:
             pais: Nombre del país.
 
         """
-        self._mapa[pais].jugador = jugador
+        self._require_pais(pais).jugador = jugador
 
     def cantidad_de_paises_del_jugador(self, jugador: int) -> int:
         """Obtiene la cantidad de países que posee un jugador.
@@ -280,10 +306,10 @@ class Mapa:
             adyacentes definidos.
 
         """
-        if pais in self._mapa:
-            adyacentes = self._mapa[pais].adyacentes
-            return [str(p) for p in adyacentes]
-        return []
+        if not self.pais_existe(pais):
+            return []
+        adyacentes = self._mapa[pais].adyacentes
+        return [str(p) for p in adyacentes]
 
     def _tiene_pais(self, pais: str) -> bool:
         """Verifica si un país existe en el mapa.
@@ -295,7 +321,7 @@ class Mapa:
             True si el país existe, False en caso contrario.
 
         """
-        return pais in self._mapa
+        return self.pais_existe(pais)
 
     def _obtener_misiles(self, pais: str) -> int:
         """Obtiene la cantidad de misiles de un país (método interno).

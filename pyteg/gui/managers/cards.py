@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, cast
 
+from pyteg.gui.connection_utils import cliente_esta_conectado
 from pyteg.gui.tarjetas import TarjetasDialog
 
 if TYPE_CHECKING:
@@ -34,9 +35,11 @@ class CardManager:
 
     def mostrar_tarjetas(self) -> None:
         """Muestra la ventana de tarjetas del jugador."""
+        if not cliente_esta_conectado(self.main_window):
+            return
+
         # Solicitar tarjetas actualizadas al servidor
-        if self.main_window.transmisor:
-            self.main_window.transmisor.solicitar_tarjetas()
+        self.main_window.transmisor.solicitar_tarjetas()
 
         dialog = TarjetasDialog(cast("QWidget", self.main_window))
 

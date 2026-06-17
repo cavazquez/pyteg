@@ -14,6 +14,7 @@ from pyteg.client.msg.actions import (
 )
 from pyteg.client.msg.base import IMsg
 from pyteg.client.msg.cards import (
+    MsgCanjearTarjetas,
     MsgCanjeEspecial,
     MsgReclamarTarjeta,
     MsgSolicitarTarjetas,
@@ -33,6 +34,7 @@ __all__ = [
     "MsgAtacar",
     "MsgCanjeEspecial",
     "MsgCanjearMisil",
+    "MsgCanjearTarjetas",
     "MsgChat",
     "MsgEmpezar",
     "MsgEmpezarPartida",

@@ -35,7 +35,13 @@ El transporte entre cliente y servidor es **TCP en claro**, sin TLS ni autentica
 - `pyteg/client/msg/`: paquete de mensajes cliente→servidor (`lobby`, `actions`, `cards`, `missiles`).
 - `pyteg/client/tasks/`: paquete de tareas de cliente (`lobby/`, `game_flow/`, `battle`, `cards_missiles`).
 - `pyteg/core/`: dominio puro reutilizable.
-  - `core/mapa/`: `Country`, datos de países y constructor del mapa (`build_mapa`).
+  - `core/mapa/`: `CountryData` (estado runtime), `ThemeCountryLayout` / `ThemeContinentLayout` (layout TOML) y constructor del mapa (`build_mapa`, `build_mapa_from_reader`).
+
+### Temas de mapa (`themes/{nombre}/`)
+- **Fuente de verdad**: `TomlReader.from_theme(nombre, strict=True)` carga `paises.toml`, y opcionalmente `cartas.toml`, `adyacencias.toml` y `objetivos_secretos.toml`.
+- **Constante**: `DEFAULT_MAP_THEME = "classic"` en `pyteg/config.py`; servidor acepta `--theme`; cliente usa `map_theme` en `Gui` y `QCustomGraphicsScene`.
+- **Símbolos de cartas**: claves de `[Cartas]` en TOML (orden = reparto en `Mazo`); `TarjetaWidget` resuelve imágenes vía `pyteg/core/theme_resources.py`.
+- **Limitación conocida**: cliente y servidor no negocian el tema por red; deben usar el mismo valor manualmente.
   - `core/cartas/`: mazo y tarjeta de país.
   - `core/turnos/`: protocolo `ITurno`, implementaciones (`turnos.py`) y temporizador.
   - `core/combate/`: `batalla`, `dados`, `calculos` y sistema de misiles. `core/combate/protocols.py` define `MapaCalculos` (Protocol estructural usado por `calculos`).

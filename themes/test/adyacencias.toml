@@ -1,0 +1,5 @@
+# Adyacencias del mapa de prueba
+
+[Adyacencias]
+Circulo = ["Rectangulo"]
+Rectangulo = ["Circulo"]

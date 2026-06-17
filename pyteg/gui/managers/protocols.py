@@ -45,6 +45,7 @@ class MainWindowProtocol(GameWindowProtocol, Protocol):
     """
 
     theme: str
+    map_theme: str
     turno_actual: int
     jugador_actual_id: int | None
     jugador_actual_nombre: str | None

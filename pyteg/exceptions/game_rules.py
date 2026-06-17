@@ -22,6 +22,23 @@ class NotPlayerTurnError(GameRuleViolationError):
         super().__init__(mensaje)
 
 
+class CountryNotFoundError(GameRuleViolationError):
+    """Excepción cuando se referencia un país inexistente en el mapa."""
+
+    def __init__(self, pais: str, mensaje: str | None = None) -> None:
+        """Inicializa la excepción.
+
+        Args:
+            pais: Nombre del país no encontrado.
+            mensaje: Mensaje descriptivo del error.
+
+        """
+        if mensaje is None:
+            mensaje = f"El país '{pais}' no existe en el mapa"
+        super().__init__(mensaje)
+        self.pais = pais
+
+
 class CountryNotOwnedError(GameRuleViolationError):
     """Excepción lanzada cuando un jugador intenta actuar sobre un país que no posee."""
 

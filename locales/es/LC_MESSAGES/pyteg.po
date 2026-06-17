@@ -175,8 +175,20 @@ msgid "Moviendo {} unidad(es) de {} a {}"
 msgstr "Moviendo {} unidad(es) de {} a {}"
 
 # Menú contextual (país)
-msgid "Agregar Infantería"
-msgstr "Agregar Infantería"
+msgid "Colocar unidad"
+msgstr "Colocar unidad"
+
+msgid "Sin unidades disponibles para este país"
+msgstr "Sin unidades disponibles para este país"
+
+msgid "Consume primero refuerzos de {} ({}), luego generales ({})"
+msgstr "Consume primero refuerzos de {} ({}), luego generales ({})"
+
+msgid "Refuerzos de {}: {} disponibles"
+msgstr "Refuerzos de {}: {} disponibles"
+
+msgid "Unidades generales: {} disponibles"
+msgstr "Unidades generales: {} disponibles"
 
 msgid "Agregar Misil"
 msgstr "Agregar Misil"
