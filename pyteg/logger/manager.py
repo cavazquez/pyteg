@@ -21,6 +21,8 @@ class PyTegLogger:
     def __init__(self) -> None:
         """Inicializa el sistema de logging de PyTeg."""
         self._loggers: dict[str, logging.Logger] = {}
+        self._console_level = logging.WARNING
+        self._file_level = logging.INFO
         self._setup_directories()
 
     def _setup_directories(self) -> None:
@@ -61,6 +63,14 @@ class PyTegLogger:
 
             setup_file_handler(logger, log_filename, process_type)
             setup_console_handler(logger, process_type)
+            for handler in logger.handlers:
+                if (
+                    isinstance(handler, logging.StreamHandler)
+                    and handler.stream == sys.stdout
+                ):
+                    handler.setLevel(self._console_level)
+                elif isinstance(handler, logging.handlers.RotatingFileHandler):
+                    handler.setLevel(self._file_level)
 
         self._loggers[name] = logger
         return logger
@@ -72,6 +82,7 @@ class PyTegLogger:
             level: Nivel de logging (logging.DEBUG, INFO, WARNING, etc.).
 
         """
+        self._console_level = level
         for logger in self._loggers.values():
             for handler in logger.handlers:
                 if (
@@ -87,6 +98,7 @@ class PyTegLogger:
             level: Nivel de logging (logging.DEBUG, INFO, WARNING, etc.).
 
         """
+        self._file_level = level
         for logger in self._loggers.values():
             for handler in logger.handlers:
                 if isinstance(handler, logging.handlers.RotatingFileHandler):

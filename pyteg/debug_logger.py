@@ -67,8 +67,10 @@ class DebugLogger:
         with Path(self.log_file).open("a", encoding="utf-8") as f:
             f.write(f"[{timestamp}] {full_message}\n")
 
-        # También imprimir en consola pero más limpio (solo mensajes importantes)
-        if "user_id" in message or "MI user_id" in message:
+        # Solo imprimir en consola con -v/--verbose (evita ruido con logging INFO)
+        if ("-v" in sys.argv or "--verbose" in sys.argv) and (
+            "user_id" in message or "MI user_id" in message
+        ):
             print(f"[DEBUG] {full_message}")
 
 

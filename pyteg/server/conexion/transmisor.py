@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
+from pyteg.logger import get_logger
 from pyteg.server.msg import (
     IMsg,
     MsgActualizarListaJugadores,
@@ -34,6 +35,9 @@ if TYPE_CHECKING:
     from pyteg.server.msg.types import BattleResultPayload, MissileResultPayload
 
 
+LOGGER = get_logger(__name__)
+
+
 class ServerTransmisor:
     """Transmisor de mensajes del servidor al cliente."""
 
@@ -62,7 +66,7 @@ class ServerTransmisor:
             else:
                 self._conn.send(json_str)
         except (ConnectionError, OSError, BrokenPipeError) as e:
-            print(f"Error sending message: {e}")
+            LOGGER.warning("Error al enviar mensaje: %s", e)
 
     def enviar_chat(self, msg: str) -> None:
         """Envía un mensaje de chat al cliente.
@@ -118,7 +122,7 @@ class ServerTransmisor:
             username: Nombre de usuario.
 
         """
-        print(f"enviar_username, {userid=} , {username=}")
+        LOGGER.debug("enviar_username, userid=%s, username=%s", userid, username)
         msg = MsgUsername(userid, username)
         self._send_message(msg)
 
@@ -230,7 +234,7 @@ class ServerTransmisor:
         for pais in mapa.paises():
             unidades = mapa.cantidad_unidades(pais)
             userid = mapa.ocupado_por(pais)
-            print(f"{pais} {userid} {unidades}")
+            LOGGER.debug("%s userid=%s unidades=%s", pais, userid, unidades)
             self.enviar_pais(pais, userid, unidades)
 
     def enviar_resultado_batalla(self, batalla_data: BattleResultPayload) -> None:
@@ -310,9 +314,10 @@ class ServerTransmisor:
             descripcion (str): Descripción del objetivo secreto
 
         """
-        print(
-            f"ServerTransmisor: Enviando objetivo secreto - ID: {objetivo_id}, "
-            f"Desc: {descripcion}"
+        LOGGER.debug(
+            "Enviando objetivo secreto - ID: %s, Desc: %s",
+            objetivo_id,
+            descripcion,
         )
         msg = MsgObjetivoSecreto(objetivo_id, descripcion)
         self._send_message(msg)
