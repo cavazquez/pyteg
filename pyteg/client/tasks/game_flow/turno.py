@@ -10,6 +10,7 @@ from pyteg.config import (
     TIMER_COLOR_GREEN_THRESHOLD,
     TIMER_COLOR_ORANGE_THRESHOLD,
 )
+from pyteg.i18n import _
 
 if TYPE_CHECKING:
     from pyteg.client.tasks.protocols import GameWindowProtocol
@@ -48,7 +49,9 @@ class ClientTaskTurno(IClientTask[TurnoTaskData]):
         main_window.sound_manager.play_turn()
 
         if main_window.chat is not None:
-            main_window.chat.append(f"Turno {num_turno + 1} iniciado", "system")
+            main_window.chat.append(
+                _("Turno {} iniciado").format(num_turno + 1), "system"
+            )
 
 
 class ClientTaskTiempo(IClientTask[TiempoTaskData]):
@@ -75,6 +78,8 @@ class ClientTaskTiempo(IClientTask[TiempoTaskData]):
             else:
                 color = "red"
 
-            main_window.update_timer_display(f"Tiempo: {tiempo}s", color=color)
+            main_window.update_timer_display(
+                _("Tiempo: {}s").format(tiempo), color=color
+            )
         else:
             main_window.update_timer_display("")

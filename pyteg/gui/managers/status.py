@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING
 from PySide6.QtWidgets import QLabel
 
 from pyteg.debug_logger import debug_logger
+from pyteg.i18n import _
 from pyteg.logger import get_logger
 
 if TYPE_CHECKING:
@@ -82,16 +83,16 @@ class StatusManager:
         """
         # Traducir estados técnicos a nombres más amigables
         estados_amigables = {
-            "INICIAL": "Inicial",
-            "EsperarJugadores": "Esperando Jugadores",
-            "JUGANDO": "En Juego",
-            "FINALIZADO": "Finalizado",
-            "Conectado": "Conectado",
-            "Desconectado": "Desconectado",
+            "INICIAL": _("Inicial"),
+            "EsperarJugadores": _("Esperando Jugadores"),
+            "JUGANDO": _("En Juego"),
+            "FINALIZADO": _("Finalizado"),
+            "Conectado": _("Conectado"),
+            "Desconectado": _("Desconectado"),
         }
 
         estado_mostrar = estados_amigables.get(estado, estado)
-        self.main_window.estado_label.setText(f"Estado: {estado_mostrar}")
+        self.main_window.estado_label.setText(_("Estado: {}").format(estado_mostrar))
 
     def update_mi_jugador_info(self) -> None:
         """Actualiza la información del usuario actual (mi jugador).
@@ -104,7 +105,7 @@ class StatusManager:
             client = getattr(self.main_window, "client", None)
             if client is None or not client.userid():
                 debug_logger.log("GUI: No hay cliente conectado")
-                self.main_window.mi_username_label.setText("[No conectado]")
+                self.main_window.mi_username_label.setText(_("[No conectado]"))
                 self.main_window.mi_color_indicator.setStyleSheet("""
                     background-color: #cccccc;
                     border: 1px solid #999999;
@@ -117,7 +118,7 @@ class StatusManager:
             debug_logger.log(f"GUI: Mi user_id: {mi_user_id}")
 
             # Obtener mi nombre de usuario
-            mi_username = client.username() or "[Sin nombre]"
+            mi_username = client.username() or _("[Sin nombre]")
             debug_logger.log(f"GUI: Mi username: {mi_username}")
 
             # Obtener mi color asignado
@@ -149,7 +150,7 @@ class StatusManager:
                 """)
         except (AttributeError, KeyError, ValueError) as e:
             _LOG.warning("Error al actualizar información de mi jugador: %s", e)
-            self.main_window.mi_username_label.setText("[Error]")
+            self.main_window.mi_username_label.setText(_("[Error]"))
 
     def update_turno(
         self,
@@ -177,7 +178,7 @@ class StatusManager:
 
         # Actualizar el texto del turno
         self.main_window.turno_label.setText(
-            f"Ronda: {num_ronda} - Turno: {num_turno + 1}"
+            _("Ronda: {} - Turno: {}").format(num_ronda, num_turno + 1)
         )
 
         # Actualizar sombreado del jugador en su turno

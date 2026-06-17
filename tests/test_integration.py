@@ -337,34 +337,74 @@ class TestIntegration(unittest.TestCase):
         """Admin inicia la partida; ambos clientes reciben estado JUGANDO."""
         c1 = self._new_client()  # admin (primer cliente = user_id 1)
         c2 = self._new_client()
+        self._start_two_player_game(c1, c2)
 
+    def _start_two_player_game(
+        self, c1: _TestClient, c2: _TestClient, *, segundos: int = 60
+    ) -> None:
+        """Configura usernames y arranca partida con c1 como admin."""
         self.assertIsNotNone(c1.wait_for("user_id"), "c1 sin user_id")
         self.assertIsNotNone(c2.wait_for("user_id"), "c2 sin user_id")
 
-        # Establecer nombres de usuario
         c1.send({"mensaje": "set_username", "username": "Admin"})
         c2.send({"mensaje": "set_username", "username": "Jugador2"})
         time.sleep(0.1)
 
-        # Admin configura y empieza
-        c1.send({"mensaje": "empezar", "segundos": 60})
+        c1.send({"mensaje": "empezar", "segundos": segundos})
         time.sleep(0.1)
         c1.send({"mensaje": "empezar_partida"})
 
-        # Ambos deben recibir el estado "JUGANDO"
-        estado_c1 = c1.wait_for(
-            "estado",
-            timeout=4.0,
-            extra_check=lambda m: m.get("estado") == "JUGANDO",
+        self.assertIsNotNone(
+            c1.wait_for(
+                "estado",
+                timeout=4.0,
+                extra_check=lambda m: m.get("estado") == "JUGANDO",
+            ),
+            "c1 no recibió estado JUGANDO",
         )
-        estado_c2 = c2.wait_for(
-            "estado",
-            timeout=4.0,
-            extra_check=lambda m: m.get("estado") == "JUGANDO",
+        self.assertIsNotNone(
+            c2.wait_for(
+                "estado",
+                timeout=4.0,
+                extra_check=lambda m: m.get("estado") == "JUGANDO",
+            ),
+            "c2 no recibió estado JUGANDO",
         )
 
-        self.assertIsNotNone(estado_c1, "c1 no recibió estado JUGANDO")
-        self.assertIsNotNone(estado_c2, "c2 no recibió estado JUGANDO")
+    def test_receives_turno_after_game_start(self) -> None:
+        """Tras iniciar la partida, los clientes reciben el mensaje de turno."""
+        c1 = self._new_client()
+        c2 = self._new_client()
+        self._start_two_player_game(c1, c2)
+
+        turno_c1 = c1.wait_for("turno", timeout=4.0)
+        turno_c2 = c2.wait_for("turno", timeout=4.0)
+
+        self.assertIsNotNone(turno_c1, "c1 no recibió mensaje turno")
+        self.assertIsNotNone(turno_c2, "c2 no recibió mensaje turno")
+        if turno_c1 is not None:
+            self.assertIn("num_turno", turno_c1)
+            self.assertIn("num_ronda", turno_c1)
+
+    def test_receives_tiempo_during_active_turn(self) -> None:
+        """El temporizador de turno envía mensajes tiempo a los clientes."""
+        c1 = self._new_client()
+        c2 = self._new_client()
+        self._start_two_player_game(c1, c2, segundos=30)
+
+        tiempo_c1 = c1.wait_for(
+            "tiempo",
+            timeout=5.0,
+            extra_check=lambda m: int(m.get("tiempo", 0)) > 0,
+        )
+        tiempo_c2 = c2.wait_for(
+            "tiempo",
+            timeout=5.0,
+            extra_check=lambda m: int(m.get("tiempo", 0)) > 0,
+        )
+
+        self.assertIsNotNone(tiempo_c1, "c1 no recibió mensaje tiempo")
+        self.assertIsNotNone(tiempo_c2, "c2 no recibió mensaje tiempo")
 
 
 if __name__ == "__main__":

@@ -6,7 +6,7 @@ relacionada con las tarjetas del jugador.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Any, cast
 
 from pyteg.gui.tarjetas import TarjetasDialog
 
@@ -52,3 +52,14 @@ class CardManager:
             dialog.set_objetivo_secreto(objetivo_id, descripcion)
 
         dialog.exec()
+
+    def refresh_open_tarjetas_dialogs(self, tarjetas: list[Any]) -> None:
+        """Actualiza los diálogos de tarjetas abiertos con la lista provista.
+
+        Args:
+            tarjetas: Lista actualizada de tarjetas del jugador.
+
+        """
+        for widget in self.main_window.findChildren(TarjetasDialog):
+            if widget.isVisible():
+                widget.actualizar_tarjetas(tarjetas)

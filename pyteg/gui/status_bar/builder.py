@@ -44,7 +44,7 @@ def _build_turn_and_local_player(main_window: StatusBarHost) -> None:
     main_window.jugador_actual_layout = QHBoxLayout(main_window.jugador_actual_widget)
     main_window.jugador_actual_layout.setContentsMargins(4, 0, 4, 0)
     main_window.jugador_actual_layout.setSpacing(6)
-    main_window.turno_label = QLabel("Turno: 0")
+    main_window.turno_label = QLabel(_("Turno: 0"))
     main_window.turno_label.setStyleSheet(styles.LABEL_BOLD_STYLE)
     main_window.jugador_actual_layout.addWidget(main_window.turno_label)
     main_window.status_bar.addPermanentWidget(main_window.jugador_actual_widget)

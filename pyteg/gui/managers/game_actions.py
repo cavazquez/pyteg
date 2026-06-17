@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING, cast
 from PySide6.QtWidgets import QDialog, QWidget
 
 from pyteg.gui.dialogs.attack import AttackDialog
+from pyteg.i18n import _, ngettext
 from pyteg.logger import get_logger
 
 if TYPE_CHECKING:
@@ -42,7 +43,7 @@ class GameActionsManager:
         scene = self.main_window.scene
         if scene is None or not hasattr(scene, "selection_manager"):
             self.main_window.update_status_bar(
-                "Error: No hay sistema de selección disponible", "red"
+                _("Error: No hay sistema de selección disponible"), "red"
             )
             return
 
@@ -51,13 +52,13 @@ class GameActionsManager:
         destino = selection_manager.get_pais_destino()
 
         if not origen:
-            status_msg = "Selecciona un país de origen primero"
+            status_msg = _("Selecciona un país de origen primero")
             self.main_window.update_status_bar(status_msg, "orange")
             return
 
         if not destino:
             self.main_window.update_status_bar(
-                "Selecciona un país de destino después del origen", "orange"
+                _("Selecciona un país de destino después del origen"), "orange"
             )
             return
 
@@ -69,7 +70,8 @@ class GameActionsManager:
 
             if max_unidades < 1:
                 self.main_window.update_status_bar(
-                    f"No hay suficientes unidades en {origen} para atacar", "orange"
+                    _("No hay suficientes unidades en {} para atacar").format(origen),
+                    "orange",
                 )
                 return
 
@@ -81,14 +83,18 @@ class GameActionsManager:
                 cantidad_unidades = dialog.get_cantidad_unidades()
                 self.main_window.transmisor.atacar(origen, destino, cantidad_unidades)
                 self.main_window.update_status_bar(
-                    f"Atacando de {origen} a {destino} con {cantidad_unidades} "
-                    f"unidad{'es' if cantidad_unidades > 1 else ''}...",
+                    _("Atacando de {} a {} con {} {}…").format(
+                        origen,
+                        destino,
+                        cantidad_unidades,
+                        ngettext("unidad", "unidades", cantidad_unidades),
+                    ),
                     "blue",
                 )
                 # Cancelar selección después de atacar
                 selection_manager.cancelar_seleccion()
         else:
-            error_msg = "Error: No hay conexión disponible"
+            error_msg = _("Error: No hay conexión disponible")
             self.main_window.update_status_bar(error_msg, "red")
 
     def finalizar_turno(self) -> None:

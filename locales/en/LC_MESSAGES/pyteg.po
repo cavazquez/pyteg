@@ -352,3 +352,78 @@ msgstr "Empty"
 
 msgid "Seleccionadas: %s"
 msgstr "Selected: %s"
+
+# Battle flow (additional strings)
+msgid "Atacar de {} a {}"
+msgstr "Attack from {} to {}"
+
+msgid "Selecciona con cuántas unidades atacar:"
+msgstr "Select how many units to attack with:"
+
+msgid "1 unidad"
+msgid_plural "{} unidades"
+msgstr[0] "1 unit"
+msgstr[1] "{} units"
+
+msgid "Atacante ({}):"
+msgstr "Attacker ({}): "
+
+msgid "Defensor ({}):"
+msgstr "Defender ({}): "
+
+msgid "Lanzar Dados"
+msgstr "Roll Dice"
+
+msgid "¡{} conquista {}!"
+msgstr "{} conquers {}!"
+
+msgid "{} defiende exitosamente"
+msgstr "{} defends successfully"
+
+msgid "Batalla reñida"
+msgstr "Close battle"
+
+msgid "Pérdidas: {} (-{}), {} (-{})"
+msgstr "Losses: {} (-{}), {} (-{})"
+
+msgid "Error: No hay sistema de selección disponible"
+msgstr "Error: Selection system not available"
+
+msgid "Selecciona un país de origen primero"
+msgstr "Select an origin country first"
+
+msgid "Selecciona un país de destino después del origen"
+msgstr "Select a destination country after the origin"
+
+msgid "Error: No hay conexión disponible"
+msgstr "Error: No connection available"
+
+msgid "En Juego"
+msgstr "In Game"
+
+msgid "[Sin nombre]"
+msgstr "[No name]"
+
+msgid "Turno: 0"
+msgstr "Turn: 0"
+
+msgid "¡Has conquistado {}!"
+msgstr "You conquered {}!"
+
+msgid "Tu ataque a {} fue repelido"
+msgstr "Your attack on {} was repelled"
+
+msgid "Batalla: {} ataca {}"
+msgstr "Battle: {} attacks {}"
+
+msgid "¡{} conquistó {}!"
+msgstr "{} conquered {}!"
+
+msgid "{} defendió {}"
+msgstr "{} defended {}"
+
+msgid "Error mostrando batalla: {} vs {}"
+msgstr "Error showing battle: {} vs {}"
+
+msgid "Tiempo: {}s"
+msgstr "Time: {}s"
