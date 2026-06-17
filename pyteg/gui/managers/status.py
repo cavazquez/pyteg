@@ -185,6 +185,10 @@ class StatusManager:
         if jugador_actual_nombre:
             self.main_window.players_manager.set_current_player(jugador_actual_nombre)
 
+        from pyteg.gui.gameplay_state import refresh_acciones_juego  # noqa: PLC0415
+
+        refresh_acciones_juego(self.main_window)
+
     def update_timer_display(self, text: str, color: str | None = None) -> None:
         """Actualiza el display del timer en la barra de estado.
 

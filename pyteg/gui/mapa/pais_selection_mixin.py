@@ -22,17 +22,20 @@ class PaisSelectionMixin:
     _main_window: MainWindowProtocol | None
 
     def mousePressEvent(self, event: QGraphicsSceneMouseEvent) -> None:  # noqa: N802
-        """Maneja los clics del mouse en el país."""
+        """Delega la selección a la escena (soporta superposiciones)."""
         if event.button() == Qt.MouseButton.LeftButton:
+            main_window = self._main_window
             if (
-                self._main_window is not None
-                and self._main_window.scene is not None
-                and hasattr(self._main_window.scene, "selection_manager")
+                main_window is not None
+                and main_window.scene is not None
+                and hasattr(main_window.scene, "handle_country_click")
+            ) and main_window.scene.handle_country_click(
+                event.scenePos(), event.screenPos()
             ):
-                self._main_window.scene.selection_manager.seleccionar_pais(self._nombre)
-        else:
-            item = cast("QGraphicsPixmapItem", self)
-            QGraphicsPixmapItem.mousePressEvent(item, event)
+                event.accept()
+                return
+        item = cast("QGraphicsPixmapItem", self)
+        QGraphicsPixmapItem.mousePressEvent(item, event)
 
     def set_seleccion_visual(self, tipo: str) -> None:
         """Establece el indicador visual de selección usando oscurecimiento."""

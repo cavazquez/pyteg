@@ -12,7 +12,10 @@ from typing import TYPE_CHECKING
 from PySide6.QtCore import QTimer
 
 from pyteg.config import MAP_CONTINENT_TO_PANEL_LABEL
+from pyteg.gui.gameplay_state import refresh_acciones_juego
 from pyteg.gui.managers.units_panel import format_unit_label
+from pyteg.gui.units_placement import unidades_colocables_en_pais
+from pyteg.i18n import _
 
 if TYPE_CHECKING:
     from pyteg.gui.managers.protocols import MainWindowProtocol
@@ -137,6 +140,39 @@ class UnitsManager:
             )
             self.main_window.row_widgets["Misiles"].setVisible(False)
             self.main_window.last_units["Misiles"] = 0
+
+        self._notify_placement_feedback()
+        refresh_acciones_juego(self.main_window)
+
+    def _notify_placement_feedback(self) -> None:
+        pais = getattr(self.main_window, "ultimo_pais_colocado", None)
+        continente = getattr(self.main_window, "ultimo_continente_colocado", None)
+        antes = getattr(self.main_window, "unidades_antes_colocar", None)
+        if not pais or not continente or not antes:
+            return
+
+        _total_antes, cont_antes, gen_antes = unidades_colocables_en_pais(
+            antes, continente
+        )
+        ahora = self.main_window.last_units
+        _total_ahora, cont_ahora, gen_ahora = unidades_colocables_en_pais(
+            ahora, continente
+        )
+
+        panel_key = MAP_CONTINENT_TO_PANEL_LABEL.get(continente)
+        if cont_antes > cont_ahora and panel_key:
+            msg = _("Colocada en {}: consumió refuerzo de {}").format(
+                pais, _(panel_key)
+            )
+        elif gen_antes > gen_ahora:
+            msg = _("Colocada en {}: consumió unidad general").format(pais)
+        else:
+            msg = _("Unidad colocada en {}").format(pais)
+
+        self.main_window.update_status_bar(msg, "green")
+        self.main_window.ultimo_pais_colocado = None
+        self.main_window.ultimo_continente_colocado = None
+        self.main_window.unidades_antes_colocar = {}
 
     def _flash_row(self, key: str) -> None:
         """Aplica un efecto de flash a una fila de unidades cuando cambia el valor."""

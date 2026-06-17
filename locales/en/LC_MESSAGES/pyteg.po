@@ -275,6 +275,78 @@ msgstr "{} reinforcements: {} available"
 msgid "Unidades generales: {} disponibles"
 msgstr "General units: {} available"
 
+msgid "Seleccionar país"
+msgstr "Select country"
+
+msgid "Lanzar misil"
+msgstr "Launch missile"
+
+msgid "¿Lanzar misil de {} a {}?"
+msgstr "Launch missile from {} to {}?"
+
+msgid "Lanzando misil de {} a {}…"
+msgstr "Launching missile from {} to {}…"
+
+msgid "No es tu turno"
+msgstr "Not your turn"
+
+msgid "Colocá todas las unidades antes de atacar o mover"
+msgstr "Place all units before attacking or moving"
+
+msgid "Seleccionar Unidades a Mover"
+msgstr "Select Units to Move"
+
+msgid "Mover de {} a {}"
+msgstr "Move from {} to {}"
+
+msgid "Selecciona cuántas unidades mover:"
+msgstr "Select how many units to move:"
+
+msgid "Moviendo {} {} de {} a {}…"
+msgstr "Moving {} {} from {} to {}…"
+
+msgid "No hay suficientes unidades en {} para mover"
+msgstr "Not enough units in {} to move"
+
+msgid "{} no es tu país"
+msgstr "{} is not your country"
+
+msgid "No puedes atacar tu propio país"
+msgstr "You cannot attack your own country"
+
+msgid "{} no es adyacente a {}"
+msgstr "{} is not adjacent to {}"
+
+msgid "Solo puedes mover a países propios"
+msgstr "You can only move to your own countries"
+
+msgid "No puedes lanzar misiles a tus propios países"
+msgstr "You cannot launch missiles at your own countries"
+
+msgid "Colocar unidades"
+msgstr "Place units"
+
+msgid "Colocar en {}"
+msgstr "Place in {}"
+
+msgid "Cantidad a colocar:"
+msgstr "Units to place:"
+
+msgid "Colocar"
+msgstr "Place"
+
+msgid "Colocando {} {} en {}…"
+msgstr "Placing {} {} in {}…"
+
+msgid "Colocada en {}: consumió refuerzo de {}"
+msgstr "Placed in {}: used {} reinforcement"
+
+msgid "Colocada en {}: consumió unidad general"
+msgstr "Placed in {}: used a general unit"
+
+msgid "Unidad colocada en {}"
+msgstr "Unit placed in {}"
+
 msgid "Agregar Misil"
 msgstr "Add Missile"
 

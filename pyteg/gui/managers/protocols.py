@@ -51,6 +51,9 @@ class MainWindowProtocol(GameWindowProtocol, Protocol):
     jugador_actual_nombre: str | None
     jugador_actual_color: str | None
     last_units: dict[str, int]
+    ultimo_pais_colocado: str | None
+    ultimo_continente_colocado: str | None
+    unidades_antes_colocar: dict[str, int]
     row_widgets: dict[str, QFrame]
     value_labels: dict[str, QLabel]
     status_temp_label: QLabel | None

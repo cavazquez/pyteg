@@ -137,6 +137,15 @@ class Pais(PaisBattleFxMixin, PaisSelectionMixin, QGraphicsPixmapItem):
             return self._circle.get_unidades()
         return 0
 
+    def get_cantidad_misiles(self) -> int:
+        """Retorna la cantidad de misiles en el país.
+
+        Returns:
+            Cantidad de misiles disponibles.
+
+        """
+        return self._cantidad_misiles
+
     def set_main_window(self, main_window: Any) -> None:
         """Establece la referencia a la ventana principal."""
         self._main_window = main_window

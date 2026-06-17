@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Protocol
 
-from pyteg.gui.toolbar import ToolBar
+from pyteg.gui.gameplay_state import refresh_acciones_juego
 from pyteg.i18n import translate as _
 
 if TYPE_CHECKING:
@@ -67,25 +67,7 @@ class CountrySelectionManager:
         self._pais_origen_widget = None
         self._pais_destino_widget = None
         self._actualizar_seleccion_label()
-
-    def confirmar_seleccion(self) -> None:
-        """Confirma la selección y ejecuta movimiento (acción por defecto)."""
-        if (
-            self._pais_origen
-            and self._pais_destino
-            and hasattr(self.main_window, "transmisor")
-            and self.main_window.transmisor
-        ):
-            self.main_window.transmisor.mover_unidad(
-                origen=self._pais_origen, destino=self._pais_destino, cantidad=1
-            )
-            self.main_window.status_bar.showMessage(
-                _("Moviendo 1 unidad de {} a {}").format(
-                    self._pais_origen, self._pais_destino
-                ),
-                3000,
-            )
-            self.cancelar_seleccion()
+        refresh_acciones_juego(self.main_window)
 
     def refresh_labels(self) -> None:
         """Re-aplica las traducciones del label de selección y notifica a la toolbar.
@@ -121,11 +103,15 @@ class CountrySelectionManager:
 
         self._actualizar_botones_toolbar()
 
+    def _actualizar_botones_toolbar(self) -> None:
+        """Actualiza toolbar según selección y turno."""
+        refresh_acciones_juego(self.main_window)
+
     def get_pais_origen(self) -> str | None:
         """Retorna el país origen seleccionado.
 
         Returns:
-            Nombre del país origen o None si no hay selección.
+            Nombre del país origen o None.
 
         """
         return self._pais_origen
@@ -134,21 +120,7 @@ class CountrySelectionManager:
         """Retorna el país destino seleccionado.
 
         Returns:
-            Nombre del país destino o None si no hay selección.
+            Nombre del país destino o None.
 
         """
         return self._pais_destino
-
-    def _actualizar_botones_toolbar(self) -> None:
-        """Actualiza el estado de los botones de atacar y mover en la toolbar."""
-        hay_dos_paises = (
-            self._pais_origen is not None and self._pais_destino is not None
-        )
-
-        if hasattr(self.main_window, "findChildren"):
-            toolbars = self.main_window.findChildren(ToolBar)
-            for toolbar in toolbars:
-                if hasattr(toolbar, "actualizar_botones_seleccion"):
-                    toolbar.actualizar_botones_seleccion(
-                        hay_dos_paises_seleccionados=hay_dos_paises
-                    )
