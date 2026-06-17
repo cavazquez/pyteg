@@ -45,7 +45,7 @@ dev = [
     "coverage==7.12.0",
     "ruff==0.14.10",
     "nuitka==2.8.6",
-    "hatch==1.16.2",
+    "hatch==1.17.0",
     "hatch-nuitka==0.0.4",
     "radon==6.0.1",
     "pylint==4.0.4",
