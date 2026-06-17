@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import unittest
 
+from pyteg.config import BONIFICACIONES_CONTINENTE
 from pyteg.core.combate.calculos import Calculos
 from pyteg.server.juego.mapa import Mapa
 
@@ -75,7 +76,10 @@ class TestCalculos(unittest.TestCase):
             }
 
         mapa = Mapa(build_mapa)
-        self.assertEqual(Calculos.calcular_unidades_europa(mapa, J_MENGANO), 5)
+        self.assertEqual(
+            Calculos.calcular_unidades_continente(mapa, J_MENGANO, "Europa"),
+            BONIFICACIONES_CONTINENTE["Europa"],
+        )
 
     def test_calcular_unidades_sin_toda_europa(self) -> None:
         """Prueba calcular unidades cuando el jugador no tiene toda Europa."""
@@ -89,7 +93,9 @@ class TestCalculos(unittest.TestCase):
             }
 
         mapa = Mapa(build_mapa)
-        self.assertEqual(Calculos.calcular_unidades_europa(mapa, J_MENGANO), 0)
+        self.assertEqual(
+            Calculos.calcular_unidades_continente(mapa, J_MENGANO, "Europa"), 0
+        )
 
     def test_calcular_unidades_con_toda_asia(self) -> None:
         """Prueba calcular unidades cuando el jugador tiene toda Asia."""
@@ -103,7 +109,10 @@ class TestCalculos(unittest.TestCase):
             }
 
         mapa = Mapa(build_mapa)
-        self.assertEqual(Calculos.calcular_unidades_asia(mapa, J_MENGANO), 7)
+        self.assertEqual(
+            Calculos.calcular_unidades_continente(mapa, J_MENGANO, "Asia"),
+            BONIFICACIONES_CONTINENTE["Asia"],
+        )
 
     def test_calcular_unidades_sin_toda_asia(self) -> None:
         """Prueba calcular unidades cuando el jugador no tiene toda Asia."""
@@ -117,7 +126,9 @@ class TestCalculos(unittest.TestCase):
             }
 
         mapa = Mapa(build_mapa)
-        self.assertEqual(Calculos.calcular_unidades_asia(mapa, J_MENGANO), 0)
+        self.assertEqual(
+            Calculos.calcular_unidades_continente(mapa, J_MENGANO, "Asia"), 0
+        )
 
     def test_calcular_unidades_con_toda_africa(self) -> None:
         """Prueba calcular unidades cuando el jugador tiene toda África."""
@@ -131,7 +142,10 @@ class TestCalculos(unittest.TestCase):
             }
 
         mapa = Mapa(build_mapa)
-        self.assertEqual(Calculos.calcular_unidades_africa(mapa, J_MENGANO), 3)
+        self.assertEqual(
+            Calculos.calcular_unidades_continente(mapa, J_MENGANO, "Africa"),
+            BONIFICACIONES_CONTINENTE["Africa"],
+        )
 
     def test_calcular_unidades_sin_toda_africa(self) -> None:
         """Prueba calcular unidades cuando el jugador no tiene toda África."""
@@ -145,7 +159,9 @@ class TestCalculos(unittest.TestCase):
             }
 
         mapa = Mapa(build_mapa)
-        self.assertEqual(Calculos.calcular_unidades_africa(mapa, J_MENGANO), 0)
+        self.assertEqual(
+            Calculos.calcular_unidades_continente(mapa, J_MENGANO, "Africa"), 0
+        )
 
     def test_calcular_unidades_con_toda_oceania(self) -> None:
         """Prueba calcular unidades cuando el jugador tiene toda Oceanía."""
@@ -159,7 +175,10 @@ class TestCalculos(unittest.TestCase):
             }
 
         mapa = Mapa(build_mapa)
-        self.assertEqual(Calculos.calcular_unidades_oceania(mapa, J_MENGANO), 2)
+        self.assertEqual(
+            Calculos.calcular_unidades_continente(mapa, J_MENGANO, "Oceania"),
+            BONIFICACIONES_CONTINENTE["Oceania"],
+        )
 
     def test_calcular_unidades_sin_toda_ocenia(self) -> None:
         """Prueba calcular unidades cuando el jugador no tiene toda Oceanía."""
@@ -173,7 +192,9 @@ class TestCalculos(unittest.TestCase):
             }
 
         mapa = Mapa(build_mapa)
-        self.assertEqual(Calculos.calcular_unidades_oceania(mapa, J_MENGANO), 0)
+        self.assertEqual(
+            Calculos.calcular_unidades_continente(mapa, J_MENGANO, "Oceania"), 0
+        )
 
     def test_calcular_unidades_con_toda_america_del_sur(self) -> None:
         """Prueba calcular unidades cuando el jugador tiene toda América del Sur."""
@@ -188,8 +209,8 @@ class TestCalculos(unittest.TestCase):
 
         mapa = Mapa(build_mapa)
         self.assertEqual(
-            Calculos.calcular_unidades_america_del_sur(mapa, J_MENGANO),
-            3,
+            Calculos.calcular_unidades_continente(mapa, J_MENGANO, "Sudamerica"),
+            BONIFICACIONES_CONTINENTE["Sudamerica"],
         )
 
     def test_calcular_unidades_sin_toda_america_del_sur(self) -> None:
@@ -205,7 +226,7 @@ class TestCalculos(unittest.TestCase):
 
         mapa = Mapa(build_mapa)
         self.assertEqual(
-            Calculos.calcular_unidades_america_del_sur(mapa, J_MENGANO),
+            Calculos.calcular_unidades_continente(mapa, J_MENGANO, "Sudamerica"),
             0,
         )
 
@@ -222,8 +243,8 @@ class TestCalculos(unittest.TestCase):
 
         mapa = Mapa(build_mapa)
         self.assertEqual(
-            Calculos.calcular_unidades_america_del_norte(mapa, J_MENGANO),
-            5,
+            Calculos.calcular_unidades_continente(mapa, J_MENGANO, "Norteamerica"),
+            BONIFICACIONES_CONTINENTE["Norteamerica"],
         )
 
     def test_calcular_unidades_sin_toda_america_del_norte(self) -> None:
@@ -242,7 +263,7 @@ class TestCalculos(unittest.TestCase):
 
         mapa = Mapa(build_mapa)
         self.assertEqual(
-            Calculos.calcular_unidades_america_del_norte(mapa, J_MENGANO),
+            Calculos.calcular_unidades_continente(mapa, J_MENGANO, "Norteamerica"),
             0,
         )
 

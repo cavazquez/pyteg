@@ -14,6 +14,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from pyteg.config import DEFAULT_MAP_THEME
 from pyteg.i18n import translate as _
 
 from . import styles
@@ -39,6 +40,10 @@ class TarjetasDialog(TarjetasExchangeMixin, TarjetasSelectionMixin, QDialog):
         self.setWindowTitle(_("Mis Tarjetas"))
         self.setModal(True)
         self.setFixedSize(600, 550)
+
+        self.map_theme = DEFAULT_MAP_THEME
+        if parent is not None and hasattr(parent, "map_theme"):
+            self.map_theme = parent.map_theme
 
         self.tarjetas: list[TarjetaItem] = [
             {"pais": "Circulo", "simbolo": "Galeon"},

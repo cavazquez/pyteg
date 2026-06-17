@@ -4,6 +4,14 @@ Este módulo contiene todas las constantes utilizadas en el juego
 para evitar valores hardcodeados y mejorar mantenibilidad.
 """
 
+from __future__ import annotations
+
+from typing import NamedTuple
+
+# Tema de mapa por defecto (assets en themes/{nombre}/)
+DEFAULT_MAP_THEME = "classic"
+"""Nombre del tema de mapa usado por servidor y cliente."""
+
 # Configuración de turnos
 DEFAULT_TURN_SECONDS = 20
 """Segundos por defecto para cada turno."""
@@ -56,7 +64,7 @@ COUNTRIES_DIVISOR = 2
 """Divisor para calcular unidades generales (1 unidad por cada N países)."""
 
 # Tipos de unidades válidos
-VALID_UNIT_TYPES = {"infanteria", "misil"}
+VALID_UNIT_TYPES = {"infanteria"}
 """Tipos de unidades válidos en el juego."""
 
 # Restricciones de turnos
@@ -93,6 +101,52 @@ MISSILE_DAMAGE_DISTANCE_2 = 2
 
 MISSILE_DAMAGE_DISTANCE_3 = 1
 """Daño de misil a distancia 3."""
+
+
+# Continentes: ID del mapa (TOML) como fuente única; derivados para GUI y turnos
+class ContinentSpec(NamedTuple):
+    """Metadatos de un continente del juego."""
+
+    map_id: str
+    """Identificador en TOML y mapa (ej. ``Sudamerica``)."""
+
+    panel_label: str
+    """Etiqueta del panel UNIDADES / msgid de traducción."""
+
+    unit_suffix: str
+    """Sufijo de métodos en ``SiguientesTurnos`` (ej. ``sudamerica``)."""
+
+    bonus: int
+    """Unidades de bonificación por control completo del continente."""
+
+
+CONTINENTS: tuple[ContinentSpec, ...] = (
+    ContinentSpec("Sudamerica", "América del Sur", "sudamerica", 3),
+    ContinentSpec("Norteamerica", "América del Norte", "norteamerica", 5),
+    ContinentSpec("Europa", "Europa", "europa", 5),
+    ContinentSpec("Asia", "Asia", "asia", 7),
+    ContinentSpec("Africa", "África", "africa", 3),
+    ContinentSpec("Oceania", "Oceanía", "oceania", 2),
+)
+"""Registro canónico de continentes (orden = panel UNIDADES)."""
+
+BONIFICACIONES_CONTINENTE: dict[str, int] = {
+    spec.map_id: spec.bonus for spec in CONTINENTS
+}
+"""Bonificación por control completo; claves = ID del mapa."""
+
+CONTINENT_PANEL_LABELS: tuple[str, ...] = tuple(spec.panel_label for spec in CONTINENTS)
+"""Orden de filas de bonificación continental en el panel UNIDADES."""
+
+MAP_CONTINENT_TO_PANEL_LABEL: dict[str, str] = {
+    spec.map_id: spec.panel_label for spec in CONTINENTS
+}
+"""ID del mapa (TOML) → etiqueta del panel UNIDADES."""
+
+CONTINENT_UNIT_SUFFIX: dict[str, str] = {
+    spec.map_id: spec.unit_suffix for spec in CONTINENTS
+}
+"""ID del mapa → sufijo de métodos ``cant_unidades_*`` / ``usar_unidad_*``."""
 
 # Configuración de UI
 TITILATION_MAX_INTENSITY = 0.7

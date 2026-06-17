@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING, cast
 
 from PySide6.QtWidgets import QDialog, QWidget
 
+from pyteg.gui.connection_utils import cliente_esta_conectado
 from pyteg.gui.dialogs.attack import AttackDialog
 from pyteg.i18n import _, ngettext
 from pyteg.logger import get_logger
@@ -63,8 +64,13 @@ class GameActionsManager:
             return
 
         transmisor = self.main_window.transmisor
-        has_atacar = hasattr(transmisor, "atacar")
-        if has_atacar:
+        if not cliente_esta_conectado(self.main_window):
+            self.main_window.update_status_bar(
+                _("Error: No hay conexión disponible"), "red"
+            )
+            return
+
+        if hasattr(transmisor, "atacar"):
             # Obtener información del país atacante para determinar unidades disponibles
             max_unidades = self.get_max_attack_units(origen)
 
@@ -99,16 +105,14 @@ class GameActionsManager:
 
     def finalizar_turno(self) -> None:
         """Método llamado cuando se hace clic en el botón Finalizar Turno."""
-        # Aquí puedes agregar la lógica para finalizar el turno actual
-        # Por ejemplo, notificar al servidor que el turno ha terminado
-        transmisor = self.main_window.transmisor
-        if hasattr(transmisor, "finalizar_turno"):
-            self.main_window.transmisor.finalizar_turno()
-            scene = self.main_window.scene
-            if scene is not None and hasattr(scene, "selection_manager"):
-                scene.selection_manager.cancelar_seleccion()
-        else:
-            _LOG.warning("No se pudo finalizar el turno: transmisor no disponible")
+        if not cliente_esta_conectado(self.main_window):
+            _LOG.warning("No se pudo finalizar el turno: sin conexión")
+            return
+
+        self.main_window.transmisor.finalizar_turno()
+        scene = self.main_window.scene
+        if scene is not None and hasattr(scene, "selection_manager"):
+            scene.selection_manager.cancelar_seleccion()
 
     def get_max_attack_units(self, pais: str) -> int:
         """Obtiene el máximo número de unidades disponibles para atacar desde un país.
@@ -142,11 +146,11 @@ class GameActionsManager:
             pais: Nombre del país donde canjear el misil.
 
         """
-        if self.main_window.transmisor:
-            self.main_window.transmisor.canjear_misil(pais)
-            self.main_window.status_bar.showMessage(
-                f"Canjeando misil en {pais}...", 3000
-            )
+        if not cliente_esta_conectado(self.main_window):
+            return
+
+        self.main_window.transmisor.canjear_misil(pais)
+        self.main_window.status_bar.showMessage(f"Canjeando misil en {pais}...", 3000)
 
     def lanzar_misil(self, pais_origen: str, pais_destino: str) -> None:
         """Lanza un misil desde un país hacia otro.
@@ -156,9 +160,11 @@ class GameActionsManager:
             pais_destino: País objetivo del misil.
 
         """
-        if self.main_window.transmisor:
-            self.main_window.transmisor.lanzar_misil(pais_origen, pais_destino)
-            self.main_window.status_bar.showMessage(
-                f"Lanzando misil desde {pais_origen} hacia {pais_destino}...",
-                3000,
-            )
+        if not cliente_esta_conectado(self.main_window):
+            return
+
+        self.main_window.transmisor.lanzar_misil(pais_origen, pais_destino)
+        self.main_window.status_bar.showMessage(
+            f"Lanzando misil desde {pais_origen} hacia {pais_destino}...",
+            3000,
+        )

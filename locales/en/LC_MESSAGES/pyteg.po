@@ -260,8 +260,20 @@ msgid "Moviendo {} unidad(es) de {} a {}"
 msgstr "Moving {} unit(s) from {} to {}"
 
 # Country context menu
-msgid "Agregar Infantería"
-msgstr "Add Infantry"
+msgid "Colocar unidad"
+msgstr "Place unit"
+
+msgid "Sin unidades disponibles para este país"
+msgstr "No units available for this country"
+
+msgid "Consume primero refuerzos de {} ({}), luego generales ({})"
+msgstr "Uses {} reinforcements ({}) first, then general units ({})"
+
+msgid "Refuerzos de {}: {} disponibles"
+msgstr "{} reinforcements: {} available"
+
+msgid "Unidades generales: {} disponibles"
+msgstr "General units: {} available"
 
 msgid "Agregar Misil"
 msgstr "Add Missile"

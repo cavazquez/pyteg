@@ -5,6 +5,9 @@ section() {
   printf '\n==> %s\n\n' "$1"
 }
 
+section "uv sync (dev)"
+uv sync --group dev
+
 section "gettext: compilar .po → .mo (locales/)"
 # Los .mo no se versionan (.gitignore); regenerarlos evita inglés roto tras git pull.
 uv run python scripts/manage_translations.py compile
@@ -22,18 +25,8 @@ section "Mypy"
 uv run mypy
 
 section "Coverage run"
-uv run python -m coverage run --branch -m unittest
+uv run python -m coverage run --branch -m unittest discover
 
 section "Coverage summary"
-uv run python - <<'PY'
-import contextlib
-import coverage
-import io
-
-cov = coverage.Coverage(data_file=".coverage")
-cov.load()
-with contextlib.redirect_stdout(io.StringIO()):
-    total = cov.report(show_missing=False)
-print(f"Total coverage: {total:.1f}%")
-PY
+uv run coverage report
 

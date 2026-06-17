@@ -146,6 +146,7 @@ class ConnectionClient(QWidget):
             _LOG.debug("Conectando...")
         elif state == QAbstractSocket.SocketState.ConnectedState:
             _LOG.info("Socket en estado conectado")
+            self._main_window.conexion = self
             self._main_window.transmisor = ClientTransmisor(self)
             self._main_window.ventana_conectar.close()
             # Actualizar estado de botones en la toolbar
@@ -153,6 +154,7 @@ class ConnectionClient(QWidget):
                 self._main_window.toolbar.actualizar_estado_conexion(conectado=True)
         elif state == QAbstractSocket.SocketState.UnconnectedState:
             _LOG.info("Socket desconectado")
+            self._main_window.conexion = None
             # Reproducir sonido de desconexión
             if hasattr(self._main_window, "sound_manager"):
                 self._main_window.sound_manager.play_disconnect()

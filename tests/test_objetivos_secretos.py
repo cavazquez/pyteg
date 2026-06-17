@@ -2,7 +2,7 @@
 
 import unittest
 from typing import cast
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 
 from pyteg.core.partida.objetivos_secretos import ObjetivosSecretos
 
@@ -36,7 +36,6 @@ class TestObjetivosSecretos(unittest.TestCase):
         self.mock_toml_reader.get_objetivo_secreto.side_effect = (
             mock_get_objetivo_secreto
         )
-        self.mock_toml_reader.get_paises.return_value = ["usa", "canada", "mexico"]
 
         self.objetivos_secretos = ObjetivosSecretos(self.mock_toml_reader)
 
@@ -76,33 +75,27 @@ class TestObjetivosSecretos(unittest.TestCase):
         jugador_id = 42
         self.objetivos_secretos.objetivos_asignados[jugador_id] = "obj_1"
 
-        mock_mapa: dict[str, list[object]] = {
-            "pais1": ["continente1", "coords", jugador_id, 1],
-            "pais2": ["continente1", "coords", jugador_id, 2],
-        }
+        mock_mapa = Mock()
+        mock_mapa.cantidad_de_paises_del_jugador.return_value = 30
 
-        with patch.object(
-            self.objetivos_secretos, "_contar_paises_jugador", return_value=30
-        ):
-            resultado = self.objetivos_secretos.verificar_condicion_victoria(
-                jugador_id, mock_mapa, Mock()
-            )
-            self.assertTrue(resultado)
+        resultado = self.objetivos_secretos.verificar_condicion_victoria(
+            jugador_id, mock_mapa, Mock()
+        )
+        self.assertTrue(resultado)
 
-        with patch.object(
-            self.objetivos_secretos, "_contar_paises_jugador", return_value=25
-        ):
-            resultado = self.objetivos_secretos.verificar_condicion_victoria(
-                jugador_id, mock_mapa, Mock()
-            )
-            self.assertFalse(resultado)
+        mock_mapa.cantidad_de_paises_del_jugador.return_value = 25
+        resultado = self.objetivos_secretos.verificar_condicion_victoria(
+            jugador_id, mock_mapa, Mock()
+        )
+        self.assertFalse(resultado)
 
     def test_verificar_condicion_victoria_destruir_jugador(self) -> None:
         """Test de verificación de victoria por destruir jugador."""
         jugador_id = 10
         self.objetivos_secretos.objetivos_asignados[jugador_id] = "obj_2"
 
-        mock_mapa: dict[str, list[object]] = {}
+        mock_mapa = Mock()
+        mock_mapa.cantidad_de_paises_del_jugador.return_value = 0
 
         mock_rojo = Mock()
         mock_rojo.userid.return_value = 55
@@ -134,48 +127,28 @@ class TestObjetivosSecretos(unittest.TestCase):
         self.objetivos_data["obj_3"] = objetivo_continentes
         self.objetivos_secretos.objetivos_asignados[jugador_id] = "obj_3"
 
-        mock_mapa: dict[str, list[object]] = {
-            "usa": ["America del Norte", "coords", jugador_id, 1],
-            "canada": ["America del Norte", "coords", jugador_id, 1],
-            "mexico": ["America del Norte", "coords", jugador_id, 1],
-            "egipto": ["Africa", "coords", jugador_id, 1],
-            "sudafrica": ["Africa", "coords", jugador_id, 2],
-            "nigeria": ["Africa", "coords", jugador_id, 1],
-        }
-
-        def mock_get_paises(continente: str) -> list[str]:
-            if continente == "America del Norte":
-                return ["usa", "canada", "mexico"]
-            if continente == "Africa":
-                return ["egipto", "sudafrica", "nigeria"]
-            return []
-
-        self.mock_toml_reader.get_paises.side_effect = mock_get_paises
+        mock_mapa = Mock()
+        mock_mapa.jugador_controla_continente.return_value = True
 
         resultado = self.objetivos_secretos.verificar_condicion_victoria(
             jugador_id, mock_mapa, Mock()
         )
         self.assertTrue(resultado)
 
-    def test_contar_paises_jugador(self) -> None:
-        """Test del conteo de países de un jugador."""
-        jugador_id = 5
-
-        mock_mapa = {
-            "pais1": ["continente1", "coords", jugador_id, 1],
-            "pais2": ["continente1", "coords", jugador_id, 2],
-            "pais3": ["continente2", "coords", 99, 1],
-        }
-
-        count = self.objetivos_secretos._contar_paises_jugador(jugador_id, mock_mapa)  # noqa: SLF001
-        self.assertEqual(count, 2)
+        mock_mapa.jugador_controla_continente.side_effect = lambda _jid, continente: (
+            continente == "America del Norte"
+        )
+        resultado = self.objetivos_secretos.verificar_condicion_victoria(
+            jugador_id, mock_mapa, Mock()
+        )
+        self.assertFalse(resultado)
 
     def test_sin_objetivo_asignado(self) -> None:
         """Test cuando un jugador no tiene objetivo asignado."""
         jugador_id = 88
 
         resultado = self.objetivos_secretos.verificar_condicion_victoria(
-            jugador_id, {}, Mock()
+            jugador_id, Mock(), Mock()
         )
         self.assertFalse(resultado)
 

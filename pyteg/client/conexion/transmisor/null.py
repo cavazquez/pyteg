@@ -16,6 +16,15 @@ class ClientNullTransmisor(IClientTransmisor):
     def __init__(self) -> None:
         """Inicializa el transmisor nulo."""
 
+    def esta_conectado(self) -> bool:
+        """Indica que no hay conexión activa.
+
+        Returns:
+            Siempre False.
+
+        """
+        return False
+
     def enviar_chat(self, _: str) -> None:
         """Envía un mensaje de chat (no-op cuando no hay conexión).
 
@@ -114,6 +123,11 @@ class ClientNullTransmisor(IClientTransmisor):
         """Realiza un canje especial cuando no está conectado."""
         _ = pais
         _LOG.debug("No puedes realizar canje especial. No estás conectado.")
+
+    def canjear_tarjetas(self, tarjetas: list[dict[str, Any]]) -> None:
+        """Canjea tarjetas cuando no está conectado."""
+        _ = tarjetas
+        _LOG.debug("No puedes canjear tarjetas. No estás conectado.")
 
     def canjear_misil(self, pais: str) -> None:
         """Canjea un misil cuando no está conectado."""

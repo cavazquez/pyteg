@@ -9,6 +9,7 @@ from PySide6.QtWidgets import QMainWindow, QWidget
 
 from pyteg.client.colores.paleta import Colores
 from pyteg.client.conexion.transmisor import ClientNullTransmisor
+from pyteg.config import DEFAULT_MAP_THEME
 from pyteg.gui.facades.main_window_delegates import MainWindowDelegatesMixin
 from pyteg.gui.managers.cards import CardManager
 from pyteg.gui.managers.config import ConfigManager
@@ -93,6 +94,7 @@ class Gui(QMainWindow, MainWindowDelegatesMixin):
         self._vivo = True
         self.client: Client = client
         self.theme: str = "light"
+        self.map_theme: str = DEFAULT_MAP_THEME
         self.client_by_id: dict[int, Client] = {}
         self.transmisor = ClientNullTransmisor()
         self.conexion: ConnectionClient | None = None

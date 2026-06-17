@@ -65,10 +65,6 @@ class ConfigManager:
         self._objetivos_secretos = objetivos_secretos
         self.misiles_habilitados = misiles_habilitados
 
-        # Inicializar variables para objetivo secreto
-        self._objetivo_secreto_id = None
-        self._objetivo_secreto_descripcion = None
-
     def mostrar_configuracion_partida(self) -> None:
         """Muestra la ventana de configuración de la partida."""
         dialog = ConfiguracionDialog(

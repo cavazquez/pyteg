@@ -4,16 +4,18 @@ from __future__ import annotations
 
 import argparse
 import sys
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
+from pyteg.config import DEFAULT_MAP_THEME
 from pyteg.core.cartas.mazo import Mazo
-from pyteg.core.mapa.build_mapa import build_mapa
+from pyteg.core.mapa.build_mapa import build_mapa_from_reader
 from pyteg.core.partida.objetivos_secretos import ObjetivosSecretos
 from pyteg.log_cli import add_log_arguments
 from pyteg.logger import get_logger
 from pyteg.server.conexion.broadcaster import ServerMessageBroadcaster
 from pyteg.server.conexion.registrar_jugadores import registrar_jugadores
 from pyteg.server.conexion.registry import ServerClientRegistry
+from pyteg.server.juego import session_sync
 from pyteg.server.juego.color import ServerColor
 from pyteg.server.juego.coordinator import ServerGameCoordinator
 from pyteg.server.juego.estado import Estado
@@ -39,38 +41,17 @@ class Server:
     y sus conexiones.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, theme: str = DEFAULT_MAP_THEME) -> None:
         """Inicializa el servidor con mapa, mazo y configuración inicial."""
+        self.theme = theme
         self._client_registry = ServerClientRegistry()
         self.color = ServerColor()
         self.estado = Estado()
-        # Inicializar broadcaster de mensajes
         self._broadcaster = ServerMessageBroadcaster(self.dame_clientes)
 
-        # Inicializar el mapa
-        self.mapa = Mapa(build_mapa)
-
-        # Inicializar el mazo con los países del mapa y símbolos de cartas
-        paises = self.mapa.paises()
-        simbolos = ["Galeon", "Globo", "Canon", "Comodin"]
-        self.mazo = Mazo(paises, simbolos)
-
-        # Inicializar sistema de objetivos secretos
-
-        # Crear TomlReader para objetivos secretos
-        paises_path = get_resource_path("themes/classic/paises.toml")
-        cartas_path = get_resource_path("themes/classic/cartas.toml")
-        adyacencias_path = get_resource_path("themes/classic/adyacencias.toml")
-        objetivos_path = get_resource_path("themes/classic/objetivos_secretos.toml")
-
-        paises_content = paises_path.read_text(encoding="utf-8")
-        cartas_content = cartas_path.read_text(encoding="utf-8")
-        adyacencias_content = adyacencias_path.read_text(encoding="utf-8")
-        objetivos_content = objetivos_path.read_text(encoding="utf-8")
-
-        toml_reader = TomlReader(
-            paises_content, cartas_content, adyacencias_content, objetivos_content
-        )
+        toml_reader = TomlReader.from_theme(theme, strict=True)
+        self.mapa = Mapa(lambda: build_mapa_from_reader(toml_reader))
+        self.mazo = Mazo(self.mapa.paises(), toml_reader.get_simbolos())
         self.objetivos_secretos = ObjetivosSecretos(toml_reader)
 
         # Inicializar coordinador de partidas
@@ -195,56 +176,16 @@ class Server:
 
         Los envía en el orden de los turnos.
         """
-        clientes_ordenados: list[Client]
-        if hasattr(self, "game") and self.game is not None:
-            jugadores_orden_ids = self.game.lista_jugadores_orden_turno()
-            clientes_por_id: dict[int, Client] = {
-                int(c.userid()): c for c in self.dame_clientes()
-            }
-            clientes_ordenados = [
-                clientes_por_id[uid]
-                for uid in jugadores_orden_ids
-                if uid in clientes_por_id
-            ]
-            clientes_restantes = [
-                c for c in self.dame_clientes() if c not in clientes_ordenados
-            ]
-            clientes_ordenados.extend(clientes_restantes)
-        else:
-            clientes_ordenados = self.dame_clientes()
-
-        for client in self.dame_clientes():
-            for otro_client in clientes_ordenados:
-                color = otro_client.color_actual()
-                if color is not None:
-                    client.transmisor.color_asignado(otro_client.userid(), color)
-
-        if hasattr(self, "game") and self.game is not None:
-            self.actualizar_lista_jugadores_ui()
+        session_sync.enviar_colores_asignados(self.game, self.dame_clientes)
 
     def actualizar_lista_jugadores_ui(self) -> None:
         """Actualiza la lista de jugadores en la interfaz de usuario.
 
         Actualiza la lista para todos los clientes.
         """
-        if not hasattr(self, "game") or self.game is None:
+        if self.game is None:
             return
-
-        jugadores_orden_ids = self.game.lista_jugadores_orden_turno()
-        clientes_por_id: dict[int, Client] = {
-            int(c.userid()): c for c in self.dame_clientes()
-        }
-
-        for client in self.dame_clientes():
-            jugadores_con_colores: list[tuple[int, Any]] = []
-            for uid in jugadores_orden_ids:
-                cliente = clientes_por_id.get(int(uid))
-                if cliente is None:
-                    continue
-                color = cliente.color_actual()
-                jugadores_con_colores.append((cliente.userid(), color))
-
-            client.transmisor.actualizar_lista_jugadores(jugadores_con_colores)
+        session_sync.actualizar_lista_jugadores_ui(self.game, self.dame_clientes)
 
     def enviar_estado(self) -> None:
         """Envía el estado actual del juego a todos los clientes."""
@@ -254,41 +195,13 @@ class Server:
         """Envía el número de turno y ronda actuales a todos los clientes."""
         if not self.game:
             return
-
-        turno_actual = self.game.id_turno_actual()
-
-        jugador_actual_id: int | None = None
-        jugador_actual_nombre: str | None = None
-        jugador_actual_color: str | None = None
-
-        try:
-            turno_obj = self.game.turno_actual()
-            if turno_obj and hasattr(turno_obj, "jugador_actual"):
-                jugador_id = turno_obj.jugador_actual()
-
-                if jugador_id:
-                    cliente = self._client_registry.obtener_cliente(int(jugador_id))
-                    if cliente is not None:
-                        jugador_actual_id = cliente.userid()
-                        jugador_actual_nombre = cliente.username()
-                        color_obj = cliente.color_actual()
-                        jugador_actual_color = color_obj.to_hex() if color_obj else None
-
-        except (AttributeError, KeyError) as e:
-            LOGGER.warning("Error obteniendo información del jugador actual: %s", e)
-
-        for client in self.dame_clientes():
-            client.transmisor.enviar_turno(
-                turno_actual,
-                self.game.num_ronda(),
-                jugador_actual_id,
-                jugador_actual_nombre,
-                jugador_actual_color,
-            )
-
-        self.enviar_unidades_disponibles()
-
-        self.enviar_mapa()
+        session_sync.enviar_turno_actual(
+            self.game,
+            self.dame_clientes,
+            self._client_registry.obtener_cliente,
+            self._broadcaster,
+            self.mapa,
+        )
 
     def enviar_chat(self, username: str, msg: str) -> None:
         """Envía un mensaje de chat a todos los clientes.
@@ -319,17 +232,9 @@ class Server:
         """Envía las unidades disponibles al jugador del turno actual."""
         if not self.game:
             return
-
-        turno_actual = self.game.turno_actual()
-        if not turno_actual:
-            return
-
-        jugador_actual_id = turno_actual.jugador_actual()
-        unidades = turno_actual.unidades_por_tipo()
-
-        cliente = self._client_registry.obtener_cliente(int(jugador_actual_id))
-        if cliente is not None:
-            cliente.transmisor.enviar_unidades_disponibles(unidades)
+        session_sync.enviar_unidades_disponibles(
+            self.game, self._client_registry.obtener_cliente
+        )
 
     def enviar_mapa(self) -> None:
         """Envía el estado actual del mapa a todos los clientes conectados."""
@@ -419,6 +324,13 @@ def parse_arguments() -> argparse.Namespace:
         help="Puerto donde escuchar las conexiones (predeterminado: 65432)",
     )
 
+    parser.add_argument(
+        "--theme",
+        type=str,
+        default=DEFAULT_MAP_THEME,
+        help=(f"Tema de mapa en themes/ (predeterminado: {DEFAULT_MAP_THEME})"),
+    )
+
     add_log_arguments(
         parser,
         verbose_help="Nivel DEBUG en consola (tráfico de red, batallas, mensajes)",
@@ -439,8 +351,13 @@ def main() -> None:
     elif args.quiet:
         logger.debug("Modo silencioso: solo errores en consola")
 
+    theme_dir = get_resource_path(f"themes/{args.theme}")
+    if not (theme_dir / "paises.toml").is_file():
+        logger.error("Tema de mapa no encontrado: themes/%s/paises.toml", args.theme)
+        sys.exit(1)
+
     try:
-        server = Server()
+        server = Server(theme=args.theme)
         registrar_jugadores(server, host=args.host, port=args.port)
     except KeyboardInterrupt:
         logger.info("Servidor detenido por el usuario")

@@ -16,7 +16,9 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from pyteg.config import DEFAULT_MAP_THEME
 from pyteg.gui.mapa.menu import Menu
+from pyteg.gui.mapa.overlap_check import load_pais_bounds, paises_en_punto
 from pyteg.gui.mapa.pais import Pais
 from pyteg.gui.mapa.selection_manager import CountrySelectionManager
 from pyteg.i18n import translate as _
@@ -27,22 +29,28 @@ from pyteg.utils import get_resource_path
 class QCustomGraphicsScene(QGraphicsScene):
     """Escena gráfica personalizada para mostrar el mapa del juego."""
 
-    def __init__(self, main_window: Any, parent: QWidget | None = None) -> None:
+    def __init__(
+        self,
+        main_window: Any,
+        parent: QWidget | None = None,
+        *,
+        theme: str = DEFAULT_MAP_THEME,
+    ) -> None:
         """Inicializa la escena gráfica.
 
         Args:
             main_window: Ventana principal de la aplicación.
             parent: Widget padre (opcional).
+            theme: Nombre del tema de mapa en themes/.
 
         """
         super().__init__(parent)
         self.main_window = main_window
+        self.map_theme = theme
         self.paises: dict[str, Pais] = {}
-        # Configurar fondo celeste que representa el agua/océano
-        self.setBackgroundBrush(QBrush(QColor("#87CEEB")))  # Sky Blue / Celeste suave
-        # Crear el manejador de selección de países
+        self.setBackgroundBrush(QBrush(QColor("#87CEEB")))
         self.selection_manager = CountrySelectionManager(main_window, self)
-        self.load_map_data()
+        self.load_map_data(theme=theme)
 
     def mouseMoveEvent(self, event: QGraphicsSceneMouseEvent) -> None:  # noqa: N802
         """Maneja el movimiento del mouse en la escena.
@@ -54,9 +62,21 @@ class QCustomGraphicsScene(QGraphicsScene):
         # Obtener las coordenadas del mouse en la escena
         # Mostrar las coordenadas en el Status Bar
         scene_pos = event.scenePos()
-        self.main_window.update_status_bar(
-            _("Coordenadas: ({}, {})").format(scene_pos.x(), scene_pos.y()),
-        )
+        if event.modifiers() & Qt.KeyboardModifier.ShiftModifier:
+            if not hasattr(self, "_debug_bounds"):
+                self._debug_bounds = load_pais_bounds(self.map_theme)
+            stack = paises_en_punto(self._debug_bounds, scene_pos.x(), scene_pos.y())
+            if stack:
+                msg = _("Bajo cursor: {}").format(" → ".join(stack))
+            else:
+                msg = _("Coordenadas: ({}, {}) — sin país").format(
+                    scene_pos.x(), scene_pos.y()
+                )
+            self.main_window.update_status_bar(msg)
+        else:
+            self.main_window.update_status_bar(
+                _("Coordenadas: ({}, {})").format(scene_pos.x(), scene_pos.y()),
+            )
         # Llamar al evento original
         super().mouseMoveEvent(event)
 
@@ -92,23 +112,18 @@ class QCustomGraphicsScene(QGraphicsScene):
             if isinstance(item, Pais):
                 pais = item.nombre()
                 # Pasar explícitamente la ventana principal como padre para Wayland
-                menu = Menu(pais, self.main_window, parent=self.main_window)
+                menu = Menu(
+                    pais,
+                    item.continente(),
+                    self.main_window,
+                    parent=self.main_window,
+                )
                 menu.exec_(event.screenPos())
 
-    def load_map_data(self) -> None:
+    def load_map_data(self, theme: str = DEFAULT_MAP_THEME) -> None:
         """Carga los datos del mapa desde archivos TOML y crea los widgets de países."""
         folder = "themes/"
-
-        paises_content = get_resource_path("themes/classic/paises.toml").read_text(
-            encoding="utf-8"
-        )
-        cartas_content = get_resource_path("themes/classic/cartas.toml").read_text(
-            encoding="utf-8"
-        )
-        adyacencias_content = get_resource_path(
-            "themes/classic/adyacencias.toml"
-        ).read_text(encoding="utf-8")
-        reader = TomlReader(paises_content, cartas_content, adyacencias_content)
+        reader = TomlReader.from_theme(theme, strict=True)
 
         for continente in reader.get_continentes():
             cor_x, cor_y = reader.coordenadas_continente(continente)
@@ -127,6 +142,22 @@ class QCustomGraphicsScene(QGraphicsScene):
                 pixmap_item.set_main_window(self.main_window)
                 self.paises[pais] = pixmap_item
                 self.addItem(pixmap_item)
+
+        self._elevate_army_markers()
+
+    def _elevate_army_markers(self) -> None:
+        """Dibuja los círculos de unidades por encima de países vecinos superpuestos."""
+        z_marker = 1000
+        for pais in self.paises.values():
+            circle = getattr(pais, "_circle", None)
+            if circle is None:
+                continue
+            scene_pos = pais.mapToScene(circle.pos())
+            circle.setParentItem(None)
+            circle.setPos(scene_pos)
+            circle.setZValue(z_marker)
+            circle.setAcceptedMouseButtons(Qt.MouseButton.NoButton)
+            z_marker += 1
 
     def obtener_pais(self, nombre_pais: str) -> Pais | None:
         """Retorna el widget del país especificado.

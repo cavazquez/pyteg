@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING
 
 from PySide6.QtCore import QTimer
 
+from pyteg.config import MAP_CONTINENT_TO_PANEL_LABEL
 from pyteg.gui.managers.units_panel import format_unit_label
 
 if TYPE_CHECKING:
@@ -48,21 +49,10 @@ class UnitsManager:
                 Ejemplo: {"infanteria": 5, "misiles": 2, "Africa": 3}
 
         """
-        # Mapeo de nombres de continentes del servidor a los de la GUI
-        continent_mapping = {
-            "Africa": "África",
-            "Europa": "Europa",
-            "Asia": "Asia",
-            "América del Sur": "América del Sur",
-            "América del Norte": "América del Norte",
-            "Oceanía": "Oceanía",
-        }
-
         # Actualizar unidades generales (infantería)
         if "infanteria" in unidades:
             cantidad = unidades["infanteria"]
             prev = self.main_window.last_units.get("Generales", None)
-            # Estilo con color verde si hay unidades disponibles
             if cantidad > 0:
                 style = (
                     "font-weight: bold; "
@@ -83,10 +73,10 @@ class UnitsManager:
                 self._flash_row("Generales")
             self.main_window.last_units["Generales"] = cantidad
 
-        # Actualizar unidades de continentes
-        for server_name, gui_name in continent_mapping.items():
-            if server_name in unidades and gui_name in self.main_window.value_labels:
-                cantidad = unidades[server_name]
+        # Actualizar unidades de continentes (claves = ID del mapa en el protocolo)
+        for map_id, gui_name in MAP_CONTINENT_TO_PANEL_LABEL.items():
+            if map_id in unidades and gui_name in self.main_window.value_labels:
+                cantidad = unidades[map_id]
                 prev = self.main_window.last_units.get(gui_name, None)
                 if cantidad > 0:
                     # Estilo destacado para continentes con unidades disponibles

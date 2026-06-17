@@ -9,6 +9,7 @@ from pyteg.client.msg import (
     MsgAgregarUnidad,
     MsgAtacar,
     MsgCanjearMisil,
+    MsgCanjearTarjetas,
     MsgCanjeEspecial,
     MsgChat,
     MsgEmpezar,
@@ -37,6 +38,17 @@ class ClientTransmisor(IClientTransmisor):
 
         """
         self._conn = conn
+
+    def esta_conectado(self) -> bool:
+        """Indica si la conexión subyacente está activa.
+
+        Returns:
+            True si el socket está conectado.
+
+        """
+        if hasattr(self._conn, "esta_conectado"):
+            return bool(self._conn.esta_conectado())
+        return True
 
     def enviar_chat(self, msg: str) -> None:
         """Envía un mensaje de chat al servidor.
@@ -106,7 +118,7 @@ class ClientTransmisor(IClientTransmisor):
 
         Args:
             pais (str): Nombre del país donde se agregará la unidad
-            tipo_unidad (str): Tipo de unidad a agregar (ej: 'infanteria', 'misil')
+            tipo_unidad (str): Tipo de unidad a agregar (ej: 'infanteria')
             cantidad (int, optional): Cantidad de unidades a agregar. Defaults to 1.
 
         """
@@ -183,6 +195,16 @@ class ClientTransmisor(IClientTransmisor):
 
         """
         msg = MsgCanjeEspecial(pais)
+        self._conn.send_data(msg.to_json())
+
+    def canjear_tarjetas(self, tarjetas: list[dict[str, Any]]) -> None:
+        """Canjea tres tarjetas por unidades generales.
+
+        Args:
+            tarjetas: Lista de tarjetas con pais y simbolo.
+
+        """
+        msg = MsgCanjearTarjetas(tarjetas)
         self._conn.send_data(msg.to_json())
 
     def canjear_misil(self, pais: str) -> None:

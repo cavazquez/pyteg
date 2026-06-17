@@ -15,7 +15,7 @@ class MsgAgregarUnidad(IMsg):
 
         Args:
             pais: Nombre del país donde se agregará la unidad.
-            tipo_unidad: Tipo de unidad a agregar (ej: 'infanteria', 'misil').
+            tipo_unidad: Tipo de unidad a agregar (ej: 'infanteria').
             cantidad: Cantidad de unidades a agregar. Defaults to 1.
 
         """

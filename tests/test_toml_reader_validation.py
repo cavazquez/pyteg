@@ -318,6 +318,173 @@ class TestTomlReaderValidation(unittest.TestCase):
         self.assertEqual(reader.obtener_paises_adyacentes("Pais1"), ["Pais2"])
         self.assertEqual(len(reader.todos_los_paises()), 2)
 
+    def test_pais_duplicado_en_continentes(self) -> None:
+        """Test que país duplicado en dos continentes lance error."""
+        toml = """
+        [Cartas]
+        jocker = "test.png"
+
+        [A]
+        pos_x = 0
+        pos_y = 0
+
+        [A.X]
+        file = "a.png"
+        pos_x = 1
+        pos_y = 2
+        army_x = 3
+        army_y = 4
+
+        [B]
+        pos_x = 10
+        pos_y = 10
+
+        [B.X]
+        file = "b.png"
+        pos_x = 1
+        pos_y = 2
+        army_x = 3
+        army_y = 4
+        """
+        with self.assertRaises(TomlReaderError) as context:
+            TomlReader(toml)
+        self.assertIn("duplicado", str(context.exception))
+
+    def test_pais_sin_entrada_adyacencias(self) -> None:
+        """Test que país sin entrada en adyacencias lance error."""
+        toml = """
+        [Cartas]
+        jocker = "test.png"
+
+        [Adyacencias]
+        Pais1 = ["Pais2"]
+
+        [Continente]
+        pos_x = 10
+        pos_y = 20
+
+        [Continente.Pais1]
+        continente = "Continente"
+        file = "test.png"
+        pos_x = 1
+        pos_y = 2
+        army_x = 3
+        army_y = 4
+
+        [Continente.Pais2]
+        continente = "Continente"
+        file = "test2.png"
+        pos_x = 5
+        pos_y = 6
+        army_x = 7
+        army_y = 8
+        """
+        with self.assertRaises(TomlReaderError) as context:
+            TomlReader(toml)
+        self.assertIn("sin entrada en adyacencias", str(context.exception))
+
+    def test_adyacencia_asimetrica_strict(self) -> None:
+        """Test que adyacencia asimétrica falle con strict=True."""
+        toml = """
+        [Cartas]
+        jocker = "test.png"
+
+        [Adyacencias]
+        Pais1 = ["Pais2"]
+        Pais2 = []
+
+        [Continente]
+        pos_x = 10
+        pos_y = 20
+
+        [Continente.Pais1]
+        continente = "Continente"
+        file = "test.png"
+        pos_x = 1
+        pos_y = 2
+        army_x = 3
+        army_y = 4
+
+        [Continente.Pais2]
+        continente = "Continente"
+        file = "test2.png"
+        pos_x = 5
+        pos_y = 6
+        army_x = 7
+        army_y = 8
+        """
+        with self.assertRaises(TomlReaderError) as context:
+            TomlReader(toml, strict=True)
+        self.assertIn("asimétrica", str(context.exception))
+
+    def test_adyacencia_asimetrica_no_strict(self) -> None:
+        """Test que adyacencia asimétrica no falle sin strict."""
+        toml = """
+        [Cartas]
+        jocker = "test.png"
+
+        [Adyacencias]
+        Pais1 = ["Pais2"]
+        Pais2 = []
+
+        [Continente]
+        pos_x = 10
+        pos_y = 20
+
+        [Continente.Pais1]
+        continente = "Continente"
+        file = "test.png"
+        pos_x = 1
+        pos_y = 2
+        army_x = 3
+        army_y = 4
+
+        [Continente.Pais2]
+        continente = "Continente"
+        file = "test2.png"
+        pos_x = 5
+        pos_y = 6
+        army_x = 7
+        army_y = 8
+        """
+        reader = TomlReader(toml, strict=False)
+        self.assertEqual(reader.obtener_paises_adyacentes("Pais1"), ["Pais2"])
+
+    def test_pais_sin_file_strict(self) -> None:
+        """Test que país sin file falle con strict=True."""
+        toml = """
+        [Cartas]
+        jocker = "test.png"
+
+        [Continente]
+        pos_x = 10
+        pos_y = 20
+
+        [Continente.Pais1]
+        continente = "Continente"
+        pos_x = 1
+        pos_y = 2
+        army_x = 3
+        army_y = 4
+        """
+        with self.assertRaises(TomlReaderError) as context:
+            TomlReader(toml, strict=True)
+        self.assertIn("file", str(context.exception))
+
+    def test_from_theme_classic_strict(self) -> None:
+        """Test que el tema classic cargue sin errores en modo strict."""
+        reader = TomlReader.from_theme("classic", strict=True)
+        self.assertEqual(len(reader.todos_los_paises()), 50)
+        self.assertEqual(
+            reader.get_simbolos(),
+            ["Galeon", "Globo", "Canon", "Comodin"],
+        )
+
+    def test_from_theme_test_strict(self) -> None:
+        """Test que el tema test cargue sin errores en modo strict."""
+        reader = TomlReader.from_theme("test", strict=True)
+        self.assertEqual(set(reader.todos_los_paises()), {"Circulo", "Rectangulo"})
+
 
 if __name__ == "__main__":
     unittest.main()

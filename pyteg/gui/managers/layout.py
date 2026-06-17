@@ -67,7 +67,10 @@ class LayoutManager:
     def _setup_scene_and_view(self) -> None:
         """Configurar escena y vista gráfica."""
         # Agrego la escena y la vista
-        self.main_window.scene = QCustomGraphicsScene(self.main_window)
+        self.main_window.scene = QCustomGraphicsScene(
+            self.main_window,
+            theme=self.main_window.map_theme,
+        )
         self.main_window.view = QCustomGraphicsView(
             self.main_window.scene, self.main_window
         )

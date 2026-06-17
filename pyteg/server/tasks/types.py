@@ -99,6 +99,24 @@ class CanjearMisilTaskData(BaseTaskData, _OptCanjearMisil):
     """`data` de la tarea `canjear_misil`."""
 
 
+class _TarjetaCanjePayload(TypedDict, total=False):
+    """Elemento de la lista de tarjetas enviada por el cliente."""
+
+    pais: str
+    simbolo: str
+    index: int
+
+
+class _OptCanjearTarjetas(TypedDict, total=False):
+    """Campos opcionales de canje de tres tarjetas."""
+
+    tarjetas: list[_TarjetaCanjePayload]
+
+
+class CanjearTarjetasTaskData(BaseTaskData, _OptCanjearTarjetas):
+    """`data` de la tarea `canjear_tarjetas`."""
+
+
 class _OptSetUsername(TypedDict, total=False):
     """Campos opcionales de set_username."""
 

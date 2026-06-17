@@ -1,14 +1,3 @@
-[Cartas]
-jocker = "tar_comodin.png"
-ballon = "tar_globo.png"
-cannon = "tar_canon.png"
-ship = "tar_galeon.png"
-
-[Adyacencias]
-# Formato: pais = ["pais_adyacente1", "pais_adyacente2", ...]
-Circulo = ["Rectangulo"]
-Rectangulo = ["Circulo"]
-
 [Sudamerica]
 pos_x = 0
 pos_y = 0
@@ -21,7 +10,6 @@ pos_y = 0
 army_x = 90
 army_y = 60
 
-
 [Sudamerica.Rectangulo]
 continente = "Sudamerica"
 file = "test/rect.svg"
@@ -29,6 +17,3 @@ pos_x = -300
 pos_y = 0
 army_x = 60
 army_y = 60
-
-
-

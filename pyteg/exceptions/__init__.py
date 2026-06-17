@@ -13,6 +13,7 @@ from __future__ import annotations
 
 from pyteg.exceptions.base import PyTegError
 from pyteg.exceptions.game_rules import (
+    CountryNotFoundError,
     CountryNotOwnedError,
     GameNotStartedError,
     GameRuleViolationError,
@@ -31,6 +32,7 @@ from pyteg.exceptions.system import (
 )
 
 __all__ = [
+    "CountryNotFoundError",
     "CountryNotOwnedError",
     "EstadoInvalidoError",
     "GameNotStartedError",

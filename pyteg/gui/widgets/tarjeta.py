@@ -2,13 +2,12 @@
 
 from __future__ import annotations
 
-from typing import ClassVar
-
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QMouseEvent, QPixmap
 from PySide6.QtWidgets import QLabel, QVBoxLayout, QWidget
 
-from pyteg.utils import get_resource_path
+from pyteg.config import DEFAULT_MAP_THEME
+from pyteg.core.theme_resources import get_card_image_path
 
 
 class TarjetaWidget(QWidget):
@@ -16,27 +15,28 @@ class TarjetaWidget(QWidget):
 
     seleccionada = Signal(object)  # Señal emitida cuando se selecciona/deselecciona
 
-    # Mapeo de símbolos a archivos de imagen
-    SIMBOLOS_IMAGENES: ClassVar[dict[str, str]] = {
-        "Galeon": "themes/classic/tar_galeon.png",
-        "Globo": "themes/classic/tar_globo.png",
-        "Canon": "themes/classic/tar_canon.png",
-        "Comodin": "themes/classic/tar_comodin.png",
-    }
-
-    def __init__(self, pais: str, simbolo: str, index: int = 0) -> None:
+    def __init__(
+        self,
+        pais: str,
+        simbolo: str,
+        index: int = 0,
+        *,
+        map_theme: str = DEFAULT_MAP_THEME,
+    ) -> None:
         """Inicializa el widget de tarjeta.
 
         Args:
             pais: Nombre del país de la tarjeta.
             simbolo: Símbolo de la tarjeta (Galeon, Globo, Canon, Comodin).
             index: Índice de la tarjeta (por defecto 0).
+            map_theme: Tema de mapa para resolver la imagen del símbolo.
 
         """
         super().__init__()
         self.pais = pais
         self.simbolo = simbolo
         self.index = index
+        self.map_theme = map_theme
         self._seleccionada = False
         self._setup_ui()
 
@@ -45,7 +45,6 @@ class TarjetaWidget(QWidget):
         layout = QVBoxLayout()
         layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-        # Etiqueta del país
         self.label_pais = QLabel(self.pais)
         self.label_pais.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.label_pais.setStyleSheet("""
@@ -59,16 +58,13 @@ class TarjetaWidget(QWidget):
             }
         """)
 
-        # Etiqueta del símbolo con imagen
         self.label_simbolo = QLabel()
         self.label_simbolo.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-        # Cargar imagen del símbolo si existe
-        imagen_path = self.SIMBOLOS_IMAGENES.get(self.simbolo)
+        imagen_path = get_card_image_path(self.map_theme, self.simbolo)
         if imagen_path:
-            pixmap = QPixmap(str(get_resource_path(imagen_path)))
+            pixmap = QPixmap(imagen_path)
             if not pixmap.isNull():
-                # Escalar la imagen a un tamaño apropiado
                 scaled_pixmap = pixmap.scaled(
                     32,
                     32,
@@ -77,10 +73,8 @@ class TarjetaWidget(QWidget):
                 )
                 self.label_simbolo.setPixmap(scaled_pixmap)
             else:
-                # Si no se puede cargar la imagen, mostrar texto
                 self.label_simbolo.setText(self.simbolo)
         else:
-            # Si no hay mapeo, mostrar texto
             self.label_simbolo.setText(self.simbolo)
 
         self.label_simbolo.setStyleSheet("""
@@ -94,11 +88,8 @@ class TarjetaWidget(QWidget):
         layout.addWidget(self.label_simbolo)
         self.setLayout(layout)
 
-        # Estilo del widget completo
         self._actualizar_estilo()
         self.setFixedSize(120, 80)
-
-        # Hacer el widget clickeable
         self.setCursor(Qt.CursorShape.PointingHandCursor)
 
     def _actualizar_estilo(self) -> None:

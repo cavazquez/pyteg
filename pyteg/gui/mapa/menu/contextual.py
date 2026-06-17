@@ -9,18 +9,20 @@ from PySide6.QtWidgets import QMenu, QWidget
 
 from pyteg.config import MISSILE_UNIT_COST
 from pyteg.gui.mapa.menu.actions_mixin import MenuActionsMixin
-from pyteg.gui.mapa.menu.old_movement_mixin import MenuOldMovementMixin
+from pyteg.gui.units_placement import (
+    tooltip_colocar_unidad,
+    unidades_colocables_en_pais,
+)
 from pyteg.i18n import translate as _
 
 
-class Menu(MenuActionsMixin, MenuOldMovementMixin, QMenu):
+class Menu(MenuActionsMixin, QMenu):
     """Menú contextual que se muestra al hacer clic derecho en un país."""
-
-    pais_origen: str | None = None
 
     def __init__(
         self,
         pais: str,
+        continente_mapa: str,
         main_window: Any,
         parent: QWidget | None = None,
     ) -> None:
@@ -28,12 +30,14 @@ class Menu(MenuActionsMixin, MenuOldMovementMixin, QMenu):
 
         Args:
             pais: Nombre del país.
+            continente_mapa: ID de continente del mapa (TOML).
             main_window: Ventana principal de la aplicación.
             parent: Widget padre (opcional). En Wayland se usa main_window.
 
         """
         super().__init__(parent or main_window)
         self.pais = pais
+        self.continente_mapa = continente_mapa
         self.main_window = main_window
         self.transmisor = getattr(main_window, "transmisor", None)
 
@@ -44,13 +48,7 @@ class Menu(MenuActionsMixin, MenuOldMovementMixin, QMenu):
         self.action_pais = QAction(pais, self)
         self.action_pais.setEnabled(False)
 
-        self.action_agregar_infanteria = QAction(_("Agregar Infantería"), self)
-        self.action_agregar_misil = QAction(_("Agregar Misil"), self)
-
-        self.action_mover_1_unidad = QAction(_("Mover 1 unidad"), self)
-        self.action_mover_3_unidades = QAction(_("Mover 3 unidades"), self)
-        self.action_mover_5_unidades = QAction(_("Mover 5 unidades"), self)
-        self.action_cancelar_movimiento = QAction(_("Cancelar movimiento"), self)
+        self.action_colocar_unidad = QAction(_("Colocar unidad"), self)
 
         self.action_atacar = QAction(_("Atacar"), self)
         self.action_mover_seleccion = QAction(_("Mover"), self)
@@ -60,18 +58,7 @@ class Menu(MenuActionsMixin, MenuOldMovementMixin, QMenu):
             _("Canjear Misil ({} unidades)").format(MISSILE_UNIT_COST), self
         )
 
-        self.action_agregar_infanteria.triggered.connect(self.agregar_infanteria)
-        self.action_agregar_misil.triggered.connect(self.agregar_misil)
-        self.action_mover_1_unidad.triggered.connect(
-            lambda: self.completar_movimiento(1)
-        )
-        self.action_mover_3_unidades.triggered.connect(
-            lambda: self.completar_movimiento(3)
-        )
-        self.action_mover_5_unidades.triggered.connect(
-            lambda: self.completar_movimiento(5)
-        )
-        self.action_cancelar_movimiento.triggered.connect(self.cancelar_movimiento)
+        self.action_colocar_unidad.triggered.connect(self.colocar_unidad)
 
         self.action_atacar.triggered.connect(self.atacar)
         self.action_mover_seleccion.triggered.connect(self.mover)
@@ -88,8 +75,13 @@ class Menu(MenuActionsMixin, MenuOldMovementMixin, QMenu):
         self.addAction(self.action_pais)
         self.addSeparator()
 
-        self.addAction(self.action_agregar_infanteria)
-        self.addAction(self.action_agregar_misil)
+        last_units = getattr(self.main_window, "last_units", {})
+        total, _, _ = unidades_colocables_en_pais(last_units, self.continente_mapa)
+        self.action_colocar_unidad.setEnabled(total > 0)
+        self.action_colocar_unidad.setToolTip(
+            tooltip_colocar_unidad(last_units, self.continente_mapa)
+        )
+        self.addAction(self.action_colocar_unidad)
         self.addSeparator()
 
         misiles_habilitados = bool(
@@ -98,20 +90,6 @@ class Menu(MenuActionsMixin, MenuOldMovementMixin, QMenu):
         if misiles_habilitados:
             self.addAction(self.action_canjear_misil)
             self.addSeparator()
-
-        cls = type(self)
-        if cls.pais_origen is None:
-            pass
-        elif cls.pais_origen == self.pais:
-            self.addAction(self.action_cancelar_movimiento)
-        else:
-            self.addAction(self.action_mover_1_unidad)
-            self.addAction(self.action_mover_3_unidades)
-            self.addAction(self.action_mover_5_unidades)
-            self.addSeparator()
-            self.addAction(self.action_cancelar_movimiento)
-
-        self.addSeparator()
 
         scene = getattr(self.main_window, "scene", None)
         selection_manager = getattr(scene, "selection_manager", None)

@@ -5,6 +5,10 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 from pyteg.config import VALID_UNIT_TYPES
+from pyteg.core.turnos.unit_pool import (
+    consumir_unidad_reparto,
+    unidades_disponibles_en_pais,
+)
 from pyteg.server.juego.validators import (
     CountryOwnershipValidator,
     GameStateValidator,
@@ -51,24 +55,25 @@ class ServerTaskAgregarUnidad(IServerTask[AgregarUnidadTaskData]):
         self._cantidad = data.get("cantidad", 1)
         self._action_name = "agregar_unidad"
 
-    def _validate_units_available(self, turno_actual: Any, cantidad: int) -> None:
-        """Valida que haya suficientes unidades disponibles.
+    def _validate_units_available(
+        self, turno_actual: Any, continente_pais: str, cantidad: int
+    ) -> None:
+        """Valida que haya suficientes unidades para colocar en el país.
 
         Args:
             turno_actual: Turno actual del juego.
+            continente_pais: Continente del país destino.
             cantidad: Cantidad de unidades requeridas.
 
         Raises:
             ValidationError: Si no hay suficientes unidades disponibles.
 
         """
-        if (
-            not hasattr(turno_actual, "cant_unidades")
-            or turno_actual.cant_unidades() < cantidad
-        ):
+        disponibles = unidades_disponibles_en_pais(turno_actual, continente_pais)
+        if disponibles < cantidad:
             msg = (
                 f"No hay suficientes unidades disponibles para agregar "
-                f"{cantidad} unidades"
+                f"{cantidad} unidad(es) en este continente"
             )
             raise ValidationError(msg)
 
@@ -89,17 +94,12 @@ class ServerTaskAgregarUnidad(IServerTask[AgregarUnidadTaskData]):
         if context.game is None:
             return
         turno_actual = context.game.turno_actual()
-        self._validate_units_available(turno_actual, self._cantidad)
-
-        if context.game is None:
-            return
-        turno_actual = context.game.turno_actual()
+        continente_pais = context.mapa.continente(self._pais)
+        self._validate_units_available(turno_actual, continente_pais, self._cantidad)
 
         for _ in range(self._cantidad):
             context.mapa.agregar_una_unidad(self._pais)
-
-            if hasattr(turno_actual, "usar_unidad"):
-                turno_actual.usar_unidad()
+            consumir_unidad_reparto(turno_actual, continente_pais)
 
         msg = (
             f"Se agregaron {self._cantidad} unidad(es) de tipo {self._tipo_unidad}"

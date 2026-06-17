@@ -1,4 +1,4 @@
-"""Acciones de ataque, movimiento con selección y canje de misil."""
+"""Acciones de refuerzo, ataque, movimiento con selección y canje de misil."""
 
 from __future__ import annotations
 
@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 
 from PySide6.QtWidgets import QDialog
 
+from pyteg.gui.connection_utils import cliente_esta_conectado
 from pyteg.gui.dialogs.attack import AttackDialog
 from pyteg.i18n import ngettext
 from pyteg.i18n import translate as _
@@ -18,7 +19,12 @@ _LOG = get_logger("gui.menu")
 
 
 class MenuActionsMixin:
-    """Atacar, mover con `selection_manager`, cancelar selección, canjear misil."""
+    """Colocar refuerzos, atacar, mover con `selection_manager`, canjear misil."""
+
+    def colocar_unidad(self: MenuHost) -> None:
+        """Coloca una unidad en el país (el servidor elige el pool continental)."""
+        if cliente_esta_conectado(self.main_window) and self.transmisor is not None:
+            self.transmisor.agregar_unidad(pais=self.pais, tipo_unidad="infanteria")
 
     def atacar(self: MenuHost) -> None:
         """Ataca del país origen al país destino."""
@@ -28,7 +34,12 @@ class MenuActionsMixin:
             origen = selection_manager.get_pais_origen()
             destino = selection_manager.get_pais_destino()
 
-            if origen and destino and self.transmisor:
+            if (
+                origen
+                and destino
+                and cliente_esta_conectado(self.main_window)
+                and self.transmisor
+            ):
                 get_max_units = getattr(
                     self.main_window, "get_max_attack_units", lambda _: 0
                 )
@@ -74,7 +85,12 @@ class MenuActionsMixin:
             origen = selection_manager.get_pais_origen()
             destino = selection_manager.get_pais_destino()
 
-            if origen and destino and self.transmisor is not None:
+            if (
+                origen
+                and destino
+                and cliente_esta_conectado(self.main_window)
+                and self.transmisor is not None
+            ):
                 self.transmisor.mover_unidad(origen=origen, destino=destino, cantidad=1)
                 _LOG.debug("Moviendo 1 unidad de %s a %s", origen, destino)
                 status_bar = getattr(self.main_window, "status_bar", None)

@@ -7,7 +7,11 @@ from typing import TYPE_CHECKING
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QGridLayout, QHBoxLayout, QLabel, QWidget
 
-from pyteg.config import CARD_SELECTION_ORANGE_THRESHOLD, CARDS_FOR_EXCHANGE
+from pyteg.config import (
+    CARD_SELECTION_ORANGE_THRESHOLD,
+    CARDS_FOR_EXCHANGE,
+    DEFAULT_MAP_THEME,
+)
 from pyteg.gui.widgets.tarjeta import TarjetaWidget
 from pyteg.i18n import translate as _
 
@@ -33,8 +37,15 @@ class TarjetasSelectionMixin:
 
         self.tarjetas_widgets.clear()
 
+        map_theme = getattr(self, "map_theme", DEFAULT_MAP_THEME)
+
         for i, tarjeta in enumerate(self.tarjetas[:4]):
-            tarjeta_widget = TarjetaWidget(tarjeta["pais"], tarjeta["simbolo"], i)
+            tarjeta_widget = TarjetaWidget(
+                tarjeta["pais"],
+                tarjeta["simbolo"],
+                i,
+                map_theme=map_theme,
+            )
             tarjeta_widget.seleccionada.connect(self._on_tarjeta_seleccionada)
             self.tarjetas_widgets.append(tarjeta_widget)
             row = i // 2

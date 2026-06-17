@@ -5,6 +5,7 @@ Todas las fechas en formato YYYY-MM-DD.
 ## [Unreleased]
 
 ### Changed
+- **TomlReader robusto y multi-tema**: validaciones de países únicos, cobertura y simetría de adyacencias (`strict=True`), campos obligatorios y assets; `TomlReader.from_theme()` centraliza la carga; `cartas.toml` alinea símbolos (`Galeon`, `Globo`, etc.) con servidor y GUI; eliminado `utils.build_mapa` obsoleto.
 - **Logging del servidor**: reemplazo de `print` por el sistema `pyteg.logger`; flags CLI `--quiet`, `--log-level` y `-v` para controlar la salida en consola (tráfico de red y batallas en DEBUG).
 - **Logging del cliente y temporizador**: flags CLI equivalentes en el cliente; `TurnoTimer` usa logger (WARNING en fallos de envío, INFO al agotar el turno). Lógica compartida en `pyteg/log_cli.py`.
 - **Logging en runtime restante**: `VictoryChecker` registra victorias en INFO; `SoundManager` avisa WAV faltantes en WARNING.
@@ -13,6 +14,8 @@ Todas las fechas en formato YYYY-MM-DD.
 - **Modularización de `main_window.py`**: delegaciones públicas en `MainWindowDelegatesMixin`; `show_battle_result_dialog` y `refresh_open_tarjetas_dialogs` movidos a managers.
 
 ### Added
+- **Multi-tema de mapa**: constante `DEFAULT_MAP_THEME`, flag `--theme` en servidor, `map_theme` en cliente/GUI; tema `themes/test/` completo para desarrollo.
+- **Dataclasses de layout**: `ThemeCountryLayout` y `ThemeContinentLayout` en `pyteg/core/mapa/theme_layout.py`.
 - **Tests de `VictoryChecker` y `TurnoTimer`**: cobertura de victoria por países/objetivos y del temporizador de turno.
 - **Tests de integración de gameplay**: turno, tiempo, victoria por umbral y ataque con `resultado_batalla`.
 - **Tests de cobertura GUI y servidor**: `UnitsManager`, `VentanaAdmin`, `LanguageManager`, `SoundManager` y tareas `canjear_misil` / `lanzar_misil`.

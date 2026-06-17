@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
+from pyteg.gui.connection_utils import cliente_esta_conectado
 from pyteg.logger import get_logger
 
 if TYPE_CHECKING:
+    from pyteg.gui.managers.protocols import MainWindowProtocol
+
     from .protocols import TarjetasExchangeHost
 
 _LOG = get_logger("gui.tarjetas_dialog")
@@ -64,6 +67,8 @@ class TarjetasExchangeMixin:
 
         """
         parent = self.parent()
-        if parent is None:
+        if parent is None or not cliente_esta_conectado(
+            cast("MainWindowProtocol", parent)
+        ):
             return None
         return getattr(parent, "transmisor", None)

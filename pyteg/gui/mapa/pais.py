@@ -13,6 +13,7 @@ from PySide6.QtWidgets import (
 )
 
 from pyteg.exceptions import ImagenNoEncontradaError
+from pyteg.gui.mapa.army_position import resolve_army_position
 from pyteg.gui.mapa.pais_battle_fx_mixin import PaisBattleFxMixin
 from pyteg.gui.mapa.pais_selection_mixin import PaisSelectionMixin
 from pyteg.gui.widgets.circulo import Circulo
@@ -77,9 +78,13 @@ class Pais(PaisBattleFxMixin, PaisSelectionMixin, QGraphicsPixmapItem):
 
     def cargar_circulo(self) -> None:
         """Carga y posiciona el círculo que muestra las unidades."""
-        pos_x_abs = self._army_x
-        pos_y_abs = self._army_y
-        # (x, y)
+        pixmap = self.pixmap()
+        pos_x_abs, pos_y_abs = resolve_army_position(
+            pixmap.width(),
+            pixmap.height(),
+            self._army_x,
+            self._army_y,
+        )
         self._circle = Circulo(pos_x_abs, pos_y_abs)
         self._circle.setParentItem(self)
 
@@ -91,6 +96,15 @@ class Pais(PaisBattleFxMixin, PaisSelectionMixin, QGraphicsPixmapItem):
 
         """
         return self._nombre
+
+    def continente(self) -> str:
+        """Obtiene el identificador de continente del mapa (TOML).
+
+        Returns:
+            Nombre del continente (ej. ``Sudamerica``, ``Africa``).
+
+        """
+        return self._continente
 
     def set_color(self, color: QColor | str | None) -> None:
         """Establece el color del país.
