@@ -55,7 +55,9 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y \
             libgl1-mesa-dev \
+            libegl1 \
             libglib2.0-0 \
+            libpulse0 \
             libxkbcommon-x11-0 \
             libxcb-icccm4 \
             libxcb-image0 \
@@ -76,6 +78,10 @@ jobs:
       - name: Run tests
         run: |
           uv run python -m unittest discover
+        env:
+          LANG: es_ES.UTF-8
+          LC_ALL: es_ES.UTF-8
+          QT_QPA_PLATFORM: offscreen
 
       - name: Build binaries with Nuitka
         shell: bash
