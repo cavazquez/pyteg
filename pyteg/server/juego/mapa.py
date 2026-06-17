@@ -40,11 +40,11 @@ class Mapa:
     def _require_pais(self, pais: str) -> CountryData:
         """Obtiene los datos de un país o lanza si no existe.
 
-        Raises:
-            CountryNotFoundError: Si el país no está en el mapa.
-
         Returns:
             Datos del país solicitado.
+
+        Raises:
+            CountryNotFoundError: Si el país no está en el mapa.
 
         """
         if pais not in self._mapa:
