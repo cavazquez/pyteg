@@ -427,3 +427,73 @@ msgstr "Error showing battle: {} vs {}"
 
 msgid "Tiempo: {}s"
 msgstr "Time: {}s"
+
+# Admin window and sidebar panels
+msgid "Duración del turno (segundos):"
+msgstr "Turn duration (seconds):"
+
+msgid "p. ej., 30, 60, 120"
+msgstr "e.g. 30, 60, 120"
+
+msgid "Duración del turno en segundos"
+msgstr "Turn duration in seconds"
+
+msgid "Objetivo específico de países"
+msgstr "Specific country objective"
+
+msgid "Activar para usar un objetivo específico de países en lugar de controlar todos"
+msgstr "Enable to use a specific country count instead of controlling all"
+
+msgid "p. ej., 30, 50, 42"
+msgstr "e.g. 30, 50, 42"
+
+msgid "Cantidad de países necesarios para ganar"
+msgstr "Number of countries required to win"
+
+msgid "Objetivos secretos"
+msgstr "Secret objectives"
+
+msgid "Activar para usar objetivos secretos del TEG clásico en lugar de solo conquistar países"
+msgstr "Enable classic TEG secret objectives instead of country conquest only"
+
+msgid "Habilitar Misiles"
+msgstr "Enable Missiles"
+
+msgid "Activar para permitir canjear y lanzar misiles durante la partida"
+msgstr "Allow exchanging and launching missiles during the game"
+
+msgid "JUGADORES"
+msgstr "PLAYERS"
+
+msgid "UNIDADES"
+msgstr "UNITS"
+
+msgid "América del Sur"
+msgstr "South America"
+
+msgid "América del Norte"
+msgstr "North America"
+
+msgid "Europa"
+msgstr "Europe"
+
+msgid "Asia"
+msgstr "Asia"
+
+msgid "África"
+msgstr "Africa"
+
+msgid "Oceanía"
+msgstr "Oceania"
+
+msgid "Unidades generales disponibles para colocar"
+msgstr "General units available to place"
+
+msgid "Misiles disponibles"
+msgstr "Missiles available"
+
+msgid "Refuerzos por control de {}"
+msgstr "Reinforcements for controlling {}"
+
+msgid "{}: {}"
+msgstr "{}: {}"

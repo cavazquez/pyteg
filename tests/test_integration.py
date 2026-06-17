@@ -15,6 +15,7 @@ import time
 import unittest
 from typing import Any
 
+from pyteg.config import MIN_UNITS_FOR_ATTACK
 from pyteg.server.app import Server
 from pyteg.server.conexion.build_cliente import ServerBuildClient
 from pyteg.server.conexion.connection import ConnectionServer
@@ -210,6 +211,16 @@ class _TestClient:
             time.sleep(0.05)
         return None
 
+    def snapshot_received(self) -> list[dict[str, Any]]:
+        """Copia thread-safe de los mensajes recibidos hasta el momento.
+
+        Returns:
+            Lista de mensajes JSON ya parseados.
+
+        """
+        with self._lock:
+            return list(self.received)
+
     def close(self) -> None:
         """Cierra la conexión."""
         self._running = False
@@ -340,17 +351,39 @@ class TestIntegration(unittest.TestCase):
         self._start_two_player_game(c1, c2)
 
     def _start_two_player_game(
-        self, c1: _TestClient, c2: _TestClient, *, segundos: int = 60
-    ) -> None:
-        """Configura usernames y arranca partida con c1 como admin."""
-        self.assertIsNotNone(c1.wait_for("user_id"), "c1 sin user_id")
-        self.assertIsNotNone(c2.wait_for("user_id"), "c2 sin user_id")
+        self,
+        c1: _TestClient,
+        c2: _TestClient,
+        *,
+        segundos: int = 60,
+        paises_para_victoria: int | None = None,
+        objetivos_secretos: bool | None = None,
+    ) -> tuple[int, int]:
+        """Configura usernames y arranca partida con c1 como admin.
+
+        Returns:
+            Tupla ``(user_id_c1, user_id_c2)``.
+
+        """
+        uid1_msg = c1.wait_for("user_id")
+        uid2_msg = c2.wait_for("user_id")
+        self.assertIsNotNone(uid1_msg, "c1 sin user_id")
+        self.assertIsNotNone(uid2_msg, "c2 sin user_id")
+        if uid1_msg is None or uid2_msg is None:
+            self.fail("Faltan mensajes user_id")
+        uid1 = int(uid1_msg["user_id"])
+        uid2 = int(uid2_msg["user_id"])
 
         c1.send({"mensaje": "set_username", "username": "Admin"})
         c2.send({"mensaje": "set_username", "username": "Jugador2"})
         time.sleep(0.1)
 
-        c1.send({"mensaje": "empezar", "segundos": segundos})
+        empezar: dict[str, Any] = {"mensaje": "empezar", "segundos": segundos}
+        if paises_para_victoria is not None:
+            empezar["paises_para_victoria"] = paises_para_victoria
+        if objetivos_secretos is not None:
+            empezar["objetivos_secretos"] = objetivos_secretos
+        c1.send(empezar)
         time.sleep(0.1)
         c1.send({"mensaje": "empezar_partida"})
 
@@ -370,6 +403,98 @@ class TestIntegration(unittest.TestCase):
             ),
             "c2 no recibió estado JUGANDO",
         )
+        return uid1, uid2
+
+    def _latest_turno(self, *clients: _TestClient) -> dict[str, Any] | None:
+        """Devuelve el mensaje ``turno`` más reciente recibido por algún cliente.
+
+        Returns:
+            Último mensaje ``turno`` visto, o ``None`` si aún no llegó ninguno.
+
+        """
+        latest: dict[str, Any] | None = None
+        for client in clients:
+            for msg in client.snapshot_received():
+                if msg.get("mensaje") == "turno":
+                    latest = msg
+        return latest
+
+    def _wait_latest_turno(
+        self, *clients: _TestClient, timeout: float = 4.0
+    ) -> dict[str, Any]:
+        """Espera hasta recibir un mensaje ``turno`` en algún cliente.
+
+        Returns:
+            Primer mensaje ``turno`` disponible tras la espera.
+
+        """
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
+            turno = self._latest_turno(*clients)
+            if turno is not None:
+                return turno
+            time.sleep(0.05)
+        self.fail("No se recibió mensaje turno")
+        return {}
+
+    def _client_for_user(
+        self,
+        c1: _TestClient,
+        c2: _TestClient,
+        uid1: int,
+        uid2: int,
+        user_id: int,
+    ) -> _TestClient:
+        """Devuelve el cliente de test asociado a un ``user_id``.
+
+        Returns:
+            Cliente cuyo ``user_id`` coincide.
+
+        """
+        if user_id == uid1:
+            return c1
+        if user_id == uid2:
+            return c2
+        self.fail(f"user_id {user_id} no corresponde a ningún cliente")
+        return c1
+
+    def _finalize_current_turn(
+        self,
+        c1: _TestClient,
+        c2: _TestClient,
+        uid1: int,
+        uid2: int,
+    ) -> None:
+        """Finaliza el turno del jugador activo según el último mensaje ``turno``."""
+        turno = self._wait_latest_turno(c1, c2)
+        active_id = turno.get("jugador_actual_id")
+        self.assertIsNotNone(active_id, "turno sin jugador_actual_id")
+        if active_id is None:
+            return
+        client = self._client_for_user(c1, c2, uid1, uid2, int(active_id))
+        client.send({"mensaje": "finalizar_turno"})
+        time.sleep(0.2)
+
+    def _find_adjacent_enemy_pair(self, attacker_id: int) -> tuple[str, str] | None:
+        """Busca origen/destino adyacentes entre enemigos (sin exigir unidades).
+
+        Returns:
+            Par ``(origen, destino)`` o ``None`` si no hay frontera enemiga.
+
+        """
+        game = self._server.game
+        self.assertIsNotNone(game, "partida no iniciada")
+        if game is None:
+            return None
+        mapa = game.mapa()
+        for pais in mapa.paises():
+            if mapa.ocupado_por(pais) != attacker_id:
+                continue
+            for vecino in mapa.obtener_paises_adyacentes(pais):
+                owner = mapa.ocupado_por(vecino)
+                if owner is not None and owner != attacker_id:
+                    return pais, vecino
+        return None
 
     def test_receives_turno_after_game_start(self) -> None:
         """Tras iniciar la partida, los clientes reciben el mensaje de turno."""
@@ -405,6 +530,80 @@ class TestIntegration(unittest.TestCase):
 
         self.assertIsNotNone(tiempo_c1, "c1 no recibió mensaje tiempo")
         self.assertIsNotNone(tiempo_c2, "c2 no recibió mensaje tiempo")
+
+    def test_receives_victory_after_round_with_low_threshold(self) -> None:
+        """Al completar una ronda con umbral bajo, se difunde victoria."""
+        c1 = self._new_client()
+        c2 = self._new_client()
+        uid1, uid2 = self._start_two_player_game(
+            c1,
+            c2,
+            paises_para_victoria=1,
+            objetivos_secretos=False,
+        )
+
+        self._finalize_current_turn(c1, c2, uid1, uid2)
+        self._finalize_current_turn(c1, c2, uid1, uid2)
+
+        victoria_c1 = c1.wait_for("victoria", timeout=5.0)
+        victoria_c2 = c2.wait_for("victoria", timeout=5.0)
+
+        self.assertIsNotNone(victoria_c1, "c1 no recibió mensaje victoria")
+        self.assertIsNotNone(victoria_c2, "c2 no recibió mensaje victoria")
+        if victoria_c1 is not None:
+            self.assertIn("ganador_id", victoria_c1)
+            self.assertIn("ganador_nombre", victoria_c1)
+
+    def test_attack_sends_battle_result(self) -> None:
+        """Tras los turnos iniciales, un ataque válido difunde resultado_batalla."""
+        c1 = self._new_client()
+        c2 = self._new_client()
+        uid1, uid2 = self._start_two_player_game(
+            c1,
+            c2,
+            segundos=30,
+            paises_para_victoria=30,
+            objetivos_secretos=False,
+        )
+
+        for _ in range(4):
+            self._finalize_current_turn(c1, c2, uid1, uid2)
+
+        turno = self._wait_latest_turno(c1, c2)
+        attacker_id = turno.get("jugador_actual_id")
+        self.assertIsNotNone(attacker_id)
+        if attacker_id is None:
+            return
+
+        pair = self._find_adjacent_enemy_pair(int(attacker_id))
+        self.assertIsNotNone(pair, "no hay par adyacente atacable en el mapa")
+        if pair is None:
+            return
+        origen, destino = pair
+
+        game = self._server.game
+        self.assertIsNotNone(game)
+        if game is not None:
+            game.mapa().set_unidades(origen, MIN_UNITS_FOR_ATTACK)
+
+        attacker = self._client_for_user(c1, c2, uid1, uid2, int(attacker_id))
+        attacker.send({
+            "mensaje": "atacar",
+            "origen": origen,
+            "destino": destino,
+            "cantidad_unidades": 1,
+        })
+
+        resultado_c1 = c1.wait_for("resultado_batalla", timeout=5.0)
+        resultado_c2 = c2.wait_for("resultado_batalla", timeout=5.0)
+
+        self.assertIsNotNone(resultado_c1, "c1 no recibió resultado_batalla")
+        self.assertIsNotNone(resultado_c2, "c2 no recibió resultado_batalla")
+        if resultado_c1 is not None:
+            self.assertEqual(resultado_c1.get("origen"), origen)
+            self.assertEqual(resultado_c1.get("destino"), destino)
+            self.assertIn("dados_atacante", resultado_c1)
+            self.assertIn("dados_defensor", resultado_c1)
 
 
 if __name__ == "__main__":

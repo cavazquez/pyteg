@@ -9,11 +9,14 @@ Todas las fechas en formato YYYY-MM-DD.
 - **Logging del cliente y temporizador**: flags CLI equivalentes en el cliente; `TurnoTimer` usa logger (WARNING en fallos de envío, INFO al agotar el turno). Lógica compartida en `pyteg/log_cli.py`.
 - **Logging en runtime restante**: `VictoryChecker` registra victorias en INFO; `SoundManager` avisa WAV faltantes en WARNING.
 - **i18n en flujos de batalla**: cadenas de ataque, dados y turno en diálogos, managers y tareas del cliente; traducciones en `locales/en`.
+- **i18n en admin y paneles laterales**: ventana de administración, títulos JUGADORES/UNIDADES y filas del panel de unidades.
 - **Modularización de `main_window.py`**: delegaciones públicas en `MainWindowDelegatesMixin`; `show_battle_result_dialog` y `refresh_open_tarjetas_dialogs` movidos a managers.
 
 ### Added
 - **Tests de `VictoryChecker` y `TurnoTimer`**: cobertura de victoria por países/objetivos y del temporizador de turno.
-- **Tests de integración de gameplay**: turno y tiempo restante tras el inicio de partida.
+- **Tests de integración de gameplay**: turno, tiempo, victoria por umbral y ataque con `resultado_batalla`.
+- **Tests de cobertura GUI y servidor**: `UnitsManager`, `VentanaAdmin`, `LanguageManager`, `SoundManager` y tareas `canjear_misil` / `lanzar_misil`.
+- **Tests de client tasks lobby**: `ClientTaskEstado`, `ClientTaskUserId`, `ClientTaskUsername` y `ClientTaskActualizarListaJugadores`.
 
 ### Security
 - **Dependabot GHSA-537c-gmf6-5ccf**: actualización de `cryptography` transitiva (cadena dev `hatch` → `keyring` → `secretstorage`) a `>= 48.0.1`; restricción en `pyproject.toml` para evitar regresiones en el lockfile.

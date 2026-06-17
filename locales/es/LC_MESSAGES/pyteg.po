@@ -267,3 +267,73 @@ msgstr "Vacío"
 
 msgid "Seleccionadas: %s"
 msgstr "Seleccionadas: %s"
+
+# Admin window and sidebar panels
+msgid "Duración del turno (segundos):"
+msgstr "Duración del turno (segundos):"
+
+msgid "p. ej., 30, 60, 120"
+msgstr "p. ej., 30, 60, 120"
+
+msgid "Duración del turno en segundos"
+msgstr "Duración del turno en segundos"
+
+msgid "Objetivo específico de países"
+msgstr "Objetivo específico de países"
+
+msgid "Activar para usar un objetivo específico de países en lugar de controlar todos"
+msgstr "Activar para usar un objetivo específico de países en lugar de controlar todos"
+
+msgid "p. ej., 30, 50, 42"
+msgstr "p. ej., 30, 50, 42"
+
+msgid "Cantidad de países necesarios para ganar"
+msgstr "Cantidad de países necesarios para ganar"
+
+msgid "Objetivos secretos"
+msgstr "Objetivos secretos"
+
+msgid "Activar para usar objetivos secretos del TEG clásico en lugar de solo conquistar países"
+msgstr "Activar para usar objetivos secretos del TEG clásico en lugar de solo conquistar países"
+
+msgid "Habilitar Misiles"
+msgstr "Habilitar Misiles"
+
+msgid "Activar para permitir canjear y lanzar misiles durante la partida"
+msgstr "Activar para permitir canjear y lanzar misiles durante la partida"
+
+msgid "JUGADORES"
+msgstr "JUGADORES"
+
+msgid "UNIDADES"
+msgstr "UNIDADES"
+
+msgid "América del Sur"
+msgstr "América del Sur"
+
+msgid "América del Norte"
+msgstr "América del Norte"
+
+msgid "Europa"
+msgstr "Europa"
+
+msgid "Asia"
+msgstr "Asia"
+
+msgid "África"
+msgstr "África"
+
+msgid "Oceanía"
+msgstr "Oceanía"
+
+msgid "Unidades generales disponibles para colocar"
+msgstr "Unidades generales disponibles para colocar"
+
+msgid "Misiles disponibles"
+msgstr "Misiles disponibles"
+
+msgid "Refuerzos por control de {}"
+msgstr "Refuerzos por control de {}"
+
+msgid "{}: {}"
+msgstr "{}: {}"

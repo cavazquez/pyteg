@@ -16,6 +16,7 @@ from PySide6.QtWidgets import (
 )
 
 from pyteg.config import DEFAULT_TURN_SECONDS
+from pyteg.i18n import translate as _
 
 
 class VentanaAdmin(QWidget):
@@ -30,16 +31,16 @@ class VentanaAdmin(QWidget):
         """
         super().__init__()
         self.main_window = main_window
-        self.setWindowTitle("Admin")
+        self.setWindowTitle(_("Admin"))
 
         self._layout = QVBoxLayout()
 
         # Fila para ingresar los segundos
         self.seconds_layout = QHBoxLayout()
-        self.seconds_label = QLabel("Duración del turno (segundos):")
+        self.seconds_label = QLabel(_("Duración del turno (segundos):"))
         self.seconds_input = QLineEdit()
-        self.seconds_input.setPlaceholderText("p. ej., 30, 60, 120")
-        self.seconds_input.setToolTip("Duración del turno en segundos")
+        self.seconds_input.setPlaceholderText(_("p. ej., 30, 60, 120"))
+        self.seconds_input.setToolTip(_("Duración del turno en segundos"))
         self.seconds_input.setValidator(QIntValidator(0, 3600, self))
         self.seconds_input.setText(str(DEFAULT_TURN_SECONDS))  # valor por defecto
 
@@ -49,20 +50,22 @@ class VentanaAdmin(QWidget):
         self._layout.addLayout(self.seconds_layout)
 
         # Checkbox para habilitar objetivo específico de países
-        self.countries_checkbox = QCheckBox("Objetivo específico de países")
+        self.countries_checkbox = QCheckBox(_("Objetivo específico de países"))
         self.countries_checkbox.setChecked(True)  # habilitado por defecto (50 países)
         self.countries_checkbox.setToolTip(
-            "Activar para usar un objetivo específico de países "
-            "en lugar de controlar todos"
+            _(
+                "Activar para usar un objetivo específico de países "
+                "en lugar de controlar todos"
+            )
         )
         self._layout.addWidget(self.countries_checkbox)
 
         # Fila para ingresar países para ganar
         self.countries_layout = QHBoxLayout()
-        self.countries_label = QLabel("Países para ganar:")
+        self.countries_label = QLabel(_("Países para ganar:"))
         self.countries_input = QLineEdit()
-        self.countries_input.setPlaceholderText("p. ej., 30, 50, 42")
-        self.countries_input.setToolTip("Cantidad de países necesarios para ganar")
+        self.countries_input.setPlaceholderText(_("p. ej., 30, 50, 42"))
+        self.countries_input.setToolTip(_("Cantidad de países necesarios para ganar"))
         self.countries_input.setValidator(QIntValidator(1, 999, self))
         self.countries_input.setText("50")  # valor por defecto
 
@@ -72,26 +75,28 @@ class VentanaAdmin(QWidget):
         self._layout.addLayout(self.countries_layout)
 
         # Checkbox para habilitar objetivos secretos
-        self.objetivos_secretos_checkbox = QCheckBox("Objetivos secretos")
+        self.objetivos_secretos_checkbox = QCheckBox(_("Objetivos secretos"))
         self.objetivos_secretos_checkbox.setChecked(True)
         self.objetivos_secretos_checkbox.setToolTip(
-            "Activar para usar objetivos secretos del TEG clásico "
-            "en lugar de solo conquistar países"
+            _(
+                "Activar para usar objetivos secretos del TEG clásico "
+                "en lugar de solo conquistar países"
+            )
         )
         self._layout.addWidget(self.objetivos_secretos_checkbox)
 
         # Checkbox para habilitar misiles
-        self.misiles_checkbox = QCheckBox("Habilitar Misiles")
+        self.misiles_checkbox = QCheckBox(_("Habilitar Misiles"))
         self.misiles_checkbox.setChecked(True)  # habilitado por defecto
         self.misiles_checkbox.setToolTip(
-            "Activar para permitir canjear y lanzar misiles durante la partida"
+            _("Activar para permitir canjear y lanzar misiles durante la partida")
         )
         self._layout.addWidget(self.misiles_checkbox)
 
         # Conectar checkbox para habilitar/deshabilitar el campo de países
         self.countries_checkbox.toggled.connect(self._toggle_countries_input)
 
-        self.button = QPushButton("Empezar")
+        self.button = QPushButton(_("Empezar"))
         self.button.clicked.connect(self.empezar)
         # Permitir activar con Enter
         self.button.setDefault(True)
@@ -104,6 +109,35 @@ class VentanaAdmin(QWidget):
 
         # Inicializar estado del campo de países
         self._toggle_countries_input(self.countries_checkbox.isChecked())
+
+    def update_language(self, _lang_code: str) -> None:
+        """Re-aplica traducciones a etiquetas estáticas de la ventana admin."""
+        self.setWindowTitle(_("Admin"))
+        self.seconds_label.setText(_("Duración del turno (segundos):"))
+        self.seconds_input.setPlaceholderText(_("p. ej., 30, 60, 120"))
+        self.seconds_input.setToolTip(_("Duración del turno en segundos"))
+        self.countries_checkbox.setText(_("Objetivo específico de países"))
+        self.countries_checkbox.setToolTip(
+            _(
+                "Activar para usar un objetivo específico de países "
+                "en lugar de controlar todos"
+            )
+        )
+        self.countries_label.setText(_("Países para ganar:"))
+        self.countries_input.setPlaceholderText(_("p. ej., 30, 50, 42"))
+        self.countries_input.setToolTip(_("Cantidad de países necesarios para ganar"))
+        self.objetivos_secretos_checkbox.setText(_("Objetivos secretos"))
+        self.objetivos_secretos_checkbox.setToolTip(
+            _(
+                "Activar para usar objetivos secretos del TEG clásico "
+                "en lugar de solo conquistar países"
+            )
+        )
+        self.misiles_checkbox.setText(_("Habilitar Misiles"))
+        self.misiles_checkbox.setToolTip(
+            _("Activar para permitir canjear y lanzar misiles durante la partida")
+        )
+        self.button.setText(_("Empezar"))
 
     def _toggle_countries_input(self, enabled: bool) -> None:  # noqa: FBT001
         """Habilita o deshabilita el campo de países según el checkbox."""

@@ -107,6 +107,8 @@ class Gui(QMainWindow, MainWindowDelegatesMixin):
         self.row_widgets: dict[str, object] = {}
         self.last_units: dict[str, object] = {}
         self.status_temp_label: object = None
+        self.players_title_label: object = None
+        self.units_section_title_label: object = None
 
     def _gui_init_window_and_managers(self) -> None:
         self.setWindowTitle(_("PyTeg"))
