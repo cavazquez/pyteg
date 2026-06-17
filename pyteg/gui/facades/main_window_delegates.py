@@ -121,9 +121,13 @@ class MainWindowDelegatesMixin:
         """Canjea unidades por un misil en el país indicado."""
         self.game_actions_manager.canjear_misil(pais)
 
-    def colocar_unidad_en_pais(self, pais: str, continente_mapa: str) -> None:
+    def colocar_unidad_en_pais(
+        self, pais: str, continente_mapa: str, cantidad: int
+    ) -> None:
         """Coloca unidades en un país del mapa."""
-        self.game_actions_manager.colocar_unidad_en_pais(pais, continente_mapa)
+        self.game_actions_manager.colocar_unidad_en_pais(
+            pais, continente_mapa, cantidad
+        )
 
     def lanzar_misil(self, pais_origen: str, pais_destino: str) -> None:
         """Lanza un misil entre dos países."""

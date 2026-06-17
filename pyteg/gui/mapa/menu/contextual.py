@@ -14,7 +14,10 @@ from pyteg.gui.units_placement import (
     tooltip_colocar_unidad,
     unidades_colocables_en_pais,
 )
+from pyteg.i18n import ngettext
 from pyteg.i18n import translate as _
+
+_PLACE_PRESETS = (1, 3, 5)
 
 
 class Menu(MenuActionsMixin, QMenu):
@@ -49,7 +52,7 @@ class Menu(MenuActionsMixin, QMenu):
         self.action_pais = QAction(pais, self)
         self.action_pais.setEnabled(False)
 
-        self.action_colocar_unidad = QAction(_("Colocar unidad"), self)
+        self.submenu_colocar = QMenu(_("Colocar unidad"), self)
 
         self.action_atacar = QAction(_("Atacar"), self)
         self.action_mover_seleccion = QAction(_("Mover"), self)
@@ -59,8 +62,6 @@ class Menu(MenuActionsMixin, QMenu):
             _("Canjear Misil ({} unidades)").format(MISSILE_UNIT_COST), self
         )
         self.action_lanzar_misil = QAction(_("Lanzar misil"), self)
-
-        self.action_colocar_unidad.triggered.connect(self.colocar_unidad)
 
         self.action_atacar.triggered.connect(self.atacar)
         self.action_mover_seleccion.triggered.connect(self.mover)
@@ -81,11 +82,13 @@ class Menu(MenuActionsMixin, QMenu):
         last_units = getattr(self.main_window, "last_units", {})
         total, _, _ = unidades_colocables_en_pais(last_units, self.continente_mapa)
         mi_turno = es_mi_turno(self.main_window)
-        self.action_colocar_unidad.setEnabled(mi_turno and total > 0)
-        self.action_colocar_unidad.setToolTip(
+        self.submenu_colocar.clear()
+        self.submenu_colocar.setToolTip(
             tooltip_colocar_unidad(last_units, self.continente_mapa)
         )
-        self.addAction(self.action_colocar_unidad)
+        self.submenu_colocar.setEnabled(mi_turno and total > 0)
+        self._poblar_submenu_colocar(total)
+        self.addMenu(self.submenu_colocar)
         self.addSeparator()
 
         misiles_habilitados = bool(
@@ -123,6 +126,36 @@ class Menu(MenuActionsMixin, QMenu):
                 ):
                     self.addAction(self.action_lanzar_misil)
             self.addAction(self.action_cancelar_seleccion)
+
+    def _poblar_submenu_colocar(self, total: int) -> None:
+        """Añade cantidades 1/3/5 y atajo para el resto en un solo clic."""
+        for cantidad in _PLACE_PRESETS:
+            if cantidad <= total:
+                etiqueta = _("Colocar {} {}").format(
+                    cantidad,
+                    ngettext("unidad", "unidades", cantidad),
+                )
+                action = self.submenu_colocar.addAction(etiqueta)
+                action.triggered.connect(
+                    lambda _checked=False, n=cantidad: self.colocar_unidades(n)
+                )
+
+        if total > max(_PLACE_PRESETS):
+            action = self.submenu_colocar.addAction(
+                _("Colocar todas ({})").format(total)
+            )
+            action.triggered.connect(
+                lambda _checked=False, n=total: self.colocar_unidades(n)
+            )
+        elif total not in _PLACE_PRESETS:
+            etiqueta = _("Colocar {} {}").format(
+                total,
+                ngettext("unidad", "unidades", total),
+            )
+            action = self.submenu_colocar.addAction(etiqueta)
+            action.triggered.connect(
+                lambda _checked=False, n=total: self.colocar_unidades(n)
+            )
 
     def _puede_lanzar_misil(self, pais_origen: str | None) -> bool:
         if not pais_origen:

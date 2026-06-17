@@ -37,26 +37,49 @@ class ClientTaskVictoria(IClientTask[VictoriaTaskData]):
         self._ganador_id = data.get("ganador_id")
         self._ganador_nombre = data.get("ganador_nombre")
 
+    def _es_ganador_local(self, main_window: GameWindowProtocol) -> bool:
+        client = getattr(main_window, "client", None)
+        if client is None or self._ganador_id is None:
+            return False
+        userid = client.userid() if hasattr(client, "userid") else None
+        if not userid:
+            return False
+        return int(userid) == int(self._ganador_id)
+
     def run(self, main_window: GameWindowProtocol) -> None:
-        """Muestra un mensaje de victoria cuando alguien gana la partida."""
+        """Muestra victoria o derrota según el jugador local."""
         try:
-            main_window.sound_manager.play_victory()
+            soy_ganador = self._es_ganador_local(main_window)
+            if soy_ganador:
+                main_window.sound_manager.play_victory()
+            else:
+                main_window.sound_manager.play_defeat()
 
             main_window.update_status_bar(
                 _("🏆 ¡{} ha ganado la partida!").format(self._ganador_nombre),
-                "green",
+                "green" if soy_ganador else "orange",
             )
 
             msg_box = QMessageBox(cast("QWidget", main_window))
             msg_box.setWindowTitle(_("¡Partida Terminada!"))
-            msg_box.setIcon(QMessageBox.Icon.Information)
-            msg_box.setText(_("🏆 ¡Felicitaciones!"))
-            msg_box.setInformativeText(
-                _(
-                    "{} ha ganado la partida controlando el número objetivo de países."
-                ).format(self._ganador_nombre)
-            )
             msg_box.setStandardButtons(QMessageBox.StandardButton.Ok)
+
+            if soy_ganador:
+                msg_box.setIcon(QMessageBox.Icon.Information)
+                msg_box.setText(_("🏆 ¡Felicitaciones!"))
+                msg_box.setInformativeText(
+                    _(
+                        "{} ha ganado la partida controlando el número "
+                        "objetivo de países."
+                    ).format(self._ganador_nombre)
+                )
+            else:
+                msg_box.setIcon(QMessageBox.Icon.Warning)
+                msg_box.setText(_("Has perdido la partida"))
+                msg_box.setInformativeText(
+                    _("{} ha ganado la partida.").format(self._ganador_nombre)
+                )
+
             msg_box.exec()
 
             if main_window.chat is not None:

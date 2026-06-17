@@ -14,7 +14,6 @@ from PySide6.QtWidgets import QDialog, QMessageBox, QWidget
 from pyteg.gui.connection_utils import cliente_esta_conectado
 from pyteg.gui.dialogs.attack import AttackDialog
 from pyteg.gui.dialogs.move import MoveDialog
-from pyteg.gui.dialogs.place import PlaceUnitsDialog
 from pyteg.gui.gameplay_state import (
     avisar_fase_reparto,
     avisar_fuera_de_turno,
@@ -297,8 +296,10 @@ class GameActionsManager:
         self.main_window.transmisor.canjear_misil(pais)
         self.main_window.status_bar.showMessage(f"Canjeando misil en {pais}...", 3000)
 
-    def colocar_unidad_en_pais(self, pais: str, continente_mapa: str) -> None:
-        """Abre diálogo y coloca unidades en un país."""
+    def colocar_unidad_en_pais(
+        self, pais: str, continente_mapa: str, cantidad: int
+    ) -> None:
+        """Coloca unidades en un país sin diálogo (cantidad elegida en el menú)."""
         if not es_mi_turno(self.main_window):
             avisar_fuera_de_turno(self.main_window)
             return
@@ -318,11 +319,8 @@ class GameActionsManager:
             )
             return
 
-        dialog = PlaceUnitsDialog(pais, total, cast("QWidget", self.main_window))
-        if dialog.exec() != QDialog.DialogCode.Accepted:
-            return
+        cantidad = min(max(1, cantidad), total)
 
-        cantidad = dialog.get_cantidad()
         self.main_window.ultimo_pais_colocado = pais
         self.main_window.ultimo_continente_colocado = continente_mapa
         self.main_window.unidades_antes_colocar = dict(last_units)

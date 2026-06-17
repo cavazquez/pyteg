@@ -10,11 +10,12 @@ Todas las fechas en formato YYYY-MM-DD.
 - **Turno y fase de reparto**: `gameplay_state` deshabilita atacar/mover/finalizar fuera de turno o con refuerzos pendientes.
 - **Clic en zonas superpuestas**: menú «Seleccionar país» y z-order por área de sprite en la escena.
 - **Validación previa en GUI**: `map_rules` (adyacencia y propiedad) antes de atacar, mover o lanzar misil.
-- **Colocar varias unidades**: `PlaceUnitsDialog` y cantidad en un solo mensaje al servidor.
+- **Colocar varias unidades**: submenú contextual con 1, 3, 5 y atajos para el resto.
 - **Feedback al colocar**: status bar indica si se consumió refuerzo continental o unidad general.
 - **CI de layout**: `check_map_overlaps.py` con `--max-bbox-pairs` y `--fail-on-cross-continent` (excepción Groenlandia:Islandia).
 
 ### Changed
+- **Fin de partida**: solo el ganador ve «Felicitaciones»; los demás reciben mensaje de derrota.
 - **Layout classic (Norteamérica y Europa)**: ajustes conservadores en `themes/classic/paises.toml` para reducir solapamientos bbox (69 pares, umbral 75).
 
 ## [0.0.8] - 2026-06-17
