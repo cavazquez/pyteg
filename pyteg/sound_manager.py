@@ -4,12 +4,20 @@ Este módulo proporciona una clase para gestionar la reproducción de efectos
 de sonido en el juego, incluyendo control de volumen y mute.
 """
 
-from pathlib import Path
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 from PySide6.QtCore import QUrl
 from PySide6.QtMultimedia import QAudioOutput, QMediaPlayer
 
+from pyteg.logger import get_logger
 from pyteg.utils import get_resource_path
+
+if TYPE_CHECKING:
+    from pathlib import Path
+
+LOGGER = get_logger(__name__)
 
 
 class SoundManager:
@@ -56,7 +64,7 @@ class SoundManager:
         sound_path = get_resource_path(f"sounds/{filename}")
 
         if not sound_path.exists():
-            print(f"Advertencia: Archivo de sonido no encontrado: {sound_path}")
+            LOGGER.warning("Archivo de sonido no encontrado: %s", sound_path)
             return None
 
         return sound_path

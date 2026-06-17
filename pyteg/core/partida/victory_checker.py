@@ -8,6 +8,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from pyteg.logger import get_logger
+
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
@@ -15,6 +17,9 @@ if TYPE_CHECKING:
     from pyteg.protocols import IClientProtocol
     from pyteg.server.juego.color import ServerColor
     from pyteg.server.juego.mapa import Mapa
+
+
+LOGGER = get_logger(__name__)
 
 
 class VictoryChecker:
@@ -106,9 +111,12 @@ class VictoryChecker:
                     jugador.username() if hasattr(jugador, "username") else str(jugador)
                 )
                 objetivo = self._objetivos_secretos.get_objetivo_jugador(jugador_id)
-                print(f"¡{jugador_nombre} ha ganado cumpliendo su objetivo secreto!")
+                LOGGER.info(
+                    "%s ha ganado cumpliendo su objetivo secreto",
+                    jugador_nombre,
+                )
                 if objetivo:
-                    print(f"Objetivo cumplido: {objetivo['descripcion']}")
+                    LOGGER.info("Objetivo cumplido: %s", objetivo["descripcion"])
                 return jugador
 
         return None
@@ -140,11 +148,15 @@ class VictoryChecker:
 
             if paises_controlados >= objetivo_paises:
                 if self._paises_para_victoria == 0:
-                    print(f"¡{jugador_nombre} ha ganado controlando todos los países!")
+                    LOGGER.info(
+                        "%s ha ganado controlando todos los países",
+                        jugador_nombre,
+                    )
                 else:
-                    print(
-                        f"¡{jugador_nombre} ha ganado controlando "
-                        f"{paises_controlados} países!"
+                    LOGGER.info(
+                        "%s ha ganado controlando %s países",
+                        jugador_nombre,
+                        paises_controlados,
                     )
                 return jugador
 
