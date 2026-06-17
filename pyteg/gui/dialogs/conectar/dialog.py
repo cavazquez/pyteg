@@ -26,6 +26,38 @@ from pyteg.logger import get_logger
 
 _LOG = get_logger("gui.conectar")
 
+# Variantes ES/EN del texto actual → msgid a re-traducir
+_CONNECT_TEXT_TO_MSGID: dict[str, str] = {
+    "Conectar a Partida": "Conectar a Partida",
+    "Connect to Game": "Conectar a Partida",
+    "Ingresa los datos para conectarte a una partida existente": (
+        "Ingresa los datos para conectarte a una partida existente"
+    ),
+    "Enter the details to connect to an existing game": (
+        "Ingresa los datos para conectarte a una partida existente"
+    ),
+    "Dirección:": "Dirección:",
+    "Address:": "Dirección:",
+    "Direccion:": "Dirección:",
+    "Puerto:": "Puerto:",
+    "Port:": "Puerto:",
+    "Usuario:": "Usuario:",
+    "User:": "Usuario:",
+    "Cancelar": "Cancelar",
+    "Cancel": "Cancelar",
+    "Conectar": "Conectar",
+    "Connect": "Conectar",
+}
+
+
+def _retranslate_widget_texts(
+    widgets: list[QLabel | QPushButton], replacements: dict[str, str]
+) -> None:
+    for widget in widgets:
+        msgid = replacements.get(widget.text())
+        if msgid is not None:
+            widget.setText(_(msgid))
+
 
 class VentanaConectar(QDialog):
     """Ventana de diálogo para conectarse al servidor."""
@@ -219,33 +251,10 @@ class VentanaConectar(QDialog):
     def update_language(self) -> None:
         """Actualiza todos los textos de la interfaz al cambiar el idioma."""
         self.setWindowTitle(_("Conectar al servidor"))
-
-        labels = self.findChildren(QLabel)
-        for label in labels:
-            current_text = label.text()
-            if current_text in {"Conectar a Partida", "Connect to Game"}:
-                label.setText(_("Conectar a Partida"))
-            elif current_text in {
-                "Ingresa los datos para conectarte a una partida existente",
-                "Enter the details to connect to an existing game",
-            }:
-                label.setText(
-                    _("Ingresa los datos para conectarte a una partida existente")
-                )
-            elif current_text in {"Dirección:", "Address:", "Direccion:"}:
-                label.setText(_("Dirección:"))
-            elif current_text in {"Puerto:", "Port:"}:
-                label.setText(_("Puerto:"))
-            elif current_text in {"Usuario:", "User:"}:
-                label.setText(_("Usuario:"))
-
-        buttons = self.findChildren(QPushButton)
-        for button in buttons:
-            current_text = button.text()
-            if current_text in {"Cancelar", "Cancel"}:
-                button.setText(_("Cancelar"))
-            elif current_text in {"Conectar", "Connect"}:
-                button.setText(_("Conectar"))
+        _retranslate_widget_texts(self.findChildren(QLabel), _CONNECT_TEXT_TO_MSGID)
+        _retranslate_widget_texts(
+            self.findChildren(QPushButton), _CONNECT_TEXT_TO_MSGID
+        )
 
         if hasattr(self, "addr"):
             self.addr.setPlaceholderText(_("Dirección del servidor"))
