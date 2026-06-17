@@ -53,6 +53,8 @@ class MainWindowProtocol(GameWindowProtocol, Protocol):
     row_widgets: dict[str, QFrame]
     value_labels: dict[str, QLabel]
     status_temp_label: QLabel | None
+    players_title_label: QLabel | None
+    units_section_title_label: QLabel | None
 
     view: QCustomGraphicsView | None
     toolbar: ToolBar | None

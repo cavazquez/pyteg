@@ -74,6 +74,18 @@ class LanguageManager:
         if self.main_window.toolbar is not None:
             self.main_window.toolbar.update_language(lang_code)
 
+        players_title = getattr(self.main_window, "players_title_label", None)
+        if players_title is not None:
+            players_title.setText(_("JUGADORES"))
+
+        units_title = getattr(self.main_window, "units_section_title_label", None)
+        if units_title is not None:
+            units_title.setText(_("UNIDADES"))
+
+        units_manager = getattr(self.main_window, "units_manager", None)
+        if units_manager is not None:
+            units_manager.refresh_unit_labels()
+
         # Refrescar cualquier widget top-level visible que exponga
         # `update_language(lang_code)` (duck typing). Esto cubre la ventana de
         # espera de jugadores, el diálogo de tarjetas (si en algún momento se

@@ -15,8 +15,24 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from pyteg.i18n import translate as _
+
 if TYPE_CHECKING:
     from pyteg.gui.managers.protocols import MainWindowProtocol
+
+
+def format_unit_label(key: str, value: int) -> str:
+    """Formatea la etiqueta de una fila de unidades traducible.
+
+    Args:
+        key: Clave interna de la fila (también msgid).
+        value: Cantidad a mostrar.
+
+    Returns:
+        Texto listo para `QLabel.setText`.
+
+    """
+    return _("{}: {}").format(_(key), value)
 
 
 def setup_continent_values(
@@ -31,10 +47,11 @@ def setup_continent_values(
     section_layout.setContentsMargins(10, 10, 10, 10)
     section_layout.setSpacing(6)
 
-    title = QLabel("UNIDADES")
+    title = QLabel(_("UNIDADES"))
     title.setAlignment(Qt.AlignmentFlag.AlignLeft)
     title.setObjectName("unitsTitle")
     section_layout.addWidget(title)
+    main_window.units_section_title_label = title
 
     main_window.value_labels = {}
     main_window.row_widgets = {}
@@ -47,7 +64,7 @@ def setup_continent_values(
         value=0,
         icon_color="#2E7D32",
         glyph="G",
-        tooltip="Unidades generales disponibles para colocar",
+        tooltip=_("Unidades generales disponibles para colocar"),
     )
 
     _create_unit_row(
@@ -57,7 +74,7 @@ def setup_continent_values(
         value=0,
         icon_color="#D32F2F",
         glyph="M",
-        tooltip="Misiles disponibles",
+        tooltip=_("Misiles disponibles"),
     )
     main_window.row_widgets["Misiles"].setVisible(False)
 
@@ -76,7 +93,7 @@ def setup_continent_values(
             value=0,
             icon_color="#1565C0",
             glyph="C",
-            tooltip=f"Refuerzos por control de {cont}",
+            tooltip=_("Refuerzos por control de {}").format(_(cont)),
         )
 
     layout.addWidget(section)
@@ -102,7 +119,7 @@ def _create_unit_row(  # noqa: PLR0913, PLR0917
     icon_label = _make_circle_icon(icon_color, glyph)
     row_layout.addWidget(icon_label)
 
-    label = QLabel(f"{key}: {value}")
+    label = QLabel(format_unit_label(key, value))
     label.setObjectName("unitRowLabel")
     row_layout.addWidget(label)
 

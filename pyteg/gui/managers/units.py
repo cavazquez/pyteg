@@ -11,6 +11,8 @@ from typing import TYPE_CHECKING
 
 from PySide6.QtCore import QTimer
 
+from pyteg.gui.managers.units_panel import format_unit_label
+
 if TYPE_CHECKING:
     from pyteg.gui.managers.protocols import MainWindowProtocol
 
@@ -30,6 +32,13 @@ class UnitsManager:
 
         """
         self.main_window = main_window
+
+    def refresh_unit_labels(self) -> None:
+        """Re-aplica traducciones a las filas del panel UNIDADES."""
+        for key, label in self.main_window.value_labels.items():
+            value = self.main_window.last_units.get(key, 0)
+            if isinstance(value, int):
+                label.setText(format_unit_label(key, value))
 
     def update_unidades_disponibles(self, unidades: dict[str, int]) -> None:  # noqa: PLR0912
         """Actualiza el panel derecho con las unidades disponibles.
@@ -63,10 +72,10 @@ class UnitsManager:
                     "border-radius: 4px; "
                     "border-left: 3px solid #4CAF50;"
                 )
-                text = f"Generales: {cantidad}"
+                text = format_unit_label("Generales", cantidad)
             else:
                 style = "font-weight: bold; color: #666666;"
-                text = f"Generales: {cantidad}"
+                text = format_unit_label("Generales", cantidad)
 
             self.main_window.value_labels["Generales"].setText(text)
             self.main_window.value_labels["Generales"].setStyleSheet(style)
@@ -89,11 +98,11 @@ class UnitsManager:
                         "border-radius: 4px; "
                         "border-left: 3px solid #2196F3;"
                     )
-                    text = f"{gui_name}: {cantidad}"
+                    text = format_unit_label(gui_name, cantidad)
                 else:
                     # Estilo normal para continentes sin unidades
                     style = "font-weight: bold; color: #666666;"
-                    text = f"{gui_name}: 0"
+                    text = format_unit_label(gui_name, 0)
 
                 self.main_window.value_labels[gui_name].setText(text)
                 self.main_window.value_labels[gui_name].setStyleSheet(style)
@@ -102,14 +111,16 @@ class UnitsManager:
                 self.main_window.last_units[gui_name] = cantidad
             elif gui_name in self.main_window.value_labels:
                 # Resetear continentes que no tienen unidades disponibles
-                self.main_window.value_labels[gui_name].setText(f"{gui_name}: 0")
+                self.main_window.value_labels[gui_name].setText(
+                    format_unit_label(gui_name, 0)
+                )
                 self.main_window.value_labels[gui_name].setStyleSheet(
                     "font-weight: bold; color: #666666;"
                 )
 
         # Actualizar Misiles: usar fila existente y mostrar/ocultar
         if "misiles" in unidades and unidades["misiles"] > 0:
-            text = f"Misiles: {unidades['misiles']}"
+            text = format_unit_label("Misiles", unidades["misiles"])
             style = (
                 "font-weight: bold; "
                 "color: #D32F2F; "
@@ -128,7 +139,9 @@ class UnitsManager:
             self.main_window.last_units["Misiles"] = unidades["misiles"]
         else:
             # Ocultar y resetear
-            self.main_window.value_labels["Misiles"].setText("Misiles: 0")
+            self.main_window.value_labels["Misiles"].setText(
+                format_unit_label("Misiles", 0)
+            )
             self.main_window.value_labels["Misiles"].setStyleSheet(
                 "font-weight: bold; color: #666666;"
             )

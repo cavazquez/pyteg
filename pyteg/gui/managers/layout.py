@@ -21,6 +21,7 @@ from pyteg.gui.mapa.scene import QCustomGraphicsScene
 from pyteg.gui.toolbar import ToolBar
 from pyteg.gui.widgets.chat import Chat
 from pyteg.gui.widgets.view import QCustomGraphicsView
+from pyteg.i18n import translate as _
 
 if TYPE_CHECKING:
     from pyteg.gui.managers.protocols import MainWindowProtocol
@@ -126,7 +127,8 @@ class LayoutManager:
     def _add_players_title(self, layout: QVBoxLayout) -> None:
         """Agregar título de la sección de jugadores."""
         # Título para la sección de jugadores
-        players_title = QLabel("JUGADORES")
+        players_title = QLabel(_("JUGADORES"))
+        self.main_window.players_title_label = players_title
         players_title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         players_title.setStyleSheet("""
             QLabel {
