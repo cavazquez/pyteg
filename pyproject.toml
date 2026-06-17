@@ -42,7 +42,7 @@ dev = [
     "pyside6-stubs==6.7.3.0",
     "typing-extensions==4.15.0",
     "types-polib==1.2.0.20250401",
-    "coverage==7.12.0",
+    "coverage==7.14.1",
     "ruff==0.15.17",
     "nuitka==2.8.6",
     "hatch==1.17.0",
