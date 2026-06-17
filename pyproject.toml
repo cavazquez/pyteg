@@ -31,9 +31,8 @@ ignore = [
 	"PLR0904", # too-many-public-methods
 	"PLR6301", # no-self-use
 	"ERA001",  # commented-out-code
-	"C901",    # complex-structure
-	"D203",   #
-	"D213",   #
+	"D203",   # incompatible con D211 (blank line before class)
+	"D213",   # incompatible con D212 (summary en primera línea)
 	]
 
 [dependency-groups]

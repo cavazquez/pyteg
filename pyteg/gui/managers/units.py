@@ -20,6 +20,32 @@ from pyteg.i18n import _
 if TYPE_CHECKING:
     from pyteg.gui.managers.protocols import MainWindowProtocol
 
+_STYLE_INACTIVE = "font-weight: bold; color: #666666;"
+_STYLE_GENERALES_ACTIVE = (
+    "font-weight: bold; "
+    "color: #2E7D32; "
+    "background-color: #E8F5E8; "
+    "padding: 4px 8px; "
+    "border-radius: 4px; "
+    "border-left: 3px solid #4CAF50;"
+)
+_STYLE_CONTINENT_ACTIVE = (
+    "font-weight: bold; "
+    "color: #1565C0; "
+    "background-color: #E3F2FD; "
+    "padding: 4px 8px; "
+    "border-radius: 4px; "
+    "border-left: 3px solid #2196F3;"
+)
+_STYLE_MISSILES_ACTIVE = (
+    "font-weight: bold; "
+    "color: #D32F2F; "
+    "background-color: #FFEBEE; "
+    "padding: 4px 8px; "
+    "border-radius: 4px; "
+    "border-left: 3px solid #F44336;"
+)
+
 
 class UnitsManager:
     """Gestiona la visualización y actualización de unidades disponibles.
@@ -44,7 +70,65 @@ class UnitsManager:
             if isinstance(value, int):
                 label.setText(format_unit_label(key, value))
 
-    def update_unidades_disponibles(self, unidades: dict[str, int]) -> None:  # noqa: PLR0912
+    def _sync_unit_row(
+        self,
+        key: str,
+        cantidad: int,
+        active_style: str,
+        inactive_style: str = _STYLE_INACTIVE,
+    ) -> None:
+        label = self.main_window.value_labels[key]
+        style = active_style if cantidad > 0 else inactive_style
+        label.setText(format_unit_label(key, cantidad))
+        label.setStyleSheet(style)
+        prev = self.main_window.last_units.get(key)
+        if prev is None or prev != cantidad:
+            self._flash_row(key)
+        self.main_window.last_units[key] = cantidad
+
+    def _reset_unit_row(self, key: str) -> None:
+        label = self.main_window.value_labels[key]
+        label.setText(format_unit_label(key, 0))
+        label.setStyleSheet(_STYLE_INACTIVE)
+
+    def _update_generales(self, unidades: dict[str, int]) -> None:
+        if "infanteria" not in unidades:
+            return
+        self._sync_unit_row(
+            "Generales",
+            unidades["infanteria"],
+            _STYLE_GENERALES_ACTIVE,
+        )
+
+    def _update_continentes(self, unidades: dict[str, int]) -> None:
+        for map_id, gui_name in MAP_CONTINENT_TO_PANEL_LABEL.items():
+            if gui_name not in self.main_window.value_labels:
+                continue
+            if map_id in unidades:
+                self._sync_unit_row(
+                    gui_name,
+                    unidades[map_id],
+                    _STYLE_CONTINENT_ACTIVE,
+                )
+            else:
+                self._reset_unit_row(gui_name)
+
+    def _update_misiles(self, unidades: dict[str, int]) -> None:
+        row = self.main_window.row_widgets["Misiles"]
+        if "misiles" in unidades and unidades["misiles"] > 0:
+            self._sync_unit_row(
+                "Misiles",
+                unidades["misiles"],
+                _STYLE_MISSILES_ACTIVE,
+            )
+            row.setVisible(True)
+            return
+
+        self._reset_unit_row("Misiles")
+        row.setVisible(False)
+        self.main_window.last_units["Misiles"] = 0
+
+    def update_unidades_disponibles(self, unidades: dict[str, int]) -> None:
         """Actualiza el panel derecho con las unidades disponibles.
 
         Args:
@@ -52,95 +136,9 @@ class UnitsManager:
                 Ejemplo: {"infanteria": 5, "misiles": 2, "Africa": 3}
 
         """
-        # Actualizar unidades generales (infantería)
-        if "infanteria" in unidades:
-            cantidad = unidades["infanteria"]
-            prev = self.main_window.last_units.get("Generales", None)
-            if cantidad > 0:
-                style = (
-                    "font-weight: bold; "
-                    "color: #2E7D32; "
-                    "background-color: #E8F5E8; "
-                    "padding: 4px 8px; "
-                    "border-radius: 4px; "
-                    "border-left: 3px solid #4CAF50;"
-                )
-                text = format_unit_label("Generales", cantidad)
-            else:
-                style = "font-weight: bold; color: #666666;"
-                text = format_unit_label("Generales", cantidad)
-
-            self.main_window.value_labels["Generales"].setText(text)
-            self.main_window.value_labels["Generales"].setStyleSheet(style)
-            if prev is None or prev != cantidad:
-                self._flash_row("Generales")
-            self.main_window.last_units["Generales"] = cantidad
-
-        # Actualizar unidades de continentes (claves = ID del mapa en el protocolo)
-        for map_id, gui_name in MAP_CONTINENT_TO_PANEL_LABEL.items():
-            if map_id in unidades and gui_name in self.main_window.value_labels:
-                cantidad = unidades[map_id]
-                prev = self.main_window.last_units.get(gui_name, None)
-                if cantidad > 0:
-                    # Estilo destacado para continentes con unidades disponibles
-                    style = (
-                        "font-weight: bold; "
-                        "color: #1565C0; "
-                        "background-color: #E3F2FD; "
-                        "padding: 4px 8px; "
-                        "border-radius: 4px; "
-                        "border-left: 3px solid #2196F3;"
-                    )
-                    text = format_unit_label(gui_name, cantidad)
-                else:
-                    # Estilo normal para continentes sin unidades
-                    style = "font-weight: bold; color: #666666;"
-                    text = format_unit_label(gui_name, 0)
-
-                self.main_window.value_labels[gui_name].setText(text)
-                self.main_window.value_labels[gui_name].setStyleSheet(style)
-                if prev is None or prev != cantidad:
-                    self._flash_row(gui_name)
-                self.main_window.last_units[gui_name] = cantidad
-            elif gui_name in self.main_window.value_labels:
-                # Resetear continentes que no tienen unidades disponibles
-                self.main_window.value_labels[gui_name].setText(
-                    format_unit_label(gui_name, 0)
-                )
-                self.main_window.value_labels[gui_name].setStyleSheet(
-                    "font-weight: bold; color: #666666;"
-                )
-
-        # Actualizar Misiles: usar fila existente y mostrar/ocultar
-        if "misiles" in unidades and unidades["misiles"] > 0:
-            text = format_unit_label("Misiles", unidades["misiles"])
-            style = (
-                "font-weight: bold; "
-                "color: #D32F2F; "
-                "background-color: #FFEBEE; "
-                "padding: 4px 8px; "
-                "border-radius: 4px; "
-                "border-left: 3px solid #F44336;"
-            )
-            self.main_window.value_labels["Misiles"].setText(text)
-            self.main_window.value_labels["Misiles"].setStyleSheet(style)
-            # Mostrar fila completa (parent del label)
-            self.main_window.row_widgets["Misiles"].setVisible(True)
-            prev = self.main_window.last_units.get("Misiles", None)
-            if prev is None or prev != unidades["misiles"]:
-                self._flash_row("Misiles")
-            self.main_window.last_units["Misiles"] = unidades["misiles"]
-        else:
-            # Ocultar y resetear
-            self.main_window.value_labels["Misiles"].setText(
-                format_unit_label("Misiles", 0)
-            )
-            self.main_window.value_labels["Misiles"].setStyleSheet(
-                "font-weight: bold; color: #666666;"
-            )
-            self.main_window.row_widgets["Misiles"].setVisible(False)
-            self.main_window.last_units["Misiles"] = 0
-
+        self._update_generales(unidades)
+        self._update_continentes(unidades)
+        self._update_misiles(unidades)
         self._notify_placement_feedback()
         refresh_acciones_juego(self.main_window)
 

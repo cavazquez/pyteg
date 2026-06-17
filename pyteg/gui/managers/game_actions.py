@@ -26,7 +26,10 @@ from pyteg.i18n import _, ngettext
 from pyteg.logger import get_logger
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from pyteg.gui.managers.protocols import MainWindowProtocol
+    from pyteg.gui.mapa.selection_manager import CountrySelectionManager
 
 _LOG = get_logger("gui.game_actions")
 
@@ -48,92 +51,164 @@ class GameActionsManager:
         """
         self.main_window = main_window
 
-    def atacar(self) -> None:  # noqa: PLR0911, PLR0912
-        """Método llamado cuando se hace clic en el botón Atacar de la toolbar."""
+    def _puede_iniciar_combate(self) -> bool:
         if not es_mi_turno(self.main_window):
             avisar_fuera_de_turno(self.main_window)
-            return
+            return False
         if not puede_atacar_o_mover(self.main_window):
             avisar_fase_reparto(self.main_window)
-            return
+            return False
+        return True
+
+    def _selection_manager_o_avisar(self) -> CountrySelectionManager | None:
         scene = self.main_window.scene
         if scene is None or not hasattr(scene, "selection_manager"):
             self.main_window.update_status_bar(
                 _("Error: No hay sistema de selección disponible"), "red"
             )
-            return
+            return None
+        return scene.selection_manager
 
-        selection_manager = scene.selection_manager
-        origen = selection_manager.get_pais_origen()
-        destino = selection_manager.get_pais_destino()
-
+    def _resolver_origen_destino(
+        self,
+        selection_manager: CountrySelectionManager,
+        origen: str | None,
+        destino: str | None,
+    ) -> tuple[str, str] | None:
+        if origen is None:
+            origen = selection_manager.get_pais_origen()
+        if destino is None:
+            destino = selection_manager.get_pais_destino()
         if not origen:
-            status_msg = _("Selecciona un país de origen primero")
-            self.main_window.update_status_bar(status_msg, "orange")
-            return
-
+            self.main_window.update_status_bar(
+                _("Selecciona un país de origen primero"), "orange"
+            )
+            return None
         if not destino:
             self.main_window.update_status_bar(
                 _("Selecciona un país de destino después del origen"), "orange"
             )
-            return
+            return None
+        return origen, destino
 
-        theme = getattr(self.main_window, "map_theme", "classic")
-        if not es_mi_pais(self.main_window, origen):
-            self.main_window.update_status_bar(
-                _("{} no es tu país").format(origen), "orange"
-            )
-            return
+    def _validar_origen_propio(self, origen: str) -> bool:
+        if es_mi_pais(self.main_window, origen):
+            return True
+        self.main_window.update_status_bar(
+            _("{} no es tu país").format(origen), "orange"
+        )
+        return False
+
+    def _validar_adyacencia(self, origen: str, destino: str, theme: str) -> bool:
+        if son_adyacentes(theme, origen, destino):
+            return True
+        self.main_window.update_status_bar(
+            _("{} no es adyacente a {}").format(destino, origen), "orange"
+        )
+        return False
+
+    def _validar_conexion(self) -> bool:
+        if cliente_esta_conectado(self.main_window):
+            return True
+        self.main_window.update_status_bar(
+            _("Error: No hay conexión disponible"), "red"
+        )
+        return False
+
+    def _validar_destino_ataque(self, origen: str, destino: str, theme: str) -> bool:
         if not es_pais_enemigo(self.main_window, destino):
             self.main_window.update_status_bar(
                 _("No puedes atacar tu propio país"), "orange"
             )
-            return
-        if not son_adyacentes(theme, origen, destino):
-            self.main_window.update_status_bar(
-                _("{} no es adyacente a {}").format(destino, origen), "orange"
-            )
-            return
+            return False
+        return self._validar_adyacencia(origen, destino, theme)
 
+    def _validar_destino_movimiento(
+        self, origen: str, destino: str, theme: str
+    ) -> bool:
+        if not es_mi_pais(self.main_window, destino):
+            self.main_window.update_status_bar(
+                _("Solo puedes mover a países propios"), "orange"
+            )
+            return False
+        return self._validar_adyacencia(origen, destino, theme)
+
+    def _preparar_accion_combate(
+        self,
+        origen: str | None,
+        destino: str | None,
+        validar_destino: Callable[[str, str, str], bool],
+    ) -> tuple[str, str, CountrySelectionManager] | None:
+        if not self._puede_iniciar_combate():
+            return None
+        selection_manager = self._selection_manager_o_avisar()
+        if selection_manager is None:
+            return None
+
+        par = self._resolver_origen_destino(selection_manager, origen, destino)
+        if par is None:
+            return None
+        origen_res, destino_res = par
+
+        theme = getattr(self.main_window, "map_theme", "classic")
+        listo = (
+            self._validar_origen_propio(origen_res)
+            and validar_destino(origen_res, destino_res, theme)
+            and self._validar_conexion()
+        )
+        if not listo:
+            return None
+        return origen_res, destino_res, selection_manager
+
+    def _ejecutar_ataque(
+        self,
+        origen: str,
+        destino: str,
+        selection_manager: CountrySelectionManager,
+    ) -> None:
         transmisor = self.main_window.transmisor
-        if not cliente_esta_conectado(self.main_window):
+        if not hasattr(transmisor, "atacar"):
             self.main_window.update_status_bar(
                 _("Error: No hay conexión disponible"), "red"
             )
             return
 
-        if hasattr(transmisor, "atacar"):
-            # Obtener información del país atacante para determinar unidades disponibles
-            max_unidades = self.get_max_attack_units(origen)
-
-            if max_unidades < 1:
-                self.main_window.update_status_bar(
-                    _("No hay suficientes unidades en {} para atacar").format(origen),
-                    "orange",
-                )
-                return
-
-            # Mostrar diálogo para seleccionar cantidad de unidades
-            dialog = AttackDialog(
-                origen, destino, max_unidades, cast("QWidget", self.main_window)
+        max_unidades = self.get_max_attack_units(origen)
+        if max_unidades < 1:
+            self.main_window.update_status_bar(
+                _("No hay suficientes unidades en {} para atacar").format(origen),
+                "orange",
             )
-            if dialog.exec() == QDialog.DialogCode.Accepted:
-                cantidad_unidades = dialog.get_cantidad_unidades()
-                self.main_window.transmisor.atacar(origen, destino, cantidad_unidades)
-                self.main_window.update_status_bar(
-                    _("Atacando de {} a {} con {} {}…").format(
-                        origen,
-                        destino,
-                        cantidad_unidades,
-                        ngettext("unidad", "unidades", cantidad_unidades),
-                    ),
-                    "blue",
-                )
-                # Cancelar selección después de atacar
-                selection_manager.cancelar_seleccion()
-        else:
-            error_msg = _("Error: No hay conexión disponible")
-            self.main_window.update_status_bar(error_msg, "red")
+            return
+
+        dialog = AttackDialog(
+            origen, destino, max_unidades, cast("QWidget", self.main_window)
+        )
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            return
+
+        cantidad_unidades = dialog.get_cantidad_unidades()
+        transmisor.atacar(origen, destino, cantidad_unidades)
+        self.main_window.update_status_bar(
+            _("Atacando de {} a {} con {} {}…").format(
+                origen,
+                destino,
+                cantidad_unidades,
+                ngettext("unidad", "unidades", cantidad_unidades),
+            ),
+            "blue",
+        )
+        selection_manager.cancelar_seleccion()
+
+    def atacar(self) -> None:
+        """Método llamado cuando se hace clic en el botón Atacar de la toolbar."""
+        preparado = self._preparar_accion_combate(
+            None, None, self._validar_destino_ataque
+        )
+        if preparado is None:
+            return
+        origen, destino, selection_manager = preparado
+        self._ejecutar_ataque(origen, destino, selection_manager)
 
     def get_max_move_units(self, pais: str) -> int:
         """Unidades movibles desde un país (debe quedar al menos 1 en origen).
@@ -156,62 +231,12 @@ class GameActionsManager:
         unidades_totales = paises[pais].get_unidades()
         return max(0, unidades_totales - 1)
 
-    def mover(self, origen: str | None = None, destino: str | None = None) -> None:  # noqa: PLR0911, PLR0912
-        """Mueve unidades entre países seleccionados (toolbar o menú contextual)."""
-        if not es_mi_turno(self.main_window):
-            avisar_fuera_de_turno(self.main_window)
-            return
-        if not puede_atacar_o_mover(self.main_window):
-            avisar_fase_reparto(self.main_window)
-            return
-        scene = self.main_window.scene
-        if scene is None or not hasattr(scene, "selection_manager"):
-            self.main_window.update_status_bar(
-                _("Error: No hay sistema de selección disponible"), "red"
-            )
-            return
-
-        selection_manager = scene.selection_manager
-        if origen is None:
-            origen = selection_manager.get_pais_origen()
-        if destino is None:
-            destino = selection_manager.get_pais_destino()
-
-        if not origen:
-            self.main_window.update_status_bar(
-                _("Selecciona un país de origen primero"), "orange"
-            )
-            return
-
-        if not destino:
-            self.main_window.update_status_bar(
-                _("Selecciona un país de destino después del origen"), "orange"
-            )
-            return
-
-        theme = getattr(self.main_window, "map_theme", "classic")
-        if not es_mi_pais(self.main_window, origen):
-            self.main_window.update_status_bar(
-                _("{} no es tu país").format(origen), "orange"
-            )
-            return
-        if not es_mi_pais(self.main_window, destino):
-            self.main_window.update_status_bar(
-                _("Solo puedes mover a países propios"), "orange"
-            )
-            return
-        if not son_adyacentes(theme, origen, destino):
-            self.main_window.update_status_bar(
-                _("{} no es adyacente a {}").format(destino, origen), "orange"
-            )
-            return
-
-        if not cliente_esta_conectado(self.main_window):
-            self.main_window.update_status_bar(
-                _("Error: No hay conexión disponible"), "red"
-            )
-            return
-
+    def _ejecutar_movimiento(
+        self,
+        origen: str,
+        destino: str,
+        selection_manager: CountrySelectionManager,
+    ) -> None:
         max_unidades = self.get_max_move_units(origen)
         if max_unidades < 1:
             self.main_window.update_status_bar(
@@ -240,6 +265,16 @@ class GameActionsManager:
             "blue",
         )
         selection_manager.cancelar_seleccion()
+
+    def mover(self, origen: str | None = None, destino: str | None = None) -> None:
+        """Mueve unidades entre países seleccionados (toolbar o menú contextual)."""
+        preparado = self._preparar_accion_combate(
+            origen, destino, self._validar_destino_movimiento
+        )
+        if preparado is None:
+            return
+        origen_res, destino_res, selection_manager = preparado
+        self._ejecutar_movimiento(origen_res, destino_res, selection_manager)
 
     def finalizar_turno(self) -> None:
         """Método llamado cuando se hace clic en el botón Finalizar Turno."""
