@@ -68,6 +68,12 @@ warn_unused_ignores = true
 explicit_package_bases = true
 files = ["pyteg", "tests", "scripts"]
 
+[tool.uv]
+constraint-dependencies = [
+    # GHSA-537c-gmf6-5ccf: OpenSSL embebido en wheels de cryptography < 48.0.1
+    "cryptography>=48.0.1",
+]
+
 [build-system]
 requires = ["hatchling>=1.18", "hatch-nuitka"]
 build-backend = "hatchling.build"
