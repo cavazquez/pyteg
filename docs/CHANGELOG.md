@@ -4,22 +4,42 @@ Todas las fechas en formato YYYY-MM-DD.
 
 ## [Unreleased]
 
+## [0.0.8] - 2026-06-17
+
 ### Changed
+- **Continentes unificados en `config.py`**: `CONTINENTS` y `ContinentSpec` como fuente única; bonificaciones, sufijos de unidades y etiquetas del panel derivadas de ahí; `Calculos` y `SiguientesTurnos` simplificados con `unit_pool`.
+- **Colocación de unidades**: menú contextual «Colocar unidad» con tooltip de disponibilidad (refuerzos continentales vs generales); consumo correcto de bonificaciones al agregar en mapa.
 - **TomlReader robusto y multi-tema**: validaciones de países únicos, cobertura y simetría de adyacencias (`strict=True`), campos obligatorios y assets; `TomlReader.from_theme()` centraliza la carga; `cartas.toml` alinea símbolos (`Galeon`, `Globo`, etc.) con servidor y GUI; eliminado `utils.build_mapa` obsoleto.
+- **Layout del mapa classic**: mayor separación intra-Europa/Asia y entre continentes en `themes/classic/paises.toml`; posiciones de ejército explícitas en países de Asia.
 - **Logging del servidor**: reemplazo de `print` por el sistema `pyteg.logger`; flags CLI `--quiet`, `--log-level` y `-v` para controlar la salida en consola (tráfico de red y batallas en DEBUG).
 - **Logging del cliente y temporizador**: flags CLI equivalentes en el cliente; `TurnoTimer` usa logger (WARNING en fallos de envío, INFO al agotar el turno). Lógica compartida en `pyteg/log_cli.py`.
 - **Logging en runtime restante**: `VictoryChecker` registra victorias en INFO; `SoundManager` avisa WAV faltantes en WARNING.
 - **i18n en flujos de batalla**: cadenas de ataque, dados y turno en diálogos, managers y tareas del cliente; traducciones en `locales/en`.
 - **i18n en admin y paneles laterales**: ventana de administración, títulos JUGADORES/UNIDADES y filas del panel de unidades.
 - **Modularización de `main_window.py`**: delegaciones públicas en `MainWindowDelegatesMixin`; `show_battle_result_dialog` y `refresh_open_tarjetas_dialogs` movidos a managers.
+- **`run_tests.sh`**: `uv sync --group dev`, `unittest discover` y `coverage report` con umbral `fail_under` en `pyproject.toml`.
 
 ### Added
+- **`session_sync`**: sincronización de estado de sesión entre servidor y clientes al unirse o reconectar.
+- **`unit_pool` y `units_placement`**: pools de refuerzos por continente y lógica GUI de disponibilidad al colocar.
+- **Canje de tarjetas en servidor**: tarea `canjear_tarjetas` y mensajes cliente asociados.
 - **Multi-tema de mapa**: constante `DEFAULT_MAP_THEME`, flag `--theme` en servidor, `map_theme` en cliente/GUI; tema `themes/test/` completo para desarrollo.
-- **Dataclasses de layout**: `ThemeCountryLayout` y `ThemeContinentLayout` en `pyteg/core/mapa/theme_layout.py`.
+- **Dataclasses de layout**: `ThemeCountryLayout` y `ThemeContinentLayout` en `pyteg/core/mapa/theme_layout.py`; `theme_resources.py` para assets de cartas.
+- **Marcadores de ejército**: `army_position.py` y elevación de círculos en escena para legibilidad.
+- **Herramientas de solapamiento de mapa**: `overlap_check.py`, `layout_nudge.py` y scripts `check_map_overlaps.py` / `nudge_map_countries.py`.
 - **Tests de `VictoryChecker` y `TurnoTimer`**: cobertura de victoria por países/objetivos y del temporizador de turno.
 - **Tests de integración de gameplay**: turno, tiempo, victoria por umbral y ataque con `resultado_batalla`.
 - **Tests de cobertura GUI y servidor**: `UnitsManager`, `VentanaAdmin`, `LanguageManager`, `SoundManager` y tareas `canjear_misil` / `lanzar_misil`.
 - **Tests de client tasks lobby**: `ClientTaskEstado`, `ClientTaskUserId`, `ClientTaskUsername` y `ClientTaskActualizarListaJugadores`.
+- **Tests nuevos**: `session_sync`, `units_placement`, `continents_config`, `unit_pool`, `army_position`, `map_overlap_check`, `canjear_tarjetas`, `config_manager`.
+
+### Fixed
+- **Marcadores de unidades en «0»**: centrado en sprite y clamp dentro del país cuando `army_x/y` no están definidos.
+- **Objetivo secreto**: ya no se borra al aplicar `set_configuracion_partida`.
+- **Validación de país en `Mapa`**: `CountryNotFoundError` para países inexistentes.
+
+### Removed
+- **`old_movement_mixin.py`**: código muerto del menú contextual del mapa.
 
 ### Security
 - **Dependabot GHSA-537c-gmf6-5ccf**: actualización de `cryptography` transitiva (cadena dev `hatch` → `keyring` → `secretstorage`) a `>= 48.0.1`; restricción en `pyproject.toml` para evitar regresiones en el lockfile.
