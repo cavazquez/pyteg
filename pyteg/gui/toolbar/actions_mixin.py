@@ -9,7 +9,7 @@ if TYPE_CHECKING:
 
     from pyteg.gui.managers.protocols import MainWindowProtocol
 
-from pyteg.i18n import translate as _
+from pyteg.gui.gameplay_state import es_mi_turno
 
 
 class ToolBarActionsMixin:
@@ -19,6 +19,19 @@ class ToolBarActionsMixin:
     button_conectar: QAction | None
     button_atacar: QAction | None
     button_mover: QAction | None
+    button_finalizar_turno: QAction | None
+
+    def actualizar_botones_turno(self, *, es_mi_turno: bool) -> None:
+        """Habilita acciones de juego solo durante el turno del jugador local."""
+        if not self._esta_conectado():
+            return
+        if self.button_finalizar_turno:
+            self.button_finalizar_turno.setEnabled(es_mi_turno)
+        if not es_mi_turno:
+            if self.button_atacar:
+                self.button_atacar.setEnabled(False)
+            if self.button_mover:
+                self.button_mover.setEnabled(False)
 
     def actualizar_botones_seleccion(
         self, *, hay_dos_paises_seleccionados: bool
@@ -71,20 +84,10 @@ class ToolBarActionsMixin:
             self.button_atacar.setEnabled(False)
         if self.button_mover:
             self.button_mover.setEnabled(False)
+        if self.button_finalizar_turno:
+            self.button_finalizar_turno.setEnabled(es_mi_turno(self.main_window))
 
     def _mover_paises_seleccionados(self) -> None:
         """Ejecuta movimiento entre los países seleccionados."""
-        if hasattr(self.main_window, "scene") and self.main_window.scene:
-            selection_manager = self.main_window.scene.selection_manager
-            origen = selection_manager.get_pais_origen()
-            destino = selection_manager.get_pais_destino()
-
-            if origen and destino and hasattr(self.main_window, "transmisor"):
-                self.main_window.transmisor.mover_unidad(
-                    origen=origen, destino=destino, cantidad=1
-                )
-                self.main_window.status_bar.showMessage(
-                    _("Moviendo {} unidad(es) de {} a {}").format(1, origen, destino),
-                    3000,
-                )
-                selection_manager.cancelar_seleccion()
+        if hasattr(self.main_window, "mover"):
+            self.main_window.mover()

@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
+from operator import itemgetter
 from typing import Any
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import QPoint, QPointF, Qt
 from PySide6.QtGui import (
     QBrush,
     QColor,
@@ -13,12 +14,17 @@ from PySide6.QtWidgets import (
     QGraphicsScene,
     QGraphicsSceneContextMenuEvent,
     QGraphicsSceneMouseEvent,
+    QMenu,
     QWidget,
 )
 
 from pyteg.config import DEFAULT_MAP_THEME
 from pyteg.gui.mapa.menu import Menu
-from pyteg.gui.mapa.overlap_check import load_pais_bounds, paises_en_punto
+from pyteg.gui.mapa.overlap_check import (
+    PaisBounds,
+    load_pais_bounds,
+    paises_en_punto,
+)
 from pyteg.gui.mapa.pais import Pais
 from pyteg.gui.mapa.selection_manager import CountrySelectionManager
 from pyteg.i18n import translate as _
@@ -81,23 +87,62 @@ class QCustomGraphicsScene(QGraphicsScene):
         super().mouseMoveEvent(event)
 
     def mousePressEvent(self, event: QGraphicsSceneMouseEvent) -> None:  # noqa: N802
-        """Maneja los clics del mouse en la escena.
-
-        Args:
-            event: Evento de clic del mouse.
-
-        """
+        """Maneja los clics del mouse en la escena."""
         if event.button() == Qt.MouseButton.LeftButton:
-            # Verificar si se hizo clic en un área vacía (sin países)
-            items = self.items(event.scenePos())
-            pais_clicked = any(isinstance(item, Pais) for item in items)
+            scene_pos = event.scenePos()
+            if self._handle_country_click(scene_pos, event.screenPos()):
+                event.accept()
+                return
 
-            # Si no se hizo clic en un país, cancelar todas las selecciones
+            items = self.items(scene_pos)
+            pais_clicked = any(isinstance(item, Pais) for item in items)
             if not pais_clicked:
                 self.selection_manager.cancelar_seleccion()
 
-        # Llamar al evento original para mantener funcionalidad existente
         super().mousePressEvent(event)
+
+    def _ensure_bounds_cache(self) -> list[PaisBounds]:
+        if not hasattr(self, "_debug_bounds"):
+            self._debug_bounds = load_pais_bounds(self.map_theme)
+        return self._debug_bounds
+
+    def handle_country_click(
+        self, scene_pos: QPointF, screen_pos: QPoint | None = None
+    ) -> bool:
+        """Resuelve clic en país(es); menú si hay superposición.
+
+        Returns:
+            True si el clic fue consumido.
+
+        """
+        from PySide6.QtGui import QCursor  # noqa: PLC0415
+
+        pos = scene_pos
+        x = float(pos.x())
+        y = float(pos.y())
+        stack = paises_en_punto(self._ensure_bounds_cache(), x, y)
+        if not stack:
+            return False
+
+        if len(stack) == 1:
+            self.selection_manager.seleccionar_pais(stack[0])
+            return True
+
+        menu = QMenu(self.main_window)
+        menu.setTitle(_("Seleccionar país"))
+        for nombre in stack:
+            action = menu.addAction(nombre)
+            action.triggered.connect(
+                lambda _checked=False, n=nombre: (
+                    self.selection_manager.seleccionar_pais(n)
+                )
+            )
+        global_pos = screen_pos if screen_pos is not None else QCursor.pos()
+        menu.exec(global_pos)
+        return True
+
+    def _handle_country_click(self, scene_pos: QPointF, screen_pos: QPoint) -> bool:
+        return self.handle_country_click(scene_pos, screen_pos)
 
     def contextMenuEvent(self, event: QGraphicsSceneContextMenuEvent) -> None:  # noqa: N802
         """Maneja el menú contextual (clic derecho) en la escena.
@@ -143,7 +188,18 @@ class QCustomGraphicsScene(QGraphicsScene):
                 self.paises[pais] = pixmap_item
                 self.addItem(pixmap_item)
 
+        self._apply_country_z_order()
         self._elevate_army_markers()
+
+    def _apply_country_z_order(self) -> None:
+        """Países más pequeños quedan encima para facilitar el clic."""
+        areas: list[tuple[str, int]] = []
+        for nombre, widget in self.paises.items():
+            pixmap = widget.pixmap()
+            areas.append((nombre, pixmap.width() * pixmap.height()))
+        areas.sort(key=itemgetter(1))
+        for z_index, (nombre, _area) in enumerate(areas):
+            self.paises[nombre].setZValue(z_index)
 
     def _elevate_army_markers(self) -> None:
         """Dibuja los círculos de unidades por encima de países vecinos superpuestos."""

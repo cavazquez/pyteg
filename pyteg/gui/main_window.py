@@ -135,6 +135,9 @@ class Gui(QMainWindow, MainWindowDelegatesMixin):
         self.jugador_actual_id: int | None = None
         self.jugador_actual_nombre: str | None = None
         self.jugador_actual_color: str | None = None
+        self.ultimo_pais_colocado: str | None = None
+        self.ultimo_continente_colocado: str | None = None
+        self.unidades_antes_colocar: dict[str, int] = {}
         self.colores = Colores()
 
     def vivo(self) -> bool:

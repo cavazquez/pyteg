@@ -110,8 +110,8 @@ army_y = 10
 [Europa.Islandia]
 continente = "Europa"
 file = "classic/islandia.png"
-pos_x = 44
-pos_y = 36
+pos_x = 32
+pos_y = 28
 army_x = 9
 army_y = 3
 
@@ -119,7 +119,7 @@ army_y = 3
 continente = "Europa"
 file = "classic/gran_bretania.png"
 pos_x = 82
-pos_y = 52
+pos_y = 60
 army_x = 10
 army_y = 10
 
@@ -225,16 +225,16 @@ pos_y = -4
 [Norteamerica.Canada]
 continente = "Norteamerica"
 file = "classic/canada.png"
-pos_x = 83
-pos_y = 4
+pos_x = 88
+pos_y = 6
 army_x = 30
 army_y = 30
 
 [Norteamerica.Yukon]
 continente = "Norteamerica"
 file = "classic/yukon.png"
-pos_x = 60
-pos_y = 34
+pos_x = 52
+pos_y = 38
 army_x = 15
 army_y = 30
 
@@ -257,48 +257,48 @@ army_y = 30
 [Norteamerica.Oregon]
 continente = "Norteamerica"
 file = "classic/oregon.png"
-pos_x = 26
-pos_y = 110
+pos_x = 20
+pos_y = 102
 army_x = 50
 army_y = 30
 
 [Norteamerica.California]
 continente = "Norteamerica"
 file = "classic/california.png"
-pos_x = 68
-pos_y = 151
+pos_x = 58
+pos_y = 158
 army_x = 30
 army_y = 15
 
 [Norteamerica.Mexico]
 continente = "Norteamerica"
 file = "classic/mexico.png"
-pos_x = 126
-pos_y = 172
+pos_x = 118
+pos_y = 158
 army_x = 30
 army_y = 20
 
 [Norteamerica.NuevaYork]
 continente = "Norteamerica"
 file = "classic/nuevayork.png"
-pos_x = 113
-pos_y = 94
+pos_x = 106
+pos_y = 102
 army_x = 20
 army_y = 30
 
 [Norteamerica.Terranova]
 continente = "Norteamerica"
 file = "classic/terranova.png"
-pos_x = 152
-pos_y = 84
+pos_x = 164
+pos_y = 76
 army_x = 20
 army_y = 20
 
 [Norteamerica.Labrador]
 continente = "Norteamerica"
 file = "classic/labrador.png"
-pos_x = 182
-pos_y = 56
+pos_x = 190
+pos_y = 48
 army_x = 15
 army_y = 20
 

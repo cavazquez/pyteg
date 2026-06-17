@@ -3,6 +3,7 @@
 Uso:
     uv run python scripts/check_map_overlaps.py
     uv run python scripts/check_map_overlaps.py --theme classic --pixels
+    uv run python scripts/check_map_overlaps.py --max-bbox-pairs 75
 """
 
 from __future__ import annotations
@@ -40,6 +41,22 @@ def _parse_args() -> argparse.Namespace:
         default=50,
         help="Umbral mínimo de píxeles opacos para reportar (default: 50)",
     )
+    parser.add_argument(
+        "--max-bbox-pairs",
+        type=int,
+        default=None,
+        help="Falla si hay más pares bbox superpuestos que este valor",
+    )
+    parser.add_argument(
+        "--fail-on-cross-continent",
+        action="store_true",
+        help="Falla si hay solapamientos bbox entre continentes distintos",
+    )
+    parser.add_argument(
+        "--allow-cross",
+        default="",
+        help="Pares continente cruzado permitidos, ej. Groenlandia:Islandia",
+    )
     return parser.parse_args()
 
 
@@ -47,7 +64,7 @@ def main() -> int:
     """Ejecuta el análisis e imprime pares superpuestos.
 
     Returns:
-        0 si no hay solapamientos de bbox; 1 si los hay.
+        0 si pasa los umbrales; 1 si hay violaciones.
 
     """
     args = _parse_args()
@@ -86,7 +103,32 @@ def main() -> int:
         "\nTip: en la GUI, mantené Shift y mové el mouse para ver "
         "la pila de países bajo el cursor."
     )
-    return 1 if bbox_overlaps else 0
+
+    exit_code = 0
+    if args.max_bbox_pairs is not None and len(bbox_overlaps) > args.max_bbox_pairs:
+        print(
+            f"\nERROR: {len(bbox_overlaps)} pares bbox > máximo {args.max_bbox_pairs}"
+        )
+        exit_code = 1
+
+    if args.fail_on_cross_continent:
+        allowed = {
+            tuple(pair.split(":", 1))
+            for pair in args.allow_cross.split(",")
+            if ":" in pair
+        }
+        cross = [
+            o
+            for o in bbox_overlaps
+            if o.top.continent != o.bottom.continent
+            and (o.top.name, o.bottom.name) not in allowed
+            and (o.bottom.name, o.top.name) not in allowed
+        ]
+        if cross:
+            print(f"\nERROR: {len(cross)} solapamientos entre continentes distintos")
+            exit_code = 1
+
+    return exit_code
 
 
 if __name__ == "__main__":

@@ -104,6 +104,10 @@ class MainWindowDelegatesMixin:
         """Inicia flujo de ataque desde la toolbar."""
         self.game_actions_manager.atacar()
 
+    def mover(self) -> None:
+        """Inicia flujo de movimiento desde toolbar o menú contextual."""
+        self.game_actions_manager.mover()
+
     def get_max_attack_units(self, pais: str) -> int:
         """Máximo de unidades atacantes desde un país.
 
@@ -116,6 +120,10 @@ class MainWindowDelegatesMixin:
     def canjear_misil(self, pais: str) -> None:
         """Canjea unidades por un misil en el país indicado."""
         self.game_actions_manager.canjear_misil(pais)
+
+    def colocar_unidad_en_pais(self, pais: str, continente_mapa: str) -> None:
+        """Coloca unidades en un país del mapa."""
+        self.game_actions_manager.colocar_unidad_en_pais(pais, continente_mapa)
 
     def lanzar_misil(self, pais_origen: str, pais_destino: str) -> None:
         """Lanza un misil entre dos países."""

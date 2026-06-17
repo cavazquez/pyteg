@@ -8,6 +8,7 @@ from PySide6.QtGui import QAction
 from PySide6.QtWidgets import QMenu, QWidget
 
 from pyteg.config import MISSILE_UNIT_COST
+from pyteg.gui.gameplay_state import es_mi_turno, puede_atacar_o_mover
 from pyteg.gui.mapa.menu.actions_mixin import MenuActionsMixin
 from pyteg.gui.units_placement import (
     tooltip_colocar_unidad,
@@ -57,6 +58,7 @@ class Menu(MenuActionsMixin, QMenu):
         self.action_canjear_misil = QAction(
             _("Canjear Misil ({} unidades)").format(MISSILE_UNIT_COST), self
         )
+        self.action_lanzar_misil = QAction(_("Lanzar misil"), self)
 
         self.action_colocar_unidad.triggered.connect(self.colocar_unidad)
 
@@ -65,6 +67,7 @@ class Menu(MenuActionsMixin, QMenu):
         self.action_cancelar_seleccion.triggered.connect(self.cancelar_seleccion_menu)
 
         self.action_canjear_misil.triggered.connect(self.canjear_misil)
+        self.action_lanzar_misil.triggered.connect(self.lanzar_misil)
 
         self.actualizar_menu()
 
@@ -77,7 +80,8 @@ class Menu(MenuActionsMixin, QMenu):
 
         last_units = getattr(self.main_window, "last_units", {})
         total, _, _ = unidades_colocables_en_pais(last_units, self.continente_mapa)
-        self.action_colocar_unidad.setEnabled(total > 0)
+        mi_turno = es_mi_turno(self.main_window)
+        self.action_colocar_unidad.setEnabled(mi_turno and total > 0)
         self.action_colocar_unidad.setToolTip(
             tooltip_colocar_unidad(last_units, self.continente_mapa)
         )
@@ -88,6 +92,7 @@ class Menu(MenuActionsMixin, QMenu):
             getattr(self.main_window, "misiles_habilitados", False)
         )
         if misiles_habilitados:
+            self.action_canjear_misil.setEnabled(mi_turno)
             self.addAction(self.action_canjear_misil)
             self.addSeparator()
 
@@ -106,6 +111,26 @@ class Menu(MenuActionsMixin, QMenu):
             self.addAction(self.action_cancelar_seleccion)
         else:
             if pais_destino == self.pais:
+                puede_combate = puede_atacar_o_mover(self.main_window)
+                self.action_atacar.setEnabled(puede_combate)
+                self.action_mover_seleccion.setEnabled(puede_combate)
                 self.addAction(self.action_atacar)
                 self.addAction(self.action_mover_seleccion)
+                if (
+                    misiles_habilitados
+                    and puede_combate
+                    and self._puede_lanzar_misil(pais_origen)
+                ):
+                    self.addAction(self.action_lanzar_misil)
             self.addAction(self.action_cancelar_seleccion)
+
+    def _puede_lanzar_misil(self, pais_origen: str | None) -> bool:
+        if not pais_origen:
+            return False
+        scene = getattr(self.main_window, "scene", None)
+        if scene is None or not hasattr(scene, "paises"):
+            return False
+        pais_widget = scene.paises.get(pais_origen)
+        if pais_widget is None:
+            return False
+        return bool(pais_widget.get_cantidad_misiles() > 0)

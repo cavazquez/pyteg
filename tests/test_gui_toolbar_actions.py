@@ -28,6 +28,7 @@ class _DummyToolbar(ToolBarActionsMixin):
         self.button_conectar = MagicMock()
         self.button_atacar = MagicMock()
         self.button_mover = MagicMock()
+        self.button_finalizar_turno = MagicMock()
 
 
 def _btns(tb: _DummyToolbar) -> tuple[MagicMock, MagicMock, MagicMock]:
@@ -88,12 +89,17 @@ class TestToolbarActionsMixin(unittest.TestCase):
 
     def test_habilitar_botones_conectado(self) -> None:
         mw = MagicMock()
+        mw.client.userid.return_value = None
+        mw.jugador_actual_id = None
         tb = _DummyToolbar(mw)
         tb._habilitar_botones_conectado()
         c, a, m = _btns(tb)
         c.setEnabled.assert_called_once_with(False)
         a.setEnabled.assert_called_once_with(False)
         m.setEnabled.assert_called_once_with(False)
+        cast("MagicMock", tb.button_finalizar_turno).setEnabled.assert_called_once_with(
+            False
+        )
 
     def test_actualizar_botones_desconectado_no_toca_atacar_mover(self) -> None:
         mw = MagicMock()

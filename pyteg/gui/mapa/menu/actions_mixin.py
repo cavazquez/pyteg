@@ -4,105 +4,35 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from PySide6.QtWidgets import QDialog
-
 from pyteg.gui.connection_utils import cliente_esta_conectado
-from pyteg.gui.dialogs.attack import AttackDialog
-from pyteg.i18n import ngettext
-from pyteg.i18n import translate as _
-from pyteg.logger import get_logger
+from pyteg.gui.gameplay_state import avisar_fuera_de_turno, es_mi_turno
 
 if TYPE_CHECKING:
     from pyteg.gui.mapa.menu.protocols import MenuHost
-
-_LOG = get_logger("gui.menu")
 
 
 class MenuActionsMixin:
     """Colocar refuerzos, atacar, mover con `selection_manager`, canjear misil."""
 
     def colocar_unidad(self: MenuHost) -> None:
-        """Coloca una unidad en el país (el servidor elige el pool continental)."""
-        if cliente_esta_conectado(self.main_window) and self.transmisor is not None:
+        """Coloca unidades en el país (el servidor elige el pool continental)."""
+        if not es_mi_turno(self.main_window):
+            avisar_fuera_de_turno(self.main_window)
+            return
+        if hasattr(self.main_window, "colocar_unidad_en_pais"):
+            self.main_window.colocar_unidad_en_pais(self.pais, self.continente_mapa)
+        elif cliente_esta_conectado(self.main_window) and self.transmisor is not None:
             self.transmisor.agregar_unidad(pais=self.pais, tipo_unidad="infanteria")
 
     def atacar(self: MenuHost) -> None:
         """Ataca del país origen al país destino."""
-        scene = getattr(self.main_window, "scene", None)
-        selection_manager = getattr(scene, "selection_manager", None)
-        if selection_manager:
-            origen = selection_manager.get_pais_origen()
-            destino = selection_manager.get_pais_destino()
-
-            if (
-                origen
-                and destino
-                and cliente_esta_conectado(self.main_window)
-                and self.transmisor
-            ):
-                get_max_units = getattr(
-                    self.main_window, "get_max_attack_units", lambda _: 0
-                )
-                max_unidades = get_max_units(origen)
-
-                if max_unidades < 1:
-                    self.main_window.update_status_bar(
-                        _("No hay suficientes unidades en {} para atacar").format(
-                            origen
-                        ),
-                        "orange",
-                    )
-                    return
-
-                dialog = AttackDialog(origen, destino, max_unidades, self.main_window)
-                if dialog.exec() == QDialog.DialogCode.Accepted:
-                    cantidad_unidades = dialog.get_cantidad_unidades()
-                    self.transmisor.atacar(origen, destino, cantidad_unidades)
-                    _LOG.debug(
-                        "Atacando de %s a %s con %s unidades",
-                        origen,
-                        destino,
-                        cantidad_unidades,
-                    )
-                    unidad_txt = ngettext("unidad", "unidades", cantidad_unidades)
-                    self.main_window.update_status_bar(
-                        _("Atacando de {} a {} con {} {}…").format(
-                            origen,
-                            destino,
-                            cantidad_unidades,
-                            unidad_txt,
-                        ),
-                        "blue",
-                    )
-
-            selection_manager.cancelar_seleccion()
+        if hasattr(self.main_window, "atacar"):
+            self.main_window.atacar()
 
     def mover(self: MenuHost) -> None:
-        """Mueve unidades del país origen al país destino (selección nueva)."""
-        scene = getattr(self.main_window, "scene", None)
-        selection_manager = getattr(scene, "selection_manager", None)
-        if selection_manager:
-            origen = selection_manager.get_pais_origen()
-            destino = selection_manager.get_pais_destino()
-
-            if (
-                origen
-                and destino
-                and cliente_esta_conectado(self.main_window)
-                and self.transmisor is not None
-            ):
-                self.transmisor.mover_unidad(origen=origen, destino=destino, cantidad=1)
-                _LOG.debug("Moviendo 1 unidad de %s a %s", origen, destino)
-                status_bar = getattr(self.main_window, "status_bar", None)
-                if status_bar is not None:
-                    status_bar.showMessage(
-                        _("Moviendo {} unidad(es) de {} a {}").format(
-                            1, origen, destino
-                        ),
-                        3000,
-                    )
-
-            selection_manager.cancelar_seleccion()
+        """Mueve unidades del país origen al país destino."""
+        if hasattr(self.main_window, "mover"):
+            self.main_window.mover()
 
     def cancelar_seleccion_menu(self: MenuHost) -> None:
         """Cancela la selección actual desde el menú contextual."""
@@ -115,3 +45,14 @@ class MenuActionsMixin:
         """Canjea unidades por 1 misil en el país actual."""
         if hasattr(self.main_window, "canjear_misil"):
             self.main_window.canjear_misil(self.pais)
+
+    def lanzar_misil(self: MenuHost) -> None:
+        """Lanza un misil desde el país origen seleccionado hacia este país."""
+        scene = getattr(self.main_window, "scene", None)
+        selection_manager = getattr(scene, "selection_manager", None)
+        if selection_manager and hasattr(self.main_window, "lanzar_misil"):
+            origen = selection_manager.get_pais_origen()
+            destino = selection_manager.get_pais_destino()
+            if origen and destino:
+                self.main_window.lanzar_misil(origen, destino)
+            selection_manager.cancelar_seleccion()
