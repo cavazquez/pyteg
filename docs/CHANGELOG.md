@@ -7,6 +7,10 @@ Todas las fechas en formato YYYY-MM-DD.
 ### Changed
 - **Logging del servidor**: reemplazo de `print` por el sistema `pyteg.logger`; flags CLI `--quiet`, `--log-level` y `-v` para controlar la salida en consola (tráfico de red y batallas en DEBUG).
 - **Logging del cliente y temporizador**: flags CLI equivalentes en el cliente; `TurnoTimer` usa logger (WARNING en fallos de envío, INFO al agotar el turno). Lógica compartida en `pyteg/log_cli.py`.
+- **Logging en runtime restante**: `VictoryChecker` registra victorias en INFO; `SoundManager` avisa WAV faltantes en WARNING.
+
+### Security
+- **Dependabot GHSA-537c-gmf6-5ccf**: actualización de `cryptography` transitiva (cadena dev `hatch` → `keyring` → `secretstorage`) a `>= 48.0.1`; restricción en `pyproject.toml` para evitar regresiones en el lockfile.
 
 ## [0.0.7] - 2026-06-17
 
