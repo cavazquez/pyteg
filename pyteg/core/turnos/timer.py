@@ -6,6 +6,10 @@ import threading
 import time
 from typing import Any
 
+from pyteg.logger import get_logger
+
+LOGGER = get_logger(__name__)
+
 
 class TurnoTimer(threading.Thread):
     """Hilo que controla el temporizador de turnos.
@@ -46,9 +50,10 @@ class TurnoTimer(threading.Thread):
                 cliente.transmisor.enviar_tiempo(userid_turno, tiempo_restante)
             except (ConnectionError, OSError, AttributeError) as exc:
                 # No queremos que un fallo en un cliente interrumpa el temporizador
-                print(
-                    "[TurnoTimer] Error enviando tiempo a cliente "
-                    f"{cliente.userid()}: {exc}"
+                LOGGER.warning(
+                    "Error enviando tiempo a cliente %s: %s",
+                    cliente.userid(),
+                    exc,
                 )
 
     # ------------------------------------------------------------------
@@ -87,8 +92,7 @@ class TurnoTimer(threading.Thread):
             else:
                 # Si el tiempo se agotó, pasar al siguiente turno
                 if remaining <= 0:
-                    msg = f"[TurnoTimer] Tiempo agotado para el turno {turno_actual}"
-                    print(msg)
+                    LOGGER.info("Tiempo agotado para el turno %s", turno_actual)
                     self._server.game.finalizar_turno()
                     # Enviar el nuevo número de turno a los clientes
                     self._server.enviar_turno_actual()

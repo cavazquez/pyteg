@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Any
 from pyteg.core.cartas.mazo import Mazo
 from pyteg.core.mapa.build_mapa import build_mapa
 from pyteg.core.partida.objetivos_secretos import ObjetivosSecretos
+from pyteg.log_cli import add_log_arguments
 from pyteg.logger import get_logger
 from pyteg.server.conexion.broadcaster import ServerMessageBroadcaster
 from pyteg.server.conexion.registrar_jugadores import registrar_jugadores
@@ -17,7 +18,7 @@ from pyteg.server.juego.color import ServerColor
 from pyteg.server.juego.coordinator import ServerGameCoordinator
 from pyteg.server.juego.estado import Estado
 from pyteg.server.juego.mapa import Mapa
-from pyteg.server.logging_setup import LOG_LEVEL_CHOICES, configure_server_logging
+from pyteg.server.logging_setup import configure_server_logging
 from pyteg.toml_reader import TomlReader
 from pyteg.utils import get_resource_path
 from pyteg.version import NAME, VERSION
@@ -418,28 +419,9 @@ def parse_arguments() -> argparse.Namespace:
         help="Puerto donde escuchar las conexiones (predeterminado: 65432)",
     )
 
-    # Argumento para modo verboso
-    parser.add_argument(
-        "-v",
-        "--verbose",
-        action="store_true",
-        help="Nivel DEBUG en consola (tráfico de red, batallas, mensajes)",
-    )
-    parser.add_argument(
-        "-q",
-        "--quiet",
-        action="store_true",
-        help="Solo errores en consola (nivel ERROR)",
-    )
-    parser.add_argument(
-        "--log-level",
-        choices=LOG_LEVEL_CHOICES,
-        default=None,
-        metavar="LEVEL",
-        help=(
-            "Nivel de log en consola "
-            f"({', '.join(LOG_LEVEL_CHOICES)}; predeterminado: INFO)"
-        ),
+    add_log_arguments(
+        parser,
+        verbose_help="Nivel DEBUG en consola (tráfico de red, batallas, mensajes)",
     )
 
     return parser.parse_args()
