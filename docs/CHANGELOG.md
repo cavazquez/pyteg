@@ -16,6 +16,7 @@ Todas las fechas en formato YYYY-MM-DD.
 
 ### Changed
 - **Fin de partida**: solo el ganador ve «Felicitaciones»; los demás reciben mensaje de derrota.
+- **CI**: dependencias Qt/audio en GitHub Actions y tests de i18n independientes del locale del runner.
 - **Layout classic (Norteamérica y Europa)**: ajustes conservadores en `themes/classic/paises.toml` para reducir solapamientos bbox (69 pares, umbral 75).
 
 ## [0.0.8] - 2026-06-17

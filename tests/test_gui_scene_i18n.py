@@ -8,6 +8,7 @@ import unittest
 from unittest.mock import MagicMock
 
 from pyteg.gui.mapa.selection_manager import CountrySelectionManager
+from tests.locale_fixtures import use_spanish
 
 
 def _make_manager() -> tuple[CountrySelectionManager, MagicMock]:
@@ -28,6 +29,10 @@ def _make_manager() -> tuple[CountrySelectionManager, MagicMock]:
 
 class TestCountrySelectionManagerRefreshLabels(unittest.TestCase):
     """`refresh_labels` re-aplica las traducciones según el estado de selección."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        use_spanish()
 
     def test_refresh_labels_sin_seleccion(self) -> None:
         manager, mw = _make_manager()

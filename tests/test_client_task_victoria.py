@@ -8,10 +8,15 @@ import unittest
 from unittest.mock import MagicMock, patch
 
 from pyteg.client.tasks.game_flow.partida import ClientTaskVictoria
+from tests.locale_fixtures import use_spanish
 
 
 class ClientTaskVictoriaTests(unittest.TestCase):
     """Comprueba sonido y textos según si el jugador local ganó."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        use_spanish()
 
     def _main_window(self, userid: int) -> MagicMock:
         main_window = MagicMock()

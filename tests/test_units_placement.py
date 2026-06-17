@@ -1,5 +1,7 @@
 """Tests para disponibilidad de unidades al colocar refuerzos (GUI)."""
 
+# ruff: noqa: D102
+
 from __future__ import annotations
 
 import unittest
@@ -8,10 +10,15 @@ from pyteg.gui.units_placement import (
     tooltip_colocar_unidad,
     unidades_colocables_en_pais,
 )
+from tests.locale_fixtures import use_spanish
 
 
 class TestUnitsPlacement(unittest.TestCase):
     """Suma continental + generales como en el servidor."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        use_spanish()
 
     def test_suma_bonificacion_y_generales(self) -> None:
         """Suma bonificación continental y unidades generales."""

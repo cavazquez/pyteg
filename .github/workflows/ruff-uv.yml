@@ -6,6 +6,10 @@ jobs:
   build:
 
     runs-on: ubuntu-latest
+    env:
+      LANG: es_ES.UTF-8
+      LC_ALL: es_ES.UTF-8
+      QT_QPA_PLATFORM: offscreen
     strategy:
       matrix:
         python-version: ["3.11", "3.12", "3.13"]
@@ -20,10 +24,37 @@ jobs:
             enable-cache: true
         - name: Install project and dev dependencies
           run: uv sync --group dev
-        - name: Install gettext (msgfmt)
-          run: sudo apt-get update && sudo apt-get install -y gettext
+        - name: Install system dependencies
+          run: |
+            sudo apt-get update
+            sudo apt-get install -y \
+              gettext \
+              locales \
+              libegl1 \
+              libgl1 \
+              libglib2.0-0 \
+              libpulse0 \
+              libxkbcommon-x11-0 \
+              libxcb-cursor0 \
+              libxcb-icccm4 \
+              libxcb-image0 \
+              libxcb-keysyms1 \
+              libxcb-randr0 \
+              libxcb-render-util0 \
+              libxcb-xinerama0 \
+              libxcb-xfixes0 \
+              libfontconfig1 \
+              libxrender1 \
+              libxi6 \
+              libxext6 \
+              libx11-6
+            sudo locale-gen es_ES.UTF-8
         - name: Compile gettext catalogs (.po → .mo)
           run: uv run python scripts/manage_translations.py compile
+          env:
+            LANG: es_ES.UTF-8
+            LC_ALL: es_ES.UTF-8
+            QT_QPA_PLATFORM: offscreen
         - name: Lint with ruff
           run: |
             # stop the build if there are Python syntax errors or undefined names
