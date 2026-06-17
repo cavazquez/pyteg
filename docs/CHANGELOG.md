@@ -5,9 +5,20 @@ Todas las fechas en formato YYYY-MM-DD.
 ## [Unreleased]
 
 ### Changed
+- **Identidad canónica del jugador = `userid` (int)** (ADR-012): en dominio servidor (mapa, turnos, mazo, cartas, validadores, combate, objetivos) y en mensajes JSON que transportan identidad; `username` queda solo para UI y chat. **Rompe compatibilidad de protocolo** entre versiones mezcladas de cliente/servidor.
+- **Tipado por capas (Protocols y TypedDict)**:
+  - Dominio: protocolo `IJugador`; `Mazo` / `TarjetaDePais` / `CardManager` comparan y asignan por `userid`.
+  - Mensajes: `TypedDict` en payloads frecuentes (`BattleResultPayload`, `MissileResultPayload`, turno, lista de jugadores, configuración de partida) y en `data` de tareas servidor/cliente.
+  - Servidor: `IClientProtocol` y `ServerLikeProtocol` ampliados; tareas y `Game` usan interfaces en lugar de `client: Any`.
+  - GUI: `GameWindowProtocol`, `MainWindowProtocol` y `LobbyWindowProtocol` con tipos concretos (Qt, managers, `Client`); mixins y tareas sin `main_window: Any`.
+  - Tests: `FakePlayer` conforme estructuralmente a `IClientProtocol`; `Game` acepta `Sequence[IClientProtocol]`; menos `cast` en `test_game`.
+- **Refactor de módulos monolíticos en paquetes por dominio** (ADR-010): `pyteg/protocols/`, `pyteg/exceptions/`, `pyteg/logger/` con reexport en `__init__.py`; sin shims de compatibilidad.
+- **Protocolos para tipar `Gui` desde tareas y managers** (ADR-011): eliminación de `hasattr` defensivos donde el contrato es estable; smoke test `test_gui_protocol_compat.py`.
 - **Paquete Python renombrado de `src` a `pyteg`**: imports `from pyteg.…`, entry points y builds Nuitka apuntan al directorio `pyteg/`; actualizar scripts locales que ejecuten `python src/...` a `python pyteg/...`.
 
 ### Fixed
+- **Servidor: ruido «Mensaje no JSON recibido»**: el transporte parte buffers con `\0`; se ignoran fragmentos vacíos tras `split("\0")` antes de `json.loads` (cada mensaje bien formado dejaba un `""` al final).
+- **GUI: `RuntimeWarning` al cablear idioma** en `VentanaConectar` al conectar señales de i18n.
 - **Corrección de carga de recursos en binarios**: Solucionado problema donde los binarios compilados con Nuitka no podían cargar iconos y otros recursos
   - Implementada función `get_resource_path()` en `pyteg/utils.py` que maneja rutas de recursos tanto en desarrollo como en binarios empaquetados
   - Actualizada carga de iconos en toolbar, imágenes de países, imágenes de tarjetas y archivos TOML
@@ -15,6 +26,9 @@ Todas las fechas en formato YYYY-MM-DD.
   - Los binarios ahora funcionan correctamente sin errores de `ImagenNoEncontradaError`
 
 ### Added
+- **Efectos de sonido WAV (CC0)**: assets en `sounds/` (Juhani Junkala / OpenGameArt); ver `sounds/README.md`.
+- **Nuevos módulos de tipos**: `pyteg/protocols/jugador.py`, `pyteg/server/msg/types.py`, `pyteg/server/tasks/types.py`, `pyteg/client/tasks/types.py`.
+- **Documentación ADR**: ADR-010 (splits protocols/exceptions/logger), ADR-011 (protocolos GUI), ADR-012 (`userid` canónico) en `docs/DECISIONS.md`.
 - **Sistema de versionado consistente**: Los binarios ahora incluyen la versión en el nombre del archivo y la muestran al ejecutarse
   - Nuevo módulo `pyteg/version.py` para gestión centralizada de versiones
   - Consistencia entre `pyproject.toml` y tags de Git
