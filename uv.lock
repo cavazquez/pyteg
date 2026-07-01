@@ -1015,7 +1015,7 @@ dev = [
     { name = "pyside6-stubs", specifier = "==6.7.3.0" },
     { name = "radon", specifier = "==6.0.1" },
     { name = "ruff", specifier = "==0.15.17" },
-    { name = "types-polib", specifier = "==1.2.0.20250401" },
+    { name = "types-polib", specifier = "==1.2.0.20260518" },
     { name = "typing-extensions", specifier = "==4.15.0" },
 ]
 
@@ -1246,11 +1246,11 @@ wheels = [
 
 [[package]]
 name = "types-polib"
-version = "1.2.0.20250401"
+version = "1.2.0.20260518"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/41/09/a76057d8fd2e361029c283ff1237b53ff82d6c2db43ad762f993bf4e1d87/types_polib-1.2.0.20250401.tar.gz", hash = "sha256:0a7d2cc4918680925c43ccd604c561933d98fb79a8e6dc3f6de433189c9d606d", size = 9204, upload-time = "2025-04-01T03:07:09.39Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/f3/a0/bc3cfd4d6cb2e9798a28579dd4dd39675cde66a52dd9f5f158b0afc80420/types_polib-1.2.0.20260518.tar.gz", hash = "sha256:2b593a1c6eceb1c4d2ef41054d24ec17c5ee3ec4f2a29a26ece75d8f5715420f", size = 9285, upload-time = "2026-05-18T06:02:24.073Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/1d/37/9dedecbfec311bb4ca79a885b5d3c49c4a19273065cfadb44d261fd4cf2c/types_polib-1.2.0.20250401-py3-none-any.whl", hash = "sha256:366dc395519cf8f49d343a30e372dbe662b5621440b621cf190e455cd8436b40", size = 8564, upload-time = "2025-04-01T03:07:08.545Z" },
+    { url = "https://files.pythonhosted.org/packages/67/05/11cf19d219d4cdf53bbf8b3e0c9254d7a04d4b1a6df966124421e407138e/types_polib-1.2.0.20260518-py3-none-any.whl", hash = "sha256:1a6b9bd7eab3672a1c2e54c939b3fb720241e2b671e34a60cb82d2f791eba025", size = 8528, upload-time = "2026-05-18T06:02:22.737Z" },
 ]
 
 [[package]]
