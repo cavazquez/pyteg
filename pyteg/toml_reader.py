@@ -3,14 +3,20 @@
 from __future__ import annotations
 
 import tomllib
+from math import isfinite
 from pathlib import Path
 from typing import Any
 
-from pyteg.core.mapa.theme_layout import ThemeContinentLayout, ThemeCountryLayout
+from pyteg.core.mapa.theme_layout import (
+    ThemeContinentLayout,
+    ThemeCountryLayout,
+    ThemeVisualConnection,
+)
 from pyteg.utils import get_resource_path
 
 _ASSET_EXTENSIONS = {".png", ".svg", ".jpg", ".jpeg"}
 _COUNTRY_REQUIRED_FIELDS = ("file", "pos_x", "pos_y", "army_x", "army_y")
+_VISUAL_POINT_COORDINATES = 2
 
 
 class TomlReaderError(Exception):
@@ -52,6 +58,8 @@ class TomlReader:
         self._init_load_paises(paises_toml_string)
         self._init_merge_cartas(cartas_toml_string)
         self.adyacencias: dict[str, list[str]] = {}
+        self._conexiones_visuales_raw: object = []
+        self.conexiones_visuales: list[ThemeVisualConnection] = []
         self._init_merge_adyacencias(adyacencias_toml_string)
         self.objetivos_secretos: dict[str, dict[str, Any]] = {}
         self._init_merge_objetivos_secretos(objetivos_secretos_toml_string)
@@ -125,13 +133,21 @@ class TomlReader:
                     msg = "Archivo de adyacencias debe contener sección 'Adyacencias'"
                     raise TomlReaderError(msg)
                 self.adyacencias = adyacencias_parsed["Adyacencias"]
+                self._conexiones_visuales_raw = adyacencias_parsed.get(
+                    "ConexionesVisuales", []
+                )
                 self._validar_adyacencias()
             except tomllib.TOMLDecodeError as e:
                 msg = f"Error al parsear TOML de adyacencias: {e}"
                 raise TomlReaderError(msg) from e
         elif "Adyacencias" in self.parsed_toml:
             self.adyacencias = self.parsed_toml["Adyacencias"]
+            self._conexiones_visuales_raw = self.parsed_toml.get(
+                "ConexionesVisuales", []
+            )
             self._validar_adyacencias()
+        elif "ConexionesVisuales" in self.parsed_toml:
+            self._conexiones_visuales_raw = self.parsed_toml["ConexionesVisuales"]
 
     def _init_merge_objetivos_secretos(
         self, objetivos_secretos_toml_string: str | None
@@ -157,6 +173,7 @@ class TomlReader:
         self._procesar_continentes_y_paises()
         self._validar_nombres_unicos()
         self._validar_consistencia_datos()
+        self._validar_conexiones_visuales()
         self._validar_cobertura_adyacencias()
         if self.strict:
             self._validar_campos_pais_completos()
@@ -177,7 +194,7 @@ class TomlReader:
         continentes_encontrados = [
             key
             for key in self.parsed_toml
-            if key not in {"Cartas", "Adyacencias"}
+            if key not in {"Cartas", "Adyacencias", "ConexionesVisuales"}
             and isinstance(self.parsed_toml[key], dict)
         ]
 
@@ -277,7 +294,7 @@ class TomlReader:
 
         """
         for continente in self.parsed_toml:
-            if continente in {"Cartas", "Adyacencias"}:
+            if continente in {"Cartas", "Adyacencias", "ConexionesVisuales"}:
                 continue
 
             if not isinstance(self.parsed_toml[continente], dict):
@@ -393,6 +410,118 @@ class TomlReader:
                         f"País adyacente '{adyacente}' de '{pais}' no existe en el mapa"
                     )
                     raise TomlReaderError(msg)
+
+    def _validar_conexiones_visuales(self) -> None:
+        """Valida y construye las conexiones visuales opcionales del tema.
+
+        Las conexiones deben apuntar a países existentes y a una adyacencia
+        real. Esto evita que una línea decorativa sugiera una jugada que el
+        servidor no permite. La lista no participa en el mapa del dominio.
+
+        Raises:
+            TomlReaderError: Si una conexión visual no respeta el esquema.
+
+        """
+        raw_connections = self._conexiones_visuales_raw
+        if raw_connections is None or raw_connections == []:
+            self.conexiones_visuales = []
+            return
+        if not isinstance(raw_connections, list):
+            msg = "La sección 'ConexionesVisuales' debe ser una lista de tablas"
+            raise TomlReaderError(msg)
+
+        countries = set(self.todos_los_paises())
+        seen: set[frozenset[str]] = set()
+        visual_connections: list[ThemeVisualConnection] = []
+        for index, raw in enumerate(raw_connections, start=1):
+            if not isinstance(raw, dict):
+                msg = f"Conexión visual #{index} debe ser una tabla"
+                raise TomlReaderError(msg)
+            visual_connections.append(
+                self._construir_conexion_visual(raw, index, countries, seen)
+            )
+
+        self.conexiones_visuales = visual_connections
+
+    def _construir_conexion_visual(
+        self,
+        raw: dict[str, Any],
+        index: int,
+        countries: set[str],
+        seen: set[frozenset[str]],
+    ) -> ThemeVisualConnection:
+        origen = raw.get("origen")
+        destino = raw.get("destino")
+        if not isinstance(origen, str) or not origen:
+            msg = f"Conexión visual #{index} debe tener 'origen' string"
+            raise TomlReaderError(msg)
+        if not isinstance(destino, str) or not destino:
+            msg = f"Conexión visual #{index} debe tener 'destino' string"
+            raise TomlReaderError(msg)
+        if origen == destino:
+            msg = f"Conexión visual #{index} no puede unir un país consigo mismo"
+            raise TomlReaderError(msg)
+        missing = [pais for pais in (origen, destino) if pais not in countries]
+        if missing:
+            msg = (
+                f"Conexión visual #{index} referencia países inexistentes: "
+                f"{', '.join(missing)}"
+            )
+            raise TomlReaderError(msg)
+
+        if self.adyacencias and not (
+            destino in self.adyacencias.get(origen, [])
+            or origen in self.adyacencias.get(destino, [])
+        ):
+            msg = (
+                f"Conexión visual #{index} no corresponde a una adyacencia: "
+                f"'{origen}' - '{destino}'"
+            )
+            raise TomlReaderError(msg)
+
+        pair = frozenset((origen, destino))
+        if pair in seen:
+            msg = f"Conexión visual duplicada: '{origen}' - '{destino}'"
+            raise TomlReaderError(msg)
+        seen.add(pair)
+
+        return ThemeVisualConnection(
+            origen,
+            destino,
+            self._validar_puntos_visuales(raw.get("puntos", []), index),
+        )
+
+    def _validar_puntos_visuales(
+        self, raw_points: object, connection_index: int
+    ) -> tuple[tuple[float, float], ...]:
+        if not isinstance(raw_points, list):
+            msg = f"Puntos de conexión visual #{connection_index} deben ser una lista"
+            raise TomlReaderError(msg)
+
+        points: list[tuple[float, float]] = []
+        for point_index, point in enumerate(raw_points, start=1):
+            if (
+                not isinstance(point, list)
+                or len(point) != _VISUAL_POINT_COORDINATES
+                or any(
+                    isinstance(value, bool) or not isinstance(value, int | float)
+                    for value in point
+                )
+            ):
+                msg = (
+                    f"Punto #{point_index} de conexión visual #{connection_index} "
+                    "debe ser [x, y] numérico"
+                )
+                raise TomlReaderError(msg)
+            x, y = float(point[0]), float(point[1])
+            if not isfinite(x) or not isfinite(y):
+                msg = (
+                    f"Punto #{point_index} de conexión visual #{connection_index} "
+                    "debe contener coordenadas finitas"
+                )
+                raise TomlReaderError(msg)
+            points.append((x, y))
+        return tuple(points)
 
     def _validar_cobertura_adyacencias(self) -> None:
         """Exige entrada de adyacencias para cada país si la sección existe.
@@ -648,6 +777,15 @@ class TomlReader:
 
         """
         return list(self.adyacencias.get(pais, []))
+
+    def get_conexiones_visuales(self) -> list[ThemeVisualConnection]:
+        """Obtiene las conexiones visuales opcionales definidas por el tema.
+
+        Returns:
+            Copia de las conexiones declaradas por el tema.
+
+        """
+        return list(self.conexiones_visuales)
 
     def get_objetivos_secretos(self) -> dict[str, dict[str, Any]]:
         """Obtiene diccionario de objetivos secretos del juego.

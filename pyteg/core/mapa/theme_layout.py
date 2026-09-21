@@ -26,3 +26,17 @@ class ThemeContinentLayout:
     pos_x: int
     pos_y: int
     paises: dict[str, ThemeCountryLayout]
+
+
+@dataclass(frozen=True)
+class ThemeVisualConnection:
+    """Conexión visual opcional entre dos países de un tema.
+
+    ``puntos`` contiene puntos intermedios en coordenadas absolutas de la
+    escena. Los extremos se calculan desde el centro de cada imagen para que
+    un cambio de tamaño del asset no obligue a actualizar el TOML.
+    """
+
+    origen: str
+    destino: str
+    puntos: tuple[tuple[float, float], ...] = ()

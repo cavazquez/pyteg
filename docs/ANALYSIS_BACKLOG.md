@@ -8,7 +8,7 @@ fuera de estos cambios salvo cuando se indica expresamente.
 
 ## #198 — conexiones sobre el agua
 
-**Veredicto: parcial; follow-up #213.**
+**Veredicto: implementado en #213.**
 
 `themes/classic/adyacencias.toml` y `themes/test/adyacencias.toml` contienen el
 grafo completo y `TomlReader.from_theme(..., strict=True)` valida cobertura y
@@ -17,11 +17,11 @@ misma fuente para `son_adyacentes` y el simulador carga el archivo del tema.
 Por lo tanto, las conexiones de juego ya son configurables y no hay una lista
 paralela codificada en Python.
 
-La escena `QCustomGraphicsScene` sólo crea los widgets `Pais`; no hay elementos
-de línea ni un campo que distinga frontera terrestre de conexión marítima. El
-issue original mezcla datos de reglas con presentación. El follow-up #213
-propone una sección visual opcional con puntos, validación de países y z-order
-inferior, sin permitir que una línea habilite un ataque.
+La escena `QCustomGraphicsScene` ahora crea, además, líneas opcionales declaradas
+en `[[ConexionesVisuales]]` dentro de `adyacencias.toml`. Cada entrada valida
+sus países, exige una adyacencia existente, acepta puntos intermedios y queda
+por debajo de los sprites sin recibir eventos del mouse. Las líneas sólo son
+presentación: `Adyacencias` sigue siendo la fuente de verdad de las reglas.
 
 ## #199 — símbolo de carta
 
@@ -109,8 +109,8 @@ un nuevo puerto si aparece otro transporte con requisitos distintos.
 
 ## Resultado
 
-El único trabajo de código de esta tanda es la legibilidad de cartas y la
-unificación del objetivo predeterminado. El trazado visual de conexiones queda
-aislado en #213; SVG, UPX, idiomas adicionales y cartas de situaciones quedan
-documentados como decisiones diferidas con condiciones concretas para
+El trabajo de código de esta tanda incluye la legibilidad de cartas, la
+unificación del objetivo predeterminado y el trazado visual opcional de
+conexiones marítimas. SVG, UPX, idiomas adicionales y cartas de situaciones
+quedan documentados como decisiones diferidas con condiciones concretas para
 retomarlos.
