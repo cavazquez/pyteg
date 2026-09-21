@@ -176,6 +176,7 @@ class Server:
             if not accepted:
                 client.marcar_handshake(False)  # noqa: FBT003
                 client.transmisor.enviar_error(code, message)
+                client.transmisor.enviar_hello_ack(accepted=False)
                 return False
         client.marcar_handshake(True)  # noqa: FBT003
         client.transmisor.enviar_hello_ack()

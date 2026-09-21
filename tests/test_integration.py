@@ -17,6 +17,7 @@ from typing import Any
 
 from pyteg.codecs_utils import FrameCodecError, NulDelimitedUtf8Codec
 from pyteg.config import MIN_UNITS_FOR_ATTACK
+from pyteg.protocol import PROTOCOL_VERSION, map_hash_for_theme
 from pyteg.server.app import Server
 from pyteg.server.conexion.build_cliente import ServerBuildClient
 from pyteg.server.conexion.connection import ConnectionServer
@@ -293,8 +294,11 @@ class TestIntegration(unittest.TestCase):
             c.close()
         self._srv_thread.stop()
 
-    def _new_client(self) -> _TestClient:
+    def _new_client(self, *, handshake: bool = True) -> _TestClient:
         """Crea y conecta un cliente, registrándolo para cleanup.
+
+        Args:
+            handshake: Envía el ``hello`` compatible automáticamente.
 
         Returns:
             Cliente conectado listo para usar.
@@ -303,6 +307,15 @@ class TestIntegration(unittest.TestCase):
         c = _TestClient()
         c.connect("127.0.0.1", self._port)
         self._clients.append(c)
+        if handshake:
+            c.send({
+                "mensaje": "hello",
+                "protocol_version": PROTOCOL_VERSION,
+                "theme": "classic",
+                "map_hash": map_hash_for_theme("classic"),
+                "capabilities": ["snapshots", "command_results", "reconnect"],
+                "rules": ["validated_phases", "one_card_per_turn"],
+            })
         return c
 
     def _wait_for_client_count(self, expected: int, timeout: float = 3.0) -> None:
@@ -432,6 +445,63 @@ class TestIntegration(unittest.TestCase):
         if msg is not None:
             self.assertIn("user_id", msg)
             self.assertIsInstance(msg["user_id"], int)
+
+    def test_command_before_handshake_is_rejected_without_mutation(self) -> None:
+        """Un cliente sin hello no puede configurar ni iniciar la sala."""
+        client = self._new_client(handshake=False)
+
+        received_before = len(client.snapshot_received())
+        client.send({"mensaje": "empezar", "segundos": 77})
+        error = self._wait_for_new_protocol_error(
+            client, received_before, "handshake_required"
+        )
+
+        self.assertIsNotNone(error, "No se rechazó el comando sin handshake")
+        self.assertTrue(self._server.estado.es_inicial())
+        self.assertIsNone(self._server.game)
+
+        client.send({
+            "mensaje": "hello",
+            "protocol_version": PROTOCOL_VERSION,
+            "theme": "classic",
+            "map_hash": "invalid-map-hash",
+        })
+        incompatible = client.wait_for(
+            "error",
+            extra_check=lambda data: data.get("error_type") == "incompatible_map",
+        )
+        self.assertIsNotNone(incompatible, "No se rechazó el mapa incompatible")
+        self.assertIsNotNone(
+            client.wait_for(
+                "hello_ack", extra_check=lambda data: data.get("accepted") is False
+            ),
+            "No se informó el rechazo del handshake",
+        )
+
+    def test_start_rejects_registered_client_without_handshake(self) -> None:
+        """La ausencia de hello de un jugador impide iniciar la partida."""
+        admin = self._new_client()
+        legacy = self._new_client(handshake=False)
+
+        admin.send({"mensaje": "empezar", "segundos": 77})
+        self.assertIsNotNone(
+            admin.wait_for(
+                "estado",
+                extra_check=lambda data: data.get("estado") == "EsperarJugadores",
+            ),
+            "El administrador no pudo configurar la sala",
+        )
+
+        received_before = len(admin.snapshot_received())
+        admin.send({"mensaje": "empezar_partida"})
+        error = self._wait_for_new_protocol_error(
+            admin, received_before, "handshake_required"
+        )
+
+        self.assertIsNotNone(error, "Se inició la partida con un cliente sin hello")
+        self.assertTrue(self._server.estado.es_esperando_jugadores())
+        self.assertIsNone(self._server.game)
+        legacy.close()
 
     def test_lobby_disconnect_cycles_return_all_colors(self) -> None:
         """Veinte altas y bajas no agotan colores ni retienen jugadores."""
@@ -964,6 +1034,54 @@ class TestIntegration(unittest.TestCase):
         self.fail(f"user_id {user_id} no corresponde a ningún cliente")
         return c1
 
+    def _prepare_current_turn(
+        self,
+        c1: _TestClient,
+        c2: _TestClient,
+        uid1: int,
+        uid2: int,
+    ) -> tuple[int, _TestClient]:
+        """Completa la colocación pendiente del turno vigente.
+
+        Returns:
+            Tupla con el jugador activo y su cliente TCP.
+
+        """
+        game = self._server.game
+        self.assertIsNotNone(game, "partida no iniciada")
+        if game is None:
+            self.fail("partida no iniciada")
+
+        turno = game.turno_actual()
+        active_id = int(turno.jugador_actual())
+        client = self._client_for_user(c1, c2, uid1, uid2, active_id)
+
+        if game.fase_actual() == "colocacion":
+            pending = int(game.refuerzos_pendientes())
+            country = next(
+                (
+                    pais
+                    for pais in game.mapa().paises()
+                    if game.mapa().ocupado_por(pais) == active_id
+                ),
+                None,
+            )
+            self.assertIsNotNone(country, "El jugador de turno no tiene países")
+            if country is None or pending <= 0:
+                return active_id, client
+            client.send({
+                "mensaje": "agregar_unidad",
+                "pais": country,
+                "tipo_unidad": "infanteria",
+                "cantidad": pending,
+            })
+            deadline = time.monotonic() + _READ_TIMEOUT
+            while time.monotonic() < deadline and game.fase_actual() == "colocacion":
+                time.sleep(0.05)
+            self.assertEqual(game.fase_actual(), "acciones")
+
+        return active_id, client
+
     def _finalize_current_turn(
         self,
         c1: _TestClient,
@@ -971,15 +1089,33 @@ class TestIntegration(unittest.TestCase):
         uid1: int,
         uid2: int,
     ) -> None:
-        """Finaliza el turno del jugador activo según el último mensaje ``turno``."""
-        turno = self._wait_latest_turno(c1, c2)
-        active_id = turno.get("jugador_actual_id")
-        self.assertIsNotNone(active_id, "turno sin jugador_actual_id")
-        if active_id is None:
+        """Completa la colocación y finaliza el turno vigente en el servidor."""
+        game = self._server.game
+        self.assertIsNotNone(game, "partida no iniciada")
+        if game is None:
             return
-        client = self._client_for_user(c1, c2, uid1, uid2, int(active_id))
+
+        _active_id, client = self._prepare_current_turn(c1, c2, uid1, uid2)
+        marker_before = (
+            int(game.num_ronda()),
+            int(game.id_turno_actual()),
+            int(game.turno_actual().jugador_actual()),
+        )
+
         client.send({"mensaje": "finalizar_turno"})
-        time.sleep(0.2)
+        deadline = time.monotonic() + _READ_TIMEOUT
+        while time.monotonic() < deadline:
+            if self._server.estado.es_finalizado():
+                return
+            marker_after = (
+                int(game.num_ronda()),
+                int(game.id_turno_actual()),
+                int(game.turno_actual().jugador_actual()),
+            )
+            if marker_after != marker_before:
+                return
+            time.sleep(0.05)
+        self.fail("El servidor no avanzó al finalizar el turno")
 
     def _find_adjacent_enemy_pair(self, attacker_id: int) -> tuple[str, str] | None:
         """Busca origen/destino adyacentes entre enemigos (sin exigir unidades).
@@ -1116,6 +1252,8 @@ class TestIntegration(unittest.TestCase):
 
         for _ in range(4):
             self._finalize_current_turn(c1, c2, uid1, uid2)
+
+        self._prepare_current_turn(c1, c2, uid1, uid2)
 
         turno = self._wait_latest_turno(c1, c2)
         attacker_id = turno.get("jugador_actual_id")

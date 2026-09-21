@@ -145,10 +145,11 @@ class ServerTaskEmpezarPartida(IServerTask[BaseTaskData]):
     ) -> bool:
         for jugador in client.server.dame_clientes():
             estado_handshake = getattr(jugador, "handshake_status", None)
-            if callable(estado_handshake) and estado_handshake() is False:
+            if not callable(estado_handshake) or estado_handshake() is not True:
                 client.transmisor.enviar_error(
                     "handshake_required",
-                    "Hay un cliente incompatible en la sala; no se puede iniciar.",
+                    "Todos los clientes deben completar un handshake compatible "
+                    "antes de iniciar.",
                 )
                 return False
         if client.server.estado.empezar_partida():
