@@ -5,8 +5,8 @@
 
 # Sudamérica
 Argentina = ["Chile", "Brasil", "Peru", "Uruguay"]
-Brasil = ["Argentina", "Peru", "Colombia", "Uruguay"]
-Chile = ["Argentina", "Peru"]
+Brasil = ["Argentina", "Colombia", "Peru", "Sahara", "Uruguay"]
+Chile = ["Argentina", "Australia", "Peru"]
 Colombia = ["Brasil", "Peru", "Mexico"]
 Peru = ["Argentina", "Brasil", "Chile", "Colombia"]
 Uruguay = ["Argentina", "Brasil"]
@@ -14,56 +14,56 @@ Uruguay = ["Argentina", "Brasil"]
 # Norteamérica
 Alaska = ["Yukon", "Oregon", "Kamchatka"]
 California = ["Oregon", "NuevaYork", "Mexico"]
-Canada = ["Yukon", "Oregon", "NuevaYork", "Terranova", "Labrador", "Groenlandia"]
-Groenlandia = ["Canada", "Labrador", "Islandia"]
-Labrador = ["Canada", "Groenlandia", "Terranova"]
-Mexico = ["California", "NuevaYork", "Colombia"]
-NuevaYork = ["California", "Canada", "Oregon", "Terranova", "Mexico"]
+Canada = ["Yukon", "Oregon", "NuevaYork", "Terranova"]
+Groenlandia = ["Islandia", "Labrador", "NuevaYork"]
+Labrador = ["Groenlandia", "Terranova"]
+Mexico = ["California", "Colombia"]
+NuevaYork = ["California", "Canada", "Groenlandia", "Oregon", "Terranova"]
 Oregon = ["Alaska", "California", "Canada", "NuevaYork", "Yukon"]
 Terranova = ["Canada", "Labrador", "NuevaYork"]
 Yukon = ["Alaska", "Canada", "Oregon"]
 
 # Europa
-Alemania = ["Francia", "Italia", "Polonia", "Suecia"]
-Espana = ["Francia", "Sahara"]
-Francia = ["Alemania", "Espana", "GranBretana", "Italia"]
-GranBretana = ["Francia", "Islandia", "Suecia"]
+Alemania = ["Francia", "GranBretana", "Italia", "Polonia"]
+Espana = ["Francia", "GranBretana", "Sahara"]
+Francia = ["Alemania", "Espana", "Italia"]
+GranBretana = ["Alemania", "Espana", "Islandia"]
 Islandia = ["GranBretana", "Groenlandia", "Suecia"]
-Italia = ["Alemania", "Francia", "Polonia", "Egipto", "Sahara"]
-Polonia = ["Alemania", "Italia", "Rusia", "Tartaria"]
-Rusia = ["Polonia", "Suecia", "Tartaria", "Aral", "Iran"]
-Suecia = ["Alemania", "GranBretana", "Islandia", "Rusia"]
+Italia = ["Alemania", "Francia"]
+Polonia = ["Alemania", "Egipto", "Rusia", "Turquia"]
+Rusia = ["Polonia", "Suecia", "Aral", "Iran", "Turquia"]
+Suecia = ["Islandia", "Rusia"]
 
 # África
-Egipto = ["Italia", "Sahara", "Etiopia", "Israel"]
-Etiopia = ["Egipto", "Sahara", "Zaire", "Madagascar"]
-Madagascar = ["Etiopia", "Sudafrica", "Zaire"]
-Sahara = ["Espana", "Italia", "Egipto", "Etiopia", "Zaire"]
-Sudafrica = ["Madagascar", "Zaire"]
+Egipto = ["Etiopia", "Israel", "Madagascar", "Polonia", "Sahara", "Turquia"]
+Etiopia = ["Egipto", "Sahara", "Sudafrica", "Zaire"]
+Madagascar = ["Egipto", "Zaire"]
+Sahara = ["Brasil", "Egipto", "Espana", "Etiopia", "Zaire"]
+Sudafrica = ["Etiopia", "Zaire"]
 Zaire = ["Sahara", "Etiopia", "Madagascar", "Sudafrica"]
 
 # Asia
-Arabia = ["Turquia", "Iran", "India"]
-Aral = ["Rusia", "Tartaria", "Siberia", "China", "Iran"]
-China = ["Aral", "Siberia", "Mongolia", "Gobi", "India", "Malasia"]
-Gobi = ["China", "Mongolia", "India"]
-India = ["Arabia", "China", "Gobi", "Malasia"]
-Iran = ["Rusia", "Aral", "Arabia", "Turquia"]
-Israel = ["Egipto", "Turquia"]
-Japon = ["Kamchatka", "Mongolia"]
-Kamchatka = ["Alaska", "Japon", "Mongolia", "Siberia"]
-Malasia = ["China", "India", "Sumatra"]
-Mongolia = ["China", "Gobi", "Japon", "Kamchatka", "Siberia"]
+Arabia = ["Israel", "Turquia"]
+Aral = ["Iran", "Mongolia", "Rusia", "Siberia", "Tartaria"]
+China = ["Gobi", "India", "Iran", "Japon", "Kamchatka", "Malasia", "Mongolia", "Siberia"]
+Gobi = ["China", "Iran", "Mongolia"]
+India = ["China", "Iran", "Malasia", "Sumatra"]
+Iran = ["Aral", "China", "Gobi", "India", "Mongolia", "Rusia", "Turquia"]
+Israel = ["Arabia", "Egipto", "Turquia"]
+Japon = ["China", "Kamchatka"]
+Kamchatka = ["Alaska", "China", "Japon", "Siberia"]
+Malasia = ["Borneo", "China", "India"]
+Mongolia = ["Aral", "China", "Gobi", "Iran", "Siberia"]
 Siberia = ["Aral", "China", "Kamchatka", "Mongolia", "Tartaria", "Taimiria"]
 Taimiria = ["Siberia", "Tartaria"]
-Tartaria = ["Polonia", "Rusia", "Aral", "Siberia", "Taimiria"]
-Turquia = ["Arabia", "Iran", "Israel"]
+Tartaria = ["Aral", "Siberia", "Taimiria"]
+Turquia = ["Arabia", "Egipto", "Iran", "Israel", "Polonia", "Rusia"]
 
 # Oceanía
-Australia = ["Sumatra", "Java", "Borneo"]
-Borneo = ["Australia", "Java", "Sumatra"]
-Java = ["Australia", "Borneo", "Sumatra"]
-Sumatra = ["Australia", "Borneo", "Java", "Malasia"]
+Australia = ["Borneo", "Chile", "Java", "Sumatra"]
+Borneo = ["Australia", "Malasia"]
+Java = ["Australia"]
+Sumatra = ["Australia", "India"]
 
 # Conexiones marítimas que se dibujan sólo en la escena Qt. El grafo de reglas
 # sigue siendo la sección Adyacencias y el servidor no consulta estas tablas.
@@ -71,10 +71,6 @@ Sumatra = ["Australia", "Borneo", "Java", "Malasia"]
 origen = "Alaska"
 destino = "Kamchatka"
 puntos = [[120.0, 0.0], [450.0, -15.0]]
-
-[[ConexionesVisuales]]
-origen = "Canada"
-destino = "Groenlandia"
 
 [[ConexionesVisuales]]
 origen = "Groenlandia"
@@ -89,11 +85,6 @@ origen = "Japon"
 destino = "Kamchatka"
 
 [[ConexionesVisuales]]
-origen = "Sumatra"
-destino = "Malasia"
-puntos = [[580.0, 220.0]]
-
-[[ConexionesVisuales]]
 origen = "Australia"
 destino = "Sumatra"
 
@@ -105,15 +96,3 @@ destino = "Borneo"
 origen = "Australia"
 destino = "Java"
 puntos = [[650.0, 300.0]]
-
-[[ConexionesVisuales]]
-origen = "Borneo"
-destino = "Java"
-
-[[ConexionesVisuales]]
-origen = "Borneo"
-destino = "Sumatra"
-
-[[ConexionesVisuales]]
-origen = "Java"
-destino = "Sumatra"

@@ -71,9 +71,17 @@ class VisualConnectionReaderTests(unittest.TestCase):
         reader = TomlReader.from_theme("classic", strict=True)
 
         connections = reader.get_conexiones_visuales()
-        self.assertEqual(len(connections), 12)
         self.assertEqual(
-            (connections[0].origen, connections[0].destino), ("Alaska", "Kamchatka")
+            {(connection.origen, connection.destino) for connection in connections},
+            {
+                ("Alaska", "Kamchatka"),
+                ("Australia", "Borneo"),
+                ("Australia", "Java"),
+                ("Australia", "Sumatra"),
+                ("GranBretana", "Islandia"),
+                ("Groenlandia", "Islandia"),
+                ("Japon", "Kamchatka"),
+            },
         )
 
     def test_rechaza_pais_visual_inexistente(self) -> None:
