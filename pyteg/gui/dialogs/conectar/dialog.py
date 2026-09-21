@@ -197,6 +197,19 @@ class VentanaConectar(QDialog):
 
     def connect_to_server(self) -> None:
         """Intenta conectarse al servidor con los datos proporcionados."""
+        conexion_actual = getattr(self._main_window, "conexion", None)
+        if (
+            isinstance(conexion_actual, ConnectionClient)
+            and conexion_actual.esta_ocupada()
+        ):
+            self._show_error(
+                _(
+                    "Ya existe una conexión activa o en curso en esta ventana. "
+                    "Desconéctala antes de conectar otra."
+                )
+            )
+            return
+
         result = validate(self.addr.text(), self.port.text(), self.username.text())
         if isinstance(result, ValidationError):
             self._show_error(result.message)

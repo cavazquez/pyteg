@@ -65,6 +65,11 @@ Este documento registra decisiones de arquitectura y sus motivaciones.
 - Decisión: En **dominio servidor** y en los **mensajes JSON que transportan identidad de jugador**, la identidad canónica es **`userid: int`**. `username` queda para **presentación** (UI/chat). Donde el tipo JSON y el contenido estaban desalineados, se ajusta el payload (p. ej. `ganador_id`, `atacante_id`/`defensor_id`, `jugador_id` en misiles).
 - Consecuencias: **Se rompe compatibilidad de protocolo** entre clientes y servidores de versiones mezcladas; desplegar cliente y servidor alineados. Los tests deben modelar dueños de país y turnos como enteros; no basar reglas en nombres de usuario.
 
+## ADR-013: Una conexión activa por instancia y reconexión autenticada por token
+- Contexto: El diálogo Qt podía abrir otra conexión mientras el socket anterior todavía estaba conectado o negociando. A la vez, una caída legítima necesita reemplazar el socket sin crear una segunda identidad de juego.
+- Decisión: `ConnectionClient.esta_ocupada()` bloquea nuevos intentos en la misma instancia durante los estados conectado, conectando o resolviendo host. En el servidor, `userid` y token son la identidad; un intento de reconectar una identidad que ya está registrada se rechaza y deja intacto el socket activo. `username` sólo es presentación y sus duplicados se rechazan al cambiar el nombre.
+- Consecuencias: Dos procesos distintos pueden entrar como jugadores distintos usando nombres únicos. La reconexión válida después de una baja conserva usuario, color, territorios y caché idempotente; no se agrega una política heurística basada en IP o nombre.
+
 ## Cómo proponer nuevas decisiones
 1. Agregar una nueva sección ADR-00X con contexto, decisión, consecuencias y referencias.
 2. Enlazar commits/PRs cuando sea posible.
