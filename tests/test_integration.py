@@ -1120,6 +1120,55 @@ class TestIntegration(unittest.TestCase):
         c2 = self._new_client()
         self._start_two_player_game(c1, c2)
 
+    def test_admin_disconnects_during_game_and_successor_can_rematch(self) -> None:
+        """La partida termina con un único admin sucesor capaz de revancha."""
+        c1 = self._new_client()
+        c2 = self._new_client()
+        c3 = self._new_client()
+        uid1, uid2 = self._start_two_player_game(c1, c2)
+        uid3_message = c3.wait_for("user_id")
+        self.assertIsNotNone(uid3_message, "c3 no recibió user_id")
+
+        c1.close()
+        self._wait_for_client_count(2)
+        game = self._server.game
+        self.assertIsNotNone(game, "No se creó la partida")
+        if game is None:
+            return
+        deadline = time.monotonic() + _READ_TIMEOUT
+        while time.monotonic() < deadline and not game.jugador_esta_desconectado(uid1):
+            time.sleep(0.05)
+        self.assertTrue(game.jugador_esta_desconectado(uid1))
+
+        self.assertEqual(
+            self._server.public_snapshot()["players"][0]["admin"],
+            False,
+        )
+        self.assertTrue(self._server.finalizar_partida())
+        successor_admin = c2.wait_for("sosadmin", timeout=4.0)
+        self.assertIsNotNone(successor_admin, "c2 no recibió la autoridad de sala")
+        final_snapshot = c2.wait_for(
+            "snapshot",
+            timeout=4.0,
+            extra_check=lambda message: (
+                message.get("estado") == "Finalizado"
+                and any(
+                    player.get("userid") == uid2 and player.get("admin")
+                    for player in message.get("players", [])
+                )
+            ),
+        )
+        self.assertIsNotNone(final_snapshot, "El snapshot final no anunció al sucesor")
+        c2.send({"mensaje": "volver_lobby"})
+        self.assertIsNotNone(
+            c2.wait_for(
+                "estado",
+                timeout=4.0,
+                extra_check=lambda message: message.get("estado") == "EsperarJugadores",
+            ),
+            "El sucesor no pudo solicitar la revancha",
+        )
+
     def test_snapshot_contract_is_complete_equal_and_resyncable(self) -> None:
         """Tres clientes reciben el mismo snapshot público y pueden resincronizar."""
         c1 = self._new_client()

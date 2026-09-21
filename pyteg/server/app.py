@@ -63,6 +63,12 @@ class Server:
         self.theme = theme
         self._state_revision = 0
         self._client_registry = ServerClientRegistry()
+        # La autoridad de sala se mantiene separada del orden del registro.
+        # Durante una partida la sucesión queda pendiente hasta FINALIZADO.
+        self._admin_user_id: int | None = None
+        self._pending_admin_user_id: int | None = None
+        self._admin_succession_anchor: int | None = None
+        self._admin_excluded_ids: set[int] = set()
         self.color = ServerColor()
         self.estado = Estado()
         self._broadcaster = ServerMessageBroadcaster(self.dame_clientes)
@@ -322,6 +328,7 @@ class Server:
             return
 
         LOGGER.info("Quitando cliente %s", user_id)
+        admin_changed = self._registrar_sucesion_administrador(user_id)
         if self.estado.es_jugando():
             LOGGER.info(
                 "Se conserva el color de %s porque la partida sigue activa", user_id
@@ -329,11 +336,18 @@ class Server:
             self.encolar_desconexion_jugador(user_id)
         else:
             self.color.liberar_color(client.color_actual())
-            if self.estado.es_inicial() or self.estado.es_esperando_jugadores():
+            if (
+                self.estado.es_inicial()
+                or self.estado.es_esperando_jugadores()
+                or self.estado.es_finalizado()
+            ):
                 self._promover_administrador()
 
         # Notificar a todos los clientes restantes sobre la desconexión
         self.enviar_username()
+        if admin_changed and self.estado.es_jugando():
+            self.bump_state_revision()
+            self.enviar_snapshot()
 
     def registrar_cliente(self, user_id: int, client: Client) -> bool:
         """Registra un nuevo cliente en el servidor.
@@ -364,23 +378,136 @@ class Server:
         return False
 
     def _promover_administrador(self, *, notificar: bool = True) -> None:
-        """Garantiza un único administrador mientras la sala es un lobby."""
-        clientes = self.dame_clientes()
-        if not clientes:
+        """Garantiza un único administrador según la sucesión pendiente."""
+        if not self.dame_clientes():
+            self._asignar_administrador(None)
             return
-        admin = clientes[0]
-        for candidato in clientes:
-            asignar = getattr(candidato, "asignar_admin", None)
-            if callable(asignar):
-                asignar(candidato is admin)
-        if not notificar:
+
+        admin_id = self._admin_user_id
+        if not self._admin_disponible(admin_id):
+            admin_id = self._pending_admin_user_id
+        if not self._admin_disponible(admin_id):
+            admin_id = self._buscar_sucesor(self._admin_succession_anchor)
+
+        self._asignar_administrador(admin_id)
+        if not notificar or admin_id is None:
             return
+        admin = self._client_registry.obtener_cliente(admin_id)
         sos_admin = getattr(getattr(admin, "transmisor", None), "sos_admin", None)
         if callable(sos_admin):
             sos_admin()
 
+    def _clientes_conocidos(self) -> list[Any]:
+        """Devuelve clientes conectados e identidades históricas.
+
+        Returns:
+            Clientes conocidos, sin duplicar objetos.
+
+        """
+        clientes: list[Any] = []
+        game = self.game
+        if game is not None:
+            clientes.extend(game.jugadores())
+        for cliente in self.dame_clientes():
+            if not any(cliente is conocido for conocido in clientes):
+                clientes.append(cliente)
+        return clientes
+
+    def _ids_en_orden_de_registro(self) -> list[int]:
+        """Devuelve identidades en el orden original de registro.
+
+        Returns:
+            IDs sin repetir, ordenados por registro.
+
+        """
+        ids: list[int] = []
+        for cliente in self._clientes_conocidos():
+            userid = int(cliente.userid())
+            if userid not in ids:
+                ids.append(userid)
+        return ids
+
+    def _admin_disponible(self, user_id: int | None) -> bool:
+        """Indica si una identidad puede recibir autoridad de sala.
+
+        Returns:
+            ``True`` si está conectada y puede administrar la sala.
+
+        """
+        if user_id is None or user_id in self._admin_excluded_ids:
+            return False
+        if self._client_registry.obtener_cliente(user_id) is None:
+            return False
+        game = self.game
+        if game is None:
+            return True
+        ids_de_la_partida = {int(cliente.userid()) for cliente in game.jugadores()}
+        return user_id in ids_de_la_partida and not (
+            game.jugador_esta_eliminado(user_id)
+            or game.jugador_esta_desconectado(user_id)
+        )
+
+    def _buscar_sucesor(self, despues_de: int | None) -> int | None:
+        """Busca el siguiente cliente elegible con rotación determinista.
+
+        Returns:
+            ID del sucesor o ``None`` si no hay candidatos.
+
+        """
+        ids = self._ids_en_orden_de_registro()
+        if not ids:
+            return None
+        inicio = ids.index(despues_de) + 1 if despues_de in ids else 0
+        for desplazamiento in range(len(ids)):
+            candidato = ids[(inicio + desplazamiento) % len(ids)]
+            if candidato != despues_de and self._admin_disponible(candidato):
+                return candidato
+        return None
+
+    def _asignar_administrador(self, user_id: int | None) -> None:
+        """Actualiza todas las copias de una identidad para dejar un solo admin."""
+        self._admin_user_id = user_id
+        if user_id is not None:
+            self._pending_admin_user_id = None
+            self._admin_succession_anchor = None
+        for cliente in self._clientes_conocidos():
+            asignar = getattr(cliente, "asignar_admin", None)
+            if callable(asignar):
+                asignar(int(cliente.userid()) == user_id)
+
+    def _registrar_sucesion_administrador(self, user_id: int) -> bool:
+        """Revoca al admin que sale y deja preparado su sucesor.
+
+        Returns:
+            ``True`` si la salida cambió la autoridad de la sala.
+
+        """
+        user_id = int(user_id)
+        if self._admin_user_id is None:
+            cliente = self._client_registry.obtener_cliente(user_id)
+            es_admin = getattr(cliente, "es_admin", None)
+            if callable(es_admin) and es_admin():
+                self._admin_user_id = user_id
+        es_admin_actual = self._admin_user_id == user_id
+        es_sucesor_pendiente = self._pending_admin_user_id == user_id
+        if not es_admin_actual and not es_sucesor_pendiente:
+            return False
+
+        if es_admin_actual:
+            self._admin_succession_anchor = user_id
+        self._admin_excluded_ids.add(user_id)
+        self._admin_user_id = None
+        self._pending_admin_user_id = self._buscar_sucesor(
+            self._admin_succession_anchor
+        )
+        self._asignar_administrador(None)
+        return True
+
     def promover_administrador(self) -> None:
         """Expone la sucesión para reabrir un lobby tras una partida."""
+        self._admin_excluded_ids.clear()
+        self._pending_admin_user_id = None
+        self._admin_succession_anchor = None
         self._promover_administrador()
 
     def registrar_reconexion_pendiente(self, user_id: int, client: Client) -> bool:
@@ -454,6 +581,7 @@ class Server:
             return False
 
         client.reasignar_userid(int(user_id))
+        self._asignar_administrador(self._admin_user_id)
         if not game.reconectar_jugador(int(user_id), client, token):
             # El estado sólo puede fallar si cambió entre las dos validaciones;
             # devolver el registro temporal evita dejar una conexión huérfana.
@@ -482,6 +610,15 @@ class Server:
         if self._game_coordinator.configuracion_partida()["objetivos_secretos"]:
             self.enviar_objetivo_secreto(client)
         return True
+
+    def administrador_eliminado(self, user_id: int) -> None:
+        """Registra la sucesión si el administrador perdió la partida."""
+        if not self._registrar_sucesion_administrador(user_id):
+            return
+        if self.estado.es_finalizado():
+            self._promover_administrador()
+        self.bump_state_revision()
+        self.enviar_snapshot()
 
     def dame_lista_jugadores(self) -> list[int]:
         """Obtiene la lista de IDs de jugadores conectados.
@@ -572,6 +709,7 @@ class Server:
         """
         changed = self._game_coordinator.finalizar_partida()
         if changed:
+            self._promover_administrador()
             self.bump_state_revision()
             self.enviar_snapshot()
         return changed
