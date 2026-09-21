@@ -460,6 +460,23 @@ class ServerTaskTests(unittest.TestCase):
         )
         self.assertTrue(self.server.sent_map)
 
+    def test_mover_unidad_rejects_invalid_amounts_without_mutating_map(self) -> None:
+        """Cero, negativos y tipos no enteros no invierten unidades en el mapa."""
+        invalid_amounts: tuple[object, ...] = (0, -5, True, 1.5, "1", None)
+        for amount in invalid_amounts:
+            with self.subTest(amount=amount):
+                payload = {"origen": "Origen", "destino": "Vecino", "cantidad": amount}
+                task = self._make_task(ServerTaskMoverUnidad, payload)
+
+                task.run(self.client)
+
+                self.assertIn(
+                    "entero positivo", self.client.transmisor.error_chat_messages[-1]
+                )
+                self.assertEqual(self.mapa.cantidad_unidades("Origen"), 3)
+                self.assertEqual(self.mapa.cantidad_unidades("Vecino"), 1)
+                self.assertFalse(self.server.sent_map)
+
     def test_atacar_bloqueado_en_primer_turno(self) -> None:
         """Prueba que atacar está bloqueado en el primer turno."""
         # Usar PrimerTurno real para que el código detecte que es el primer turno

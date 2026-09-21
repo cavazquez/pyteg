@@ -215,22 +215,27 @@ class UnitValidator:
     def validate_sufficient_units_to_move(
         mapa: Mapa | IMapProtocol,
         origen: str,
-        cantidad: int,
+        cantidad: object,
         error_message: str | None = None,
     ) -> None:
-        """Valida que haya suficientes unidades para mover sin vaciar el país.
+        """Valida una cantidad positiva y las unidades disponibles para mover.
 
         Args:
             mapa: Instancia del mapa del juego.
             origen: País de origen.
-            cantidad: Cantidad de unidades a mover.
+            cantidad: Cantidad entera y positiva de unidades a mover.
             error_message: Mensaje de error personalizado. Si es None,
                 se usa un mensaje por defecto.
 
         Raises:
-            InvalidActionError: Si no hay suficientes unidades para mover.
+            InvalidActionError: Si la cantidad es inválida o no hay suficientes
+                unidades para mover.
 
         """
+        if type(cantidad) is not int or cantidad <= 0:
+            msg = error_message or "La cantidad a mover debe ser un entero positivo"
+            raise InvalidActionError(msg)
+
         unidades_origen = mapa.cantidad_unidades(origen)
         if unidades_origen <= cantidad:
             msg = (

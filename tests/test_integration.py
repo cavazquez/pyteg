@@ -350,6 +350,64 @@ class TestIntegration(unittest.TestCase):
             time.sleep(0.05)
         return None
 
+    def _wait_for_new_protocol_error(
+        self, client: _TestClient, received_before: int, expected_error_type: str
+    ) -> dict[str, Any] | None:
+        """Espera un error de protocolo emitido después del índice indicado.
+
+        Returns:
+            El mensaje de error esperado, o ``None`` al vencer el plazo.
+
+        """
+        deadline = time.monotonic() + _READ_TIMEOUT
+        while time.monotonic() < deadline:
+            for message in client.snapshot_received()[received_before:]:
+                if (
+                    message.get("mensaje") == "error"
+                    and message.get("error_type") == expected_error_type
+                ):
+                    return message
+            time.sleep(0.05)
+        return None
+
+    def _assert_invalid_move_amount(
+        self,
+        client: _TestClient,
+        origin: str,
+        destination: str,
+        amount: object,
+    ) -> None:
+        """Comprueba que una cantidad TCP inválida no muta países ni desconecta."""
+        game = self._server.game
+        self.assertIsNotNone(game, "partida no iniciada")
+        if game is None:
+            return
+        mapa = game.mapa()
+        units_before = (
+            mapa.cantidad_unidades(origin),
+            mapa.cantidad_unidades(destination),
+        )
+        received_before = len(client.snapshot_received())
+        payload: dict[str, Any] = {
+            "mensaje": "mover_unidad",
+            "origen": origin,
+            "destino": destination,
+            "cantidad": amount,
+        }
+        client.send(payload)
+
+        error = self._wait_for_new_protocol_error(
+            client, received_before, "invalid_field"
+        )
+
+        self.assertIsNotNone(
+            error, f"La cantidad inválida {amount!r} no devolvió error"
+        )
+        self.assertEqual(
+            (mapa.cantidad_unidades(origin), mapa.cantidad_unidades(destination)),
+            units_before,
+        )
+
     # ------------------------------------------------------------------
     # Test 1: un cliente recibe MsgUserId al conectarse
     # ------------------------------------------------------------------
@@ -639,6 +697,37 @@ class TestIntegration(unittest.TestCase):
             (mapa.cantidad_unidades(origin), mapa.cantidad_unidades(destination)),
             units_before,
         )
+
+    def test_invalid_move_amounts_preserve_map_and_tcp_connection(self) -> None:
+        """Una cantidad inválida no cambia países y el cliente puede seguir jugando."""
+        first = self._new_client()
+        second = self._new_client()
+        first_id, second_id = self._start_two_player_game(first, second)
+        turn = self._wait_latest_turno(first, second)
+        active_id = turn.get("jugador_actual_id")
+        self.assertIsNotNone(active_id, "turno sin jugador_actual_id")
+        if active_id is None:
+            return
+
+        active_client = self._client_for_user(
+            first, second, first_id, second_id, int(active_id)
+        )
+        origin, destination = self._assign_adjacent_countries(int(active_id))
+        invalid_amounts: tuple[object, ...] = (0, -5, True, 1.5, "1", None)
+        for amount in invalid_amounts:
+            with self.subTest(amount=amount):
+                self._assert_invalid_move_amount(
+                    active_client, origin, destination, amount
+                )
+
+        active_client.send({"mensaje": "chat", "msg": "Sigo conectado"})
+        recovered = active_client.wait_for(
+            "chat",
+            extra_check=lambda message: str(message.get("msg")).endswith(
+                ": Sigo conectado"
+            ),
+        )
+        self.assertIsNotNone(recovered, "El cliente se desconectó tras el error")
 
     # ------------------------------------------------------------------
     # Test 5: flujo completo — inicio de partida con dos jugadores
