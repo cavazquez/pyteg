@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import unittest
-from typing import TYPE_CHECKING, TypeVar, cast
-from unittest.mock import MagicMock
+from typing import TYPE_CHECKING, cast
+from unittest.mock import MagicMock, patch
 
 from pyteg.core.cartas.mazo import Mazo
 from pyteg.core.turnos.turnos import PrimerTurno, SegundoTurno, SiguientesTurnos
@@ -18,10 +18,8 @@ if TYPE_CHECKING:
     from pyteg.protocols.server import ServerLikeProtocol
     from pyteg.server.conexion.transmisor import ServerTransmisor
 
-T = TypeVar("T")
 
-
-def _no_none(value: T | None) -> T:
+def _no_none[T](value: T | None) -> T:
     """Devuelve `value` si no es `None`, levantando si lo es.
 
     Helper de estrechamiento de tipo para tests: evita `cast` y `assert`
@@ -239,6 +237,33 @@ class TestGame(unittest.TestCase):
 
         self.assertIsInstance(game.turnos()[0], SegundoTurno)
         self.assertIsInstance(game.turnos()[1], SegundoTurno)
+
+    def test_victoria_finaliza_partida_una_sola_vez(self) -> None:
+        """La victoria detiene el juego y no permite avanzar más turnos."""
+        self.server.estado.esperar_jugadores()
+        self.server.estado.empezar_partida()
+        game = Game(
+            self.mapa,
+            self.mazo_placeholder,
+            self.default_jugadores,
+            self.server,
+            paises_para_victoria=1,
+        )
+        game.empezar()
+
+        with patch.object(self.server, "enviar_victoria") as enviar_victoria:
+            game.finalizar_turno()
+            game.finalizar_turno()
+
+            self.assertTrue(self.server.estado.es_finalizado())
+            self.assertFalse(game.empezo())
+            enviar_victoria.assert_called_once()
+
+            turno_final = game.id_turno_actual()
+            game.finalizar_turno()
+
+        self.assertEqual(game.id_turno_actual(), turno_final)
+        enviar_victoria.assert_called_once()
 
     def test_finalizar_turno_y_segunda_ronda(self) -> None:
         """Prueba finalizar turnos y llegar a la segunda ronda."""

@@ -25,6 +25,14 @@ class GameplayStateTests(unittest.TestCase):
         main_window.jugador_actual_id = 2
         self.assertFalse(es_mi_turno(main_window))
 
+    def test_no_es_mi_turno_con_partida_finalizada(self) -> None:
+        main_window = MagicMock()
+        main_window.partida_finalizada = True
+        main_window.client.userid.return_value = 2
+        main_window.jugador_actual_id = 2
+
+        self.assertFalse(es_mi_turno(main_window))
+
     def test_refresh_deshabilita_finalizar_fuera_de_turno(self) -> None:
         from PySide6.QtWidgets import QApplication, QMainWindow
 

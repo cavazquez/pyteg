@@ -7,6 +7,7 @@ from unittest.mock import MagicMock
 
 from pyteg.config import DEFAULT_TURN_SECONDS, VICTORY_ALL_COUNTRIES
 from pyteg.server.juego.coordinator import ServerGameCoordinator
+from pyteg.server.juego.estado import Estado
 
 
 class TestServerGameCoordinator(unittest.TestCase):
@@ -102,3 +103,30 @@ class TestServerGameCoordinator(unittest.TestCase):
         """game() es None antes de empezar_partida."""
         self.assertIsNone(self.coordinator.game())
         self.assertIsNone(self.coordinator.turno_timer())
+
+    def test_finalizar_partida_detiene_timer_y_difunde_estado(self) -> None:
+        """El cierre cambia de estado una vez y detiene el temporizador."""
+        estado = Estado()
+        estado.esperar_jugadores()
+        estado.empezar_partida()
+        broadcaster = MagicMock()
+        coordinator = ServerGameCoordinator(
+            self.mapa,
+            self.mazo,
+            self.objetivos,
+            estado,
+            list,
+            broadcaster,
+            self.color_manager,
+        )
+        timer = MagicMock()
+        coordinator._turno_timer = timer  # noqa: SLF001
+
+        self.assertTrue(coordinator.finalizar_partida())
+        self.assertTrue(estado.es_finalizado())
+        timer.detener.assert_called_once()
+        broadcaster.enviar_estado.assert_called_once_with(Estado.FINALIZADO)
+
+        self.assertFalse(coordinator.finalizar_partida())
+        timer.detener.assert_called_once()
+        broadcaster.enviar_estado.assert_called_once()

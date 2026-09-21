@@ -17,6 +17,9 @@ def es_mi_turno(main_window: MainWindowProtocol | Any) -> bool:
         True si el userid local coincide con el jugador en turno.
 
     """
+    if getattr(main_window, "partida_finalizada", False) is True:
+        return False
+
     client = getattr(main_window, "client", None)
     if client is None:
         return False

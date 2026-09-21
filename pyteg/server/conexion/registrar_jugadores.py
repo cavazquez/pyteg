@@ -4,13 +4,17 @@ from __future__ import annotations
 
 import socket
 import threading
+from contextlib import suppress
 from typing import TYPE_CHECKING, Any, Protocol
 
+from pyteg.codecs_utils import NulDelimitedUtf8Codec
 from pyteg.logger import get_logger
 from pyteg.server.conexion.build_cliente import ServerBuildClient
 from pyteg.server.conexion.connection import ConnectionServer
+from pyteg.server.msg import MsgError
 
 if TYPE_CHECKING:
+    from pyteg.server.conexion.cliente import Client
     from pyteg.server.juego.estado import Estado
 
 
@@ -19,15 +23,64 @@ class ServerLike(Protocol):
 
     estado: Estado
 
-    def registrar_cliente(self, user_id: Any, client: Any) -> None:
+    def registrar_cliente(self, user_id: Any, client: Any) -> bool:
         """Registra un cliente en el servidor.
 
         Args:
             user_id: ID del usuario.
             client: Cliente a registrar.
 
+        Returns:
+            ``True`` si el cliente fue aceptado.
+
         """
         ...
+
+
+def _rechazar_conexion(
+    conn: socket.socket,
+    error_type: str,
+    message: str,
+    logger: Any,
+) -> None:
+    """Envía un error JSON normalizado y libera el socket entrante."""
+    try:
+        payload = MsgError(error_type, message).to_json()
+        conn.sendall(NulDelimitedUtf8Codec.encode_frame(payload))
+    except OSError:
+        logger.exception("Error al enviar el rechazo de conexión")
+    finally:
+        conn.close()
+
+
+def _iniciar_cliente(
+    server: ServerLike,
+    builder: ServerBuildClient,
+    conn: socket.socket,
+    addr: tuple[str, int],
+    logger: Any,
+) -> None:
+    """Registra un cliente aceptado y arranca su hilo de recepción."""
+    connection = ConnectionServer(conn, addr)
+    client: Client | None = None
+    try:
+        user_id, client = builder.build(connection, server)
+        if not server.registrar_cliente(user_id, client):
+            client.transmisor.enviar_error(
+                "room_full", "La sala está completa. Intenta nuevamente más tarde."
+            )
+            client.cerrar()
+            return
+
+        client_thread = threading.Thread(target=client.run, daemon=True)
+        client_thread.start()
+        logger.info("Cliente %s conectado y en ejecución", user_id)
+    except Exception:
+        if client is not None:
+            client.cerrar()
+        else:
+            connection.close()
+        raise
 
 
 def registrar_jugadores(
@@ -49,8 +102,15 @@ def registrar_jugadores(
             try:
                 logger.debug("Esperando conexiones en %s:%s...", host, port)
                 conn, addr = server_socket.accept()
-                logger.info("Nueva conexión aceptada desde %s", addr)
+            except KeyboardInterrupt:
+                logger.info("Deteniendo el servidor por interrupción del usuario")
+                break
+            except Exception:
+                logger.exception("Error al aceptar una conexión")
+                continue
 
+            logger.info("Nueva conexión aceptada desde %s", addr)
+            try:
                 if server.estado.es_jugando() or server.estado.es_finalizado():
                     estado_actual = server.estado.estado_actual()
                     logger.warning(
@@ -59,31 +119,20 @@ def registrar_jugadores(
                         addr,
                         estado_actual,
                     )
-                    try:
-                        mensaje_rechazo = (
-                            "El juego ya está en progreso. "
-                            "No se pueden conectar nuevos jugadores."
-                        )
-                        conn.send(mensaje_rechazo.encode("utf-8"))
-                    except OSError:
-                        logger.exception("Error al enviar mensaje de rechazo")
-                    finally:
-                        conn.close()
+                    _rechazar_conexion(
+                        conn,
+                        "game_in_progress",
+                        "El juego ya está en progreso. "
+                        "No se pueden conectar nuevos jugadores.",
+                        logger,
+                    )
                     continue
 
-                connection = ConnectionServer(conn, addr)
-                user_id, client = server_build_client.build(connection, server)
-                server.registrar_cliente(user_id, client)
-
-                client_thread = threading.Thread(target=client.run, daemon=True)
-                client_thread.start()
-                logger.info("Cliente %s conectado y en ejecución", user_id)
-
-            except KeyboardInterrupt:
-                logger.info("Deteniendo el servidor por interrupción del usuario")
-                break
+                _iniciar_cliente(server, server_build_client, conn, addr, logger)
             except Exception:
                 logger.exception("Error al manejar la conexión")
+                with suppress(OSError):
+                    conn.close()
 
     except (OSError, RuntimeError) as exc:
         logger.critical("Error crítico en el servidor: %s", exc, exc_info=True)

@@ -112,7 +112,7 @@ def get_user_color(colores_obj: Any, username: str) -> str | None:
             g = int(selected_color.green() * 255)
             b = int(selected_color.blue() * 255)
             return f"#{r:02x}{g:02x}{b:02x}"
-    except (AttributeError, KeyError, TypeError):
+    except AttributeError, KeyError, TypeError:
         return None
     return None
 

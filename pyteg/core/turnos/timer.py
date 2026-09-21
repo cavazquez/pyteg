@@ -40,6 +40,16 @@ class TurnoTimer(threading.Thread):
         """Detiene el hilo de forma segura."""
         self._stop_event.set()
 
+    def _partida_activa(self) -> bool:
+        """Indica si el servidor todavía acepta actualizaciones de turno.
+
+        Returns:
+            ``True`` mientras el juego está en curso.
+
+        """
+        estado = getattr(self._server, "estado", None)
+        return bool(estado is not None and estado.es_jugando())
+
     # ------------------------------------------------------------------
     # Internals
     # ------------------------------------------------------------------
@@ -62,7 +72,11 @@ class TurnoTimer(threading.Thread):
     def run(self) -> None:
         """Ejecuta el hilo del temporizador de turnos."""
         while not self._stop_event.is_set():
-            if not self._server.game or not self._server.game.empezo():
+            if (
+                not self._partida_activa()
+                or not self._server.game
+                or not self._server.game.empezo()
+            ):
                 time.sleep(1)
                 continue
 
@@ -86,7 +100,10 @@ class TurnoTimer(threading.Thread):
 
                 # Si el jugador actual cambió,
                 # notificar a los clientes y salir del bucle interno
-                if turno_actual != self._server.game.turno_actual():
+                if (
+                    self._partida_activa()
+                    and turno_actual != self._server.game.turno_actual()
+                ):
                     self._server.enviar_turno_actual()
                     break
             else:
@@ -95,12 +112,14 @@ class TurnoTimer(threading.Thread):
                     LOGGER.info("Tiempo agotado para el turno %s", turno_actual)
                     self._server.game.finalizar_turno()
                     # Enviar el nuevo número de turno a los clientes
-                    self._server.enviar_turno_actual()
+                    if self._partida_activa() and not self._stop_event.is_set():
+                        self._server.enviar_turno_actual()
                 else:
                     # El contador llegó a 0 -> finalizar turno automáticamente
                     self._server.game.finalizar_turno()
                     # Enviar el nuevo número de turno a los clientes
-                    self._server.enviar_turno_actual()
+                    if self._partida_activa() and not self._stop_event.is_set():
+                        self._server.enviar_turno_actual()
 
             # Pequeño respiro antes de continuar (evita bucle tight)
             time.sleep(0.1)

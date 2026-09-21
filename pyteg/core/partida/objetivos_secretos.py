@@ -136,7 +136,7 @@ class ObjetivosSecretos:
             all_clients = (
                 colores.dame_clientes() if hasattr(colores, "dame_clientes") else []
             )
-        except (AttributeError, RuntimeError):
+        except AttributeError, RuntimeError:
             all_clients = []
 
         for client in all_clients:
@@ -152,7 +152,7 @@ class ObjetivosSecretos:
                     if cid is not None and self._jugador_tiene_paises(cid, mapa):
                         jugador_objetivo_eliminado = False
                     break
-            except (AttributeError, RuntimeError):
+            except AttributeError, RuntimeError:
                 continue
 
         try:
@@ -161,7 +161,7 @@ class ObjetivosSecretos:
                 if hasattr(colores, "get_color_name_by_client_id")
                 else None
             )
-        except (AttributeError, RuntimeError):
+        except AttributeError, RuntimeError:
             mi_color = None
 
         if not jugador_objetivo_existe or mi_color == color_objetivo:

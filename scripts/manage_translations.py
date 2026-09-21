@@ -51,7 +51,7 @@ def compile_translations() -> None:
                     cmd = ["msgfmt", str(po_file), "-o", str(mo_file)]
                     subprocess.run(cmd, check=True, timeout=30)  # noqa: S603
                     print(f"✓ Compilado con msgfmt: {po_file} -> {mo_file}")
-                except (subprocess.CalledProcessError, FileNotFoundError):
+                except subprocess.CalledProcessError, FileNotFoundError:
                     print(
                         f"⚠️  No se pudo compilar {po_file}. Instala 'polib' o 'gettext'"
                     )

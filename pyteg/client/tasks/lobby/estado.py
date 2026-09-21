@@ -32,9 +32,11 @@ class ClientTaskEstado(IClientTask[EstadoTaskData]):
         main_window.update_game_state(self._msg)
 
         if self._msg == "EsperarJugadores":
+            main_window.partida_finalizada = False
             CLIENT_TASKS_LOG.debug("Mostrando ventana de espera de jugadores")
             main_window.ventana_esperar_jugadores()
         elif self._msg == "JUGANDO":
+            main_window.partida_finalizada = False
             CLIENT_TASKS_LOG.debug("Cambiando a estado JUGANDO")
             if main_window.w is not None:
                 CLIENT_TASKS_LOG.debug("Cerrando ventana de espera...")
@@ -56,6 +58,19 @@ class ClientTaskEstado(IClientTask[EstadoTaskData]):
                 CLIENT_TASKS_LOG.warning(
                     "Error al actualizar lista de jugadores: %s", e
                 )
+
+            main_window.update()
+        elif self._msg == "Finalizado":
+            main_window.partida_finalizada = True
+            main_window.update_timer_display("")
+
+            toolbar = getattr(main_window, "toolbar", None)
+            if toolbar is not None and hasattr(toolbar, "deshabilitar_acciones_juego"):
+                toolbar.deshabilitar_acciones_juego()
+
+            scene = getattr(main_window, "scene", None)
+            if scene is not None and hasattr(scene, "selection_manager"):
+                scene.selection_manager.cancelar_seleccion()
 
             main_window.update()
 

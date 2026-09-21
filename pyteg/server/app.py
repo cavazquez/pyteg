@@ -129,29 +129,53 @@ class Server:
         """
         return self._client_registry.cantidad()
 
-    def quitarme(self, user_id: int) -> None:
-        """Desconecta un cliente del servidor.
+    def quitarme(self, user_id: int, expected_client: Client | None = None) -> None:
+        """Retira una conexión y libera su color cuando corresponde.
 
         Args:
             user_id: ID del cliente a desconectar.
+            expected_client: Conexión que solicita la baja. Impide que un cierre
+                tardío retire a otro cliente con el mismo ID.
 
         """
+        client = self._client_registry.desconectar_cliente(user_id, expected_client)
+        if client is None:
+            return
+
         LOGGER.info("Quitando cliente %s", user_id)
-        self._client_registry.desconectar_cliente(user_id)
+        if self.estado.es_jugando():
+            LOGGER.info(
+                "Se conserva el color de %s porque la partida sigue activa", user_id
+            )
+        else:
+            self.color.liberar_color(client.color_actual())
+
         # Notificar a todos los clientes restantes sobre la desconexión
         self.enviar_username()
 
-    def registrar_cliente(self, user_id: int, client: Client) -> None:
+    def registrar_cliente(self, user_id: int, client: Client) -> bool:
         """Registra un nuevo cliente en el servidor.
 
         Args:
             user_id: ID único del cliente.
             client: Objeto cliente a registrar.
 
+        Returns:
+            ``True`` si se reservó un color y se registró al cliente. Devuelve
+            ``False`` si la sala no tiene capacidad.
+
         """
         # Asignar color antes de registrar
-        self.color.asignar_color_aleatorio(client)
-        self._client_registry.registrar_cliente(user_id, client)
+        if not self.color.asignar_color_aleatorio(client):
+            LOGGER.warning("Sala llena; no se puede registrar el cliente %s", user_id)
+            return False
+
+        if self._client_registry.registrar_cliente(user_id, client):
+            return True
+
+        self.color.liberar_color(client.color_actual())
+        LOGGER.warning("ID de cliente duplicado al registrar %s", user_id)
+        return False
 
     def dame_lista_jugadores(self) -> list[int]:
         """Obtiene la lista de IDs de jugadores conectados.
@@ -193,7 +217,7 @@ class Server:
 
     def enviar_turno_actual(self) -> None:
         """Envía el número de turno y ronda actuales a todos los clientes."""
-        if not self.game:
+        if not self.estado.es_jugando() or not self.game:
             return
         session_sync.enviar_turno_actual(
             self.game,
@@ -228,9 +252,18 @@ class Server:
         """
         self._game_coordinator.empezar_partida(self)
 
+    def finalizar_partida(self) -> bool:
+        """Finaliza la partida actual y detiene sus actualizaciones.
+
+        Returns:
+            ``True`` si el estado de la partida cambió a terminal.
+
+        """
+        return self._game_coordinator.finalizar_partida()
+
     def enviar_unidades_disponibles(self) -> None:
         """Envía las unidades disponibles al jugador del turno actual."""
-        if not self.game:
+        if not self.estado.es_jugando() or not self.game:
             return
         session_sync.enviar_unidades_disponibles(
             self.game, self._client_registry.obtener_cliente
@@ -362,7 +395,7 @@ def main() -> None:
     except KeyboardInterrupt:
         logger.info("Servidor detenido por el usuario")
         sys.exit(0)
-    except (OSError, ValueError, RuntimeError):
+    except OSError, ValueError, RuntimeError:
         logger.exception("Error al iniciar el servidor")
         sys.exit(1)
 

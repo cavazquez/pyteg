@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 class MissileSystem:
     """Sistema para gestionar misiles en el mapa del juego."""
 
-    def __init__(self, mapa: "Mapa") -> None:
+    def __init__(self, mapa: Mapa) -> None:
         """Inicializa el sistema de misiles.
 
         Args:

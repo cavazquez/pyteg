@@ -198,6 +198,23 @@ class ServerGameCoordinator:
 
         return self._game
 
+    def finalizar_partida(self) -> bool:
+        """Cierra la partida activa y notifica el estado terminal.
+
+        Returns:
+            ``True`` si la partida pasó de ``JUGANDO`` a ``Finalizado``.
+
+        """
+        if not self._estado.finalizar_partida():
+            return False
+
+        if self._turno_timer is not None:
+            self._turno_timer.detener()
+
+        self._broadcaster.enviar_estado(self._estado.estado_actual())
+        LOGGER.info("Partida finalizada")
+        return True
+
     def game(self) -> Game | None:
         """Obtiene la instancia del juego actual.
 

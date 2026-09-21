@@ -70,6 +70,7 @@ class GameWindowProtocol(Protocol):
     status_bar: QStatusBar
     tarjetas_jugador: list[TarjetaItem]
     misiles_habilitados: bool
+    partida_finalizada: bool
 
     def update_unidades_disponibles(self, unidades: dict[str, int]) -> None:
         """Actualiza el panel derecho con las unidades disponibles."""

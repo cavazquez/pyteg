@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import contextlib
 import secrets
+import threading
 from copy import copy
 from typing import TYPE_CHECKING
 
@@ -39,18 +40,27 @@ class ServerColor:
             Blanco(),
         ]
         self._usados: list[IColor] = []
+        self._lock = threading.RLock()
 
-    def asignar_color_aleatorio(self, client: IClientProtocol) -> None:
+    def asignar_color_aleatorio(self, client: IClientProtocol) -> bool:
         """Asigna un color aleatorio disponible a un cliente.
 
         Args:
             client: Cliente al que asignar el color.
 
+        Returns:
+            ``True`` si se reservó un color; ``False`` cuando la sala ya no
+            tiene colores disponibles.
+
         """
-        colores_disponibles = self.colores_disponibles()
-        color = secrets.choice(colores_disponibles)
-        self.reservar_color(color)
-        client.asignar_color(copy(color))
+        with self._lock:
+            colores_disponibles = self._colores_disponibles()
+            if not colores_disponibles:
+                return False
+            color = secrets.choice(colores_disponibles)
+            self._usados.append(color)
+            client.asignar_color(copy(color))
+            return True
 
     def liberar_color(self, color: IColor | None) -> None:
         """Libera un color para que esté disponible nuevamente.
@@ -61,8 +71,8 @@ class ServerColor:
         """
         if color is None:
             return
-        with contextlib.suppress(ValueError):
-            self.colores_usados().remove(color)
+        with self._lock, contextlib.suppress(ValueError):
+            self._usados.remove(color)
 
     def reservar_color(self, color: IColor) -> None:
         """Reserva un color para que no esté disponible.
@@ -71,7 +81,9 @@ class ServerColor:
             color: Color a reservar.
 
         """
-        self.colores_usados().append(color)
+        with self._lock:
+            if color not in self._usados:
+                self._usados.append(color)
 
     def asignar_color(self, client: IClientProtocol, color_hexrgb: str) -> None:
         """Asigna un color específico a un cliente por su valor hexadecimal.
@@ -81,11 +93,15 @@ class ServerColor:
             color_hexrgb: Valor hexadecimal del color (ej: "#FF0000").
 
         """
-        color = self.obtener_color_de_hexrgb(color_hexrgb)
-        if color and color not in self.colores_usados():
+        with self._lock:
+            color = self._obtener_color_de_hexrgb(color_hexrgb)
+            if color is None:
+                return
             color_actual = client.color_actual()
-            self.liberar_color(color_actual)
-            self.reservar_color(color)
+            if color_actual is not None:
+                with contextlib.suppress(ValueError):
+                    self._usados.remove(color_actual)
+            self._usados.append(color)
             client.asignar_color(copy(color))
 
     def colores(self) -> list[IColor]:
@@ -95,7 +111,8 @@ class ServerColor:
             Lista de todos los colores.
 
         """
-        return self._colores
+        with self._lock:
+            return list(self._colores)
 
     def colores_usados(self) -> list[IColor]:
         """Obtiene la lista de colores actualmente en uso.
@@ -104,7 +121,8 @@ class ServerColor:
             Lista de colores usados.
 
         """
-        return self._usados
+        with self._lock:
+            return list(self._usados)
 
     def colores_disponibles(self) -> list[IColor]:
         """Obtiene la lista de colores disponibles (no usados).
@@ -113,7 +131,8 @@ class ServerColor:
             Lista de colores disponibles.
 
         """
-        return [color for color in self.colores() if color not in self.colores_usados()]
+        with self._lock:
+            return self._colores_disponibles()
 
     def obtener_color_de_hexrgb(self, hexrgb: str) -> IColor | None:
         """Obtiene un color por su valor hexadecimal.
@@ -125,7 +144,26 @@ class ServerColor:
             El color correspondiente o None si no se encuentra.
 
         """
-        for color in self.colores_disponibles():
+        with self._lock:
+            return self._obtener_color_de_hexrgb(hexrgb)
+
+    def _colores_disponibles(self) -> list[IColor]:
+        """Devuelve los colores libres mientras el lock ya está tomado.
+
+        Returns:
+            Colores sin reservar.
+
+        """
+        return [color for color in self._colores if color not in self._usados]
+
+    def _obtener_color_de_hexrgb(self, hexrgb: str) -> IColor | None:
+        """Busca un color libre mientras el lock ya está tomado.
+
+        Returns:
+            El color libre solicitado, o ``None`` si no está disponible.
+
+        """
+        for color in self._colores_disponibles():
             if hexrgb == color.to_hex():
                 return color
         return None

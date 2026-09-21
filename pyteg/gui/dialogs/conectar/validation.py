@@ -47,7 +47,7 @@ def validate(
         )
     try:
         port = int(port_text)
-    except (TypeError, ValueError):
+    except TypeError, ValueError:
         return ValidationError(_("Por favor ingresa un puerto válido"), "port")
     if port <= 0:
         return ValidationError(_("Por favor ingresa un puerto válido"), "port")

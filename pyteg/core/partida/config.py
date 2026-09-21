@@ -61,7 +61,7 @@ class GameConfig:
         return self.paises_para_victoria == VICTORY_ALL_COUNTRIES
 
     @classmethod
-    def default(cls) -> "GameConfig":
+    def default(cls) -> GameConfig:
         """Crea una configuración con valores por defecto.
 
         Returns:

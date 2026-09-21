@@ -81,7 +81,7 @@ class Colores:
             return QColor(128, 128, 128)
         try:
             key = int(cliente)
-        except (TypeError, ValueError):
+        except TypeError, ValueError:
             return QColor(128, 128, 128)
         return self._asignacion.get(key, QColor(128, 128, 128))
 

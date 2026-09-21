@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 import socket
+import threading
 
-from pyteg.codecs_utils import Utf8
+from pyteg.codecs_utils import FrameCodecError, NulDelimitedUtf8Codec
 from pyteg.logger import get_logger
 
 LOGGER = get_logger(__name__)
+_RECEIVE_BUFFER_BYTES = 65_536
 
 
 class ConnectionServer:
@@ -23,21 +25,26 @@ class ConnectionServer:
         """
         self._conn = connection
         self._addr = addr
+        self._codec = NulDelimitedUtf8Codec()
+        self._close_lock = threading.RLock()
+        self._closed = False
 
     def receiver(self) -> list[str] | None:
         r"""Recibe datos del cliente.
 
         Returns:
-            Lista de mensajes recibidos (separados por \0) o None si hay error.
+            Lista de mensajes completos, ``[]`` si queda una trama parcial, o
+            ``None`` ante EOF o un error de framing.
 
         """
-        data = ""
         try:
-            encode_data = self._conn.recv(1024)
+            encode_data = self._conn.recv(_RECEIVE_BUFFER_BYTES)
             if not encode_data:
+                try:
+                    self._codec.finish()
+                except FrameCodecError as error:
+                    LOGGER.warning("EOF con trama TCP incompleta: %s", error)
                 return None
-            data = Utf8.decode(encode_data)
-            LOGGER.debug("Recibiendo %s", data)
         except ConnectionResetError:
             return None
         except BrokenPipeError as ex:
@@ -46,7 +53,22 @@ class ConnectionServer:
         except (ConnectionError, OSError) as ex:
             LOGGER.warning("Error de socket al recibir: %s", ex)
             return None
-        return data.split("\0")
+
+        try:
+            messages = self._codec.feed(encode_data)
+        except FrameCodecError as error:
+            LOGGER.warning("Trama TCP inválida de %s: %s", self._addr, error)
+            self.close()
+            return None
+
+        LOGGER.debug(
+            "Recibidos %s bytes de %s; %s trama(s) completa(s), %s pendiente(s)",
+            len(encode_data),
+            self._addr,
+            len(messages),
+            self._codec.pending_bytes,
+        )
+        return messages
 
     def send(self, data: str) -> None:
         """Envía datos al cliente.
@@ -56,22 +78,31 @@ class ConnectionServer:
 
         """
         LOGGER.debug("Enviando %s", data)
-        encode_data = Utf8.encode(data + "\0")
-        try:
-            self._conn.sendall(encode_data)
-        except BrokenPipeError as ex:
-            LOGGER.warning("BrokenPipeError al enviar: %s", ex)
-        except (ConnectionError, OSError) as ex:
-            LOGGER.warning("Error de socket al enviar: %s", ex)
+        encode_data = NulDelimitedUtf8Codec.encode_frame(data)
+        with self._close_lock:
+            if self._closed:
+                return
+            try:
+                self._conn.sendall(encode_data)
+            except BrokenPipeError as ex:
+                LOGGER.warning("BrokenPipeError al enviar: %s", ex)
+                self.close()
+            except (ConnectionError, OSError) as ex:
+                LOGGER.warning("Error de socket al enviar: %s", ex)
+                self.close()
 
     def close(self) -> None:
-        """Cierra la conexión con el cliente."""
-        try:
-            self._conn.shutdown(socket.SHUT_RDWR)
-        except OSError:
-            pass
-        finally:
+        """Cierra la conexión con el cliente una única vez."""
+        with self._close_lock:
+            if self._closed:
+                return
+            self._closed = True
             try:
-                self._conn.close()
-            except OSError as ex:
-                LOGGER.warning("Error al cerrar conexión: %s", ex)
+                self._conn.shutdown(socket.SHUT_RDWR)
+            except OSError:
+                pass
+            finally:
+                try:
+                    self._conn.close()
+                except OSError as ex:
+                    LOGGER.warning("Error al cerrar conexión: %s", ex)

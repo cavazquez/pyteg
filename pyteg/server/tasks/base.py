@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Generic, TypeVar
+from typing import TYPE_CHECKING, Any
 
 from pyteg.core.partida.context import GameContext
 from pyteg.exceptions import GameRuleViolationError, MensajeNoValidoError, PyTegError
@@ -16,10 +16,8 @@ LOGGER = get_logger("server.tasks")
 if TYPE_CHECKING:
     from pyteg.protocols import IClientProtocol
 
-TData = TypeVar("TData", bound=BaseTaskData)
 
-
-class IServerTask(ABC, Generic[TData]):
+class IServerTask[TData: BaseTaskData](ABC):
     """Clase base para todas las tareas del servidor.
 
     Parametrizada por `TData` (subtipo de `BaseTaskData`) para que cada
