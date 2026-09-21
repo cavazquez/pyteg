@@ -5,6 +5,15 @@ Todas las fechas en formato YYYY-MM-DD.
 ## [Unreleased]
 
 ### Changed
+- **Distribución reproducible**: el wheel y el sdist incluyen temas, iconos,
+  sonidos y catálogos `.mo`; `scripts/verify_wheel.py` y
+  `scripts/smoke_wheel.py` prueban la instalación fuera del checkout.
+- **Build Nuitka unificado**: `scripts/build_binaries.py` valida y compila las
+  entradas vigentes `pyteg/server/app.py` y `pyteg/client/run.py` con todos los
+  recursos.
+- **Release multiplataforma**: el workflow fusiona los artefactos descargados,
+  comprueba los cuatro nombres versionados y publica los mismos archivos que
+  describe en las notas.
 - **Simulación TCP de canjes**: `simulate_game` puede ejecutar y verificar por
   sockets los reclamos de tarjetas, canjes normales, canjes especiales, canjes
   forzosos, canjes de misil y lanzamientos con `--exercise-exchanges`.

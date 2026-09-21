@@ -95,7 +95,7 @@ una victoria, consultá [la guía de simulación](docs/SIMULATION.md). El diagn�
 las prioridades y los issues para completar el proyecto están en
 [la revisión técnica](docs/PROJECT_REVIEW.md).
 
-## Build de binarios (🥚 Hatch + ⚙️ Nuitka)
+## Build de binarios (⚙️ Nuitka)
 Requiere dependencias de desarrollo:
 ```bash
 uv sync --group dev
@@ -103,16 +103,18 @@ uv sync --group dev
 
 Compilar binarios (modo onefile + standalone) para servidor y cliente:
 ```bash
-# 🥚 Hatch + ⚙️ Nuitka
-uv run hatch build -t nuitka
+# ⚙️ Nuitka; las entradas y los recursos se validan antes de compilar
+uv run python scripts/build_binaries.py --version 0.0.9
 ```
 
 Los ejecutables quedarán en `dist/`.
 
 Build de wheel/sdist (empaquetado Python estándar):
 ```bash
-# 🥚 Hatch (wheel / sdist)
-uv run hatch build -t wheel -t sdist
+# wheel / sdist
+uv build --wheel --sdist
+uv run python scripts/verify_wheel.py dist/pyteg-*.whl
+uv run python scripts/smoke_wheel.py dist/pyteg-*.whl
 ```
 
 ## Estructura del proyecto
@@ -237,12 +239,14 @@ message = _("Jugador {} ganó").format(player_name)
 ### Descargar binarios compilados
 Los binarios compilados para múltiples plataformas están disponibles en la [página de releases](https://github.com/cavazquez/pyteg/releases):
 
-- **Linux x86_64**: `pyteg-linux-x86_64.tar.gz`
-- **Windows x86_64**: `pyteg-windows-x86_64.zip`  
-- **macOS x86_64**: `pyteg-macos-x86_64.tar.gz`
-- **macOS ARM64**: `pyteg-macos-arm64.tar.gz`
+- **Linux x86_64**: `pyteg-<version>-linux-x86_64.tar.gz`
+- **Windows x86_64**: `pyteg-<version>-windows-x86_64.zip`
+- **macOS x86_64**: `pyteg-<version>-macos-x86_64.tar.gz`
+- **macOS ARM64**: `pyteg-<version>-macos-arm64.tar.gz`
 
 Los binarios son standalone (no requieren Python instalado) e incluyen todos los assets necesarios.
+Los nombres usan la versión sin el prefijo `v` del tag, por ejemplo
+`pyteg-0.0.9-linux-x86_64.tar.gz` para `v0.0.9`.
 
 ### Crear un nuevo release
 Para crear un nuevo release con binarios compilados:

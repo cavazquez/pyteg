@@ -105,9 +105,10 @@ clientes; no es un oráculo de todas las reglas.
    conquistador.
 7. Se pueden reclamar dos cartas en un mismo turno.
 8. Las fases restringidas por la GUI no tienen las mismas garantías en servidor.
-9. El wheel generado contiene 222 entradas sin mapas, iconos, idiomas ni sonidos.
-   Extraído fuera del checkout falla al cargar el tema. Nuitka referencia dos
-   módulos inexistentes y el release busca directorios distintos de los subidos.
+9. El wheel ahora incluye mapas, iconos, idiomas y sonidos; el smoke test lo
+   extrae fuera del checkout e inicia servidor y cliente Qt offscreen. Las
+   entradas Nuitka y los cuatro artefactos del release se validan antes de
+   compilar o publicar.
 
 ## Arquitectura de red recomendada
 
@@ -189,8 +190,8 @@ soportadas antes de sus pruebas.
 - [x] [#170 — Impedir cantidades no positivas o no enteras al mover unidades](https://github.com/cavazquez/pyteg/issues/170) (Reglas; implementado).
 - [x] [#171 — Pasar a FINALIZADO y detener el juego al declarar victoria](https://github.com/cavazquez/pyteg/issues/171) (Partida; implementado localmente).
 - [x] [#172 — Excluir jugadores sin territorios de los turnos y refuerzos](https://github.com/cavazquez/pyteg/issues/172) (Partida; implementado).
-- [#173 — Empaquetar recursos y cargar el wheel fuera del checkout](https://github.com/cavazquez/pyteg/issues/173) (Entrega).
-- [#174 — Actualizar las entradas de Nuitka a los módulos existentes](https://github.com/cavazquez/pyteg/issues/174) (Entrega).
+- [x] [#173 — Empaquetar recursos y cargar el wheel fuera del checkout](https://github.com/cavazquez/pyteg/issues/173) (Entrega; implementado).
+- [x] [#174 — Actualizar las entradas de Nuitka a los módulos existentes](https://github.com/cavazquez/pyteg/issues/174) (Entrega; implementado).
 
 ### P2
 
@@ -204,7 +205,7 @@ soportadas antes de sus pruebas.
 - [#182 — Publicar snapshots atómicos con revisión y cambios coherentes](https://github.com/cavazquez/pyteg/issues/182) (Red).
 - [x] [#183 — Recuperar una sesión de jugador después de perder la conexión](https://github.com/cavazquez/pyteg/issues/183) (Red; implementado).
 - [#184 — Separar estado y procesamiento de eventos del cliente de QWidget](https://github.com/cavazquez/pyteg/issues/184) (Cliente).
-- [#185 — Adjuntar al release los archivos realmente generados por la matriz](https://github.com/cavazquez/pyteg/issues/185) (Entrega).
+- [x] [#185 — Adjuntar al release los archivos realmente generados por la matriz](https://github.com/cavazquez/pyteg/issues/185) (Entrega; implementado).
 - [#186 — Ejecutar una partida multicliente hasta el estado final en CI](https://github.com/cavazquez/pyteg/issues/186) (Pruebas).
 - [#187 — Volver al lobby e iniciar una revancha sin reiniciar el servidor](https://github.com/cavazquez/pyteg/issues/187) (Partida).
 - [#188 — Correlacionar comandos y evitar ejecución duplicada al reintentar](https://github.com/cavazquez/pyteg/issues/188) (Red).

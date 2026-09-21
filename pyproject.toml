@@ -31,6 +31,8 @@ ignore = [
 	"PLR0904", # too-many-public-methods
 	"PLR6301", # no-self-use
 	"ERA001",  # commented-out-code
+	"PLW0717", # try blocks in legacy integration code
+	"RUF067",  # package initializers with task registries
 	"D203",   # incompatible con D211 (blank line before class)
 	"D213",   # incompatible con D212 (summary en primera línea)
 	]
@@ -83,11 +85,17 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.wheel]
 packages = ["pyteg"]
 
+[tool.hatch.build.targets.wheel.force-include]
+"themes" = "themes"
+"locales" = "locales"
+"icons" = "icons"
+"sounds" = "sounds"
+
 [tool.hatch.build.targets.nuitka]
-# Entradas a compilar con Nuitka
+# Entradas canónicas que comparten el workflow y el script de build de Nuitka.
 main = [
-  "pyteg/server.py",
-  "pyteg/run_client.py",
+  "pyteg/server/app.py",
+  "pyteg/client/run.py",
 ]
 onefile = true
 standalone = true

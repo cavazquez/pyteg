@@ -482,7 +482,7 @@ class Simulation:
             try:
                 connection = socket.create_connection(("127.0.0.1", self.port), 0.2)
                 break
-            except (ConnectionRefusedError, OSError):
+            except ConnectionRefusedError, OSError:
                 time.sleep(0.05)
         connection.settimeout(self.args.command_timeout)
         connection.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
