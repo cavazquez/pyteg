@@ -65,6 +65,17 @@ class TestUnitsManager(unittest.TestCase):
         self.row_misiles.setVisible.assert_called_with(False)  # noqa: FBT003
         self.assertEqual(self.main_window.last_units["Misiles"], 0)
 
+    def test_payload_vacio_limpia_todas_las_unidades(self) -> None:
+        """La revancha no deja refuerzos de la partida anterior en la GUI."""
+        self.manager.update_unidades_disponibles({"infanteria": 4, "Africa": 2})
+
+        self.manager.update_unidades_disponibles({})
+
+        self.assertEqual(self.main_window.last_units["Generales"], 0)
+        self.assertEqual(self.main_window.last_units["África"], 0)
+        self.assertEqual(self.main_window.last_units["Misiles"], 0)
+        self.row_misiles.setVisible.assert_called_with(False)  # noqa: FBT003
+
     def test_refresh_unit_labels_reaplica_texto(self) -> None:
         """`refresh_unit_labels` vuelve a formatear desde `last_units`."""
         self.main_window.last_units = {"Generales": 5, "África": 0}
