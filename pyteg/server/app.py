@@ -86,6 +86,10 @@ class Server:
         """Encola un vencimiento asociado al turno que lo originó."""
         self._command_executor.enqueue_turn_expired(generation)
 
+    def encolar_desconexion_jugador(self, user_id: int) -> None:
+        """Encola la baja de un jugador para actualizar sus turnos."""
+        self._command_executor.enqueue_client_disconnected(user_id)
+
     def turno_snapshot(self) -> tuple[int, int] | None:
         """Obtiene ``(jugador_actual, generación)`` sin leer el juego en el timer.
 
@@ -172,6 +176,7 @@ class Server:
             LOGGER.info(
                 "Se conserva el color de %s porque la partida sigue activa", user_id
             )
+            self.encolar_desconexion_jugador(user_id)
         else:
             self.color.liberar_color(client.color_actual())
 

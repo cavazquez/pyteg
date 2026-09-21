@@ -61,6 +61,7 @@ class Game:
         self._finalizada = False
         self._jugadores: list[IClientProtocol] = list(jugadores)
         self._eliminados: set[int] = set()
+        self._desconectados: set[int] = set()
         self._server = server  # Referencia al servidor para notificar cambios
         self._paises_para_victoria = paises_para_victoria
 
@@ -84,6 +85,7 @@ class Game:
         jugadores = self.lista_jugadores()
         jugadores_userids = [int(j.userid()) for j in jugadores]
         self._mapa.asignar_paises(jugadores_userids)
+        self._desconectados.clear()
         self._eliminados = {
             jugador_id
             for jugador_id in jugadores_userids
@@ -270,11 +272,11 @@ class Game:
         return self.jugadores()
 
     def jugadores_activos(self) -> list[IClientProtocol]:
-        """Devuelve participantes que todavía poseen al menos un turno.
+        """Devuelve participantes que siguen jugando y tienen conexión.
 
-        La lista histórica de participantes se conserva para nombres, chat y
-        conexiones. Los turnos, refuerzos y condición de victoria usan sólo este
-        subconjunto.
+        La lista histórica de participantes se conserva para nombres, chat,
+        colores y ocupación del mapa. Los turnos, refuerzos y condición de
+        victoria usan sólo este subconjunto.
 
         Returns:
             Jugadores que no fueron eliminados.
@@ -284,7 +286,45 @@ class Game:
             jugador
             for jugador in self._jugadores
             if not self.jugador_esta_eliminado(jugador)
+            and not self.jugador_esta_desconectado(jugador)
         ]
+
+    def desconectar_jugador(self, jugador: IClientProtocol | int) -> bool:
+        """Retira una conexión de los turnos sin borrar su identidad ni países.
+
+        Una desconexión durante una partida no equivale a perder el último
+        territorio. El jugador queda en el historial para conservar nombres,
+        colores y ocupación del mapa, pero deja de recibir turnos y no impide
+        que los jugadores conectados continúen la partida.
+
+        Returns:
+            ``True`` cuando la desconexión cambió el estado del juego.
+
+        """
+        jugador_id = int(jugador) if isinstance(jugador, int) else int(jugador.userid())
+        if (
+            jugador_id in self._desconectados
+            or jugador_id in self._eliminados
+            or not any(int(item.userid()) == jugador_id for item in self._jugadores)
+        ):
+            return False
+
+        self._desconectados.add(jugador_id)
+        self._turn_manager.eliminar_jugador(jugador_id)
+        jugadores_activos = self.jugadores_activos()
+        if len(jugadores_activos) == 1:
+            self._finalizar_partida(jugadores_activos[0])
+        return True
+
+    def jugador_esta_desconectado(self, jugador: IClientProtocol | int) -> bool:
+        """Indica si el jugador perdió su conexión durante la partida.
+
+        Returns:
+            ``True`` si el jugador quedó desconectado.
+
+        """
+        jugador_id = int(jugador) if isinstance(jugador, int) else int(jugador.userid())
+        return jugador_id in self._desconectados
 
     def jugador_esta_eliminado(self, jugador: IClientProtocol | int) -> bool:
         """Indica si el jugador perdió su último país en esta partida.
@@ -486,7 +526,9 @@ class Game:
             PlayerEliminatedError: Si el jugador ya perdió su último país.
 
         """
-        if self.jugador_esta_eliminado(jugador):
+        if self.jugador_esta_eliminado(jugador) or self.jugador_esta_desconectado(
+            jugador
+        ):
             raise PlayerEliminatedError
 
     def _username_de(self, userid: int | None) -> str:

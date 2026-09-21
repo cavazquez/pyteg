@@ -73,21 +73,40 @@ uv run python -m scripts.simulate_game \
 
 El código de salida es `0` si la comprobación solicitada pasa, `1` ante errores
 de protocolo, divergencias, rechazos o falta de victoria, y `2` si se verificó
-la victoria pero el modo estricto no observó `Finalizado` en todos los clientes.
+la victoria pero el modo estricto no observó `Finalizado` en los clientes que
+permanecieron conectados.
 
 ## Semilla y reproducibilidad
 
-Por defecto se conserva la fuente de dados productiva, `secrets.randbelow`.
-`--seed` fija la aleatoriedad del reparto; la estrategia de los bots es estable,
-pero **la semilla sola no reproduce los dados ni garantiza el mismo ganador**.
-Los colores también siguen usando su fuente productiva.
+Con `--seed N`, el reparto, los dados del harness y la estrategia estable de
+los bots producen el mismo resultado funcional. El reporte ordena
+`country_counts` de mayor a menor y conserva una entrada para cada cliente,
+incluidos los que terminan con cero países. Los colores siguen usando su fuente
+productiva y los timestamps de la traza pueden variar, por lo que no se promete
+identidad byte a byte.
 
-`--deterministic-dice` sustituye solamente `secrets.randbelow` por una fuente
-semillada en el proceso hijo del harness. No modifica archivos del servidor,
-reglas, propiedad de países ni unidades. Este modo facilita repetir una
-secuencia de juego en el mismo entorno, pero es instrumentación de prueba y
-figura explícitamente en el reporte. No garantiza identidad byte a byte de la
-traza: colores, timestamps y mensajes del timer pueden variar.
+Si se omite `--seed`, el script obtiene una semilla de `secrets.randbits` y la
+guarda en `result.json` junto con `seed_source: "generated_by_secrets"`.
+`--random-dice` mantiene los dados productivos y hace que esa corrida no sea
+repetible aunque se indique una semilla. El servidor real nunca recibe una
+semilla ni se parchea: usa `secrets` para dados y colores. `--deterministic-dice`
+es el modo reproducible del proceso hijo del harness.
+
+Para probar una baja durante la partida:
+
+```bash
+uv run python -m scripts.simulate_game \
+  --theme classic --clients 4 --victory 30 --seed 801 \
+  --disconnect-client 2 --disconnect-after-turn 5 \
+  --require-finalized
+```
+
+`--disconnect-client` usa numeración basada en uno. El servidor conserva la
+identidad, color y países del jugador que perdió la conexión, pero lo retira del
+orden de turnos dentro de la transición serializada. `connected_clients_finalized`
+certifica a los clientes que siguieron conectados; `all_clients_finalized` queda
+en `false` si alguno fue desconectado, y `disconnected_clients` deja la evidencia
+del evento.
 
 ## Resultados observados en esta revisión
 
@@ -124,8 +143,9 @@ su transporte ni su interfaz gráfica**, por lo que esta simulación no demuestr
 que un usuario pueda jugar la misma partida sin problemas de interfaz o red.
 
 Las acciones se envían secuencialmente en conexiones locales. No se simulan
-fragmentación adversaria, pérdida de conexión, reconexión, clientes lentos,
-comandos simultáneos, latencia WAN ni vencimiento del timer. Tampoco se ejercitan
+fragmentación adversaria, reconexión, clientes lentos, comandos simultáneos,
+latencia WAN ni vencimiento del timer. La opción de desconexión sí ejercita el
+cierre real de un socket y la continuidad de los clientes restantes. Tampoco se ejercitan
 objetivos secretos, tarjetas/canjes ni misiles. La estrategia utiliza colocación,
 ataque y transferencia posteriores a una conquista según la API existente;
 no valida que esas reglas reproduzcan todo el reglamento del TEG clásico.
