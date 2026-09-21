@@ -23,6 +23,7 @@ class ServerTaskSolicitarTarjetas(IServerTask[BaseTaskData]):
 
         """
         super().__init__(data)
+        self._action_name = "solicitar_tarjetas"
 
     def _execute(self, client: IClientProtocol, context: GameContext) -> None:
         """Envía las tarjetas del jugador al cliente que las solicita."""

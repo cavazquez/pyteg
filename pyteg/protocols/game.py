@@ -28,6 +28,10 @@ class IGameProtocol(Protocol):
         """
         ...
 
+    def jugador_esta_eliminado(self, jugador: IClientProtocol | int) -> bool:
+        """Indica si un jugador ya no puede actuar en la partida."""
+        ...
+
     def turno_actual(self) -> ITurno:
         """Obtiene el turno actual.
 

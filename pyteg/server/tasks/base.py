@@ -6,7 +6,12 @@ from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
 
 from pyteg.core.partida.context import GameContext
-from pyteg.exceptions import GameRuleViolationError, MensajeNoValidoError, PyTegError
+from pyteg.exceptions import (
+    GameRuleViolationError,
+    MensajeNoValidoError,
+    PlayerEliminatedError,
+    PyTegError,
+)
 from pyteg.logger import get_logger
 from pyteg.server.juego.state_validator import ServerStateValidator
 from pyteg.server.tasks.types import BaseTaskData
@@ -70,6 +75,10 @@ class IServerTask[TData: BaseTaskData](ABC):
         Args:
             client: Cliente que ejecuta la tarea.
 
+        Raises:
+            PlayerEliminatedError: Si el cliente eliminado intenta una acción
+                distinta de chatear.
+
         """
         try:
             is_admin = isinstance(client, _AdminClientProtocol) and client.es_admin()
@@ -96,6 +105,9 @@ class IServerTask[TData: BaseTaskData](ABC):
                 client.server,
             )
 
+            if self._jugador_eliminado_no_puede_actuar(context, client):
+                raise PlayerEliminatedError
+
             # Ejecutar la tarea si la validación pasa
             self._execute(client, context)
 
@@ -107,6 +119,25 @@ class IServerTask[TData: BaseTaskData](ABC):
             # Otras excepciones de PyTeg también se envían como error
             client.transmisor.enviar_error_chat(e.mensaje)
             LOGGER.warning("Error de PyTeg: %s", e.mensaje)
+
+    def _jugador_eliminado_no_puede_actuar(
+        self, context: GameContext, client: IClientProtocol
+    ) -> bool:
+        """Indica si una acción de juego fue enviada por un eliminado.
+
+        El chat se conserva disponible para todos. La consulta dinámica mantiene
+        compatibilidad con los dobles mínimos de tests y con juegos previos que
+        aún no exponían el método de eliminación.
+
+        Returns:
+            ``True`` si el cliente está eliminado y la acción debe rechazarse.
+
+        """
+        if self._action_name in {None, "chat"} or context.game is None:
+            return False
+
+        jugador_esta_eliminado = getattr(context.game, "jugador_esta_eliminado", None)
+        return callable(jugador_esta_eliminado) and bool(jugador_esta_eliminado(client))
 
 
 class ServerTaskNull(IServerTask[BaseTaskData]):

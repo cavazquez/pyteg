@@ -116,6 +116,9 @@ Para una vista visual del intercambio de mensajes, ver el diagrama de secuencia 
 
 ## Reglas e invariantes
 - Turnos: solo el jugador del turno puede realizar acciones. Validado en todas las tareas relevantes.
+- Eliminación: al perder su último país, un jugador sale de los turnos, refuerzos,
+  acciones y lista activa. Sus tarjetas asignadas pasan una sola vez al
+  conquistador; el servidor difunde un aviso de sistema y la lista actualizada.
 - Ataques: restringidos en los dos primeros turnos; requieren países adyacentes, dueño válido y unidades suficientes; el atacante puede lanzar 1 a 3 dados según unidades.
 - Movimiento: requiere adyacencia y unidades disponibles (no vaciar país origen si la regla lo impide).
 - Chat de errores: toda acción inválida genera un mensaje de error visible para el jugador con formato ⚠️ rojo.

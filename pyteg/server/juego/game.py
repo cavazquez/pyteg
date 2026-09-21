@@ -13,6 +13,7 @@ from pyteg.core.partida.card_manager import CardManager
 from pyteg.core.partida.turn_manager import TurnManager
 from pyteg.core.partida.victory_checker import VictoryChecker
 from pyteg.core.turnos.turnos import PrimerTurno, SegundoTurno, SiguientesTurnos
+from pyteg.exceptions import PlayerEliminatedError
 from pyteg.logger import get_logger
 
 if TYPE_CHECKING:
@@ -59,6 +60,7 @@ class Game:
         self._start = False
         self._finalizada = False
         self._jugadores: list[IClientProtocol] = list(jugadores)
+        self._eliminados: set[int] = set()
         self._server = server  # Referencia al servidor para notificar cambios
         self._paises_para_victoria = paises_para_victoria
 
@@ -81,9 +83,16 @@ class Game:
         """Inicia el juego asignando países y creando los primeros turnos."""
         jugadores = self.lista_jugadores()
         jugadores_userids = [int(j.userid()) for j in jugadores]
-        self._turn_manager.inicializar_turnos(jugadores_userids)
         self._mapa.asignar_paises(jugadores_userids)
-        self._card_manager.inicializar_canjes(jugadores_userids)
+        self._eliminados = {
+            jugador_id
+            for jugador_id in jugadores_userids
+            if self._mapa.cantidad_de_paises_del_jugador(jugador_id) == 0
+        }
+        jugadores_activos = self.jugadores_activos()
+        jugadores_activos_ids = [int(j.userid()) for j in jugadores_activos]
+        self._turn_manager.inicializar_turnos(jugadores_activos_ids)
+        self._card_manager.inicializar_canjes(jugadores_activos_ids)
         self._start = True
 
     def empezo(self) -> bool:
@@ -111,6 +120,7 @@ class Game:
             jugador: Jugador al que asignar la tarjeta.
 
         """
+        self._validar_jugador_activo(jugador)
         self._card_manager.dame_una_tarjeta(jugador)
 
     def turnos(self) -> list[TurnoType]:
@@ -171,6 +181,7 @@ class Game:
             tarjetas: Lista de tarjetas a canjear.
 
         """
+        self._validar_jugador_activo(jugador)
         self._card_manager.canjear(jugador, tarjetas)
 
     def cant_jugadores(self) -> int:
@@ -180,7 +191,7 @@ class Game:
             Cantidad de jugadores.
 
         """
-        return len(self.lista_jugadores())
+        return len(self.jugadores_activos())
 
     def mapa(self) -> Mapa:
         """Obtiene el mapa del juego.
@@ -196,20 +207,24 @@ class Game:
         if self._finalizada:
             return
 
+        jugadores_activos = self.jugadores_activos()
+        if len(jugadores_activos) == 1:
+            self._finalizar_partida(jugadores_activos[0])
+            return
+
         ronda_completada = self._turn_manager.avanzar_turno()
         num = self._turn_manager.id_turno_actual()
         cant_jugadores = self.cant_jugadores()
 
-        if num == cant_jugadores or ronda_completada:
+        if num >= cant_jugadores or ronda_completada:
             ganador = self._victory_checker.verificar_condicion_victoria(
-                self.lista_jugadores()
+                jugadores_activos
             )
             if ganador:
                 self._finalizar_partida(ganador)
                 return
 
-            jugadores = self.lista_jugadores()
-            jugadores_rotados = self._turn_manager.rotar_jugadores(jugadores)
+            jugadores_rotados = self._turn_manager.rotar_jugadores(jugadores_activos)
 
             jugadores_userids = [int(j.userid()) for j in jugadores_rotados]
             es_segundo_turno = isinstance(
@@ -254,6 +269,36 @@ class Game:
         """
         return self.jugadores()
 
+    def jugadores_activos(self) -> list[IClientProtocol]:
+        """Devuelve participantes que todavía poseen al menos un turno.
+
+        La lista histórica de participantes se conserva para nombres, chat y
+        conexiones. Los turnos, refuerzos y condición de victoria usan sólo este
+        subconjunto.
+
+        Returns:
+            Jugadores que no fueron eliminados.
+
+        """
+        return [
+            jugador
+            for jugador in self._jugadores
+            if not self.jugador_esta_eliminado(jugador)
+        ]
+
+    def jugador_esta_eliminado(self, jugador: IClientProtocol | int) -> bool:
+        """Indica si el jugador perdió su último país en esta partida.
+
+        Args:
+            jugador: Cliente o ``userid`` a consultar.
+
+        Returns:
+            ``True`` cuando el jugador ya no puede recibir turnos ni acciones.
+
+        """
+        jugador_id = int(jugador) if isinstance(jugador, int) else int(jugador.userid())
+        return jugador_id in self._eliminados
+
     def lista_jugadores_orden_turno(self) -> list[int]:
         """Devuelve la lista de userids en el orden actual de los turnos.
 
@@ -261,7 +306,7 @@ class Game:
             Lista de userids (int) en el orden de los turnos.
 
         """
-        return self._turn_manager.lista_jugadores_orden_turno(self.lista_jugadores())
+        return self._turn_manager.lista_jugadores_orden_turno(self.jugadores_activos())
 
     def atacar(
         self,
@@ -358,6 +403,9 @@ class Game:
             self.mapa().agregar_una_unidad(pais_defensor)
             conquistado = True
 
+            if defensor_id is not None:
+                self._eliminar_jugador(defensor_id, atacante_id)
+
             LOGGER.info("%s ha conquistado %s", atacante_nombre, pais_defensor)
         else:
             LOGGER.debug(
@@ -388,6 +436,59 @@ class Game:
             "conquistado": conquistado,
         }
 
+    def _eliminar_jugador(self, eliminado_id: int, conquistador_id: int) -> bool:
+        """Registra una eliminación y sincroniza el estado con los clientes.
+
+        La operación es idempotente: la marca en ``_eliminados`` se escribe antes
+        de transferir tarjetas, por lo que una repetición no puede entregar
+        tarjetas ni publicar una segunda eliminación.
+
+        Args:
+            eliminado_id: Jugador que acaba de perder su último país.
+            conquistador_id: Jugador que conquistó ese país.
+
+        Returns:
+            ``True`` si se registró una eliminación nueva.
+
+        """
+        if (
+            eliminado_id in self._eliminados
+            or self._mapa.cantidad_de_paises_del_jugador(eliminado_id) > 0
+        ):
+            return False
+
+        self._eliminados.add(eliminado_id)
+        self._turn_manager.eliminar_jugador(eliminado_id)
+        tarjetas_transferidas = self._card_manager.transferir_tarjetas_al_conquistador(
+            eliminado_id, conquistador_id
+        )
+        eliminado_nombre = self._username_de(eliminado_id)
+        conquistador_nombre = self._username_de(conquistador_id)
+        LOGGER.info(
+            "Jugador eliminado: %s; %s recibió %s tarjetas",
+            eliminado_nombre,
+            conquistador_nombre,
+            tarjetas_transferidas,
+        )
+        self._server.enviar_sistema(f"{eliminado_nombre} fue eliminado de la partida.")
+        self._server.enviar_colores_asignados()
+
+        jugadores_activos = self.jugadores_activos()
+        if len(jugadores_activos) == 1:
+            self._finalizar_partida(jugadores_activos[0])
+
+        return True
+
+    def _validar_jugador_activo(self, jugador: IClientProtocol | int) -> None:
+        """Rechaza recompensas y canjes solicitados por jugadores eliminados.
+
+        Raises:
+            PlayerEliminatedError: Si el jugador ya perdió su último país.
+
+        """
+        if self.jugador_esta_eliminado(jugador):
+            raise PlayerEliminatedError
+
     def _username_de(self, userid: int | None) -> str:
         """Resuelve el username de un userid usando los jugadores conectados.
 
@@ -412,6 +513,7 @@ class Game:
             jugador: Jugador a marcar como elegible.
 
         """
+        self._validar_jugador_activo(jugador)
         self._card_manager.marcar_jugador_puede_reclamar(jugador)
 
     def puede_reclamar_tarjeta(self, jugador: IClientProtocol) -> bool:
@@ -424,7 +526,9 @@ class Game:
             True si el jugador puede reclamar tarjeta, False en caso contrario.
 
         """
-        return self._card_manager.puede_reclamar_tarjeta(jugador)
+        return not self.jugador_esta_eliminado(
+            jugador
+        ) and self._card_manager.puede_reclamar_tarjeta(jugador)
 
     def reclamar_tarjeta_jugador(self, jugador: IClientProtocol) -> None:
         """Remueve al jugador de la lista de elegibles tras reclamar.
@@ -433,6 +537,7 @@ class Game:
             jugador: Jugador que reclamó la tarjeta.
 
         """
+        self._validar_jugador_activo(jugador)
         self._card_manager.reclamar_tarjeta_jugador(jugador)
 
     def limpiar_elegibilidad_reclamar(self) -> None:

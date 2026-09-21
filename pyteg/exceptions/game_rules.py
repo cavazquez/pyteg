@@ -22,6 +22,19 @@ class NotPlayerTurnError(GameRuleViolationError):
         super().__init__(mensaje)
 
 
+class PlayerEliminatedError(GameRuleViolationError):
+    """Excepción cuando un jugador eliminado intenta modificar la partida."""
+
+    def __init__(self, mensaje: str = "Has sido eliminado de la partida") -> None:
+        """Inicializa la excepción.
+
+        Args:
+            mensaje: Mensaje descriptivo del rechazo.
+
+        """
+        super().__init__(mensaje)
+
+
 class CountryNotFoundError(GameRuleViolationError):
     """Excepción cuando se referencia un país inexistente en el mapa."""
 

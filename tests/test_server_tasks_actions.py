@@ -9,6 +9,7 @@ from pyteg.server.tasks import (
     ServerTaskAgregarUnidad,
     ServerTaskAtacar,
     ServerTaskMoverUnidad,
+    ServerTaskSolicitarTarjetas,
 )
 
 
@@ -214,6 +215,7 @@ class FakeGame:
         self._turno = turno
         self.atacar_called_with: tuple[str, str, int] | None = None
         self.tarjeta_marcada = False
+        self.eliminados: set[int] = set()
 
     def turno_actual(self) -> FakeTurno | PrimerTurno:
         """Obtiene el turno actual.
@@ -263,6 +265,19 @@ class FakeGame:
 
         """
         self.tarjeta_marcada = True
+
+    def jugador_esta_eliminado(self, jugador: object) -> bool:
+        """Indica si el jugador fue eliminado en esta partida falsa.
+
+        Returns:
+            ``True`` si el ``userid`` del jugador está marcado como eliminado.
+
+        """
+        userid = getattr(jugador, "userid", None)
+        if not callable(userid):
+            return False
+        jugador_id = int(userid())
+        return jugador_id in self.eliminados
 
 
 class FakeServer:
@@ -443,6 +458,30 @@ class ServerTaskTests(unittest.TestCase):
         self.assertEqual(self.mapa.cantidad_unidades("Origen"), 3)
         self.assertEqual(self.mapa.cantidad_unidades("Vecino"), 1)
         self.assertFalse(self.server.sent_map)
+
+    def test_jugador_eliminado_no_puede_modificar_el_mapa(self) -> None:
+        """La validación común rechaza acciones de un jugador eliminado."""
+        self.server.game.eliminados.add(self.client.userid())
+        payload = {"origen": "Origen", "destino": "Vecino", "cantidad": 1}
+        task = self._make_task(ServerTaskMoverUnidad, payload)
+
+        task.run(self.client)
+
+        self.assertIn("eliminado", self.client.transmisor.error_chat_messages[-1])
+        self.assertEqual(self.mapa.cantidad_unidades("Origen"), 3)
+        self.assertEqual(self.mapa.cantidad_unidades("Vecino"), 1)
+        self.assertFalse(self.server.sent_map)
+
+    def test_jugador_eliminado_no_puede_solicitar_sus_tarjetas(self) -> None:
+        """Un eliminado tampoco puede ejecutar comandos de consulta del juego."""
+        self.server.game.eliminados.add(self.client.userid())
+        task = self._make_task(
+            ServerTaskSolicitarTarjetas, {"mensaje": "solicitar_tarjetas"}
+        )
+
+        task.run(self.client)
+
+        self.assertIn("eliminado", self.client.transmisor.error_chat_messages[-1])
 
     def test_mover_unidad_moves_own_adjacent_countries_on_active_turn(self) -> None:
         """Un movimiento válido conserva unidades y deja una en el origen."""
