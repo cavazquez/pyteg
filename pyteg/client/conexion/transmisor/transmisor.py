@@ -15,6 +15,7 @@ from pyteg.client.msg import (
     MsgEmpezar,
     MsgEmpezarPartida,
     MsgFinalizarTurno,
+    MsgHello,
     MsgLanzarMisil,
     MsgMoverUnidad,
     MsgReclamarTarjeta,
@@ -22,6 +23,7 @@ from pyteg.client.msg import (
     MsgSeleccionarColor,
     MsgSetUsername,
     MsgSolicitarTarjetas,
+    MsgVolverLobby,
 )
 from pyteg.logger import get_logger
 
@@ -104,6 +106,10 @@ class ClientTransmisor(IClientTransmisor):
         msg = MsgEmpezarPartida()
         self._conn.send_data(msg.to_json())
 
+    def volver_lobby(self) -> None:
+        """Solicita al servidor limpiar la partida y reabrir el lobby."""
+        self._conn.send_data(MsgVolverLobby().to_json())
+
     def set_username(self, username: str) -> None:
         """Establece el nombre de usuario.
 
@@ -113,6 +119,26 @@ class ClientTransmisor(IClientTransmisor):
         """
         msg = MsgSetUsername(username)
         self._conn.send_data(msg.to_json())
+
+    def hello(
+        self,
+        protocol_version: str,
+        theme: str,
+        map_hash: str,
+        *,
+        capabilities: list[str] | None = None,
+        rules: list[str] | None = None,
+    ) -> None:
+        """Negocia el contrato de protocolo con el servidor."""
+        self._conn.send_data(
+            MsgHello(
+                protocol_version,
+                theme,
+                map_hash,
+                capabilities=capabilities,
+                rules=rules,
+            ).to_json()
+        )
 
     def reconectar(self, user_id: int, token: str) -> None:
         """Solicita recuperar una sesión de juego desconectada."""

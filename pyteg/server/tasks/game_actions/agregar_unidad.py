@@ -12,6 +12,7 @@ from pyteg.core.turnos.unit_pool import (
 from pyteg.server.juego.validators import (
     CountryOwnershipValidator,
     GameStateValidator,
+    PhaseValidator,
     TurnValidator,
     UnitTypeValidator,
     ValidationError,
@@ -86,6 +87,8 @@ class ServerTaskAgregarUnidad(IServerTask[AgregarUnidadTaskData]):
 
         TurnValidator.validate_turn(client, context.game)
         GameStateValidator.validate_game_started(context.game)
+        if self._phase_negotiated(client):
+            PhaseValidator.validate_placement(context.game)
 
         CountryOwnershipValidator.validate_ownership(client, context.mapa, self._pais)
 
@@ -101,6 +104,10 @@ class ServerTaskAgregarUnidad(IServerTask[AgregarUnidadTaskData]):
             context.mapa.agregar_una_unidad(self._pais)
             consumir_unidad_reparto(turno_actual, continente_pais)
 
+        actualizar_fase = getattr(context.game, "_actualizar_fase", None)
+        if callable(actualizar_fase):
+            actualizar_fase()
+
         msg = (
             f"Se agregaron {self._cantidad} unidad(es) de tipo {self._tipo_unidad}"
             f" en {self._pais}"
@@ -110,3 +117,11 @@ class ServerTaskAgregarUnidad(IServerTask[AgregarUnidadTaskData]):
         context.enviar_mapa()
 
         context.enviar_unidades_disponibles()
+        enviar_fase = getattr(context, "enviar_fase", None)
+        if callable(enviar_fase):
+            enviar_fase()
+
+    @staticmethod
+    def _phase_negotiated(client: IClientProtocol) -> bool:
+        status = getattr(client, "handshake_status", None)
+        return callable(status) and status() is not None

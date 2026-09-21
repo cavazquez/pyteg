@@ -142,11 +142,69 @@ def _is_integer_list(value: object) -> bool:
     return isinstance(value, list) and all(type(item) is int for item in value)
 
 
+def _is_string_list(value: object) -> bool:
+    return isinstance(value, list) and all(_is_nonempty_string(item) for item in value)
+
+
+def _is_snapshot_players(value: object) -> bool:  # noqa: PLR0911
+    if not isinstance(value, list):
+        return False
+    for player in value:
+        if not isinstance(player, dict):
+            return False
+        if set(player) != {"userid", "username", "connected", "eliminated"}:
+            return False
+        if not _integer_in_range(1)(player["userid"]):
+            return False
+        if not _is_string(player["username"]):
+            return False
+        if not _is_boolean(player["connected"]) or not _is_boolean(
+            player["eliminated"]
+        ):
+            return False
+    return True
+
+
+def _is_snapshot_countries(value: object) -> bool:
+    if not isinstance(value, dict):
+        return False
+    for name, country in value.items():
+        if not _is_nonempty_string(name) or not isinstance(country, dict):
+            return False
+        if set(country) != {"userid", "unidades"}:
+            return False
+        if not _nullable(_integer_in_range(1))(country["userid"]):
+            return False
+        if not _integer_in_range(0)(country["unidades"]):
+            return False
+    return True
+
+
+def _is_snapshot_turn(value: object) -> bool:
+    if not isinstance(value, dict):
+        return False
+    return (
+        set(value) == {"num_turno", "num_ronda", "jugador_id"}
+        and _integer_in_range(0)(value["num_turno"])
+        and _integer_in_range(1)(value["num_ronda"])
+        and _nullable(_integer_in_range(1))(value["jugador_id"])
+    )
+
+
 _POSITIVE_INTEGER = _integer_in_range(1)
 _NONNEGATIVE_INTEGER = _integer_in_range(0)
 _DICE_COUNT = _integer_in_range(1, 3)
 
 _SERVER_COMMAND_SCHEMAS: dict[str, _MessageSchema] = {
+    "solicitar_snapshot": _MessageSchema({}, {}),
+    "hello": _MessageSchema(
+        {
+            "protocol_version": _is_nonempty_string,
+            "theme": _is_nonempty_string,
+            "map_hash": _is_nonempty_string,
+        },
+        {"capabilities": _is_string_list, "rules": _is_string_list},
+    ),
     "chat": _MessageSchema({"msg": _is_string}, {}),
     "empezar": _MessageSchema(
         {},
@@ -158,6 +216,7 @@ _SERVER_COMMAND_SCHEMAS: dict[str, _MessageSchema] = {
         },
     ),
     "empezar_partida": _MessageSchema({}, {}),
+    "volver_lobby": _MessageSchema({}, {}),
     "seleccionar_color": _MessageSchema({"color": _is_nonempty_string}, {}),
     "set_username": _MessageSchema({"username": _is_nonempty_string}, {}),
     "reconectar": _MessageSchema(
@@ -199,9 +258,41 @@ _SERVER_COMMAND_SCHEMAS: dict[str, _MessageSchema] = {
 }
 
 _CLIENT_EVENT_SCHEMAS: dict[str, _MessageSchema] = {
+    "snapshot": _MessageSchema(
+        {
+            "revision": _NONNEGATIVE_INTEGER,
+            "estado": _is_nonempty_string,
+            "theme": _is_nonempty_string,
+            "map_hash": _is_nonempty_string,
+            "players": _is_snapshot_players,
+            "countries": _is_snapshot_countries,
+        },
+        {"fase": _is_nonempty_string, "turno": _is_snapshot_turn},
+    ),
+    "command_result": _MessageSchema(
+        {
+            "command_id": _is_nonempty_string,
+            "accepted": _is_boolean,
+            "revision": _NONNEGATIVE_INTEGER,
+        },
+        {"error_code": _is_nonempty_string},
+    ),
+    "hello": _MessageSchema(
+        {
+            "protocol_version": _is_nonempty_string,
+            "theme": _is_nonempty_string,
+            "map_hash": _is_nonempty_string,
+        },
+        {"capabilities": _is_string_list, "rules": _is_string_list},
+    ),
+    "hello_ack": _MessageSchema({"accepted": _is_boolean}, {}),
     "chat": _MessageSchema({"msg": _is_string}, {"msg_type": _is_string}),
     "sosadmin": _MessageSchema({}, {}),
     "estado": _MessageSchema({"estado": _is_nonempty_string}, {}),
+    "fase": _MessageSchema(
+        {"fase": _is_nonempty_string, "jugador_id": _POSITIVE_INTEGER},
+        {"unidades_pendientes": _NONNEGATIVE_INTEGER},
+    ),
     "color_asignado": _MessageSchema(
         {
             "id": _POSITIVE_INTEGER,
@@ -318,7 +409,7 @@ _CLIENT_EVENT_SCHEMAS: dict[str, _MessageSchema] = {
 }
 
 
-def _validate_message(
+def _validate_message(  # noqa: C901
     payload: object,
     schemas: Mapping[str, _MessageSchema],
     *,
@@ -354,10 +445,17 @@ def _validate_message(
         msg = f"Mensaje desconocido: {discriminator}"
         raise MessageValidationError(_ERROR_UNKNOWN_MESSAGE, msg)
 
-    allowed_fields = {"mensaje", *schema.required, *schema.optional}
+    # Todos los comandos pueden llevar un identificador de idempotencia. Se
+    # mantiene opcional para clientes legacy, pero cuando aparece siempre se
+    # valida como cadena no vacía.
+    allowed_fields = {"mensaje", "command_id", *schema.required, *schema.optional}
     unexpected = sorted(set(payload).difference(allowed_fields))
     if unexpected:
         msg = f"Campo(s) no permitido(s) en {discriminator}: {', '.join(unexpected)}"
+        raise MessageValidationError(_ERROR_INVALID_FIELD, msg)
+
+    if "command_id" in payload and not _is_nonempty_string(payload["command_id"]):
+        msg = f"El campo 'command_id' no es válido para {discriminator}"
         raise MessageValidationError(_ERROR_INVALID_FIELD, msg)
 
     for field, validator in schema.required.items():

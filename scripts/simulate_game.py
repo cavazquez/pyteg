@@ -32,6 +32,7 @@ import subprocess  # noqa: S404 -- launches only the local server process
 import sys
 import time
 import tomllib
+import uuid
 from collections import Counter, deque
 from dataclasses import dataclass, field
 from operator import itemgetter
@@ -48,6 +49,7 @@ from pyteg.config import (
     MISSILE_DAMAGE_DISTANCE_3,
     MISSILE_MAX_DISTANCE,
 )
+from pyteg.protocol import PROTOCOL_VERSION, map_hash_for_theme
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -87,6 +89,7 @@ class Bot:
     players_initialized: bool = False
     session_token: str | None = None
     pending_session_token: str | None = None
+    handshake_accepted: bool = False
 
     def receive(self) -> list[dict[str, Any]]:
         """Read complete frames, retaining partial bytes across TCP receives.
@@ -147,6 +150,10 @@ class Bot:
             handler(data)
         if kind == "error" or data.get("msg_type") == "error":
             self.errors.append(data)
+        if kind == "command_result" and data.get("accepted") is False:
+            self.errors.append(data)
+        if kind == "hello_ack" and data.get("accepted") is True:
+            self.handshake_accepted = True
 
     def _apply_user_id(self, data: dict[str, Any]) -> None:
         # The first ID is ours; subsequent IDs describe other players.
@@ -339,14 +346,18 @@ class Simulation:
 
         """
         self.commands[kind] += 1
-        self._send(bot, {"mensaje": kind, **fields})
+        command_id = uuid.uuid4().hex
+        self._send(bot, {"mensaje": kind, "command_id": command_id, **fields})
         marker = f"SIM_BARRIER_{sum(self.commands.values())}"
         if kind == "reconectar":
             self._wait(
                 lambda: bot.reconnected,
                 "reconnection confirmation",
             )
-        self._send(bot, {"mensaje": "chat", "msg": marker})
+        self._send(
+            bot,
+            {"mensaje": "chat", "command_id": uuid.uuid4().hex, "msg": marker},
+        )
         self._wait(
             lambda: (
                 all(peer.barrier.endswith(marker) for peer in self.connected_bots())
@@ -420,6 +431,15 @@ class Simulation:
                 lambda: bool(self.bots[-1].userid and self.bots[-1].state),
                 "client handshake",
             )
+            self.command(
+                bot,
+                "hello",
+                protocol_version=PROTOCOL_VERSION,
+                theme=self.args.theme,
+                map_hash=map_hash_for_theme(self.args.theme),
+                capabilities=["snapshots", "command_results", "reconnect"],
+                rules=["validated_phases", "one_card_per_turn"],
+            )
             self.command(bot, "set_username", username=f"Bot_{bot.userid}")
 
     def disconnect_client(self) -> None:
@@ -491,6 +511,22 @@ class Simulation:
         self._wait(
             lambda: bool(replacement.state and replacement.pending_session_token),
             "reconnection handshake",
+        )
+        self._send(
+            replacement,
+            {
+                "mensaje": "hello",
+                "command_id": uuid.uuid4().hex,
+                "protocol_version": PROTOCOL_VERSION,
+                "theme": self.args.theme,
+                "map_hash": map_hash_for_theme(self.args.theme),
+                "capabilities": ["snapshots", "command_results", "reconnect"],
+                "rules": ["validated_phases", "one_card_per_turn"],
+            },
+        )
+        self._wait(
+            lambda: replacement.handshake_accepted,
+            "reconnection protocol handshake",
         )
         self.command(
             replacement,
@@ -735,6 +771,7 @@ class Simulation:
 
     def attack(self, bot: Bot) -> None:
         """Attack favorable adjacent targets and transfer after each conquest."""
+        claimed_this_turn = False
         while True:
             options = [
                 (country, neighbor)
@@ -771,7 +808,9 @@ class Simulation:
                         destino=target,
                         cantidad=remaining,
                     )
-                self.claim_card(bot)
+                if not claimed_this_turn:
+                    self.claim_card(bot)
+                    claimed_this_turn = True
 
     def _start_game(self) -> None:
         """Start a configured game through the public admin protocol."""

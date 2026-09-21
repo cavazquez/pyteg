@@ -28,9 +28,18 @@ class Mazo:
 
         """
         tarjetas = self.build_tarjetas_de_paises(paises, simbolos)
+        self._paises = list(paises)
+        self._simbolos = list(simbolos)
         self.mazo: dict[str, TarjetaDePais] = {}
         for tarjeta in tarjetas:
             self.mazo[tarjeta.pais] = tarjeta
+
+    def reiniciar(self) -> None:
+        """Recrea las tarjetas para una revancha sin estado heredado."""
+        self.mazo = {
+            tarjeta.pais: tarjeta
+            for tarjeta in self.build_tarjetas_de_paises(self._paises, self._simbolos)
+        }
 
     def build_tarjetas_de_paises(
         self, paises: list[str], simbolos: list[str]

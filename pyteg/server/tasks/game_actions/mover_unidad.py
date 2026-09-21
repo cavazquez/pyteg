@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 from pyteg.server.juego.validators import (
     AdjacencyValidator,
     CountryOwnershipValidator,
+    PhaseValidator,
     TurnValidator,
     UnitValidator,
     ValidationError,
@@ -56,6 +57,8 @@ class ServerTaskMoverUnidad(IServerTask[MoverUnidadTaskData]):
             return
 
         TurnValidator.validate_turn(client, context.game)
+        if self._phase_negotiated(client):
+            PhaseValidator.validate_actions(context.game)
 
         CountryOwnershipValidator.validate_ownership(client, context.mapa, self._origen)
 
@@ -78,3 +81,8 @@ class ServerTaskMoverUnidad(IServerTask[MoverUnidadTaskData]):
         )
 
         context.enviar_mapa()
+
+    @staticmethod
+    def _phase_negotiated(client: IClientProtocol) -> bool:
+        status = getattr(client, "handshake_status", None)
+        return callable(status) and status() is not None

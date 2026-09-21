@@ -20,6 +20,7 @@ from pyteg.server.tasks.game_actions import (
     ServerTaskFinalizarTurno,
     ServerTaskMoverUnidad,
 )
+from pyteg.server.tasks.handshake import ServerTaskHello
 from pyteg.server.tasks.lobby import (
     ServerTaskChat,
     ServerTaskEmpezar,
@@ -28,6 +29,8 @@ from pyteg.server.tasks.lobby import (
     ServerTaskSetUsername,
 )
 from pyteg.server.tasks.reconectar import ServerTaskReconectar
+from pyteg.server.tasks.rematch import ServerTaskVolverLobby
+from pyteg.server.tasks.snapshot import ServerTaskSolicitarSnapshot
 from pyteg.server.tasks.types import BaseTaskData
 
 # Cada factory acepta `BaseTaskData` (el TypedDict mínimo) y devuelve una
@@ -52,6 +55,9 @@ dict_task: dict[str, TaskFactory] = {
     "canjear_misil": ServerTaskCanjearMisil,
     "lanzar_misil": ServerTaskLanzarMisil,
     "reconectar": ServerTaskReconectar,
+    "hello": ServerTaskHello,
+    "solicitar_snapshot": ServerTaskSolicitarSnapshot,
+    "volver_lobby": ServerTaskVolverLobby,
 }
 
 __all__ = [
@@ -66,6 +72,7 @@ __all__ = [
     "ServerTaskEmpezar",
     "ServerTaskEmpezarPartida",
     "ServerTaskFinalizarTurno",
+    "ServerTaskHello",
     "ServerTaskLanzarMisil",
     "ServerTaskMoverUnidad",
     "ServerTaskNull",
@@ -73,7 +80,9 @@ __all__ = [
     "ServerTaskReconectar",
     "ServerTaskSeleccionarColor",
     "ServerTaskSetUsername",
+    "ServerTaskSolicitarSnapshot",
     "ServerTaskSolicitarTarjetas",
+    "ServerTaskVolverLobby",
     "TaskFactory",
     "dict_task",
 ]

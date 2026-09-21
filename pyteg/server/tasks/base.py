@@ -56,7 +56,7 @@ class IServerTask[TData: BaseTaskData](ABC):
         self._validator = ServerStateValidator()
 
     @abstractmethod
-    def _execute(self, client: IClientProtocol, context: GameContext) -> None:
+    def _execute(self, client: IClientProtocol, context: GameContext) -> bool | None:
         """Método que implementa la lógica específica de cada tarea.
 
         Args:
@@ -65,7 +65,7 @@ class IServerTask[TData: BaseTaskData](ABC):
 
         """
 
-    def run(self, client: IClientProtocol) -> None:
+    def run(self, client: IClientProtocol) -> bool:
         """Ejecuta la tarea validando primero el estado del servidor.
 
         Captura todas las excepciones de tipo GameRuleViolationError y las
@@ -74,6 +74,9 @@ class IServerTask[TData: BaseTaskData](ABC):
 
         Args:
             client: Cliente que ejecuta la tarea.
+
+        Returns:
+            ``True`` si la tarea se ejecutó; ``False`` si fue rechazada.
 
         Raises:
             PlayerEliminatedError: Si el cliente eliminado intenta una acción
@@ -92,7 +95,7 @@ class IServerTask[TData: BaseTaskData](ABC):
                     client.userid(),
                     self._action_name,
                 )
-                return
+                return False
 
             # Validar estado usando TaskValidator cuando corresponda
             if self._action_name is not None:
@@ -109,16 +112,19 @@ class IServerTask[TData: BaseTaskData](ABC):
                 raise PlayerEliminatedError
 
             # Ejecutar la tarea si la validación pasa
-            self._execute(client, context)
+            executed = self._execute(client, context)
+            return executed is not False  # noqa: TRY300
 
         except GameRuleViolationError as e:
             # Estandarizar: todas las violaciones de reglas se envían como error de chat
             client.transmisor.enviar_error_chat(e.mensaje)
             LOGGER.debug("Error de regla del juego: %s", e.mensaje)
+            return False
         except PyTegError as e:
             # Otras excepciones de PyTeg también se envían como error
             client.transmisor.enviar_error_chat(e.mensaje)
             LOGGER.warning("Error de PyTeg: %s", e.mensaje)
+            return False
 
     def _jugador_eliminado_no_puede_actuar(
         self, context: GameContext, client: IClientProtocol

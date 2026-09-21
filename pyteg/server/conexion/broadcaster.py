@@ -69,6 +69,11 @@ class ServerMessageBroadcaster:
         # Publicar evento en MessageBus
         get_message_bus().publish(EVENT_ESTADO_CAMBIADO, {"estado": estado})
 
+    def enviar_snapshot(self, snapshot: dict[str, Any]) -> None:
+        """Difunde un snapshot público de revisión única."""
+        for client in self._dame_clientes():
+            client.transmisor.enviar_snapshot(snapshot)
+
     def enviar_chat(self, username: str, msg: str) -> None:
         """Envía un mensaje de chat a todos los clientes.
 

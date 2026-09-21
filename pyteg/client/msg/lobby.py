@@ -45,6 +45,7 @@ class MsgEmpezar(IMsg):
         objetivos_secretos: bool = False,
         misiles_habilitados: bool = False,
     ) -> None:
+        """Inicializa el comando de negociación."""
         """Inicializa el mensaje para empezar la partida.
 
         Args:
@@ -128,6 +129,38 @@ class MsgSetUsername(IMsg):
         return json.dumps(data)
 
 
+class MsgHello(IMsg):
+    """Presenta la versión, el tema y el hash del mapa del cliente."""
+
+    def __init__(
+        self,
+        protocol_version: str,
+        theme: str,
+        map_hash: str,
+        *,
+        capabilities: list[str] | None = None,
+        rules: list[str] | None = None,
+    ) -> None:
+        """Inicializa el comando de negociación."""
+        self._data = {
+            "mensaje": "hello",
+            "protocol_version": protocol_version,
+            "theme": theme,
+            "map_hash": map_hash,
+            "capabilities": capabilities or [],
+            "rules": rules or [],
+        }
+
+    def to_json(self) -> str:
+        """Serializa el comando de negociación.
+
+        Returns:
+            JSON del comando.
+
+        """
+        return json.dumps(self._data)
+
+
 class MsgReconectar(IMsg):
     """Solicita recuperar una sesión desconectada."""
 
@@ -168,3 +201,16 @@ class MsgEmpezarPartida(IMsg):
             "mensaje": self._tipo,
         }
         return json.dumps(data)
+
+
+class MsgVolverLobby(IMsg):
+    """Solicita abrir el lobby para iniciar una revancha."""
+
+    def to_json(self) -> str:
+        """Serializa la solicitud de revancha.
+
+        Returns:
+            JSON con el discriminador del comando.
+
+        """
+        return json.dumps({"mensaje": "volver_lobby"})

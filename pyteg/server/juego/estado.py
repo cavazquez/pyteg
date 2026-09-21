@@ -52,6 +52,18 @@ class Estado:
             return True
         return False
 
+    def volver_al_lobby(self) -> bool:
+        """Reabre la sala después de una partida finalizada.
+
+        Returns:
+            ``True`` cuando se cambia desde ``FINALIZADO``.
+
+        """
+        if self._estado_actual != self.FINALIZADO:
+            return False
+        self._estado_actual = self.ESPERAR_JUGADORES
+        return True
+
     def estado_actual(self) -> str:
         """Obtener el estado actual.
 
@@ -106,12 +118,18 @@ class Estado:
 
         """
         return {
-            "empezar": [cls.INICIAL],
+            "empezar": [cls.INICIAL, cls.ESPERAR_JUGADORES],
             "empezar_partida": [cls.ESPERAR_JUGADORES],
             "seleccionar_color": [cls.INICIAL, cls.ESPERAR_JUGADORES],
             "set_username": [cls.INICIAL, cls.ESPERAR_JUGADORES],
             "reconectar": [cls.JUGANDO],
             "chat": [
+                cls.INICIAL,
+                cls.ESPERAR_JUGADORES,
+                cls.JUGANDO,
+                cls.FINALIZADO,
+            ],
+            "solicitar_snapshot": [
                 cls.INICIAL,
                 cls.ESPERAR_JUGADORES,
                 cls.JUGANDO,
@@ -127,6 +145,7 @@ class Estado:
             "canjear_tarjetas": [cls.JUGANDO],
             "canjear_misil": [cls.JUGANDO],
             "lanzar_misil": [cls.JUGANDO],
+            "volver_lobby": [cls.FINALIZADO],
         }
 
     def puede_ejecutar_accion(self, accion: str) -> bool:

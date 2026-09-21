@@ -36,10 +36,12 @@ timer para jugar.
 
 ## Qué se comprueba
 
-Después de cada acción, los bots esperan un eco de chat que sirve como barrera:
-el protocolo todavía no tiene identificadores de comando ni confirmaciones.
-Después de esa barrera, todos deben observar el mismo tablero, con propietarios
-válidos, todos los países presentes y al menos una unidad por país.
+Cada comando lleva un `command_id` y el servidor responde con `command_result`;
+los reintentos reciben el mismo resultado sin ejecutar la acción dos veces. Los
+bots también negocian versión, tema y hash del mapa mediante `hello`, y validan
+snapshots públicos con una revisión monotónica. Después de cada acción esperan
+la confirmación y comprueban que todos observen el mismo tablero, con
+propietarios válidos, todos los países presentes y al menos una unidad por país.
 
 Para aceptar la victoria, todos los clientes deben recibir el mismo ganador,
 ese jugador debe controlar el objetivo configurado y debe haber ocurrido al
@@ -51,6 +53,10 @@ Cada ejecución guarda:
   turnos/acciones, tablero final, hash del tablero, errores y alcance de la prueba.
 - `wire.jsonl`: todos los mensajes enviados y recibidos, con cliente y tiempo.
 - `server.log`: salida del proceso servidor.
+
+El workflow de CI ejecuta el mismo flujo con tres clientes, canjes, misiles y
+`--require-finalized`, y conserva `logs/simulations/classic-186` como artefacto
+cuando termina, también si la corrida falla.
 
 Los registros están bajo `logs/`, que el repositorio ignora en Git.
 
@@ -196,8 +202,9 @@ correctamente frames JSON terminados en NUL. **No se ejecutan el cliente Qt,
 su transporte ni su interfaz gráfica**, por lo que esta simulación no demuestra
 que un usuario pueda jugar la misma partida sin problemas de interfaz o red.
 
-Las acciones se envían secuencialmente en conexiones locales. No se simulan
-fragmentación adversaria, clientes lentos, comandos simultáneos, latencia WAN
+Las acciones se envían secuencialmente en conexiones locales. La fragmentación
+del framing y las colas acotadas tienen pruebas unitarias separadas; este
+harness no simula clientes lentos, comandos simultáneos, latencia WAN
 ni vencimiento del timer. Las opciones de desconexión y reconexión ejercitan el
 cierre real de un socket, la continuidad de los clientes restantes y el
 handshake autenticado de recuperación. Los objetivos secretos siguen fuera de

@@ -2,18 +2,25 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
+import uuid
 from typing import Any
 
 from PySide6.QtNetwork import QAbstractSocket, QTcpSocket
 from PySide6.QtWidgets import QMessageBox, QWidget
 
 from pyteg.client.conexion.transmisor import ClientTransmisor
+from pyteg.client.event_processor import ClientEventProcessor
+from pyteg.client.state_model import ClientStateModel
 from pyteg.client.tasks.manager import ClientTaskManager
 from pyteg.codecs_utils import FrameCodecError, NulDelimitedUtf8Codec
+from pyteg.config import DEFAULT_MAP_THEME
 from pyteg.i18n import translate as _
 from pyteg.logger import get_logger
+from pyteg.protocol import PROTOCOL_VERSION
 from pyteg.protocol_validation import MessageValidationError, validate_client_event
+from pyteg.utils import get_resource_path
 
 _LOG = get_logger("client.connection")
 
@@ -42,6 +49,9 @@ class ConnectionClient(QWidget):
         self._port = port
         self._username = username
         self._main_window = main_window
+        self.state_model = ClientStateModel()
+        self.event_processor = ClientEventProcessor(self.state_model)
+        main_window.client_state_model = self.state_model
         self._socket = QTcpSocket()
         self._codec = NulDelimitedUtf8Codec()
         self._socket.readyRead.connect(self.read_data)
@@ -67,6 +77,31 @@ class ConnectionClient(QWidget):
         user_id = self._main_window.client.userid()
         token_getter = getattr(self._main_window.client, "reconnect_token", None)
         token = token_getter() if callable(token_getter) else None
+        # El servidor envía el hash en su anuncio ``hello``; para la conexión
+        # Qt local usamos el mismo cálculo canónico del tema configurado.
+        theme = getattr(
+            self._main_window,
+            "map_theme",
+            getattr(self._main_window, "theme", DEFAULT_MAP_THEME),
+        )
+        if not isinstance(theme, str) or not theme:
+            theme = DEFAULT_MAP_THEME
+        try:
+            digest = hashlib.sha256()
+            theme_dir = get_resource_path(f"themes/{theme}")
+            for filename in ("paises.toml", "adyacencias.toml"):
+                digest.update(filename.encode("utf-8"))
+                digest.update((theme_dir / filename).read_bytes())
+            map_hash = digest.hexdigest()
+        except OSError:
+            map_hash = "client-map-unknown"
+        self._main_window.transmisor.hello(
+            PROTOCOL_VERSION,
+            theme,
+            map_hash,
+            capabilities=["snapshots", "command_results", "reconnect"],
+            rules=["validated_phases", "one_card_per_turn"],
+        )
         if user_id is not None and token:
             self._main_window.transmisor.reconectar(user_id, token)
         self._main_window.transmisor.set_username(self._username)
@@ -98,6 +133,13 @@ class ConnectionClient(QWidget):
             data: Datos a enviar como string.
 
         """
+        try:
+            payload = json.loads(data)
+        except json.JSONDecodeError:
+            payload = None
+        if isinstance(payload, dict) and payload.get("mensaje") != "hello":
+            payload.setdefault("command_id", uuid.uuid4().hex)
+            data = json.dumps(payload, ensure_ascii=False)
         _LOG.debug("Enviando mensaje (%s bytes)", len(data))
         encode_data = NulDelimitedUtf8Codec.encode_frame(data)
         self._socket.write(encode_data)
@@ -136,6 +178,14 @@ class ConnectionClient(QWidget):
                     continue
 
                 _LOG.debug("JSON recibido: %s", validated_data["mensaje"])
+                applied = self.event_processor.process(validated_data)
+                if applied.gap:
+                    self.send_data(
+                        json.dumps({
+                            "mensaje": "solicitar_snapshot",
+                            "command_id": uuid.uuid4().hex,
+                        })
+                    )
                 try:
                     task = ClientTaskManager.msg_to_task(validated_data)
                     task.run(self._main_window)

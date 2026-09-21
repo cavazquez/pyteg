@@ -142,7 +142,15 @@ class ServerTaskEmpezarPartida(IServerTask[BaseTaskData]):
         self,
         client: IClientProtocol,
         context: GameContext,  # noqa: ARG002
-    ) -> None:
+    ) -> bool:
+        for jugador in client.server.dame_clientes():
+            estado_handshake = getattr(jugador, "handshake_status", None)
+            if callable(estado_handshake) and estado_handshake() is False:
+                client.transmisor.enviar_error(
+                    "handshake_required",
+                    "Hay un cliente incompatible en la sala; no se puede iniciar.",
+                )
+                return False
         if client.server.estado.empezar_partida():
             client.server.enviar_estado()
             client.server.empezar_partida()
@@ -151,6 +159,8 @@ class ServerTaskEmpezarPartida(IServerTask[BaseTaskData]):
                 "No se pudo empezar la partida desde el estado %s",
                 client.server.estado.estado_actual(),
             )
+            return False
+        return True
 
 
 class ServerTaskSetUsername(IServerTask[SetUsernameTaskData]):

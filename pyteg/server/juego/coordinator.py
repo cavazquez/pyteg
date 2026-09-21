@@ -189,6 +189,15 @@ class ServerGameCoordinator:
             self._objetivos_secretos.asignar_objetivos_aleatorios(jugadores)
             server.enviar_objetivos_secretos()
 
+        # Publicar una primera revisión completa cuando la asignación inicial
+        # ya terminó, para que todos los clientes arranquen con el mismo estado.
+        bump_revision = getattr(server, "bump_state_revision", None)
+        enviar_snapshot = getattr(server, "enviar_snapshot", None)
+        if callable(bump_revision):
+            bump_revision()
+        if callable(enviar_snapshot):
+            enviar_snapshot()
+
         # Iniciar el temporizador de turnos
         LOGGER.info("Iniciando temporizador de turnos...")
         self._turno_timer = TurnoTimer(
@@ -213,6 +222,31 @@ class ServerGameCoordinator:
 
         self._broadcaster.enviar_estado(self._estado.estado_actual())
         LOGGER.info("Partida finalizada")
+        return True
+
+    def volver_al_lobby(self, server: Any) -> bool:
+        """Limpia recursos de partida y conserva las conexiones activas.
+
+        Returns:
+            ``True`` si se reabrió la sala.
+
+        """
+        if not self._estado.volver_al_lobby():
+            return False
+        self.detener()
+        self._mapa.reiniciar()
+        self._mazo.reiniciar()
+        reiniciar_objetivos = getattr(self._objetivos_secretos, "reiniciar", None)
+        if callable(reiniciar_objetivos):
+            reiniciar_objetivos()
+        self._game = None
+        self._turno_timer = None
+        promover_admin = getattr(server, "promover_administrador", None)
+        if callable(promover_admin):
+            promover_admin()
+        server.enviar_estado()
+        server.bump_state_revision()
+        server.enviar_snapshot()
         return True
 
     def game(self) -> Game | None:

@@ -15,6 +15,7 @@ from pyteg.core.partida.victory_checker import VictoryChecker
 from pyteg.core.turnos.turnos import PrimerTurno, SegundoTurno, SiguientesTurnos
 from pyteg.exceptions import PlayerEliminatedError
 from pyteg.logger import get_logger
+from pyteg.server.juego.fase import FASE_ACCIONES, FASE_COLOCACION
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -65,6 +66,7 @@ class Game:
         self._reconnect_tokens: dict[int, str] = {}
         self._server = server  # Referencia al servidor para notificar cambios
         self._paises_para_victoria = paises_para_victoria
+        self._fase = FASE_COLOCACION
 
         # Inicializar gestor de turnos
         self._turn_manager = TurnManager(mapa)
@@ -103,6 +105,7 @@ class Game:
         self._turn_manager.inicializar_turnos(jugadores_activos_ids)
         self._card_manager.inicializar_canjes(jugadores_activos_ids)
         self._start = True
+        self._actualizar_fase()
 
     def empezo(self) -> bool:
         """Verifica si el juego ha comenzado.
@@ -168,6 +171,34 @@ class Game:
         """
         return self._turn_manager.num_ronda()
 
+    def fase_actual(self) -> str:
+        """Devuelve la fase del turno vigente.
+
+        Returns:
+            ``colocacion`` o ``acciones``.
+
+        """
+        return self._fase
+
+    def refuerzos_pendientes(self) -> int:
+        """Cantidad de refuerzos que el jugador actual aún puede colocar.
+
+        Returns:
+            Suma de unidades de colocación pendientes.
+
+        """
+        if not self._start:
+            return 0
+        turno = self._turn_manager.turno_actual()
+        unidades_por_tipo = turno.unidades_por_tipo()
+        return sum(max(0, int(cantidad)) for cantidad in unidades_por_tipo.values())
+
+    def _actualizar_fase(self) -> None:
+        """Sincroniza la fase con los refuerzos del turno actual."""
+        self._fase = (
+            FASE_COLOCACION if self.refuerzos_pendientes() > 0 else FASE_ACCIONES
+        )
+
     def cant_canjes(self, jugador: IClientProtocol | int) -> int:
         """Obtiene la cantidad de canjes realizados por un jugador.
 
@@ -227,6 +258,8 @@ class Game:
 
         if num >= cant_jugadores or ronda_completada:
             self._iniciar_nueva_ronda(jugadores_activos)
+        else:
+            self._actualizar_fase()
 
     def _iniciar_nueva_ronda(
         self, jugadores_activos: Sequence[IClientProtocol]
@@ -243,6 +276,7 @@ class Game:
         self._turn_manager.iniciar_nueva_ronda(
             jugadores_userids, es_segundo_turno=es_segundo_turno
         )
+        self._actualizar_fase()
 
         # Notificar al servidor que se completó una ronda para que actualice los
         # colores, la lista de jugadores y el turno anunciado.
@@ -319,6 +353,8 @@ class Game:
 
         self._desconectados.add(jugador_id)
         self._turn_manager.eliminar_jugador(jugador_id)
+        if self._turn_manager.turnos():
+            self._actualizar_fase()
         jugadores_activos = self.jugadores_activos()
         if len(jugadores_activos) == 1:
             self._finalizar_partida(jugadores_activos[0])

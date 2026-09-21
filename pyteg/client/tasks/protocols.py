@@ -71,6 +71,8 @@ class GameWindowProtocol(Protocol):
     tarjetas_jugador: list[TarjetaItem]
     misiles_habilitados: bool
     partida_finalizada: bool
+    fase_actual: str
+    unidades_pendientes_servidor: int
 
     def update_unidades_disponibles(self, unidades: dict[str, int]) -> None:
         """Actualiza el panel derecho con las unidades disponibles."""

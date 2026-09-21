@@ -42,6 +42,10 @@ class ServerLike(Protocol):
         """Envía el turno actual a todos los clientes."""
         ...
 
+    def enviar_fase(self) -> None:
+        """Envía la fase del turno actual."""
+        ...
+
     def misiles_habilitados(self) -> bool:
         """Retorna si los misiles están habilitados."""
         ...
@@ -136,6 +140,12 @@ class GameContext:
     def enviar_turno_actual(self) -> None:
         """Envía el turno actual a todos los clientes."""
         self._server.enviar_turno_actual()
+
+    def enviar_fase(self) -> None:
+        """Envía la fase del turno actual."""
+        enviar = getattr(self._server, "enviar_fase", None)
+        if callable(enviar):
+            enviar()
 
     def misiles_habilitados(self) -> bool:
         """Retorna si los misiles están habilitados.

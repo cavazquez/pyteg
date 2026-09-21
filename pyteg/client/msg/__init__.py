@@ -23,9 +23,11 @@ from pyteg.client.msg.lobby import (
     MsgChat,
     MsgEmpezar,
     MsgEmpezarPartida,
+    MsgHello,
     MsgReconectar,
     MsgSeleccionarColor,
     MsgSetUsername,
+    MsgVolverLobby,
 )
 from pyteg.client.msg.missiles import MsgCanjearMisil, MsgLanzarMisil
 
@@ -40,6 +42,7 @@ __all__ = [
     "MsgEmpezar",
     "MsgEmpezarPartida",
     "MsgFinalizarTurno",
+    "MsgHello",
     "MsgLanzarMisil",
     "MsgMoverUnidad",
     "MsgReclamarTarjeta",
@@ -47,4 +50,5 @@ __all__ = [
     "MsgSeleccionarColor",
     "MsgSetUsername",
     "MsgSolicitarTarjetas",
+    "MsgVolverLobby",
 ]

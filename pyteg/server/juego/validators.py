@@ -300,3 +300,34 @@ class AttackRestrictionValidator:
                 "Debe esperar al tercer turno."
             )
             raise InvalidActionError(msg)
+
+
+class PhaseValidator:
+    """Valida la fase autoritativa del turno en el servidor."""
+
+    @staticmethod
+    def _validate(game: Game | IGameProtocol | None, expected: str) -> None:
+        if game is None:
+            raise GameNotStartedError
+        fase_actual = getattr(game, "fase_actual", None)
+        # Los dobles antiguos de tests no exponen fase; sus validaciones
+        # existentes siguen siendo suficientes para esas unidades aisladas.
+        if not callable(fase_actual):
+            return
+        actual = str(fase_actual())
+        if actual != expected:
+            msg = (
+                "La acción no es válida en la fase actual "
+                f"({actual}); primero debe completar la colocación."
+            )
+            raise InvalidActionError(msg)
+
+    @classmethod
+    def validate_placement(cls, game: Game | IGameProtocol | None) -> None:
+        """Exige la fase de colocación."""
+        cls._validate(game, "colocacion")
+
+    @classmethod
+    def validate_actions(cls, game: Game | IGameProtocol | None) -> None:
+        """Exige la fase de acciones."""
+        cls._validate(game, "acciones")

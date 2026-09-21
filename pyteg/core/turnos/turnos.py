@@ -12,7 +12,12 @@ if TYPE_CHECKING:
 
 
 class SiguientesTurnos:
-    """Representa los turnos después del segundo turno."""
+    """Representa los turnos después del segundo turno.
+
+    Las unidades se calculan al entrar al turno, y no al construir toda la
+    ronda.  Así las pérdidas o conquistas ocurridas durante turnos anteriores
+    se reflejan en los refuerzos del jugador que todavía no comenzó.
+    """
 
     def __init__(self, jugador: int, mapa: Mapa) -> None:
         """Inicializa un turno posterior al segundo.
@@ -23,10 +28,23 @@ class SiguientesTurnos:
 
         """
         self._jugador = jugador
-        self._unidades = Calculos.calcular_unidades_generales(mapa, jugador)
+        self._mapa = mapa
+        self._unidades = 0
+        self._unidades_calculadas = False
         for spec in CONTINENTS:
-            cantidad = Calculos.calcular_unidades_continente(mapa, jugador, spec.map_id)
+            setattr(self, f"_unidades_{spec.unit_suffix}", 0)
+
+    def preparar(self) -> None:
+        """Calcula los refuerzos una sola vez al comenzar este turno."""
+        if self._unidades_calculadas:
+            return
+        self._unidades = Calculos.calcular_unidades_generales(self._mapa, self._jugador)
+        for spec in CONTINENTS:
+            cantidad = Calculos.calcular_unidades_continente(
+                self._mapa, self._jugador, spec.map_id
+            )
             setattr(self, f"_unidades_{spec.unit_suffix}", cantidad)
+        self._unidades_calculadas = True
 
     def unidades_por_tipo(self) -> dict[str, int]:
         """Retorna todas las unidades disponibles clasificadas por tipo/continente.
@@ -36,6 +54,7 @@ class SiguientesTurnos:
             (solo continentes con valor > 0).
 
         """
+        self.preparar()
         result: dict[str, int] = {"infanteria": self._unidades}
         for spec in CONTINENTS:
             cantidad = getattr(self, f"_unidades_{spec.unit_suffix}", 0)
@@ -59,10 +78,12 @@ class SiguientesTurnos:
             num: Cantidad de unidades a agregar.
 
         """
+        self.preparar()
         self._unidades += num
 
     def usar_unidad(self) -> None:
         """Consume una unidad general."""
+        self.preparar()
         self._unidades -= 1
 
     def cant_unidades_por_continente(self, map_id: str) -> int:
@@ -78,10 +99,12 @@ class SiguientesTurnos:
         suffix = CONTINENT_UNIT_SUFFIX.get(map_id)
         if suffix is None:
             return 0
+        self.preparar()
         return int(getattr(self, f"_unidades_{suffix}", 0))
 
     def usar_unidad_por_continente(self, map_id: str) -> None:
         """Consume una unidad de bonificación del continente indicado."""
+        self.preparar()
         suffix = CONTINENT_UNIT_SUFFIX[map_id]
         attr = f"_unidades_{suffix}"
         setattr(self, attr, getattr(self, attr) - 1)
@@ -93,6 +116,7 @@ class SiguientesTurnos:
             Cantidad de unidades generales.
 
         """
+        self.preparar()
         return self._unidades
 
 
