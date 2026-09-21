@@ -233,3 +233,52 @@ class MsgEstado(IMsg):
         """
         data = {"mensaje": self._tipo, "estado": self._estado}
         return json.dumps(data)
+
+
+class MsgHello(IMsg):
+    """Anuncia la versión de protocolo y el mapa negociables."""
+
+    def __init__(
+        self,
+        protocol_version: str,
+        theme: str,
+        map_hash: str,
+        *,
+        capabilities: list[str] | None = None,
+        rules: list[str] | None = None,
+    ) -> None:
+        """Inicializa los datos de negociación."""
+        self._data = {
+            "mensaje": "hello",
+            "protocol_version": protocol_version,
+            "theme": theme,
+            "map_hash": map_hash,
+            "capabilities": capabilities or [],
+            "rules": rules or [],
+        }
+
+    def to_json(self) -> str:
+        """Serializa el anuncio de negociación.
+
+        Returns:
+            JSON del anuncio.
+
+        """
+        return json.dumps(self._data)
+
+
+class MsgHelloAck(IMsg):
+    """Confirma que el servidor aceptó la negociación."""
+
+    def __init__(self, accepted: bool = True) -> None:  # noqa: FBT001, FBT002
+        """Inicializa la confirmación."""
+        self._accepted = accepted
+
+    def to_json(self) -> str:
+        """Serializa la confirmación.
+
+        Returns:
+            JSON de la confirmación.
+
+        """
+        return json.dumps({"mensaje": "hello_ack", "accepted": self._accepted})

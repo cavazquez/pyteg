@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from pyteg.server.juego.validators import TurnValidator
+from pyteg.server.juego.validators import PhaseValidator, TurnValidator
 from pyteg.server.tasks.base import IServerTask
 from pyteg.server.tasks.types import BaseTaskData
 
@@ -28,6 +28,9 @@ class ServerTaskFinalizarTurno(IServerTask[BaseTaskData]):
 
     def _execute(self, client: IClientProtocol, context: GameContext) -> None:
         TurnValidator.validate_turn(client, context.game)
+        status = getattr(client, "handshake_status", None)
+        if callable(status) and status() is not None:
+            PhaseValidator.validate_actions(context.game)
 
         if context.game is not None:
             context.game.limpiar_elegibilidad_reclamar()

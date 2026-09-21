@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import secrets
 import threading
+from collections import OrderedDict
 from typing import TYPE_CHECKING, Any
 
 from pyteg.logger import get_logger
@@ -43,11 +44,13 @@ class Client:
         self._soy_admin = soy_admin
         self._reconnect_token = reconnect_token or secrets.token_urlsafe(32)
         self._pending_reconnect = False
+        self._handshake_status: bool | None = None
         self._color: IColor | None = None
         self.transmisor = ServerTransmisor(self._conn)
         self._logger = get_logger(f"server.client.{user_id}")
         self._cleanup_lock = threading.Lock()
         self._cleanup_completed = False
+        self._command_results: OrderedDict[str, dict[str, Any]] = OrderedDict()
 
     def asignar_color(self, color: IColor | None) -> None:
         """Asigna un color al cliente.
@@ -64,6 +67,10 @@ class Client:
 
         """
         return self._soy_admin
+
+    def asignar_admin(self, es_admin: bool) -> None:  # noqa: FBT001
+        """Actualiza el administrador de la sala sin cambiar su identidad."""
+        self._soy_admin = bool(es_admin)
 
     def reconnect_token(self) -> str:
         """Devuelve el token privado que permite recuperar la sesión.
@@ -90,6 +97,54 @@ class Client:
 
         """
         return self._pending_reconnect
+
+    def handshake_status(self) -> bool | None:
+        """Estado de la negociación: ``None`` mantiene compatibilidad legacy.
+
+        Returns:
+            ``True`` o ``False`` para una negociación explícita; ``None`` para
+            clientes legacy que todavía no la enviaron.
+
+        """
+        return self._handshake_status
+
+    def marcar_handshake(self, accepted: bool) -> None:  # noqa: FBT001
+        """Guarda el resultado de la negociación del protocolo."""
+        self._handshake_status = bool(accepted)
+
+    def command_result(self, command_id: str) -> dict[str, Any] | None:
+        """Obtiene un resultado cacheado para un reintento.
+
+        Returns:
+            Resultado anterior o ``None`` si es un comando nuevo.
+
+        """
+        result = self._command_results.get(command_id)
+        if result is not None:
+            self._command_results.move_to_end(command_id)
+        return result
+
+    def remember_command_result(
+        self, command_id: str, result: dict[str, Any], *, limit: int = 256
+    ) -> None:
+        """Guarda resultados recientes con retención acotada."""
+        self._command_results[command_id] = dict(result)
+        self._command_results.move_to_end(command_id)
+        while len(self._command_results) > limit:
+            self._command_results.popitem(last=False)
+
+    def export_command_results(self) -> dict[str, dict[str, Any]]:
+        """Exporta la caché para transferirla durante una reconexión.
+
+        Returns:
+            Copia de los resultados recientes.
+
+        """
+        return {key: dict(value) for key, value in self._command_results.items()}
+
+    def import_command_results(self, values: dict[str, dict[str, Any]]) -> None:
+        """Restaura resultados de la conexión histórica."""
+        self._command_results.update(values)
 
     def reasignar_userid(self, user_id: int) -> None:
         """Reasigna el identificador tras validar una reconexión."""
@@ -181,12 +236,29 @@ class Client:
         finally:
             self.server.quitarme(self._user_id, self)
 
-    def run(self) -> None:
+    def run(self) -> None:  # noqa: C901, PLR0912
         """Ejecuta el ciclo principal del cliente.
 
         Maneja la recepción de datos y el encolado de tareas validadas.
         """
         try:
+            protocol_version = getattr(self.server, "protocol_version", "1")
+            if not isinstance(protocol_version, str):
+                protocol_version = "1"
+            theme = getattr(self.server, "theme", "classic")
+            if not isinstance(theme, str):
+                theme = "classic"
+            map_hash_getter = getattr(self.server, "map_hash", None)
+            map_hash = map_hash_getter() if callable(map_hash_getter) else "legacy"
+            if not isinstance(map_hash, str) or not map_hash:
+                map_hash = "legacy"
+            self.transmisor.enviar_hello(
+                protocol_version,
+                theme,
+                map_hash,
+                capabilities=["snapshots", "command_results", "reconnect"],
+                rules=["validated_phases", "one_card_per_turn"],
+            )
             if self.es_reconexion_pendiente():
                 # Una conexión pendiente no debe anunciar su ID temporal ni
                 # consumir colores antes de autenticarse.
@@ -256,7 +328,7 @@ class Client:
             return
 
         mensaje = validated_data["mensaje"]
-        if self.es_reconexion_pendiente() and mensaje != "reconectar":
+        if self.es_reconexion_pendiente() and mensaje not in {"reconectar", "hello"}:
             self._enviar_error_protocolo(
                 "reconnect_required",
                 "Esta conexión debe autenticarse con reconectar antes de enviar "

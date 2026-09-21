@@ -37,6 +37,12 @@ def en_fase_reparto(main_window: MainWindowProtocol | Any) -> bool:
         True durante la fase de refuerzos.
 
     """
+    fase_actual = getattr(main_window, "fase_actual", None)
+    if fase_actual is not None:
+        return (
+            fase_actual == "colocacion"
+            and int(getattr(main_window, "unidades_pendientes_servidor", 0)) > 0
+        )
     last_units = getattr(main_window, "last_units", {})
     if not last_units:
         return False

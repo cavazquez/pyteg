@@ -102,8 +102,13 @@ class TurnManager:
 
         """
         if self._num_turno >= len(self._turnos):
-            return self.turnos()[-1]
-        return self.turnos()[self.id_turno_actual()]
+            turno = self.turnos()[-1]
+        else:
+            turno = self.turnos()[self.id_turno_actual()]
+        preparar = getattr(turno, "preparar", None)
+        if callable(preparar):
+            preparar()
+        return turno
 
     def id_turno_actual(self) -> int:
         """Obtiene el índice del turno actual.

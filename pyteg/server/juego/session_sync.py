@@ -128,6 +128,16 @@ def enviar_unidades_disponibles(game: Game, get_client: GetClientById) -> None:
         cliente.transmisor.enviar_unidades_disponibles(unidades)
 
 
+def enviar_fase(game: Game, get_clients: GetClients) -> None:
+    """Difunde la fase actual y los refuerzos pendientes."""
+    fase = getattr(game, "fase_actual", lambda: "acciones")()
+    pendientes = int(getattr(game, "refuerzos_pendientes", lambda: 0)())
+    turno = game.turno_actual()
+    jugador_id = int(turno.jugador_actual())
+    for client in get_clients():
+        client.transmisor.enviar_fase(fase, jugador_id, pendientes)
+
+
 def enviar_turno_actual(  # noqa: PLR0913
     game: Game,
     get_clients: GetClients,
@@ -152,5 +162,6 @@ def enviar_turno_actual(  # noqa: PLR0913
         )
 
     enviar_unidades_disponibles(game, get_client)
+    enviar_fase(game, get_clients)
     if incluir_mapa:
         broadcaster.enviar_mapa(mapa, game)

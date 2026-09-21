@@ -12,9 +12,13 @@ from pyteg.server.msg import (
     MsgChat,
     MsgColor,
     MsgColorAsignado,
+    MsgCommandResult,
     MsgConfiguracionPartida,
     MsgError,
     MsgEstado,
+    MsgFase,
+    MsgHello,
+    MsgHelloAck,
     MsgMisilAgregado,
     MsgObjetivoSecreto,
     MsgPais,
@@ -22,6 +26,7 @@ from pyteg.server.msg import (
     MsgResultadoBatalla,
     MsgResultadoMisil,
     MsgSessionToken,
+    MsgSnapshot,
     MsgSosAdmin,
     MsgTarjetasJugador,
     MsgTiempo,
@@ -156,6 +161,48 @@ class ServerTransmisor:
         """
         msg = MsgEstado(estado)
         self._send_message(msg)
+
+    def enviar_hello(
+        self,
+        protocol_version: str,
+        theme: str,
+        map_hash: str,
+        *,
+        capabilities: list[str] | None = None,
+        rules: list[str] | None = None,
+    ) -> None:
+        """Anuncia el contrato de protocolo antes de asignar la partida."""
+        self._send_message(
+            MsgHello(
+                protocol_version,
+                theme,
+                map_hash,
+                capabilities=capabilities,
+                rules=rules,
+            )
+        )
+
+    def enviar_hello_ack(self, accepted: bool = True) -> None:  # noqa: FBT001, FBT002
+        """Confirma el resultado de la negociación."""
+        self._send_message(MsgHelloAck(accepted))
+
+    def enviar_fase(self, fase: str, jugador_id: int, unidades_pendientes: int) -> None:
+        """Envía la fase validada por el servidor."""
+        self._send_message(MsgFase(fase, jugador_id, unidades_pendientes))
+
+    def enviar_snapshot(self, snapshot: dict[str, Any]) -> None:
+        """Envía un estado público atómico."""
+        self._send_message(MsgSnapshot(snapshot))
+
+    def enviar_resultado_comando(
+        self,
+        command_id: str,
+        accepted: bool,  # noqa: FBT001
+        revision: int,
+        error_code: str | None = None,
+    ) -> None:
+        """Envía el resultado estable de un comando."""
+        self._send_message(MsgCommandResult(command_id, accepted, revision, error_code))
 
     def enviar_tiempo(self, userid_turno: int, tiempo_restante: int) -> None:
         """Envía el tiempo restante del turno al cliente.

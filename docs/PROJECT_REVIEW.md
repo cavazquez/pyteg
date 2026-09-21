@@ -196,19 +196,19 @@ soportadas antes de sus pruebas.
 ### P2
 
 - [x] [#175 — Conservar la rotación acumulativa del orden entre rondas](https://github.com/cavazquez/pyteg/issues/175) (Reglas; implementado).
-- [#176 — Limitar la recompensa de conquista a una tarjeta por turno](https://github.com/cavazquez/pyteg/issues/176) (Reglas).
+- [x] [#176 — Limitar la recompensa de conquista a una tarjeta por turno](https://github.com/cavazquez/pyteg/issues/176) (Reglas; implementado).
 - [x] [#177 — Evitar bonificaciones por continentes ausentes del mapa](https://github.com/cavazquez/pyteg/issues/177) (Reglas; implementado).
-- [#178 — Calcular los refuerzos con el mapa vigente al iniciar cada turno](https://github.com/cavazquez/pyteg/issues/178) (Reglas).
-- [#179 — Validar en el servidor las fases de colocación, ataque y movimiento](https://github.com/cavazquez/pyteg/issues/179) (Reglas).
-- [#180 — Reasignar administrador cuando abandona la sala](https://github.com/cavazquez/pyteg/issues/180) (Sala).
-- [#181 — Negociar versión de protocolo y mapa antes de entrar a la sala](https://github.com/cavazquez/pyteg/issues/181) (Red).
-- [#182 — Publicar snapshots atómicos con revisión y cambios coherentes](https://github.com/cavazquez/pyteg/issues/182) (Red).
+- [x] [#178 — Calcular los refuerzos con el mapa vigente al iniciar cada turno](https://github.com/cavazquez/pyteg/issues/178) (Reglas; implementado).
+- [x] [#179 — Validar en el servidor las fases de colocación, ataque y movimiento](https://github.com/cavazquez/pyteg/issues/179) (Reglas; implementado).
+- [x] [#180 — Reasignar administrador cuando abandona la sala](https://github.com/cavazquez/pyteg/issues/180) (Sala; implementado).
+- [x] [#181 — Negociar versión de protocolo y mapa antes de entrar a la sala](https://github.com/cavazquez/pyteg/issues/181) (Red; implementado).
+- [x] [#182 — Publicar snapshots atómicos con revisión y cambios coherentes](https://github.com/cavazquez/pyteg/issues/182) (Red; implementado).
 - [x] [#183 — Recuperar una sesión de jugador después de perder la conexión](https://github.com/cavazquez/pyteg/issues/183) (Red; implementado).
-- [#184 — Separar estado y procesamiento de eventos del cliente de QWidget](https://github.com/cavazquez/pyteg/issues/184) (Cliente).
+- [x] [#184 — Separar estado y procesamiento de eventos del cliente de QWidget](https://github.com/cavazquez/pyteg/issues/184) (Cliente; implementado).
 - [x] [#185 — Adjuntar al release los archivos realmente generados por la matriz](https://github.com/cavazquez/pyteg/issues/185) (Entrega; implementado).
-- [#186 — Ejecutar una partida multicliente hasta el estado final en CI](https://github.com/cavazquez/pyteg/issues/186) (Pruebas).
-- [#187 — Volver al lobby e iniciar una revancha sin reiniciar el servidor](https://github.com/cavazquez/pyteg/issues/187) (Partida).
-- [#188 — Correlacionar comandos y evitar ejecución duplicada al reintentar](https://github.com/cavazquez/pyteg/issues/188) (Red).
+- [x] [#186 — Ejecutar una partida multicliente hasta el estado final en CI](https://github.com/cavazquez/pyteg/issues/186) (Pruebas; implementado).
+- [x] [#187 — Volver al lobby e iniciar una revancha sin reiniciar el servidor](https://github.com/cavazquez/pyteg/issues/187) (Partida; implementado).
+- [x] [#188 — Correlacionar comandos y evitar ejecución duplicada al reintentar](https://github.com/cavazquez/pyteg/issues/188) (Red; implementado).
 
 ## Cambios dejados en este trabajo
 
@@ -228,3 +228,12 @@ soportadas antes de sus pruebas.
   superviviente para #172.
 - Rotación acumulativa, bonus continentales contra el mapa vigente y
   reconexión autenticada con sincronización de sesión para #175, #177 y #183.
+- Recompensa de una tarjeta por turno y refuerzos calculados al entrar al turno,
+  con fase de colocación autoritativa en el servidor para #176, #178 y #179.
+- Sucesión determinista del administrador y limpieza completa para revancha sin
+  reiniciar el proceso para #180 y #187.
+- Handshake de protocolo/tema/mapa, snapshots públicos versionados y resultados
+  idempotentes de comandos, con modelo de estado Qt-independiente para #181,
+  #182, #184 y #188.
+- Simulación TCP multicliente estricta en CI, incluyendo canjes, misiles,
+  desconexión, reconexión y artefactos de evidencia para #186.

@@ -12,6 +12,7 @@ from pyteg.core.mapa.build_mapa import build_mapa_from_reader
 from pyteg.core.partida.objetivos_secretos import ObjetivosSecretos
 from pyteg.log_cli import add_log_arguments
 from pyteg.logger import get_logger
+from pyteg.protocol import PROTOCOL_VERSION, map_hash_for_theme
 from pyteg.server.conexion.broadcaster import ServerMessageBroadcaster
 from pyteg.server.conexion.registrar_jugadores import registrar_jugadores
 from pyteg.server.conexion.registry import ServerClientRegistry
@@ -44,7 +45,9 @@ class Server:
 
     def __init__(self, theme: str = DEFAULT_MAP_THEME) -> None:
         """Inicializa el servidor con mapa, mazo y configuración inicial."""
+        self.protocol_version = PROTOCOL_VERSION
         self.theme = theme
+        self._state_revision = 0
         self._client_registry = ServerClientRegistry()
         self.color = ServerColor()
         self.estado = Estado()
@@ -67,6 +70,116 @@ class Server:
         )
         self._command_executor = GameCommandExecutor(self)
         self._command_executor.start()
+
+    def map_hash(self) -> str:
+        """Identificador estable de las reglas públicas del mapa.
+
+        Returns:
+            Hash SHA-256 del mapa configurado.
+
+        """
+        return map_hash_for_theme(self.theme)
+
+    def state_revision(self) -> int:
+        """Revisión pública actual del estado del juego.
+
+        Returns:
+            Número de revisión monotónico.
+
+        """
+        return self._state_revision
+
+    def bump_state_revision(self) -> int:
+        """Avanza la revisión una vez finalizada una transición serializada.
+
+        Returns:
+            Nueva revisión pública.
+
+        """
+        self._state_revision += 1
+        return self._state_revision
+
+    def public_snapshot(self) -> dict[str, Any]:
+        """Construye el estado público sin filtrar cartas ni objetivos.
+
+        Returns:
+            Diccionario JSON serializable del estado público.
+
+        """
+        game = self.game
+        countries = {
+            pais: {
+                "userid": self.mapa.ocupado_por(pais),
+                "unidades": self.mapa.cantidad_unidades(pais),
+            }
+            for pais in self.mapa.paises()
+        }
+        historicos = game.jugadores() if game is not None else self.dame_clientes()
+        conectados = {int(client.userid()) for client in self.dame_clientes()}
+        players = [
+            {
+                "userid": int(client.userid()),
+                "username": client.username(),
+                "connected": int(client.userid()) in conectados,
+                "eliminated": game is not None and game.jugador_esta_eliminado(client),
+            }
+            for client in historicos
+        ]
+        snapshot: dict[str, Any] = {
+            "revision": self.state_revision(),
+            "estado": self.estado.estado_actual(),
+            "theme": self.theme,
+            "map_hash": self.map_hash(),
+            "players": players,
+            "countries": countries,
+        }
+        if game is not None and game.empezo():
+            turno = game.turno_actual()
+            snapshot["fase"] = game.fase_actual()
+            snapshot["turno"] = {
+                "num_turno": game.id_turno_actual(),
+                "num_ronda": game.num_ronda(),
+                "jugador_id": int(turno.jugador_actual()),
+            }
+        return snapshot
+
+    def enviar_snapshot(self) -> None:
+        """Difunde el snapshot público actual."""
+        self._broadcaster.enviar_snapshot(self.public_snapshot())
+
+    def validar_handshake(self, client: Client, data: dict[str, Any]) -> bool:
+        """Valida protocolo, tema y mapa antes de iniciar una partida.
+
+        Returns:
+            ``True`` si el cliente puede participar en la sala.
+
+        """
+        expected_hash = self.map_hash()
+        checks = (
+            (
+                data.get("protocol_version") == self.protocol_version,
+                "incompatible_protocol",
+                "La versión de protocolo no es compatible.",
+            ),
+            (
+                data.get("theme") == self.theme,
+                "incompatible_theme",
+                "El tema solicitado no coincide con el servidor.",
+            ),
+            (
+                data.get("map_hash") == expected_hash,
+                "incompatible_map",
+                "El mapa del cliente no coincide con el servidor.",
+            ),
+        )
+        for accepted, code, message in checks:
+            if not accepted:
+                client.marcar_handshake(False)  # noqa: FBT003
+                client.transmisor.enviar_error(code, message)
+                return False
+        client.marcar_handshake(True)  # noqa: FBT003
+        client.transmisor.enviar_hello_ack()
+        return True
 
     @property
     def game(self) -> Game | None:
@@ -179,6 +292,8 @@ class Server:
             self.encolar_desconexion_jugador(user_id)
         else:
             self.color.liberar_color(client.color_actual())
+            if self.estado.es_inicial() or self.estado.es_esperando_jugadores():
+                self._promover_administrador()
 
         # Notificar a todos los clientes restantes sobre la desconexión
         self.enviar_username()
@@ -195,17 +310,41 @@ class Server:
             ``False`` si la sala no tiene capacidad.
 
         """
-        # Asignar color antes de registrar
+        # Asignar color antes de registrar. El orden del registro es la única
+        # fuente de desempate para la sucesión del administrador.
+        habia_clientes = self.cant_clients() > 0
         if not self.color.asignar_color_aleatorio(client):
             LOGGER.warning("Sala llena; no se puede registrar el cliente %s", user_id)
             return False
 
         if self._client_registry.registrar_cliente(user_id, client):
+            if not habia_clientes:
+                self._promover_administrador(notificar=False)
             return True
 
         self.color.liberar_color(client.color_actual())
         LOGGER.warning("ID de cliente duplicado al registrar %s", user_id)
         return False
+
+    def _promover_administrador(self, *, notificar: bool = True) -> None:
+        """Garantiza un único administrador mientras la sala es un lobby."""
+        clientes = self.dame_clientes()
+        if not clientes:
+            return
+        admin = clientes[0]
+        for candidato in clientes:
+            asignar = getattr(candidato, "asignar_admin", None)
+            if callable(asignar):
+                asignar(candidato is admin)
+        if not notificar:
+            return
+        sos_admin = getattr(getattr(admin, "transmisor", None), "sos_admin", None)
+        if callable(sos_admin):
+            sos_admin()
+
+    def promover_administrador(self) -> None:
+        """Expone la sucesión para reabrir un lobby tras una partida."""
+        self._promover_administrador()
 
     def registrar_reconexion_pendiente(self, user_id: int, client: Client) -> bool:
         """Registra una conexión temporal sin asignarle un color nuevo.
@@ -226,7 +365,9 @@ class Server:
         client.marcar_reconexion_pendiente(pendiente=False)
         return False
 
-    def reconectar_cliente(self, client: Client, user_id: int, token: str) -> bool:
+    def reconectar_cliente(  # noqa: C901, PLR0911
+        self, client: Client, user_id: int, token: str
+    ) -> bool:
         """Autentica una conexión pendiente y restaura su sesión de juego.
 
         Returns:
@@ -251,6 +392,20 @@ class Server:
             return False
 
         temporary_user_id = int(client.userid())
+        anterior = next(
+            (
+                jugador
+                for jugador in game.jugadores()
+                if int(jugador.userid()) == int(user_id)
+            ),
+            None,
+        )
+        if anterior is None:
+            return False
+        exportar_resultados = getattr(anterior, "export_command_results", None)
+        importar_resultados = getattr(client, "import_command_results", None)
+        if callable(exportar_resultados) and callable(importar_resultados):
+            importar_resultados(exportar_resultados())
         if not self._client_registry.reasignar_cliente(
             temporary_user_id, int(user_id), client
         ):
@@ -371,7 +526,20 @@ class Server:
             ``True`` si el estado de la partida cambió a terminal.
 
         """
-        return self._game_coordinator.finalizar_partida()
+        changed = self._game_coordinator.finalizar_partida()
+        if changed:
+            self.bump_state_revision()
+            self.enviar_snapshot()
+        return changed
+
+    def volver_al_lobby(self) -> bool:
+        """Reabre el lobby y limpia todos los recursos de la partida.
+
+        Returns:
+            ``True`` si se cambió desde el estado finalizado.
+
+        """
+        return self._game_coordinator.volver_al_lobby(self)
 
     def enviar_unidades_disponibles(self) -> None:
         """Envía las unidades disponibles al jugador del turno actual."""
@@ -380,6 +548,12 @@ class Server:
         session_sync.enviar_unidades_disponibles(
             self.game, self._client_registry.obtener_cliente
         )
+
+    def enviar_fase(self) -> None:
+        """Envía la fase autoritativa del turno a todos los clientes."""
+        if not self.estado.es_jugando() or not self.game:
+            return
+        session_sync.enviar_fase(self.game, self.dame_clientes)
 
     def enviar_mapa(self) -> None:
         """Envía el estado actual del mapa a todos los clientes conectados."""

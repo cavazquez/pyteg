@@ -28,6 +28,10 @@ class ObjetivosSecretos:
         # client_userid (int) -> objetivo_id (str)
         self.objetivos_asignados: dict[int, str] = {}
 
+    def reiniciar(self) -> None:
+        """Descarta objetivos de la partida anterior."""
+        self.objetivos_asignados.clear()
+
     def asignar_objetivos_aleatorios(self, clientes: list[Any]) -> None:
         """Asigna objetivos secretos aleatorios a una lista de clientes.
 

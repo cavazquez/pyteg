@@ -283,3 +283,15 @@ class _OptEstado(TypedDict, total=False):
 
 class EstadoTaskData(BaseClientTaskData, _OptEstado):
     """`data` de `ClientTaskEstado`."""
+
+
+class _OptFase(TypedDict, total=False):
+    """Campos de la fase autoritativa del turno."""
+
+    fase: str
+    jugador_id: int
+    unidades_pendientes: int
+
+
+class FaseTaskData(BaseClientTaskData, _OptFase):
+    """`data` de `ClientTaskFase`."""

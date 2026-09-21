@@ -55,6 +55,10 @@ class IClientTransmisor(ABC):
         """Inicia la partida."""
 
     @abstractmethod
+    def volver_lobby(self) -> None:
+        """Solicita volver al lobby para iniciar una revancha."""
+
+    @abstractmethod
     def set_username(self, username: str) -> None:
         """Establece el nombre de usuario.
 
@@ -62,6 +66,18 @@ class IClientTransmisor(ABC):
             username: Nombre de usuario a establecer.
 
         """
+
+    @abstractmethod
+    def hello(
+        self,
+        protocol_version: str,
+        theme: str,
+        map_hash: str,
+        *,
+        capabilities: list[str] | None = None,
+        rules: list[str] | None = None,
+    ) -> None:
+        """Negocia protocolo, tema y mapa antes de jugar."""
 
     @abstractmethod
     def reconectar(self, user_id: int, token: str) -> None:

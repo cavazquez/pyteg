@@ -57,6 +57,10 @@ class ClientNullTransmisor(IClientTransmisor):
         """Inicia la partida (no-op cuando no hay conexión)."""
         _LOG.debug("No estas conectado")
 
+    def volver_lobby(self) -> None:
+        """Solicita una revancha (no-op cuando no hay conexión)."""
+        _LOG.debug("No estas conectado")
+
     def set_username(self, _: str) -> None:
         """Establece el nombre de usuario (no-op cuando no hay conexión).
 
@@ -64,6 +68,20 @@ class ClientNullTransmisor(IClientTransmisor):
             _: Nombre de usuario (ignorado).
 
         """
+        _LOG.debug("No estas conectado")
+
+    def hello(
+        self,
+        protocol_version: str,
+        theme: str,
+        map_hash: str,
+        *,
+        capabilities: list[str] | None = None,
+        rules: list[str] | None = None,
+    ) -> None:
+        """Negocia protocolo (no-op mientras no hay conexión)."""
+        _, _, _ = protocol_version, theme, map_hash
+        _, _ = capabilities, rules
         _LOG.debug("No estas conectado")
 
     def reconectar(self, user_id: int, token: str) -> None:

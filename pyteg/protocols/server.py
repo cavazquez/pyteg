@@ -60,6 +60,10 @@ class ServerLikeProtocol(HasEstado, Protocol):
         """Envía el turno actual a todos los clientes."""
         ...
 
+    def enviar_fase(self) -> None:
+        """Envía la fase del turno actual."""
+        ...
+
     def misiles_habilitados(self) -> bool:
         """Retorna si los misiles están habilitados."""
         ...

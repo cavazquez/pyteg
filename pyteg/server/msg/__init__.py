@@ -16,12 +16,15 @@ from pyteg.server.msg.connection import (
     MsgColor,
     MsgColorAsignado,
     MsgEstado,
+    MsgHello,
+    MsgHelloAck,
     MsgReconexion,
     MsgSessionToken,
     MsgSosAdmin,
     MsgUserId,
     MsgUsername,
 )
+from pyteg.server.msg.fase import MsgFase
 from pyteg.server.msg.map_turn import (
     MsgAgregarUnidad,
     MsgMoverUnidad,
@@ -31,6 +34,7 @@ from pyteg.server.msg.map_turn import (
     MsgUnidadesDisponibles,
 )
 from pyteg.server.msg.players import MsgActualizarListaJugadores
+from pyteg.server.msg.snapshot import MsgCommandResult, MsgSnapshot
 
 __all__ = [
     "IMsg",
@@ -40,9 +44,13 @@ __all__ = [
     "MsgChat",
     "MsgColor",
     "MsgColorAsignado",
+    "MsgCommandResult",
     "MsgConfiguracionPartida",
     "MsgError",
     "MsgEstado",
+    "MsgFase",
+    "MsgHello",
+    "MsgHelloAck",
     "MsgMisilAgregado",
     "MsgMoverUnidad",
     "MsgObjetivoSecreto",
@@ -52,6 +60,7 @@ __all__ = [
     "MsgResultadoBatalla",
     "MsgResultadoMisil",
     "MsgSessionToken",
+    "MsgSnapshot",
     "MsgSolicitarTarjetas",
     "MsgSosAdmin",
     "MsgTarjetasJugador",

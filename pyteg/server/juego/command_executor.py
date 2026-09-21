@@ -138,18 +138,56 @@ class GameCommandExecutor:
 
     def _execute_client_command(self, command: _ClientCommand) -> None:
         """Construye y ejecuta una tarea del servidor dentro del serializador."""
-        task = ServerTaskManager.msg_to_task(command.payload)
+        command_id = command.payload.get("command_id")
+        if isinstance(command_id, str):
+            cached = getattr(command.client, "command_result", lambda _: None)(
+                command_id
+            )
+            if cached is not None:
+                command.client.transmisor.enviar_resultado_comando(**cached)
+                return
+        accepted = True
+        error_code: str | None = None
         try:
-            task.run(command.client)
+            task = ServerTaskManager.msg_to_task(command.payload)
+            accepted = bool(task.run(command.client))
         except MensajeNoValidoError:
+            accepted = False
+            error_code = "invalid_message"
             LOGGER.exception(
                 "Mensaje no válido del cliente %s", command.client.userid()
             )
         except EstadoInvalidoError as error:
+            accepted = False
+            error_code = "invalid_state"
             LOGGER.warning(
                 "Error de estado del cliente %s: %s", command.client.userid(), error
             )
             command.client.transmisor.enviar_error("invalid_state", str(error))
+        except Exception:
+            accepted = False
+            error_code = "internal_error"
+            LOGGER.exception("Fallo ejecutando comando del cliente")
+
+        if isinstance(command_id, str):
+            if accepted and command.payload.get("mensaje") not in {
+                "chat",
+                "hello",
+                "solicitar_snapshot",
+            }:
+                self._server.bump_state_revision()
+                self._server.enviar_snapshot()
+            result = {
+                "command_id": command_id,
+                "accepted": accepted,
+                "revision": self._server.state_revision(),
+            }
+            if not accepted:
+                result["error_code"] = error_code or "rejected"
+            command.client.transmisor.enviar_resultado_comando(**result)
+            remember = getattr(command.client, "remember_command_result", None)
+            if callable(remember):
+                remember(command_id, result)
 
     def _execute_turn_expired(self, expired: _TurnExpired) -> None:
         """Avanza una vez sólo si el timer corresponde al turno vigente."""
@@ -174,6 +212,12 @@ class GameCommandExecutor:
         if self._server.estado.es_jugando():
             self._server.enviar_turno_actual()
             self._server.enviar_mapa()
+        bump = getattr(self._server, "bump_state_revision", None)
+        snapshot = getattr(self._server, "enviar_snapshot", None)
+        if callable(bump):
+            bump()
+        if callable(snapshot):
+            snapshot()
 
     def _execute_client_disconnected(self, event: _ClientDisconnected) -> None:
         """Quita una conexión de los turnos sin tocar su ocupación."""
@@ -187,6 +231,12 @@ class GameCommandExecutor:
         if self._server.estado.es_jugando():
             self._server.enviar_colores_asignados()
             self._server.enviar_turno_actual()
+            bump = getattr(self._server, "bump_state_revision", None)
+            snapshot = getattr(self._server, "enviar_snapshot", None)
+            if callable(bump):
+                bump()
+            if callable(snapshot):
+                snapshot()
 
     def _refresh_turn_snapshot(self) -> None:
         """Publica el turno actual y aumenta su generación al cambiarlo."""

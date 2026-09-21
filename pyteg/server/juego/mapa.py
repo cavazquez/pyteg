@@ -25,11 +25,20 @@ class Mapa:
 
         """
         mapa_raw = build_mapa()
+        self._build_mapa = build_mapa
         # Convertir listas a CountryData para mejor type safety
         self._mapa: dict[str, CountryData] = {}
         for pais, data in mapa_raw.items():
             self._mapa[pais] = CountryData.from_list(data)
         # Inicializar sistema de misiles
+        self._missile_system = MissileSystem(self)
+
+    def reiniciar(self) -> None:
+        """Restaura países, unidades y misiles al mapa original del tema."""
+        mapa_raw = self._build_mapa()
+        self._mapa = {
+            pais: CountryData.from_list(data) for pais, data in mapa_raw.items()
+        }
         self._missile_system = MissileSystem(self)
 
     def pais_existe(self, pais: str) -> bool:

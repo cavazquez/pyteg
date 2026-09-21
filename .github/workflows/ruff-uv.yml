@@ -78,3 +78,20 @@ jobs:
               --max-bbox-pairs 75 \
               --fail-on-cross-continent \
               --allow-cross Groenlandia:Islandia
+        - name: Real multiclient TCP simulation
+          run: |
+            uv run python -m scripts.simulate_game \
+              --theme classic \
+              --clients 3 \
+              --victory 30 \
+              --seed 186 \
+              --exercise-exchanges \
+              --require-finalized \
+              --timeout 240
+        - name: Upload multiclient simulation evidence
+          if: always()
+          uses: actions/upload-artifact@v4
+          with:
+            name: pyteg-multiclient-simulation
+            path: logs/simulations/classic-186
+            if-no-files-found: error

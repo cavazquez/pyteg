@@ -39,7 +39,12 @@ class CardManager:
         self._mazo = mazo
         self._turn_manager = turn_manager
         self._cant_canjes: dict[int, int] = {}
-        self._jugadores_pueden_reclamar: set[IClientProtocol] = set()
+        # La elegibilidad es por jugador y por conquista, pero la recompensa
+        # sólo puede cobrarse una vez por turno.  Guardar el identificador y
+        # la clave del turno evita que dos objetos ``Client`` representando la
+        # misma sesión vuelvan a habilitar el reclamo.
+        self._jugadores_pueden_reclamar: dict[int, tuple[int, int]] = {}
+        self._jugadores_reclamaron: dict[int, tuple[int, int]] = {}
 
     def inicializar_canjes(self, jugadores_userids: list[int]) -> None:
         """Inicializa el contador de canjes para los jugadores.
@@ -49,6 +54,20 @@ class CardManager:
 
         """
         self._cant_canjes = dict.fromkeys(jugadores_userids, 0)
+        self._jugadores_pueden_reclamar.clear()
+        self._jugadores_reclamaron.clear()
+
+    def _clave_turno(self) -> tuple[int, int]:
+        """Devuelve una clave estable para el turno actual.
+
+        Returns:
+            Tupla ``(ronda, índice de turno)``.
+
+        """
+        return (
+            int(self._turn_manager.num_ronda()),
+            int(self._turn_manager.id_turno_actual()),
+        )
 
     def dame_una_tarjeta(self, jugador: IClientProtocol) -> None:
         """Asigna una tarjeta a un jugador. Si tiene 5, fuerza un canje.
@@ -123,11 +142,8 @@ class CardManager:
         """Limpia el estado de canjes y reclamos de un jugador eliminado."""
         userid = _to_userid(jugador)
         self._cant_canjes.pop(userid, None)
-        self._jugadores_pueden_reclamar = {
-            candidato
-            for candidato in self._jugadores_pueden_reclamar
-            if _to_userid(candidato) != userid
-        }
+        self._jugadores_pueden_reclamar.pop(userid, None)
+        self._jugadores_reclamaron.pop(userid, None)
 
     def marcar_jugador_puede_reclamar(self, jugador: IClientProtocol) -> None:
         """Marca a un jugador como elegible para reclamar tarjeta.
@@ -136,7 +152,13 @@ class CardManager:
             jugador: Jugador a marcar como elegible.
 
         """
-        self._jugadores_pueden_reclamar.add(jugador)
+        userid = _to_userid(jugador)
+        clave = self._clave_turno()
+        # Una segunda conquista durante el mismo turno no genera una segunda
+        # tarjeta, aunque el ataque vuelva a marcar al jugador como elegible.
+        if self._jugadores_reclamaron.get(userid) == clave:
+            return
+        self._jugadores_pueden_reclamar[userid] = clave
 
     def puede_reclamar_tarjeta(self, jugador: IClientProtocol) -> bool:
         """Verifica si un jugador puede reclamar tarjeta.
@@ -148,7 +170,12 @@ class CardManager:
             True si el jugador puede reclamar tarjeta, False en caso contrario.
 
         """
-        return jugador in self._jugadores_pueden_reclamar
+        userid = _to_userid(jugador)
+        clave = self._clave_turno()
+        return (
+            self._jugadores_pueden_reclamar.get(userid) == clave
+            and self._jugadores_reclamaron.get(userid) != clave
+        )
 
     def reclamar_tarjeta_jugador(self, jugador: IClientProtocol) -> None:
         """Remueve al jugador de la lista de elegibles tras reclamar.
@@ -157,7 +184,11 @@ class CardManager:
             jugador: Jugador que reclamó la tarjeta.
 
         """
-        self._jugadores_pueden_reclamar.discard(jugador)
+        userid = _to_userid(jugador)
+        clave = self._clave_turno()
+        if self._jugadores_pueden_reclamar.get(userid) == clave:
+            self._jugadores_reclamaron[userid] = clave
+            self._jugadores_pueden_reclamar.pop(userid, None)
 
     def limpiar_elegibilidad_reclamar(self) -> None:
         """Limpia la elegibilidad de reclamar tarjetas (al finalizar turno)."""
