@@ -108,6 +108,32 @@ certifica a los clientes que siguieron conectados; `all_clients_finalized` queda
 en `false` si alguno fue desconectado, y `disconnected_clients` deja la evidencia
 del evento.
 
+## Canjes y misiles
+
+El modo base no ejecuta acciones privadas de tarjetas ni misiles. Para probarlas
+por TCP, el script ofrece modos explícitos:
+
+```bash
+# Canjes normales y especiales de tarjetas.
+uv run python -m scripts.simulate_game \
+  --theme classic --clients 5 --victory 30 --seed 800 \
+  --exercise-cards --require-finalized
+
+# Todos los canjes: tarjetas, canje especial y seis unidades por misil,
+# seguido de lanzamientos contra países enemigos alcanzables.
+uv run python -m scripts.simulate_game \
+  --theme classic --clients 5 --victory 30 --seed 800 \
+  --exercise-exchanges --require-finalized
+```
+
+`--exercise-missiles` habilita sólo el flujo de misiles; `--exercise-exchanges`
+activa también la reclamación de tarjetas, el canje de tres tarjetas, el canje
+especial país+tarjeta y el canje forzoso al alcanzar cinco tarjetas. El reporte
+incluye `card_claims`, `card_exchanges`, `forced_card_exchanges`,
+`special_exchanges`, `missile_exchanges` y `missile_launches`. Además, todos los
+clientes conectados deben coincidir en el inventario público de misiles y en los
+eventos de lanzamiento.
+
 ## Resultados observados en esta revisión
 
 Con el código revisado y sin sustituir los dados productivos:
@@ -131,6 +157,15 @@ Con el código revisado y sin sustituir los dados productivos:
   `Bot_1` ganó con 35 países tras 108 turnos y 322 conquistas, en 45,287 segundos.
   Los seis clientes coincidieron en ganador y tablero, observaron `Finalizado` y
   no recibieron errores.
+- **Canjes y misiles — clásico estricto, cinco clientes, objetivo 30, semilla 800:**
+  `Bot_1` ganó con 33 países tras 66 turnos y 215 conquistas. Se observaron 215
+  reclamaciones, 23 canjes normales, 39 canjes forzosos, 16 canjes especiales,
+  46 canjes de misil y 15 lanzamientos. Los cinco clientes coincidieron en
+  tablero, inventario de misiles, eventos y estado `Finalizado`.
+- **Canjes, misiles y desconexión — clásico estricto, semilla 800:** el cliente
+  2 se desconectó después del turno 5; los cuatro clientes restantes continuaron
+  hasta la victoria con 35 países, 317 conquistas, 24 canjes normales, 66
+  forzosos, 28 especiales, 53 canjes de misil y 22 lanzamientos.
 
 Los números son evidencia de esas corridas; no son una predicción para futuras
 corridas con dados productivos.
@@ -145,7 +180,7 @@ que un usuario pueda jugar la misma partida sin problemas de interfaz o red.
 Las acciones se envían secuencialmente en conexiones locales. No se simulan
 fragmentación adversaria, reconexión, clientes lentos, comandos simultáneos,
 latencia WAN ni vencimiento del timer. La opción de desconexión sí ejercita el
-cierre real de un socket y la continuidad de los clientes restantes. Tampoco se ejercitan
-objetivos secretos, tarjetas/canjes ni misiles. La estrategia utiliza colocación,
-ataque y transferencia posteriores a una conquista según la API existente;
-no valida que esas reglas reproduzcan todo el reglamento del TEG clásico.
+cierre real de un socket y la continuidad de los clientes restantes. Los
+objetivos secretos siguen fuera de alcance. La estrategia utiliza colocación,
+ataque, transferencia, tarjetas/canjes y misiles según el modo elegido; no
+valida que esas reglas reproduzcan todo el reglamento del TEG clásico.

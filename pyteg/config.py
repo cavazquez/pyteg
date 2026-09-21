@@ -34,6 +34,9 @@ MIN_UNITS_TO_LEAVE = 1
 MISSILE_UNIT_COST = 6
 """Cantidad de unidades necesarias para canjear un misil."""
 
+MIN_UNITS_FOR_MISSILE_EXCHANGE = MISSILE_UNIT_COST + MIN_UNITS_TO_LEAVE
+"""Unidades mínimas para canjear un misil sin dejar el país vacío."""
+
 MISSILE_MAX_DISTANCE = 3
 """Distancia máxima (en saltos) para lanzar un misil."""
 

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-from pyteg.config import MISSILE_UNIT_COST
+from pyteg.config import MIN_UNITS_FOR_MISSILE_EXCHANGE, MISSILE_UNIT_COST
 from pyteg.server.juego.validators import (
     CountryOwnershipValidator,
     GameStateValidator,
@@ -79,9 +79,9 @@ class ServerTaskCanjearMisil(IServerTask[CanjearMisilTaskData]):
         UnitValidator.validate_min_units(
             context.mapa,
             self._pais,
-            MISSILE_UNIT_COST,
+            MIN_UNITS_FOR_MISSILE_EXCHANGE,
             (
-                f"Se requieren al menos {MISSILE_UNIT_COST} unidades "
+                f"Se requieren al menos {MIN_UNITS_FOR_MISSILE_EXCHANGE} unidades "
                 f"para canjear un misil. {self._pais} tiene "
                 f"{context.mapa.cantidad_unidades(self._pais)} unidades."
             ),

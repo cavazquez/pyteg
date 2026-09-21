@@ -4,6 +4,15 @@ Todas las fechas en formato YYYY-MM-DD.
 
 ## [Unreleased]
 
+### Changed
+- **Simulación TCP de canjes**: `simulate_game` puede ejecutar y verificar por
+  sockets los reclamos de tarjetas, canjes normales, canjes especiales, canjes
+  forzosos, canjes de misil y lanzamientos con `--exercise-exchanges`.
+
+### Fixed
+- **Canje de misil**: exige conservar una unidad en el país; seis unidades ya
+  no pueden dejar un país vacío.
+
 ## [0.0.9] - 2026-06-17
 
 ### Added
