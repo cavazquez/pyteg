@@ -68,6 +68,10 @@ class IGameProtocol(Protocol):
         """
         ...
 
+    def fase_actual(self) -> str:
+        """Obtiene la fase autoritativa del turno (`colocacion` o `acciones`)."""
+        ...
+
     def mazo(self) -> object:  # Mazo, pero evitamos import circular
         """Obtiene el mazo de tarjetas.
 

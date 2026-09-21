@@ -87,8 +87,7 @@ class ServerTaskAgregarUnidad(IServerTask[AgregarUnidadTaskData]):
 
         TurnValidator.validate_turn(client, context.game)
         GameStateValidator.validate_game_started(context.game)
-        if self._phase_negotiated(client):
-            PhaseValidator.validate_placement(context.game)
+        PhaseValidator.validate_command(context.game, "agregar_unidad")
 
         CountryOwnershipValidator.validate_ownership(client, context.mapa, self._pais)
 
@@ -120,8 +119,3 @@ class ServerTaskAgregarUnidad(IServerTask[AgregarUnidadTaskData]):
         enviar_fase = getattr(context, "enviar_fase", None)
         if callable(enviar_fase):
             enviar_fase()
-
-    @staticmethod
-    def _phase_negotiated(client: IClientProtocol) -> bool:
-        status = getattr(client, "handshake_status", None)
-        return callable(status) and status() is not None

@@ -16,6 +16,7 @@ from pyteg.exceptions import (
 from pyteg.server.juego.validators import (
     CountryOwnershipValidator,
     GameStateValidator,
+    PhaseValidator,
     TurnValidator,
 )
 from pyteg.server.tasks.base import IServerTask
@@ -103,6 +104,7 @@ class ServerTaskLanzarMisil(IServerTask[LanzarMisilTaskData]):
             return
 
         TurnValidator.validate_turn(client, context.game)
+        PhaseValidator.validate_command(context.game, "lanzar_misil")
 
     def _validar_posesion_misil(
         self, client: IClientProtocol, context: GameContext

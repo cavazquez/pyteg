@@ -15,6 +15,11 @@ from pyteg.exceptions import (
     InvalidActionError,
     NotPlayerTurnError,
 )
+from pyteg.server.juego.fase import (
+    FASE_ACCIONES,
+    FASE_COLOCACION,
+    FASE_POR_COMANDO,
+)
 
 if TYPE_CHECKING:
     from pyteg.protocols import IClientProtocol, IGameProtocol, IMapProtocol
@@ -306,7 +311,11 @@ class PhaseValidator:
     """Valida la fase autoritativa del turno en el servidor."""
 
     @staticmethod
-    def _validate(game: Game | IGameProtocol | None, expected: str) -> None:
+    def _validate(
+        game: Game | IGameProtocol | None,
+        expected: str,
+        command: str | None = None,
+    ) -> None:
         if game is None:
             raise GameNotStartedError
         fase_actual = getattr(game, "fase_actual", None)
@@ -316,18 +325,43 @@ class PhaseValidator:
             return
         actual = str(fase_actual())
         if actual != expected:
-            msg = (
-                "La acción no es válida en la fase actual "
-                f"({actual}); primero debe completar la colocación."
-            )
+            if command is None:
+                msg = (
+                    "La acción no es válida en la fase actual "
+                    f"({actual}); primero debe completar la colocación."
+                )
+            else:
+                msg = (
+                    f"La acción '{command}' no es válida en la fase actual "
+                    f"({actual}); sólo puede ejecutarse en '{expected}'."
+                )
             raise InvalidActionError(msg)
+
+    @classmethod
+    def validate_command(cls, game: Game | IGameProtocol | None, command: str) -> None:
+        """Exige la fase declarada por la matriz de comandos.
+
+        Las tareas mutantes deben llamar este método antes de validar o
+        modificar recursos específicos. Un comando que no esté en la matriz
+        se considera un error de programación del servidor.
+
+        Raises:
+            InvalidActionError: Si el comando no está declarado o la fase no
+                coincide con la fase actual.
+
+        """
+        expected = FASE_POR_COMANDO.get(command)
+        if expected is None:
+            msg = f"El comando '{command}' no tiene una fase declarada"
+            raise InvalidActionError(msg)
+        cls._validate(game, expected, command)
 
     @classmethod
     def validate_placement(cls, game: Game | IGameProtocol | None) -> None:
         """Exige la fase de colocación."""
-        cls._validate(game, "colocacion")
+        cls._validate(game, FASE_COLOCACION)
 
     @classmethod
     def validate_actions(cls, game: Game | IGameProtocol | None) -> None:
         """Exige la fase de acciones."""
-        cls._validate(game, "acciones")
+        cls._validate(game, FASE_ACCIONES)

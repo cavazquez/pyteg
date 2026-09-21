@@ -155,6 +155,11 @@ incluye `card_claims`, `card_exchanges`, `forced_card_exchanges`,
 clientes conectados deben coincidir en el inventario público de misiles y en los
 eventos de lanzamiento.
 
+El servidor valida la fase antes de cada operación mutante: los canjes de
+tarjetas y el canje especial ocurren durante `colocacion`; el reclamo de tarjeta,
+el canje y lanzamiento de misiles ocurren durante `acciones`. El simulador
+envía los comandos en ese orden y falla si alguno no llega a ejecutarse.
+
 ## Resultados observados en esta revisión
 
 Con el código revisado y sin sustituir los dados productivos:
