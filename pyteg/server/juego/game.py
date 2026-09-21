@@ -609,6 +609,9 @@ class Game:
 
         self._eliminados.add(eliminado_id)
         self._turn_manager.eliminar_jugador(eliminado_id)
+        registrar_sucesion = getattr(self._server, "administrador_eliminado", None)
+        if callable(registrar_sucesion):
+            registrar_sucesion(eliminado_id)
         tarjetas_transferidas = self._card_manager.transferir_tarjetas_al_conquistador(
             eliminado_id, conquistador_id
         )
