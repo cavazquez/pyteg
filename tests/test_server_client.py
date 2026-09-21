@@ -40,8 +40,11 @@ class TestClienteEjecutarMensaje(unittest.TestCase):
                 "invalid_payload", "El comando debe ser un objeto JSON"
             )
 
-    def test_mensaje_chat_llama_enviar_chat(self) -> None:
-        """El mensaje de chat reenvía el texto al broadcast del servidor."""
+    def test_mensaje_chat_se_encola_para_el_ejecutor(self) -> None:
+        """El lector valida chat, pero deja su ejecución al serializador."""
         client, server = self._make_client("Fulano")
-        client.ejecutar_mensaje({"mensaje": "chat", "msg": "Hola"})
-        server.enviar_chat.assert_called_once_with("Fulano", "Hola")
+        payload = {"mensaje": "chat", "msg": "Hola"}
+
+        client.ejecutar_mensaje(payload)
+
+        server.encolar_comando.assert_called_once_with(client, payload)

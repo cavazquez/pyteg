@@ -14,10 +14,11 @@ LOGGER = get_logger(__name__)
 class TurnoTimer(threading.Thread):
     """Hilo que controla el temporizador de turnos.
 
-    Cada jugador dispone de ``segundos_por_turno`` segundos.  Cada segundo se
+    Cada jugador dispone de ``segundos_por_turno`` segundos. Cada segundo se
     envía un mensaje a *todos* los clientes con el tiempo restante para el
-    jugador cuyo turno está activo.  Cuando el tiempo llega a cero, se avanza
-    al siguiente turno mediante ``server.game.finalizar_turno()``.
+    jugador cuyo turno está activo. Cuando el tiempo llega a cero, encola un
+    vencimiento asociado a la generación del turno; el ejecutor del servidor
+    decide si aún corresponde aplicarlo.
     """
 
     def __init__(self, server: Any, segundos_por_turno: int = 120) -> None:
@@ -39,16 +40,6 @@ class TurnoTimer(threading.Thread):
     def detener(self) -> None:
         """Detiene el hilo de forma segura."""
         self._stop_event.set()
-
-    def _partida_activa(self) -> bool:
-        """Indica si el servidor todavía acepta actualizaciones de turno.
-
-        Returns:
-            ``True`` mientras el juego está en curso.
-
-        """
-        estado = getattr(self._server, "estado", None)
-        return bool(estado is not None and estado.es_jugando())
 
     # ------------------------------------------------------------------
     # Internals
@@ -72,25 +63,20 @@ class TurnoTimer(threading.Thread):
     def run(self) -> None:
         """Ejecuta el hilo del temporizador de turnos."""
         while not self._stop_event.is_set():
-            if (
-                not self._partida_activa()
-                or not self._server.game
-                or not self._server.game.empezo()
-            ):
-                time.sleep(1)
+            snapshot = self._server.turno_snapshot()
+            if snapshot is None:
+                time.sleep(0.1)
                 continue
 
-            turno_actual = self._server.game.turno_actual()
-            userid_turno = turno_actual.jugador_actual()
-
-            if not userid_turno:
-                time.sleep(1)
-                continue
+            userid_turno, generation = snapshot
 
             # Cuenta regresiva
             for remaining in range(self._segundos_por_turno, 0, -1):
                 if self._stop_event.is_set():
                     return
+
+                if self._server.turno_snapshot() != snapshot:
+                    break
 
                 # Enviar tiempo restante
                 self._broadcast_tiempo(userid_turno, remaining)
@@ -98,28 +84,16 @@ class TurnoTimer(threading.Thread):
                 # Esperar un segundo
                 time.sleep(1)
 
-                # Si el jugador actual cambió,
-                # notificar a los clientes y salir del bucle interno
-                if (
-                    self._partida_activa()
-                    and turno_actual != self._server.game.turno_actual()
-                ):
-                    self._server.enviar_turno_actual()
+                # Si cambió la generación, el timer pertenece a un turno viejo.
+                if self._server.turno_snapshot() != snapshot:
                     break
             else:
-                # Si el tiempo se agotó, pasar al siguiente turno
-                if remaining <= 0:
-                    LOGGER.info("Tiempo agotado para el turno %s", turno_actual)
-                    self._server.game.finalizar_turno()
-                    # Enviar el nuevo número de turno a los clientes
-                    if self._partida_activa() and not self._stop_event.is_set():
-                        self._server.enviar_turno_actual()
-                else:
-                    # El contador llegó a 0 -> finalizar turno automáticamente
-                    self._server.game.finalizar_turno()
-                    # Enviar el nuevo número de turno a los clientes
-                    if self._partida_activa() and not self._stop_event.is_set():
-                        self._server.enviar_turno_actual()
+                if (
+                    not self._stop_event.is_set()
+                    and self._server.turno_snapshot() == snapshot
+                ):
+                    LOGGER.info("Tiempo agotado para jugador %s", userid_turno)
+                    self._server.encolar_vencimiento_turno(generation)
 
             # Pequeño respiro antes de continuar (evita bucle tight)
             time.sleep(0.1)

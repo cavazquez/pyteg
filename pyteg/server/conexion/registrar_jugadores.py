@@ -69,7 +69,7 @@ def _iniciar_cliente(
             client.transmisor.enviar_error(
                 "room_full", "La sala está completa. Intenta nuevamente más tarde."
             )
-            client.cerrar()
+            client.cerrar(flush_outgoing=True)
             return
 
         client_thread = threading.Thread(target=client.run, daemon=True)

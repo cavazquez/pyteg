@@ -93,6 +93,7 @@ class TestServerLobbyCleanup(unittest.TestCase):
     def test_lobby_disconnect_returns_color_once(self) -> None:
         """La baja repetida no deja colores reservados ni jugadores fantasma."""
         server = Server()
+        self.addCleanup(server.detener)
         client = _FakeLobbyClient(1)
 
         self.assertTrue(server.registrar_cliente(1, cast("Client", client)))
@@ -108,6 +109,7 @@ class TestServerLobbyCleanup(unittest.TestCase):
     def test_registration_rejects_ninth_client_without_reserving_color(self) -> None:
         """La novena conexión no reemplaza ni consume el color de otro jugador."""
         server = Server()
+        self.addCleanup(server.detener)
         clients = [_FakeLobbyClient(user_id) for user_id in range(1, 10)]
 
         for client in clients[:8]:

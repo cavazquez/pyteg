@@ -154,6 +154,10 @@ class TestGame(unittest.TestCase):
         ]
         self.mazo_placeholder = Mazo(self.mapa.paises(), ["Globo"])
 
+    def tearDown(self) -> None:
+        """Detiene el ejecutor creado por el servidor de prueba."""
+        self.server.detener()
+
     def test_create_instance(self) -> None:
         """Prueba crear una instancia de Game."""
         game = Game(
