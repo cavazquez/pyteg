@@ -37,6 +37,7 @@ class _MessageSchema:
 
     required: Mapping[str, FieldValidator]
     optional: Mapping[str, FieldValidator]
+    allow_unknown: bool = False
 
 
 def _is_string(value: object) -> bool:
@@ -149,17 +150,29 @@ def _is_string_list(value: object) -> bool:
 def _is_snapshot_players(value: object) -> bool:  # noqa: PLR0911
     if not isinstance(value, list):
         return False
+    required = {
+        "userid",
+        "username",
+        "color",
+        "admin",
+        "connected",
+        "eliminated",
+    }
     for player in value:
         if not isinstance(player, dict):
             return False
-        if set(player) != {"userid", "username", "connected", "eliminated"}:
+        if not required.issubset(player):
             return False
         if not _integer_in_range(1)(player["userid"]):
             return False
         if not _is_string(player["username"]):
             return False
-        if not _is_boolean(player["connected"]) or not _is_boolean(
-            player["eliminated"]
+        if not _nullable(_is_rgb)(player["color"]):
+            return False
+        if (
+            not _is_boolean(player["admin"])
+            or not _is_boolean(player["connected"])
+            or not _is_boolean(player["eliminated"])
         ):
             return False
     return True
@@ -171,11 +184,13 @@ def _is_snapshot_countries(value: object) -> bool:
     for name, country in value.items():
         if not _is_nonempty_string(name) or not isinstance(country, dict):
             return False
-        if set(country) != {"userid", "unidades"}:
+        if not {"userid", "unidades", "misiles"}.issubset(country):
             return False
         if not _nullable(_integer_in_range(1))(country["userid"]):
             return False
-        if not _integer_in_range(0)(country["unidades"]):
+        if not _integer_in_range(0)(country["unidades"]) or not _integer_in_range(0)(
+            country["misiles"]
+        ):
             return False
     return True
 
@@ -184,10 +199,28 @@ def _is_snapshot_turn(value: object) -> bool:
     if not isinstance(value, dict):
         return False
     return (
-        set(value) == {"num_turno", "num_ronda", "jugador_id"}
+        {"num_turno", "num_ronda", "jugador_id"}.issubset(value)
         and _integer_in_range(0)(value["num_turno"])
         and _integer_in_range(1)(value["num_ronda"])
         and _nullable(_integer_in_range(1))(value["jugador_id"])
+    )
+
+
+def _is_snapshot_configuration(value: object) -> bool:
+    if not isinstance(value, dict):
+        return False
+    required = {
+        "segundos_por_turno",
+        "paises_para_victoria",
+        "objetivos_secretos",
+        "misiles_habilitados",
+    }
+    return (
+        required.issubset(value)
+        and _integer_in_range(1)(value["segundos_por_turno"])
+        and _integer_in_range(0)(value["paises_para_victoria"])
+        and _is_boolean(value["objetivos_secretos"])
+        and _is_boolean(value["misiles_habilitados"])
     )
 
 
@@ -260,14 +293,20 @@ _SERVER_COMMAND_SCHEMAS: dict[str, _MessageSchema] = {
 _CLIENT_EVENT_SCHEMAS: dict[str, _MessageSchema] = {
     "snapshot": _MessageSchema(
         {
+            "snapshot_version": _POSITIVE_INTEGER,
             "revision": _NONNEGATIVE_INTEGER,
             "estado": _is_nonempty_string,
             "theme": _is_nonempty_string,
             "map_hash": _is_nonempty_string,
+            "configuracion": _is_snapshot_configuration,
             "players": _is_snapshot_players,
             "countries": _is_snapshot_countries,
+            "fase": _nullable(_is_nonempty_string),
+            "turno": _nullable(_is_snapshot_turn),
+            "refuerzos_pendientes": _NONNEGATIVE_INTEGER,
         },
-        {"fase": _is_nonempty_string, "turno": _is_snapshot_turn},
+        {"resync": _is_boolean},
+        allow_unknown=True,
     ),
     "command_result": _MessageSchema(
         {
@@ -450,7 +489,7 @@ def _validate_message(  # noqa: C901
     # valida como cadena no vacía.
     allowed_fields = {"mensaje", "command_id", *schema.required, *schema.optional}
     unexpected = sorted(set(payload).difference(allowed_fields))
-    if unexpected:
+    if unexpected and not schema.allow_unknown:
         msg = f"Campo(s) no permitido(s) en {discriminator}: {', '.join(unexpected)}"
         raise MessageValidationError(_ERROR_INVALID_FIELD, msg)
 

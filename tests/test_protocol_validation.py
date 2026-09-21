@@ -79,6 +79,49 @@ class TestServerCommandValidation(unittest.TestCase):
 class TestClientEventValidation(unittest.TestCase):
     """Valida los eventos que un servidor entrega a un cliente Qt."""
 
+    def test_accepts_complete_forward_compatible_snapshot(self) -> None:
+        """El snapshot exige el contrato base y tolera campos futuros."""
+        payload = {
+            "mensaje": "snapshot",
+            "snapshot_version": 1,
+            "revision": 4,
+            "estado": "JUGANDO",
+            "theme": "classic",
+            "map_hash": "hash",
+            "configuracion": {
+                "segundos_por_turno": 20,
+                "paises_para_victoria": 30,
+                "objetivos_secretos": False,
+                "misiles_habilitados": True,
+                "regla_futura": "ignorada",
+            },
+            "players": [
+                {
+                    "userid": 1,
+                    "username": "Admin",
+                    "color": {"r": 255, "g": 0, "b": 0},
+                    "admin": True,
+                    "connected": True,
+                    "eliminated": False,
+                    "campo_futuro": 1,
+                }
+            ],
+            "countries": {
+                "Argentina": {
+                    "userid": 1,
+                    "unidades": 3,
+                    "misiles": 2,
+                    "dato_futuro": True,
+                }
+            },
+            "fase": "colocacion",
+            "turno": {"num_turno": 0, "num_ronda": 1, "jugador_id": 1},
+            "refuerzos_pendientes": 5,
+            "campo_futuro": {"version": 2},
+        }
+
+        self.assertEqual(validate_client_event(payload), payload)
+
     def test_rejects_invalid_or_unknown_events(self) -> None:
         """Un peer defectuoso no construye tareas con payloads inseguros."""
         invalid_cases = [

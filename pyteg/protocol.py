@@ -7,6 +7,7 @@ import hashlib
 from pyteg.utils import get_resource_path
 
 PROTOCOL_VERSION = "1"
+SNAPSHOT_VERSION = 1
 
 
 def map_hash_for_theme(theme: str) -> str:

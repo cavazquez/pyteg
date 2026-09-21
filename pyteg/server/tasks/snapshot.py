@@ -18,4 +18,6 @@ class ServerTaskSolicitarSnapshot(IServerTask[BaseTaskData]):
     def _execute(self, client: IClientProtocol, _context: GameContext) -> None:
         enviar = getattr(client.server, "public_snapshot", None)
         if callable(enviar):
-            client.transmisor.enviar_snapshot(enviar())
+            snapshot = dict(enviar())
+            snapshot["resync"] = True
+            client.transmisor.enviar_snapshot(snapshot)

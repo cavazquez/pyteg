@@ -926,6 +926,76 @@ class TestIntegration(unittest.TestCase):
         c2 = self._new_client()
         self._start_two_player_game(c1, c2)
 
+    def test_snapshot_contract_is_complete_equal_and_resyncable(self) -> None:
+        """Tres clientes reciben el mismo snapshot público y pueden resincronizar."""
+        c1 = self._new_client()
+        c2 = self._new_client()
+        c3 = self._new_client()
+        self._start_two_player_game(c1, c2)
+
+        snapshots: list[dict[str, Any]] = []
+        for client in (c1, c2, c3):
+            snapshot = client.wait_for(
+                "snapshot",
+                timeout=4.0,
+                extra_check=lambda message: (
+                    message.get("estado") == "JUGANDO"
+                    and message.get("snapshot_version") == 1
+                ),
+            )
+            self.assertIsNotNone(snapshot, "Faltó snapshot inicial")
+            if snapshot is not None:
+                snapshots.append(snapshot)
+
+        self.assertEqual(len(snapshots), 3)
+        self.assertEqual(snapshots[0], snapshots[1])
+        self.assertEqual(snapshots[1], snapshots[2])
+        snapshot = snapshots[0]
+        self.assertIn("configuracion", snapshot)
+        self.assertIn("refuerzos_pendientes", snapshot)
+        self.assertTrue(
+            all("misiles" in country for country in snapshot["countries"].values())
+        )
+        self.assertTrue(
+            all(
+                {
+                    "userid",
+                    "username",
+                    "color",
+                    "admin",
+                    "connected",
+                    "eliminated",
+                }.issubset(player)
+                for player in snapshot["players"]
+            )
+        )
+        self.assertNotIn("tarjetas", snapshot)
+        self.assertNotIn("objetivo_id", snapshot)
+
+        revision = int(snapshot["revision"])
+        server_revision = self._server.state_revision()
+        c1.send({
+            "mensaje": "solicitar_snapshot",
+            "command_id": "snapshot-resync",
+        })
+        resync = c1.wait_for(
+            "snapshot",
+            timeout=4.0,
+            extra_check=lambda message: message.get("resync") is True,
+        )
+        result = c1.wait_for(
+            "command_result",
+            timeout=4.0,
+            extra_check=lambda message: message.get("command_id") == "snapshot-resync",
+        )
+        self.assertIsNotNone(resync, "No se devolvió snapshot de resincronización")
+        self.assertIsNotNone(result, "Faltó confirmación de solicitar_snapshot")
+        if resync is not None and result is not None:
+            self.assertEqual(resync["revision"], revision)
+            self.assertEqual(result["revision"], revision)
+            self.assertTrue(result["accepted"])
+        self.assertEqual(self._server.state_revision(), server_revision)
+
     def _start_two_player_game(
         self,
         c1: _TestClient,

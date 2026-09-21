@@ -24,7 +24,7 @@ class ServerTaskReconectar(IServerTask[ReconectarTaskData]):
         self,
         client: IClientProtocol,
         context: GameContext,  # noqa: ARG002
-    ) -> None:
+    ) -> bool:
         success = client.server.reconectar_cliente(
             client,
             self._data["user_id"],
@@ -35,3 +35,5 @@ class ServerTaskReconectar(IServerTask[ReconectarTaskData]):
                 "reconnect_rejected",
                 "El token no es válido o la sesión ya no puede reconectarse.",
             )
+            return False
+        return True

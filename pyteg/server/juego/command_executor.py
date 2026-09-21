@@ -41,6 +41,12 @@ class _ClientDisconnected:
 
 
 _STOP = object()
+_NON_MUTATING_COMMANDS = frozenset({
+    "chat",
+    "hello",
+    "solicitar_snapshot",
+    "solicitar_tarjetas",
+})
 
 
 class GameCommandExecutor:
@@ -138,6 +144,7 @@ class GameCommandExecutor:
 
     def _execute_client_command(self, command: _ClientCommand) -> None:
         """Construye y ejecuta una tarea del servidor dentro del serializador."""
+        command_name = command.payload.get("mensaje")
         command_id = command.payload.get("command_id")
         if isinstance(command_id, str):
             cached = getattr(command.client, "command_result", lambda _: None)(
@@ -148,6 +155,8 @@ class GameCommandExecutor:
                 return
         accepted = True
         error_code: str | None = None
+        revision_getter = getattr(self._server, "state_revision", None)
+        revision_before = revision_getter() if callable(revision_getter) else None
         try:
             task = ServerTaskManager.msg_to_task(command.payload)
             accepted = bool(task.run(command.client))
@@ -169,14 +178,9 @@ class GameCommandExecutor:
             error_code = "internal_error"
             LOGGER.exception("Fallo ejecutando comando del cliente")
 
+        if accepted and command_name not in _NON_MUTATING_COMMANDS:
+            self._publish_revision_if_needed(revision_before)
         if isinstance(command_id, str):
-            if accepted and command.payload.get("mensaje") not in {
-                "chat",
-                "hello",
-                "solicitar_snapshot",
-            }:
-                self._server.bump_state_revision()
-                self._server.enviar_snapshot()
             result = {
                 "command_id": command_id,
                 "accepted": accepted,
@@ -188,6 +192,24 @@ class GameCommandExecutor:
             remember = getattr(command.client, "remember_command_result", None)
             if callable(remember):
                 remember(command_id, result)
+
+    def _publish_revision_if_needed(self, revision_before: int | None) -> None:
+        """Publica una única revisión para una mutación aceptada.
+
+        Algunas transiciones complejas publican dentro de su coordinador (por
+        ejemplo, iniciar, finalizar o reabrir una partida). Si ya cambiaron la
+        revisión, el ejecutor reutiliza ese snapshot y no genera un segundo.
+        """
+        revision_getter = getattr(self._server, "state_revision", None)
+        revision_after = revision_getter() if callable(revision_getter) else None
+        if revision_before is not None and revision_after != revision_before:
+            return
+        bump = getattr(self._server, "bump_state_revision", None)
+        snapshot = getattr(self._server, "enviar_snapshot", None)
+        if callable(bump):
+            bump()
+        if callable(snapshot):
+            snapshot()
 
     def _execute_turn_expired(self, expired: _TurnExpired) -> None:
         """Avanza una vez sólo si el timer corresponde al turno vigente."""

@@ -111,6 +111,31 @@ class _FakeServer:
         self.game = _FakeGame()
         self.turno_enviado = threading.Event()
         self.mapa_enviado = threading.Event()
+        self.revision = 0
+        self.snapshots = 0
+
+    def state_revision(self) -> int:
+        """Devuelve la revisión pública del doble.
+
+        Returns:
+            Revisión pública actual.
+
+        """
+        return self.revision
+
+    def bump_state_revision(self) -> int:
+        """Avanza la revisión pública del doble.
+
+        Returns:
+            Nueva revisión pública.
+
+        """
+        self.revision += 1
+        return self.revision
+
+    def enviar_snapshot(self) -> None:
+        """Cuenta snapshots difundidos por el ejecutor."""
+        self.snapshots += 1
 
     def enviar_turno_actual(self) -> None:
         """Registra la difusión del nuevo turno."""
@@ -147,8 +172,11 @@ class _BlockingPlacementTask:
         self._release = release
         self.validated_player: int | None = None
 
-    def run(self, client: _FakeClient) -> None:
+    def run(self, client: _FakeClient) -> bool:
         """Valida, se pausa y consume una unidad del turno que validó.
+
+        Returns:
+            ``True`` cuando la tarea consume la unidad validada.
 
         Raises:
             AssertionError: Si el test no libera la tarea bloqueada.
@@ -161,6 +189,7 @@ class _BlockingPlacementTask:
             msg = "La tarea bloqueada no fue liberada"
             raise AssertionError(msg)
         turno.usar_unidad()
+        return True
 
 
 class _BarrierTask:
@@ -170,9 +199,28 @@ class _BarrierTask:
         """Guarda la señal de finalización."""
         self._completed = completed
 
-    def run(self, _: object) -> None:
-        """Señala que llegó al final de la cola."""
+    def run(self, _: object) -> bool:
+        """Señala que llegó al final de la cola.
+
+        Returns:
+            Siempre ``True`` para representar una tarea aceptada.
+
+        """
         self._completed.set()
+        return True
+
+
+class _RejectingTask:
+    """Tarea falsa que representa un comando rechazado sin mutación."""
+
+    def run(self, _: object) -> bool:
+        """Devuelve rechazo para verificar que no se publica revisión.
+
+        Returns:
+            Siempre ``False``.
+
+        """
+        return False
 
 
 class TestGameCommandExecutor(unittest.TestCase):
@@ -247,3 +295,45 @@ class TestGameCommandExecutor(unittest.TestCase):
 
         self.assertFalse(self.server.turno_enviado.is_set())
         self.assertEqual(self.server.game.finalizaciones, 1)
+
+    def test_accepted_command_without_id_publishes_one_revision(self) -> None:
+        """Los clientes legacy también reciben una revisión por mutación."""
+        completed = threading.Event()
+        barrier = threading.Event()
+        with patch(
+            "pyteg.server.juego.command_executor.ServerTaskManager.msg_to_task",
+            side_effect=[_BarrierTask(completed), _BarrierTask(barrier)],
+        ):
+            self.executor.enqueue_command(
+                cast("IClientProtocol", self.client),
+                {"mensaje": "agregar_unidad"},
+            )
+            self.assertTrue(completed.wait(timeout=1.0))
+            self.executor.enqueue_command(
+                cast("IClientProtocol", self.client),
+                {"mensaje": "chat", "msg": "barrera"},
+            )
+            self.assertTrue(barrier.wait(timeout=1.0))
+
+        self.assertEqual(self.server.revision, 1)
+        self.assertEqual(self.server.snapshots, 1)
+
+    def test_rejected_command_does_not_publish_revision(self) -> None:
+        """Un rechazo no altera la revisión pública ni difunde snapshot."""
+        completed = threading.Event()
+        with patch(
+            "pyteg.server.juego.command_executor.ServerTaskManager.msg_to_task",
+            side_effect=[_RejectingTask(), _BarrierTask(completed)],
+        ):
+            self.executor.enqueue_command(
+                cast("IClientProtocol", self.client),
+                {"mensaje": "agregar_unidad"},
+            )
+            self.executor.enqueue_command(
+                cast("IClientProtocol", self.client),
+                {"mensaje": "chat", "msg": "barrera"},
+            )
+            self.assertTrue(completed.wait(timeout=1.0))
+
+        self.assertEqual(self.server.revision, 0)
+        self.assertEqual(self.server.snapshots, 0)
