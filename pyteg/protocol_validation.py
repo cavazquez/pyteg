@@ -495,9 +495,9 @@ def _validate_message(  # noqa: C901
         msg = f"Mensaje desconocido: {discriminator}"
         raise MessageValidationError(_ERROR_UNKNOWN_MESSAGE, msg)
 
-    # Todos los comandos pueden llevar un identificador de idempotencia. Se
-    # mantiene opcional para clientes legacy, pero cuando aparece siempre se
-    # valida como cadena no vacía.
+    # Todos los comandos pueden llevar un identificador de idempotencia. Aquí
+    # sólo se valida su forma; el executor exige su presencia en mutaciones y
+    # deja opcionales las consultas y demás mensajes no mutantes.
     allowed_fields = {"mensaje", "command_id", *schema.required, *schema.optional}
     unexpected = sorted(set(payload).difference(allowed_fields))
     if unexpected and not schema.allow_unknown:

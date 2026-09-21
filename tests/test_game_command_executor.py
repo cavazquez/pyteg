@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import threading
 import unittest
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Any, cast
 from unittest.mock import patch
 
 from pyteg.server.juego.command_executor import GameCommandExecutor
@@ -146,12 +146,32 @@ class _FakeServer:
         self.mapa_enviado.set()
 
 
+class _FakeTransmisor:
+    """Transmisor mínimo para observar resultados y errores del executor."""
+
+    def __init__(self) -> None:
+        """Inicializa colecciones de mensajes enviados."""
+        self.command_results: list[dict[str, Any]] = []
+        self.errors: list[tuple[str, str]] = []
+
+    def enviar_resultado_comando(self, **result: Any) -> None:
+        """Guarda un resultado de comando enviado."""
+        self.command_results.append(dict(result))
+
+    def enviar_error(self, error_type: str, message: str) -> None:
+        """Guarda un error de protocolo enviado."""
+        self.errors.append((error_type, message))
+
+
 class _FakeClient:
     """Cliente mínimo para ejecutar la tarea bloqueada."""
 
     def __init__(self, server: _FakeServer) -> None:
         """Asocia el cliente al servidor de prueba."""
         self.server = server
+        self.transmisor = _FakeTransmisor()
+        self._command_results: dict[str, dict[str, Any]] = {}
+        self._command_payloads: dict[str, dict[str, Any]] = {}
 
     def userid(self) -> int:
         """Devuelve un id estable usado sólo por el logger.
@@ -161,6 +181,39 @@ class _FakeClient:
 
         """
         return 1
+
+    def command_result(self, command_id: str) -> dict[str, Any] | None:
+        """Devuelve una copia del resultado cacheado.
+
+        Returns:
+            Resultado cacheado o ``None`` si no existe.
+
+        """
+        result = self._command_results.get(command_id)
+        return None if result is None else dict(result)
+
+    def command_payload(self, command_id: str) -> dict[str, Any] | None:
+        """Devuelve una copia del payload cacheado.
+
+        Returns:
+            Payload cacheado o ``None`` si no existe.
+
+        """
+        payload = self._command_payloads.get(command_id)
+        return None if payload is None else dict(payload)
+
+    def remember_command_result(
+        self,
+        command_id: str,
+        result: dict[str, Any],
+        payload: dict[str, Any] | None = None,
+    ) -> None:
+        """Guarda resultado y payload para simular reintentos."""
+        self._command_results[command_id] = dict(result)
+        if payload is not None:
+            self._command_payloads[command_id] = {
+                key: value for key, value in payload.items() if key != "command_id"
+            }
 
 
 class _BlockingPlacementTask:
@@ -245,7 +298,8 @@ class TestGameCommandExecutor(unittest.TestCase):
             return_value=task,
         ):
             self.executor.enqueue_command(
-                cast("IClientProtocol", self.client), {"mensaje": "agregar_unidad"}
+                cast("IClientProtocol", self.client),
+                {"mensaje": "agregar_unidad", "command_id": "placement-1"},
             )
             self.assertTrue(validated.wait(timeout=1.0), "La acción no se validó")
             snapshot = self.executor.turn_snapshot()
@@ -296,8 +350,8 @@ class TestGameCommandExecutor(unittest.TestCase):
         self.assertFalse(self.server.turno_enviado.is_set())
         self.assertEqual(self.server.game.finalizaciones, 1)
 
-    def test_accepted_command_without_id_publishes_one_revision(self) -> None:
-        """Los clientes legacy también reciben una revisión por mutación."""
+    def test_accepted_command_with_id_publishes_one_revision(self) -> None:
+        """Una mutación identificada publica una única revisión."""
         completed = threading.Event()
         barrier = threading.Event()
         with patch(
@@ -306,7 +360,7 @@ class TestGameCommandExecutor(unittest.TestCase):
         ):
             self.executor.enqueue_command(
                 cast("IClientProtocol", self.client),
-                {"mensaje": "agregar_unidad"},
+                {"mensaje": "agregar_unidad", "command_id": "placement-2"},
             )
             self.assertTrue(completed.wait(timeout=1.0))
             self.executor.enqueue_command(
@@ -318,13 +372,13 @@ class TestGameCommandExecutor(unittest.TestCase):
         self.assertEqual(self.server.revision, 1)
         self.assertEqual(self.server.snapshots, 1)
 
-    def test_rejected_command_does_not_publish_revision(self) -> None:
-        """Un rechazo no altera la revisión pública ni difunde snapshot."""
+    def test_mutation_without_id_is_rejected_before_building_task(self) -> None:
+        """Una mutación sin ID no construye tarea ni publica revisión."""
         completed = threading.Event()
         with patch(
             "pyteg.server.juego.command_executor.ServerTaskManager.msg_to_task",
-            side_effect=[_RejectingTask(), _BarrierTask(completed)],
-        ):
+            return_value=_BarrierTask(completed),
+        ) as msg_to_task:
             self.executor.enqueue_command(
                 cast("IClientProtocol", self.client),
                 {"mensaje": "agregar_unidad"},
@@ -335,5 +389,108 @@ class TestGameCommandExecutor(unittest.TestCase):
             )
             self.assertTrue(completed.wait(timeout=1.0))
 
+        self.assertEqual(msg_to_task.call_count, 1)
+        self.assertEqual(self.client.transmisor.errors[0][0], "command_id_required")
         self.assertEqual(self.server.revision, 0)
         self.assertEqual(self.server.snapshots, 0)
+
+    def test_rejected_command_does_not_publish_revision(self) -> None:
+        """Un rechazo no altera la revisión pública ni difunde snapshot."""
+        completed = threading.Event()
+        with patch(
+            "pyteg.server.juego.command_executor.ServerTaskManager.msg_to_task",
+            side_effect=[_RejectingTask(), _BarrierTask(completed)],
+        ):
+            self.executor.enqueue_command(
+                cast("IClientProtocol", self.client),
+                {"mensaje": "agregar_unidad", "command_id": "reject-1"},
+            )
+            self.executor.enqueue_command(
+                cast("IClientProtocol", self.client),
+                {"mensaje": "chat", "msg": "barrera"},
+            )
+            self.assertTrue(completed.wait(timeout=1.0))
+
+        self.assertEqual(self.server.revision, 0)
+        self.assertEqual(self.server.snapshots, 0)
+
+    def test_duplicate_command_id_replays_without_running_task(self) -> None:
+        """Un reintento idéntico devuelve el resultado sin mutar otra vez."""
+        first_completed = threading.Event()
+        barrier_completed = threading.Event()
+        with patch(
+            "pyteg.server.juego.command_executor.ServerTaskManager.msg_to_task",
+            side_effect=[
+                _BarrierTask(first_completed),
+                _BarrierTask(barrier_completed),
+            ],
+        ) as msg_to_task:
+            payload = {"mensaje": "agregar_unidad", "command_id": "same-1"}
+            self.executor.enqueue_command(cast("IClientProtocol", self.client), payload)
+            self.assertTrue(first_completed.wait(timeout=1.0))
+            self.executor.enqueue_command(
+                cast("IClientProtocol", self.client), dict(payload)
+            )
+            self.executor.enqueue_command(
+                cast("IClientProtocol", self.client),
+                {"mensaje": "chat", "msg": "barrera"},
+            )
+            self.assertTrue(barrier_completed.wait(timeout=1.0))
+
+        self.assertEqual(msg_to_task.call_count, 2)
+        self.assertEqual(self.server.revision, 1)
+        self.assertEqual(self.server.snapshots, 1)
+        self.assertEqual(
+            self.client.transmisor.command_results,
+            [
+                {"command_id": "same-1", "accepted": True, "revision": 1},
+                {"command_id": "same-1", "accepted": True, "revision": 1},
+            ],
+        )
+
+    def test_command_id_conflict_is_rejected_without_mutation(self) -> None:
+        """Reutilizar un ID con otro payload no ejecuta la segunda mutación."""
+        first_completed = threading.Event()
+        barrier_completed = threading.Event()
+        with patch(
+            "pyteg.server.juego.command_executor.ServerTaskManager.msg_to_task",
+            side_effect=[
+                _BarrierTask(first_completed),
+                _BarrierTask(barrier_completed),
+            ],
+        ) as msg_to_task:
+            self.executor.enqueue_command(
+                cast("IClientProtocol", self.client),
+                {
+                    "mensaje": "agregar_unidad",
+                    "command_id": "same-2",
+                    "pais": "A",
+                },
+            )
+            self.assertTrue(first_completed.wait(timeout=1.0))
+            self.executor.enqueue_command(
+                cast("IClientProtocol", self.client),
+                {
+                    "mensaje": "agregar_unidad",
+                    "command_id": "same-2",
+                    "pais": "B",
+                },
+            )
+            self.executor.enqueue_command(
+                cast("IClientProtocol", self.client),
+                {"mensaje": "chat", "msg": "barrera"},
+            )
+            self.assertTrue(barrier_completed.wait(timeout=1.0))
+
+        self.assertEqual(msg_to_task.call_count, 2)
+        self.assertEqual(self.server.revision, 1)
+        self.assertEqual(self.server.snapshots, 1)
+        self.assertEqual(
+            self.client.transmisor.command_results[-1],
+            {
+                "command_id": "same-2",
+                "accepted": False,
+                "revision": 1,
+                "error_code": "command_id_conflict",
+            },
+        )

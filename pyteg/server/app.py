@@ -423,10 +423,15 @@ class Server:
         )
         if anterior is None:
             return False
-        exportar_resultados = getattr(anterior, "export_command_results", None)
-        importar_resultados = getattr(client, "import_command_results", None)
-        if callable(exportar_resultados) and callable(importar_resultados):
-            importar_resultados(exportar_resultados())
+        exportar_cache = getattr(anterior, "export_command_cache", None)
+        importar_cache = getattr(client, "import_command_cache", None)
+        if callable(exportar_cache) and callable(importar_cache):
+            importar_cache(exportar_cache())
+        else:
+            exportar_resultados = getattr(anterior, "export_command_results", None)
+            importar_resultados = getattr(client, "import_command_results", None)
+            if callable(exportar_resultados) and callable(importar_resultados):
+                importar_resultados(exportar_resultados())
         if not self._client_registry.reasignar_cliente(
             temporary_user_id, int(user_id), client
         ):

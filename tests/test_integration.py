@@ -13,6 +13,7 @@ import socket
 import threading
 import time
 import unittest
+import uuid
 from typing import Any
 
 from pyteg.codecs_utils import FrameCodecError, NulDelimitedUtf8Codec
@@ -30,6 +31,12 @@ from pyteg.server.msg import MsgError
 _CONNECT_TIMEOUT = 2.0  # segundos para conectar
 _READ_TIMEOUT = 3.0  # segundos esperando un mensaje
 _RECV_SIZE = 4096
+_NON_MUTATING_COMMANDS = {
+    "chat",
+    "hello",
+    "solicitar_snapshot",
+    "solicitar_tarjetas",
+}
 
 
 # ---------------------------------------------------------------------------
@@ -201,15 +208,23 @@ class _TestClient:
             except OSError:
                 break
 
-    def send(self, data: dict[str, Any]) -> None:
+    def send(self, data: dict[str, Any], *, auto_command_id: bool = True) -> None:
         """Envía un mensaje JSON al servidor.
 
         Args:
             data: Datos a serializar y enviar.
+            auto_command_id: Agrega un ID a mutaciones que no lo incluyan.
 
         """
         if self._sock:
-            payload = json.dumps(data) + "\0"
+            payload_data = dict(data)
+            if (
+                auto_command_id
+                and payload_data.get("mensaje") not in _NON_MUTATING_COMMANDS
+                and "command_id" not in payload_data
+            ):
+                payload_data["command_id"] = uuid.uuid4().hex
+            payload = json.dumps(payload_data) + "\0"
             self._sock.sendall(payload.encode("utf-8"))
 
     def send_bytes(self, data: bytes) -> None:
@@ -391,6 +406,30 @@ class TestIntegration(unittest.TestCase):
                 if (
                     message.get("mensaje") == "error"
                     and message.get("error_type") == expected_error_type
+                ):
+                    return message
+            time.sleep(0.05)
+        return None
+
+    def _wait_for_new_command_result(
+        self,
+        client: _TestClient,
+        received_before: int,
+        command_id: str,
+        timeout: float = _READ_TIMEOUT,
+    ) -> dict[str, Any] | None:
+        """Espera el resultado de un comando posterior al índice indicado.
+
+        Returns:
+            Resultado encontrado o ``None`` si vence el tiempo de espera.
+
+        """
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
+            for message in client.snapshot_received()[received_before:]:
+                if (
+                    message.get("mensaje") == "command_result"
+                    and message.get("command_id") == command_id
                 ):
                     return message
             time.sleep(0.05)
@@ -600,11 +639,24 @@ class TestIntegration(unittest.TestCase):
         pending.close()
         self._wait_for_client_count(2)
 
-    def test_disconnected_client_can_reconnect_with_same_identity(self) -> None:
+    def test_disconnected_client_can_reconnect_with_same_identity(  # noqa: PLR0914
+        self,
+    ) -> None:
         """Una reconexión recupera color, territorios y turno sin duplicarlo."""
         first = self._new_client()
         second = self._new_client()
         self._new_client()  # Mantiene dos jugadores activos tras la baja.
+        cached_command = {
+            "mensaje": "set_username",
+            "username": "Cacheado",
+            "command_id": "reconnect-cache-1",
+        }
+        first.send(cached_command)
+        cached_result = first.wait_for(
+            "command_result",
+            extra_check=lambda data: data.get("command_id") == "reconnect-cache-1",
+        )
+        self.assertIsNotNone(cached_result, "No se cacheó el resultado previo")
         first_id, _second_id = self._start_two_player_game(first, second)
         token_message = first.wait_for(
             "session_token", extra_check=lambda data: data.get("user_id") == first_id
@@ -692,6 +744,17 @@ class TestIntegration(unittest.TestCase):
         )
         self.assertIn(first_id, game.lista_jugadores_orden_turno())
 
+        revision_before_retry = self._server.state_revision()
+        received_before_retry = len(replacement.snapshot_received())
+        replacement.send(cached_command)
+        replayed = self._wait_for_new_command_result(
+            replacement,
+            received_before_retry,
+            "reconnect-cache-1",
+        )
+        self.assertEqual(replayed, cached_result)
+        self.assertEqual(self._server.state_revision(), revision_before_retry)
+
     # ------------------------------------------------------------------
     # Test 2: dos clientes se conectan y ambos reciben user_id distintos
     # ------------------------------------------------------------------
@@ -734,7 +797,12 @@ class TestIntegration(unittest.TestCase):
         client = self._new_client()
         self.assertIsNotNone(client.wait_for("user_id"), "Cliente sin user_id")
         payload = json.dumps(
-            {"mensaje": "set_username", "username": "Café"}, ensure_ascii=False
+            {
+                "mensaje": "set_username",
+                "username": "Café",
+                "command_id": "fragmented-username",
+            },
+            ensure_ascii=False,
         )
         frame = NulDelimitedUtf8Codec.encode_frame(payload)
         split_at = frame.index("é".encode()) + 1
@@ -775,6 +843,65 @@ class TestIntegration(unittest.TestCase):
             extra_check=lambda data: data.get("username") == "Recuperado",
         )
         self.assertIsNotNone(recovered, "El lector no se recuperó tras el error")
+
+    def test_mutation_without_command_id_is_rejected_without_revision(self) -> None:
+        """El servidor exige ID antes de ejecutar cualquier mutación TCP."""
+        client = self._new_client()
+        self.assertIsNotNone(client.wait_for("user_id"), "Cliente sin user_id")
+        revision_before = self._server.state_revision()
+        received_before = len(client.snapshot_received())
+
+        client.send(
+            {"mensaje": "set_username", "username": "SinId"},
+            auto_command_id=False,
+        )
+        error = self._wait_for_new_protocol_error(
+            client, received_before, "command_id_required"
+        )
+
+        self.assertIsNotNone(error, "No se rechazó la mutación sin command_id")
+        self.assertEqual(self._server.state_revision(), revision_before)
+        self.assertNotEqual(
+            self._server.dame_clientes()[0].username(),
+            "SinId",
+        )
+
+    def test_command_id_replay_and_conflict_are_idempotent_over_tcp(self) -> None:
+        """Un retry idéntico no repite la mutación y otro payload se rechaza."""
+        client = self._new_client()
+        self.assertIsNotNone(client.wait_for("user_id"), "Cliente sin user_id")
+        command_id = "tcp-idempotency-1"
+        payload = {
+            "mensaje": "set_username",
+            "username": "Idempotente",
+            "command_id": command_id,
+        }
+
+        received_before = len(client.snapshot_received())
+        client.send(payload)
+        first = self._wait_for_new_command_result(client, received_before, command_id)
+        self.assertIsNotNone(first, "Faltó resultado del primer comando")
+        if first is None:
+            return
+        revision = int(first["revision"])
+
+        received_before = len(client.snapshot_received())
+        client.send(payload)
+        replay = self._wait_for_new_command_result(client, received_before, command_id)
+        self.assertEqual(replay, first)
+        self.assertEqual(self._server.state_revision(), revision)
+
+        received_before = len(client.snapshot_received())
+        client.send({**payload, "username": "Otro"})
+        conflict = self._wait_for_new_command_result(
+            client, received_before, command_id
+        )
+        self.assertIsNotNone(conflict, "Faltó rechazo del command_id reutilizado")
+        if conflict is not None:
+            self.assertFalse(conflict["accepted"])
+            self.assertEqual(conflict["error_code"], "command_id_conflict")
+            self.assertEqual(conflict["revision"], revision)
+        self.assertEqual(self._server.state_revision(), revision)
 
     # ------------------------------------------------------------------
     # Test 4: sólo el administrador puede configurar o empezar la partida
