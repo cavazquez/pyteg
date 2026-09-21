@@ -484,30 +484,74 @@ class TestIntegration(unittest.TestCase):
         self.assertIsNotNone(recovered, "El lector no se recuperó tras el error")
 
     # ------------------------------------------------------------------
-    # Test 4: el servidor no acepta empezar_partida sin pasar por empezar
+    # Test 4: sólo el administrador puede configurar o empezar la partida
     # ------------------------------------------------------------------
-    def test_non_admin_cannot_start_game(self) -> None:
-        """Un cliente no-admin no puede iniciar la partida (servidor sigue vivo)."""
-        c1 = self._new_client()
-        c2 = self._new_client()
+    def test_non_admin_cannot_configure_or_start_game(self) -> None:
+        """Un no-admin no altera configuración ni estado y recibe error TCP."""
+        admin = self._new_client()
+        non_admin = self._new_client()
 
-        c1.wait_for("user_id")
-        c2.wait_for("user_id")
+        self.assertIsNotNone(admin.wait_for("user_id"), "Admin sin user_id")
+        self.assertIsNotNone(non_admin.wait_for("user_id"), "Jugador sin user_id")
 
-        # c1 configura el lobby
-        c1.send({"mensaje": "empezar", "segundos": 60})
-        time.sleep(0.2)
-
-        # c2 intenta iniciar la partida (estado inválido para su rol)
-        c2.send({"mensaje": "empezar_partida"})
-
-        time.sleep(0.3)
-        # Verificar que el servidor sigue enviando mensajes (sigue vivo)
-        self.assertGreater(
-            len(c2.received),
-            0,
-            "El servidor no envió ningún mensaje al cliente 2",
+        non_admin.send({
+            "mensaje": "empezar",
+            "segundos": 1,
+            "paises_para_victoria": 2,
+            "objetivos_secretos": True,
+            "misiles_habilitados": True,
+        })
+        first_error = non_admin.wait_for(
+            "error", extra_check=lambda data: data.get("error_type") == "not_admin"
         )
+        self.assertIsNotNone(first_error, "No se rechazó la configuración no-admin")
+        self.assertTrue(self._server.estado.es_inicial())
+        self.assertIsNone(self._server.game)
+
+        received_before_start = len(non_admin.snapshot_received())
+        non_admin.send({"mensaje": "empezar_partida"})
+        deadline = time.monotonic() + _READ_TIMEOUT
+        second_error: dict[str, Any] | None = None
+        while time.monotonic() < deadline:
+            for message in non_admin.snapshot_received()[received_before_start:]:
+                if (
+                    message.get("mensaje") == "error"
+                    and message.get("error_type") == "not_admin"
+                ):
+                    second_error = message
+                    break
+            if second_error is not None:
+                break
+            time.sleep(0.05)
+
+        self.assertIsNotNone(second_error, "No se rechazó el inicio no-admin")
+        self.assertTrue(self._server.estado.es_inicial())
+        self.assertIsNone(self._server.game)
+
+        admin.send({"mensaje": "empezar", "segundos": 77})
+        self.assertIsNotNone(
+            admin.wait_for(
+                "estado",
+                extra_check=lambda data: data.get("estado") == "EsperarJugadores",
+            ),
+            "El administrador no pudo configurar la sala",
+        )
+        admin.send({"mensaje": "empezar_partida"})
+        self.assertIsNotNone(
+            admin.wait_for(
+                "estado",
+                timeout=4.0,
+                extra_check=lambda data: data.get("estado") == "JUGANDO",
+            ),
+            "El administrador no pudo iniciar la partida",
+        )
+        config = admin.wait_for("configuracion_partida", timeout=4.0)
+        self.assertIsNotNone(config, "No se difundió la configuración de partida")
+        if config is not None:
+            self.assertEqual(config["segundos_por_turno"], 77)
+            self.assertEqual(config["paises_para_victoria"], 0)
+            self.assertFalse(config["objetivos_secretos"])
+            self.assertFalse(config["misiles_habilitados"])
 
     # ------------------------------------------------------------------
     # Test 5: flujo completo — inicio de partida con dos jugadores

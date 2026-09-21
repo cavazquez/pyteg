@@ -43,6 +43,8 @@ class ServerTaskChat(IServerTask[ChatTaskData]):
 class ServerTaskEmpezar(IServerTask[EmpezarTaskData]):
     """Tarea para configurar e iniciar la partida."""
 
+    requires_admin = True
+
     def __init__(self, data: EmpezarTaskData) -> None:
         """Inicializa la tarea de empezar partida.
 
@@ -123,6 +125,8 @@ class ServerTaskSeleccionarColor(IServerTask[SeleccionarColorTaskData]):
 
 class ServerTaskEmpezarPartida(IServerTask[BaseTaskData]):
     """Tarea para iniciar la partida después de la configuración."""
+
+    requires_admin = True
 
     def __init__(self, data: BaseTaskData) -> None:
         """Inicializa la tarea de empezar partida.
