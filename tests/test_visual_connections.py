@@ -14,6 +14,31 @@ from PySide6.QtWidgets import QApplication
 from pyteg.gui.mapa.scene import QCustomGraphicsScene
 from pyteg.toml_reader import TomlReader, TomlReaderError
 
+EXPECTED_CLASSIC_VISUAL_CONNECTIONS = {
+    ("Alaska", "Kamchatka"),
+    ("Australia", "Borneo"),
+    ("Australia", "Java"),
+    ("Australia", "Sumatra"),
+    ("Brasil", "Sahara"),
+    ("Chile", "Australia"),
+    ("Colombia", "Mexico"),
+    ("Egipto", "Israel"),
+    ("Egipto", "Polonia"),
+    ("Egipto", "Turquia"),
+    ("Espana", "Sahara"),
+    ("GranBretana", "Islandia"),
+    ("Groenlandia", "Islandia"),
+    ("India", "Sumatra"),
+    ("Japon", "Kamchatka"),
+    ("Labrador", "Groenlandia"),
+    ("Malasia", "Borneo"),
+    ("NuevaYork", "Groenlandia"),
+    ("Polonia", "Turquia"),
+    ("Rusia", "Aral"),
+    ("Rusia", "Iran"),
+    ("Rusia", "Turquia"),
+}
+
 
 class VisualConnectionReaderTests(unittest.TestCase):
     """Valida el esquema TOML de conexiones visuales."""
@@ -73,15 +98,7 @@ class VisualConnectionReaderTests(unittest.TestCase):
         connections = reader.get_conexiones_visuales()
         self.assertEqual(
             {(connection.origen, connection.destino) for connection in connections},
-            {
-                ("Alaska", "Kamchatka"),
-                ("Australia", "Borneo"),
-                ("Australia", "Java"),
-                ("Australia", "Sumatra"),
-                ("GranBretana", "Islandia"),
-                ("Groenlandia", "Islandia"),
-                ("Japon", "Kamchatka"),
-            },
+            EXPECTED_CLASSIC_VISUAL_CONNECTIONS,
         )
 
     def test_rechaza_pais_visual_inexistente(self) -> None:

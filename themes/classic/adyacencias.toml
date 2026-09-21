@@ -65,12 +65,45 @@ Borneo = ["Australia", "Malasia"]
 Java = ["Australia"]
 Sumatra = ["Australia", "India"]
 
-# Conexiones marítimas que se dibujan sólo en la escena Qt. El grafo de reglas
-# sigue siendo la sección Adyacencias y el servidor no consulta estas tablas.
+# Puentes y rutas que no quedan claros por el contorno de los sprites. Se
+# dibujan sólo en la escena Qt; el grafo de reglas sigue siendo la sección
+# Adyacencias y el servidor no consulta estas tablas. La lista cubre los
+# puentes intercontinentales auditados y las rutas insulares del mapa clásico.
 [[ConexionesVisuales]]
 origen = "Alaska"
 destino = "Kamchatka"
 puntos = [[120.0, 0.0], [450.0, -15.0]]
+
+[[ConexionesVisuales]]
+origen = "Brasil"
+destino = "Sahara"
+
+[[ConexionesVisuales]]
+origen = "Chile"
+destino = "Australia"
+puntos = [[205.0, 385.0], [540.0, 385.0]]
+
+[[ConexionesVisuales]]
+origen = "Colombia"
+destino = "Mexico"
+
+[[ConexionesVisuales]]
+origen = "Egipto"
+destino = "Israel"
+puntos = [[470.0, 210.0]]
+
+[[ConexionesVisuales]]
+origen = "Egipto"
+destino = "Polonia"
+
+[[ConexionesVisuales]]
+origen = "Egipto"
+destino = "Turquia"
+puntos = [[460.0, 190.0]]
+
+[[ConexionesVisuales]]
+origen = "Espana"
+destino = "Sahara"
 
 [[ConexionesVisuales]]
 origen = "Groenlandia"
@@ -85,6 +118,24 @@ origen = "Japon"
 destino = "Kamchatka"
 
 [[ConexionesVisuales]]
+origen = "NuevaYork"
+destino = "Groenlandia"
+puntos = [[205.0, 155.0], [285.0, 130.0]]
+
+[[ConexionesVisuales]]
+origen = "Labrador"
+destino = "Groenlandia"
+puntos = [[245.0, 100.0]]
+
+[[ConexionesVisuales]]
+origen = "India"
+destino = "Sumatra"
+
+[[ConexionesVisuales]]
+origen = "Malasia"
+destino = "Borneo"
+
+[[ConexionesVisuales]]
 origen = "Australia"
 destino = "Sumatra"
 
@@ -96,3 +147,20 @@ destino = "Borneo"
 origen = "Australia"
 destino = "Java"
 puntos = [[650.0, 300.0]]
+
+[[ConexionesVisuales]]
+origen = "Polonia"
+destino = "Turquia"
+
+[[ConexionesVisuales]]
+origen = "Rusia"
+destino = "Aral"
+
+[[ConexionesVisuales]]
+origen = "Rusia"
+destino = "Iran"
+
+[[ConexionesVisuales]]
+origen = "Rusia"
+destino = "Turquia"
+puntos = [[460.0, 155.0]]

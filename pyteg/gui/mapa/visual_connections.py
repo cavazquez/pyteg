@@ -14,8 +14,8 @@ if TYPE_CHECKING:
 
 
 _VISUAL_CONNECTION_Z = -1000.0
-_VISUAL_CONNECTION_COLOR = QColor("#52758a")
-_VISUAL_CONNECTION_WIDTH = 1.5
+_VISUAL_CONNECTION_COLOR = QColor(30, 78, 101, 225)
+_VISUAL_CONNECTION_WIDTH = 2.0
 
 
 def add_visual_connections(
@@ -48,6 +48,8 @@ def add_visual_connections(
         pen.setStyle(Qt.PenStyle.DashLine)
         pen.setWidthF(_VISUAL_CONNECTION_WIDTH)
         pen.setCosmetic(True)
+        pen.setCapStyle(Qt.PenCapStyle.RoundCap)
+        pen.setJoinStyle(Qt.PenJoinStyle.RoundJoin)
         item.setPen(pen)
         item.setZValue(_VISUAL_CONNECTION_Z)
         item.setAcceptedMouseButtons(Qt.MouseButton.NoButton)

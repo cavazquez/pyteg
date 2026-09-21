@@ -24,8 +24,27 @@ La fuente anterior tenía relaciones de otro mapa en varios continentes. Entre l
 
 La decisión de usar esta matriz como baseline es de compatibilidad del software: pyteg busca interoperar con el mapa clásico de Tenés Empanadas Graciela y contrastar las reglas de red de TEGNet. No se presenta a Yetem como fuente de los datos de esta auditoría.
 
+## Puentes visuales
+
+`ConexionesVisuales` no crea reglas nuevas: es la representación de las
+aristas que el jugador debe poder seguir cuando los sprites quedan separados
+por agua o por el salto del mapa. La lista del tema clásico cubre los quince
+puentes entre continentes auditados y las rutas insulares `NuevaYork–Groenlandia`,
+`Labrador–Groenlandia`, `GranBretana–Islandia`, `Japon–Kamchatka`, `Australia–Sumatra`,
+`Australia–Borneo` y `Australia–Java`. Las fronteras terrestres restantes se
+leen en los contornos de los países y siguen estando respaldadas por
+`Adyacencias`.
+
+Los puntos intermedios se guardan sólo cuando una ruta necesita apartarse de
+otro sprite o de sus fichas. El renderer las coloca detrás de los países, con
+trazo discontinuo oscuro, extremos redondeados y ancho cosmético para que
+mantengan contraste al cambiar el zoom.
+
+La captura de regresión generada con Qt offscreen queda en
+[`docs/screenshots/classic-map-bridges.png`](screenshots/classic-map-bridges.png).
+
 ## Límites de este cambio
 
-La sección `Adyacencias` es la fuente de verdad para servidor, cliente y simulador. Las líneas dibujadas por Qt son una capa separada. En este cambio se conservaron únicamente las conexiones visuales que siguen siendo aristas válidas después de corregir el grafo; completar y ubicar visualmente los 15 puentes queda en [#220](https://github.com/cavazquez/pyteg/issues/220).
+La sección `Adyacencias` es la fuente de verdad para servidor, cliente y simulador. Las líneas dibujadas por Qt son una capa separada y se validan contra esa sección para impedir que una decoración sugiera un ataque inválido.
 
 Las regresiones de `tests/test_classic_map_audit.py` cubren países, continentes, aristas, simetría y puentes intercontinentales. Si se elimina un país, se cambia de continente o se sustituye una frontera, el test falla antes de que el cambio llegue al servidor.
