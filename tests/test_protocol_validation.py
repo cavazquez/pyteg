@@ -60,6 +60,21 @@ class TestServerCommandValidation(unittest.TestCase):
 
         self.assertEqual(validate_server_command(payload), payload)
 
+    def test_rejects_every_invalid_move_amount(self) -> None:
+        """El contrato TCP exige un entero positivo y no acepta bool como int."""
+        invalid_amounts: tuple[object, ...] = (0, -1, True, 1.5, "1", None)
+        for amount in invalid_amounts:
+            with self.subTest(amount=amount):
+                payload = {
+                    "mensaje": "mover_unidad",
+                    "origen": "Argentina",
+                    "destino": "Uruguay",
+                    "cantidad": amount,
+                }
+                with self.assertRaises(MessageValidationError) as raised:
+                    validate_server_command(payload)
+                self.assertEqual(raised.exception.code, "invalid_field")
+
 
 class TestClientEventValidation(unittest.TestCase):
     """Valida los eventos que un servidor entrega a un cliente Qt."""

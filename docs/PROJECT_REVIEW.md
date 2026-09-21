@@ -16,11 +16,15 @@ dependencias. No había issues abiertos al iniciar la revisión. Las prioridades
 son relativas a entregar una partida local fiable; no representan una certificación
 de seguridad ni compatibilidad completa con todas las reglas del TEG clásico.
 
-## Estado tras implementar #163–#168 y #171
+## Estado tras implementar #163–#171
 
 La capa TCP ahora reconstruye tramas UTF-8/NUL incrementales, valida el contrato
 antes de construir tareas y libera socket, registro y color de forma idempotente.
 Sólo el administrador puede configurar o iniciar la sala.
+
+El servidor valida que quien mueve unidades sea el jugador activo. La cantidad
+de movimiento debe ser un entero positivo, tanto en el contrato TCP como antes
+de consultar o mutar el mapa; el origen conserva al menos una unidad.
 
 Las acciones TCP validadas y los vencimientos se serializan en un único ejecutor.
 El temporizador publica `TurnExpired` con una generación del turno, por lo que un
@@ -36,15 +40,19 @@ chat sigue disponible después de la partida.
 ## Evidencia ejecutada
 
 - Python 3.14.0 y el entorno PySide6 existente.
-- **366 tests pasan** con `QT_QPA_PLATFORM=offscreen`; Ruff, formato y mypy también
-  pasan sobre 290 archivos fuente.
+- **374 tests pasan** con `QT_QPA_PLATFORM=offscreen`; Ruff, formato y mypy también
+  pasan sobre 291 archivos fuente.
 - Regresiones de red cubren fragmentación y coalescencia TCP, JSON y payloads
   inválidos, ciclo de conexión/color, permisos de administrador, una carrera
-  determinista acción/timeout, vencimientos obsoletos y cola de salida saturada.
+  determinista acción/timeout, vencimientos obsoletos, cola de salida saturada,
+  movimientos fuera de turno y cantidades inválidas.
 - **Partida clásica por TCP**, servidor productivo en subprocess y seis bots:
   semilla 45, victoria a 30 países, 78 turnos y 224 conquistas en 32,825 segundos.
   Los seis clientes terminaron en `Finalizado`, coincidieron en el tablero y no
   recibieron errores.
+- **Partida clásica estricta por TCP**, cinco bots con semilla 900 y victoria a
+  30 países: 45 turnos y 151 conquistas en 21,13 segundos. La victoria fue
+  observada y los cinco clientes terminaron en `Finalizado`.
 
 Los JSON y trazas completos quedan en `logs/simulations/`, ignorados por Git.
 Los comandos y límites están en [SIMULATION.md](SIMULATION.md).
@@ -59,9 +67,9 @@ clientes; no es un oráculo de todas las reglas.
    registrada al fallar la validación.
 2. Resuelto por #166: altas y bajas repetidas liberan socket, registro y color;
    el noveno cliente puede entrar después de ocho desconexiones.
-3. Resuelto por #165 para la sala: sólo el administrador puede configurar o
-   iniciar. Quedan pendientes #169 y #170 para rechazar movimientos fuera de
-   turno y cantidades inválidas.
+3. Resuelto por #165, #169 y #170: sólo el administrador puede configurar o
+   iniciar; mover exige el turno activo y una cantidad entera positiva antes de
+   alterar países.
 4. Resuelto por #167: una intercalación entre agregar unidades y vencer el turno
    queda ordenada en el mismo ejecutor FIFO; una generación obsoleta no puede
    avanzar dos veces ni consumir el pool del jugador siguiente.
@@ -151,8 +159,8 @@ soportadas antes de sus pruebas.
 - [x] [#166 — Liberar socket, registro y color de forma idempotente al desconectar](https://github.com/cavazquez/pyteg/issues/166) (Red; implementado).
 - [x] [#167 — Serializar comandos de juego y vencimientos de turno en un único ejecutor](https://github.com/cavazquez/pyteg/issues/167) (Red; implementado).
 - [x] [#168 — Enviar eventos por una cola FIFO acotada por conexión](https://github.com/cavazquez/pyteg/issues/168) (Red; implementado).
-- [#169 — Rechazar movimientos fuera del turno del jugador](https://github.com/cavazquez/pyteg/issues/169) (Reglas).
-- [#170 — Impedir cantidades no positivas o no enteras al mover unidades](https://github.com/cavazquez/pyteg/issues/170) (Reglas).
+- [x] [#169 — Rechazar movimientos fuera del turno del jugador](https://github.com/cavazquez/pyteg/issues/169) (Reglas; implementado).
+- [x] [#170 — Impedir cantidades no positivas o no enteras al mover unidades](https://github.com/cavazquez/pyteg/issues/170) (Reglas; implementado).
 - [x] [#171 — Pasar a FINALIZADO y detener el juego al declarar victoria](https://github.com/cavazquez/pyteg/issues/171) (Partida; implementado localmente).
 - [#172 — Excluir jugadores sin territorios de los turnos y refuerzos](https://github.com/cavazquez/pyteg/issues/172) (Partida).
 - [#173 — Empaquetar recursos y cargar el wheel fuera del checkout](https://github.com/cavazquez/pyteg/issues/173) (Entrega).
@@ -186,3 +194,5 @@ soportadas antes de sus pruebas.
   regresiones deterministas para #167.
 - Escritor FIFO acotado por conexión, plazo de envío y desconexión del cliente
   lento, con regresiones de orden y saturación para #168.
+- Validación de turno activo y cantidad positiva en movimientos, con regresiones
+  de tarea, contrato y TCP para #169 y #170.
