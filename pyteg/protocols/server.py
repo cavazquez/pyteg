@@ -110,6 +110,10 @@ class ServerLikeProtocol(HasEstado, Protocol):
         """Envía un mensaje de chat a todos los clientes."""
         ...
 
+    def enviar_sistema(self, msg: str) -> None:
+        """Envía un aviso de sistema a todos los clientes."""
+        ...
+
     def enviar_estado(self) -> None:
         """Envía el estado actual del servidor a todos los clientes."""
         ...

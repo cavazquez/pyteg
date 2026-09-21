@@ -16,7 +16,7 @@ dependencias. No había issues abiertos al iniciar la revisión. Las prioridades
 son relativas a entregar una partida local fiable; no representan una certificación
 de seguridad ni compatibilidad completa con todas las reglas del TEG clásico.
 
-## Estado tras implementar #163–#171
+## Estado tras implementar #163–#172
 
 La capa TCP ahora reconstruye tramas UTF-8/NUL incrementales, valida el contrato
 antes de construir tareas y libera socket, registro y color de forma idempotente.
@@ -37,11 +37,17 @@ El cierre de victoria conserva `Finalizado`, detiene el temporizador y difunde e
 estado antes de anunciar la victoria. Las acciones posteriores se rechazan y el
 chat sigue disponible después de la partida.
 
+Al perder el último país, un jugador se elimina una sola vez del orden de turnos,
+de los refuerzos y de las acciones. Sus cartas asignadas se transfieren al
+conquistador, sin volver al mazo, y todos los clientes reciben un aviso de sistema
+junto con la lista activa actualizada. El último superviviente gana incluso si el
+umbral de países configurado no se alcanza.
+
 ## Evidencia ejecutada
 
 - Python 3.14.0 y el entorno PySide6 existente.
-- **374 tests pasan** con `QT_QPA_PLATFORM=offscreen`; Ruff, formato y mypy también
-  pasan sobre 291 archivos fuente.
+- **380 tests pasan** con `QT_QPA_PLATFORM=offscreen`; Ruff, formato y mypy también
+  pasan sobre 293 archivos fuente.
 - Regresiones de red cubren fragmentación y coalescencia TCP, JSON y payloads
   inválidos, ciclo de conexión/color, permisos de administrador, una carrera
   determinista acción/timeout, vencimientos obsoletos, cola de salida saturada,
@@ -51,7 +57,7 @@ chat sigue disponible después de la partida.
   Los seis clientes terminaron en `Finalizado`, coincidieron en el tablero y no
   recibieron errores.
 - **Partida clásica estricta por TCP**, cinco bots con semilla 900 y victoria a
-  30 países: 45 turnos y 151 conquistas en 21,13 segundos. La victoria fue
+  30 países: 60 turnos y 182 conquistas en 24,328 segundos. La victoria fue
   observada y los cinco clientes terminaron en `Finalizado`.
 
 Los JSON y trazas completos quedan en `logs/simulations/`, ignorados por Git.
@@ -75,11 +81,14 @@ clientes; no es un oráculo de todas las reglas.
    avanzar dos veces ni consumir el pool del jugador siguiente.
 5. Resuelto por #171: la victoria congela estado, detiene el temporizador y
    cambia a `Estado.FINALIZADO` (valor wire `Finalizado`).
-6. Los eliminados siguen recibiendo turnos/refuerzos. El orden deja de rotar
-   después de la segunda ronda. Se pueden reclamar dos cartas en un mismo turno.
-7. Continentes vacíos dan bonus; los refuerzos se calculan antes del turno real.
+6. Resuelto por #172: un jugador sin países ya no recibe turnos ni refuerzos, no
+   puede ejecutar acciones y sus cartas se transfieren una única vez al
+   conquistador.
+7. El orden deja de rotar después de la segunda ronda. Se pueden reclamar dos
+   cartas en un mismo turno.
+8. Continentes vacíos dan bonus; los refuerzos se calculan antes del turno real.
    Las fases restringidas por la GUI no tienen las mismas garantías en servidor.
-8. El wheel generado contiene 222 entradas sin mapas, iconos, idiomas ni sonidos.
+9. El wheel generado contiene 222 entradas sin mapas, iconos, idiomas ni sonidos.
    Extraído fuera del checkout falla al cargar el tema. Nuitka referencia dos
    módulos inexistentes y el release busca directorios distintos de los subidos.
 
@@ -162,7 +171,7 @@ soportadas antes de sus pruebas.
 - [x] [#169 — Rechazar movimientos fuera del turno del jugador](https://github.com/cavazquez/pyteg/issues/169) (Reglas; implementado).
 - [x] [#170 — Impedir cantidades no positivas o no enteras al mover unidades](https://github.com/cavazquez/pyteg/issues/170) (Reglas; implementado).
 - [x] [#171 — Pasar a FINALIZADO y detener el juego al declarar victoria](https://github.com/cavazquez/pyteg/issues/171) (Partida; implementado localmente).
-- [#172 — Excluir jugadores sin territorios de los turnos y refuerzos](https://github.com/cavazquez/pyteg/issues/172) (Partida).
+- [x] [#172 — Excluir jugadores sin territorios de los turnos y refuerzos](https://github.com/cavazquez/pyteg/issues/172) (Partida; implementado).
 - [#173 — Empaquetar recursos y cargar el wheel fuera del checkout](https://github.com/cavazquez/pyteg/issues/173) (Entrega).
 - [#174 — Actualizar las entradas de Nuitka a los módulos existentes](https://github.com/cavazquez/pyteg/issues/174) (Entrega).
 
@@ -196,3 +205,6 @@ soportadas antes de sus pruebas.
   lento, con regresiones de orden y saturación para #168.
 - Validación de turno activo y cantidad positiva en movimientos, con regresiones
   de tarea, contrato y TCP para #169 y #170.
+- Eliminación idempotente con transferencia de cartas al conquistador, exclusión
+  de turnos y acciones, actualización de la lista activa y victoria del último
+  superviviente para #172.

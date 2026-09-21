@@ -95,6 +95,40 @@ class CardManager:
         userid = _to_userid(jugador)
         self._cant_canjes[userid] = self._cant_canjes.get(userid, 0) + 1
 
+    def transferir_tarjetas_al_conquistador(
+        self, eliminado: IJugador | int, conquistador: IJugador | int
+    ) -> int:
+        """Transfiere las tarjetas del eliminado al jugador que lo conquistó.
+
+        Política de eliminación: las tarjetas asignadas no vuelven al mazo ni se
+        descartan. Permanecen asignadas y pasan al conquistador. ``Game`` llama
+        este método una única vez, al registrar la pérdida del último país.
+
+        Args:
+            eliminado: Jugador que perdió su último país.
+            conquistador: Jugador que conquistó ese país.
+
+        Returns:
+            Cantidad de tarjetas transferidas.
+
+        """
+        tarjetas = self._mazo.tarjetas_asignadas(eliminado)
+        for tarjeta in tarjetas:
+            tarjeta.asignar(conquistador)
+
+        self.eliminar_jugador(eliminado)
+        return len(tarjetas)
+
+    def eliminar_jugador(self, jugador: IJugador | int) -> None:
+        """Limpia el estado de canjes y reclamos de un jugador eliminado."""
+        userid = _to_userid(jugador)
+        self._cant_canjes.pop(userid, None)
+        self._jugadores_pueden_reclamar = {
+            candidato
+            for candidato in self._jugadores_pueden_reclamar
+            if _to_userid(candidato) != userid
+        }
+
     def marcar_jugador_puede_reclamar(self, jugador: IClientProtocol) -> None:
         """Marca a un jugador como elegible para reclamar tarjeta.
 

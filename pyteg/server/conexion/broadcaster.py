@@ -83,6 +83,16 @@ class ServerMessageBroadcaster:
         # Publicar evento en MessageBus
         get_message_bus().publish(EVENT_CHAT, {"username": username, "message": msg})
 
+    def enviar_sistema(self, msg: str) -> None:
+        """Difunde un mensaje de sistema a todos los clientes conectados."""
+        for client in self._dame_clientes():
+            client.transmisor.enviar_sistema(msg)
+
+        get_message_bus().publish(
+            EVENT_CHAT,
+            {"username": "Sistema", "message": msg},
+        )
+
     def enviar_userid(self) -> None:
         """Envía los IDs de usuario a todos los clientes."""
         for client in self._dame_clientes():

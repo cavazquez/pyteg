@@ -50,6 +50,35 @@ class TurnManager:
 
         """
         self._turnos = [PrimerTurno(j) for j in jugadores_userids]
+        self._num_turno = 0
+
+    def eliminar_jugador(self, jugador_id: int) -> bool:
+        """Quita a un jugador de los turnos pendientes de la ronda.
+
+        Si el jugador eliminado estaba antes del turno activo, ajusta el índice
+        para que el turno activo siga apuntando al mismo jugador. El turno
+        eliminado no puede reaparecer hasta que ``Game`` construya la siguiente
+        ronda sólo con jugadores activos.
+
+        Args:
+            jugador_id: ``userid`` del jugador a retirar.
+
+        Returns:
+            ``True`` si se retiró un turno; ``False`` si ya no estaba presente.
+
+        """
+        for indice, turno in enumerate(self._turnos):
+            if int(turno.jugador_actual()) != int(jugador_id):
+                continue
+
+            self._turnos.pop(indice)
+            if indice < self._num_turno:
+                self._num_turno -= 1
+            if not self._turnos:
+                self._num_turno = 0
+            return True
+
+        return False
 
     def turnos(self) -> list[TurnoType]:
         """Obtiene la lista de turnos.

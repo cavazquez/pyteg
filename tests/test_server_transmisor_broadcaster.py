@@ -107,6 +107,39 @@ class TestServerMessageBroadcaster(unittest.TestCase):
         client.transmisor.enviar_chat.assert_called_once()
         self.assertEqual(msgs, [{"username": "ana", "message": "hola"}])
 
+    def test_enviar_sistema_llega_a_todos_los_clientes(self) -> None:
+        """Un aviso de sistema se difunde con el tipo de mensaje correcto."""
+        bus = MessageBus()
+        msgs: list[dict[str, Any]] = []
+
+        def on_chat(data: dict[str, Any]) -> None:
+            msgs.append(dict(data))
+
+        bus.subscribe(EVENT_CHAT, cast("EventHandler", on_chat))
+        c1 = MagicMock()
+        c2 = MagicMock()
+        br = ServerMessageBroadcaster(lambda: [c1, c2])
+        with patch(
+            "pyteg.server.conexion.broadcaster.get_message_bus", return_value=bus
+        ):
+            br.enviar_sistema("Jugador 2 fue eliminado de la partida.")
+
+        c1.transmisor.enviar_sistema.assert_called_once_with(
+            "Jugador 2 fue eliminado de la partida."
+        )
+        c2.transmisor.enviar_sistema.assert_called_once_with(
+            "Jugador 2 fue eliminado de la partida."
+        )
+        self.assertEqual(
+            msgs,
+            [
+                {
+                    "username": "Sistema",
+                    "message": "Jugador 2 fue eliminado de la partida.",
+                }
+            ],
+        )
+
     def test_get_clients_no_lista_devuelve_vacio(self) -> None:
         """_dame_clientes tolera retorno no-lista."""
         br = ServerMessageBroadcaster(lambda: None)

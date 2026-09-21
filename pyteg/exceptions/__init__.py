@@ -24,6 +24,7 @@ from pyteg.exceptions.game_rules import (
     MissingFieldError,
     NoMissilesAvailableError,
     NotPlayerTurnError,
+    PlayerEliminatedError,
 )
 from pyteg.exceptions.system import (
     EstadoInvalidoError,
@@ -46,5 +47,6 @@ __all__ = [
     "MissingFieldError",
     "NoMissilesAvailableError",
     "NotPlayerTurnError",
+    "PlayerEliminatedError",
     "PyTegError",
 ]

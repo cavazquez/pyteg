@@ -262,6 +262,10 @@ class Server:
         """
         self._broadcaster.enviar_chat(username, msg)
 
+    def enviar_sistema(self, msg: str) -> None:
+        """Envía un aviso de sistema a todos los clientes conectados."""
+        self._broadcaster.enviar_sistema(msg)
+
     def enviar_userid(self) -> None:
         """Envía los IDs de usuario a todos los clientes."""
         self._broadcaster.enviar_userid()
