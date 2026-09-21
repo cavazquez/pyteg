@@ -94,6 +94,14 @@ class ClientStateModel:
         self.revision = revision
         self.snapshot_version = int(event["snapshot_version"])
         self.last_phase = event.get("fase")
+        if event.get("estado") == "EsperarJugadores":
+            # Una revancha comienza con el mismo socket, por lo que el
+            # snapshot del lobby también debe retirar los datos privados de la
+            # partida anterior si algún evento llegó fuera de orden.
+            self.private_cards.clear()
+            self.private_units.clear()
+            self.private_objective = None
+            self.victory = None
         self._gap_detected = False if resync else self._gap_detected or gap
         return ApplyEventResult(applied=True, gap=gap)
 
@@ -167,9 +175,14 @@ class ClientStateModel:
             self.private_cards = deepcopy(tarjetas)
 
     def _apply_private_objective(self, event: dict[str, Any]) -> None:
+        objetivo_id = str(event.get("objetivo_id", ""))
+        descripcion = str(event.get("descripcion", ""))
+        if not objetivo_id and not descripcion:
+            self.private_objective = None
+            return
         self.private_objective = {
-            "objetivo_id": str(event.get("objetivo_id", "")),
-            "descripcion": str(event.get("descripcion", "")),
+            "objetivo_id": objetivo_id,
+            "descripcion": descripcion,
         }
 
     def _apply_victory(self, event: dict[str, Any]) -> None:

@@ -247,7 +247,14 @@ class ServerGameCoordinator:
         """
         if not self._estado.volver_al_lobby():
             return False
+        partida_anterior = self._game
         self.detener()
+        jugadores_anteriores = (
+            partida_anterior.jugadores() if partida_anterior is not None else []
+        )
+        preparar_revancha = getattr(server, "preparar_revancha", None)
+        if callable(preparar_revancha):
+            preparar_revancha(jugadores_anteriores)
         self._mapa.reiniciar()
         self._mazo.reiniciar()
         reiniciar_objetivos = getattr(self._objetivos_secretos, "reiniciar", None)
@@ -255,6 +262,10 @@ class ServerGameCoordinator:
             reiniciar_objetivos()
         self._game = None
         self._turno_timer = None
+        self._segundos_por_turno = DEFAULT_TURN_SECONDS
+        self._paises_para_victoria = VICTORY_ALL_COUNTRIES
+        self._objetivos_secretos_activados = False
+        self._misiles_habilitados = False
         promover_admin = getattr(server, "promover_administrador", None)
         if callable(promover_admin):
             promover_admin()

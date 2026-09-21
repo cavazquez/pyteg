@@ -191,6 +191,8 @@ class TarjetasDialog(TarjetasExchangeMixin, TarjetasSelectionMixin, QDialog):
         self.objetivo_secreto_descripcion = descripcion
         if descripcion:
             self.label_objetivo.setText(descripcion)
+        else:
+            self.label_objetivo.setText(_("No hay objetivo secreto asignado"))
 
     def get_objetivo_secreto(self) -> dict[str, str | None]:
         """Obtiene el objetivo secreto asignado.

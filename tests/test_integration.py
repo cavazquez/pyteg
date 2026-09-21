@@ -188,7 +188,7 @@ class _TestClient:
     def _read_loop(self) -> None:
         r"""Lee bytes del socket y parsea mensajes JSON separados por ``\0``."""
         while self._running and self._sock:
-            try:
+            try:  # noqa: PLW0717 - el doble mantiene el socket hasta cerrar la prueba
                 chunk = self._sock.recv(_RECV_SIZE)
                 if not chunk:
                     break
@@ -431,6 +431,30 @@ class TestIntegration(unittest.TestCase):
                 if (
                     message.get("mensaje") == "command_result"
                     and message.get("command_id") == command_id
+                ):
+                    return message
+            time.sleep(0.05)
+        return None
+
+    def _wait_for_new_state(
+        self,
+        client: _TestClient,
+        received_before: int,
+        expected_state: str,
+        timeout: float = _READ_TIMEOUT,
+    ) -> dict[str, Any] | None:
+        """Espera un estado emitido después de una transición concreta.
+
+        Returns:
+            Mensaje de estado o ``None`` si vence el plazo.
+
+        """
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
+            for message in client.snapshot_received()[received_before:]:
+                if (
+                    message.get("mensaje") == "estado"
+                    and message.get("estado") == expected_state
                 ):
                     return message
             time.sleep(0.05)
@@ -1169,6 +1193,216 @@ class TestIntegration(unittest.TestCase):
             "El sucesor no pudo solicitar la revancha",
         )
 
+    def test_rematch_isolates_state_after_disconnect_and_reconnect(  # noqa: C901, PLR0912, PLR0914, PLR0915
+        self,
+    ) -> None:
+        """Dos partidas consecutivas no comparten estado privado ni cachés."""
+        c1 = self._new_client()
+        c2 = self._new_client()
+        c3 = self._new_client()
+        uid3_message = c3.wait_for("user_id")
+        self.assertIsNotNone(uid3_message, "c3 no recibió user_id")
+        if uid3_message is None:
+            return
+        uid3 = int(uid3_message["user_id"])
+        token_message = c3.wait_for(
+            "session_token", extra_check=lambda message: message.get("user_id") == uid3
+        )
+        self.assertIsNotNone(token_message, "c3 no recibió token de sesión")
+        if token_message is None:
+            return
+        token = str(token_message["token"])
+
+        reused_command_id = "rematch-command-id"
+        received_before_first = len(c2.snapshot_received())
+        c2.send({
+            "mensaje": "set_username",
+            "username": "Primera partida",
+            "command_id": reused_command_id,
+        })
+        first_command = self._wait_for_new_command_result(
+            c2,
+            received_before_first,
+            reused_command_id,
+        )
+        self.assertIsNotNone(
+            first_command, "No se cacheó el comando de la primera partida"
+        )
+        first_ids = self._start_two_player_game(
+            c1,
+            c2,
+            objetivos_secretos=True,
+            misiles_habilitados=True,
+        )
+        uid1, uid2 = first_ids
+        first_snapshot = c1.wait_for(
+            "snapshot",
+            extra_check=lambda message: message.get("estado") == "JUGANDO",
+        )
+        self.assertIsNotNone(first_snapshot, "Faltó snapshot de la primera partida")
+        if first_snapshot is None:
+            return
+
+        game_one = self._server.game
+        self.assertIsNotNone(game_one, "No se creó la primera partida")
+        if game_one is None:
+            return
+        first_card = game_one.mazo().asignar_tarjeta(uid1)
+        self.assertIsNotNone(first_card, "No se asignó la tarjeta de prueba")
+        missile_country = next(iter(game_one.mapa().paises()))
+        game_one.mapa().agregar_misil(missile_country)
+        first_objective = c1.wait_for("objetivo_secreto")
+        self.assertIsNotNone(first_objective, "Faltó el objetivo de la primera partida")
+
+        c3.close()
+        self._wait_for_client_count(2)
+        deadline = time.monotonic() + _READ_TIMEOUT
+        while time.monotonic() < deadline and not game_one.jugador_esta_desconectado(
+            uid3
+        ):
+            time.sleep(0.05)
+        self.assertTrue(game_one.jugador_esta_desconectado(uid3))
+
+        replacement = self._new_client()
+        self.assertIsNotNone(replacement.wait_for("session_token"))
+        replacement.send({"mensaje": "reconectar", "user_id": uid3, "token": token})
+        self.assertIsNotNone(
+            replacement.wait_for(
+                "reconexion",
+                extra_check=lambda message: message.get("user_id") == uid3,
+            ),
+            "c3 no pudo reconectar antes de la revancha",
+        )
+        self._wait_for_client_count(3)
+
+        revision_first = int(first_snapshot["revision"])
+        self.assertTrue(self._server.finalizar_partida())
+        received_before_lobby = len(c1.snapshot_received())
+        c1.send({"mensaje": "volver_lobby"})
+        lobby_snapshot: dict[str, Any] | None = None
+        deadline = time.monotonic() + _READ_TIMEOUT
+        while time.monotonic() < deadline and lobby_snapshot is None:
+            for message in c1.snapshot_received()[received_before_lobby:]:
+                if (
+                    message.get("mensaje") == "snapshot"
+                    and message.get("estado") == "EsperarJugadores"
+                ):
+                    lobby_snapshot = message
+                    break
+            time.sleep(0.05)
+        self.assertIsNotNone(lobby_snapshot, "No se publicó el lobby de la revancha")
+        if lobby_snapshot is None:
+            return
+        self.assertGreater(int(lobby_snapshot["revision"]), revision_first)
+        private_reset: dict[str, dict[str, Any]] = {}
+        private_reset_kinds = frozenset({
+            "tarjetas_jugador",
+            "unidades_disponibles",
+            "objetivo_secreto",
+        })
+        deadline = time.monotonic() + _READ_TIMEOUT
+        while time.monotonic() < deadline and len(private_reset) < len(
+            private_reset_kinds
+        ):
+            for message in c1.snapshot_received()[received_before_lobby:]:
+                kind = message.get("mensaje")
+                if kind in private_reset_kinds:
+                    private_reset[str(kind)] = message
+            time.sleep(0.05)
+        self.assertEqual(private_reset["tarjetas_jugador"].get("tarjetas"), [])
+        self.assertEqual(private_reset["unidades_disponibles"].get("unidades"), {})
+        self.assertEqual(
+            (
+                private_reset["objetivo_secreto"].get("objetivo_id"),
+                private_reset["objetivo_secreto"].get("descripcion"),
+            ),
+            ("", ""),
+        )
+        self.assertIsNone(self._server.game)
+        self.assertEqual(self._server.mazo.cantidad_tarjetas_asignadas(), 0)
+        self.assertEqual(self._server.objetivos_secretos.objetivos_asignados, {})
+        self.assertFalse(self._server.misiles_habilitados())
+        self.assertTrue(
+            all(
+                self._server.mapa.ocupado_por(pais) is None
+                for pais in self._server.mapa.paises()
+            )
+        )
+        self.assertTrue(
+            all(
+                self._server.mapa.cantidad_misiles(pais) == 0
+                for pais in self._server.mapa.paises()
+            )
+        )
+
+        received_before_retry = len(c2.snapshot_received())
+        c2.send({
+            "mensaje": "set_username",
+            "username": "Segunda partida",
+            "command_id": reused_command_id,
+        })
+        second_command = self._wait_for_new_command_result(
+            c2,
+            received_before_retry,
+            reused_command_id,
+        )
+        self.assertIsNotNone(
+            second_command, "No se aceptó el ID de comando en la revancha"
+        )
+        if second_command is not None:
+            self.assertTrue(second_command["accepted"])
+
+        self._start_two_player_game(
+            c1,
+            c2,
+            objetivos_secretos=False,
+            misiles_habilitados=False,
+        )
+        game_two = self._server.game
+        self.assertIsNotNone(game_two, "No se creó la segunda partida")
+        if game_two is None:
+            return
+        self.assertIsNot(game_two, game_one)
+        self.assertEqual(game_two.mazo().cantidad_tarjetas_asignadas(), 0)
+        self.assertEqual(self._server.objetivos_secretos.objetivos_asignados, {})
+        self.assertTrue(
+            all(
+                game_two.mapa().cantidad_misiles(pais) == 0
+                for pais in game_two.mapa().paises()
+            )
+        )
+        self.assertGreater(
+            self._server.state_revision(), int(lobby_snapshot["revision"])
+        )
+        self.assertIn(
+            uid2, [int(client.userid()) for client in self._server.dame_clientes()]
+        )
+
+    def test_non_admin_rematch_does_not_clean_finalized_game(self) -> None:
+        """Una revancha no autorizada conserva intacto el estado final."""
+        admin = self._new_client()
+        other = self._new_client()
+        self._start_two_player_game(admin, other)
+        game = self._server.game
+        self.assertIsNotNone(game, "No se creó la partida")
+        if game is None:
+            return
+        card = game.mazo().asignar_tarjeta(1)
+        self.assertIsNotNone(card, "No se asignó la tarjeta de prueba")
+        missile_country = next(iter(game.mapa().paises()))
+        game.mapa().agregar_misil(missile_country)
+        self.assertTrue(self._server.finalizar_partida())
+
+        received_before = len(other.snapshot_received())
+        other.send({"mensaje": "volver_lobby"})
+        error = self._wait_for_new_protocol_error(other, received_before, "not_admin")
+
+        self.assertIsNotNone(error, "La revancha no autorizada no fue rechazada")
+        self.assertTrue(self._server.estado.es_finalizado())
+        self.assertIs(self._server.game, game)
+        self.assertEqual(self._server.mazo.cantidad_tarjetas_asignadas(), 1)
+        self.assertEqual(self._server.mapa.cantidad_misiles(missile_country), 1)
+
     def test_snapshot_contract_is_complete_equal_and_resyncable(self) -> None:
         """Tres clientes reciben el mismo snapshot público y pueden resincronizar."""
         c1 = self._new_client()
@@ -1239,7 +1473,7 @@ class TestIntegration(unittest.TestCase):
             self.assertTrue(result["accepted"])
         self.assertEqual(self._server.state_revision(), server_revision)
 
-    def _start_two_player_game(
+    def _start_two_player_game(  # noqa: PLR0913
         self,
         c1: _TestClient,
         c2: _TestClient,
@@ -1247,6 +1481,7 @@ class TestIntegration(unittest.TestCase):
         segundos: int = 60,
         paises_para_victoria: int | None = None,
         objetivos_secretos: bool | None = None,
+        misiles_habilitados: bool | None = None,
     ) -> tuple[int, int]:
         """Configura usernames y arranca partida con c1 como admin.
 
@@ -1272,24 +1507,21 @@ class TestIntegration(unittest.TestCase):
             empezar["paises_para_victoria"] = paises_para_victoria
         if objetivos_secretos is not None:
             empezar["objetivos_secretos"] = objetivos_secretos
+        if misiles_habilitados is not None:
+            empezar["misiles_habilitados"] = misiles_habilitados
         c1.send(empezar)
         time.sleep(0.1)
+        received_before_start = {
+            id(client): len(client.snapshot_received()) for client in (c1, c2)
+        }
         c1.send({"mensaje": "empezar_partida"})
 
         self.assertIsNotNone(
-            c1.wait_for(
-                "estado",
-                timeout=4.0,
-                extra_check=lambda m: m.get("estado") == "JUGANDO",
-            ),
+            self._wait_for_new_state(c1, received_before_start[id(c1)], "JUGANDO"),
             "c1 no recibió estado JUGANDO",
         )
         self.assertIsNotNone(
-            c2.wait_for(
-                "estado",
-                timeout=4.0,
-                extra_check=lambda m: m.get("estado") == "JUGANDO",
-            ),
+            self._wait_for_new_state(c2, received_before_start[id(c2)], "JUGANDO"),
             "c2 no recibió estado JUGANDO",
         )
         return uid1, uid2

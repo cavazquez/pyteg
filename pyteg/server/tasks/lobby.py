@@ -90,7 +90,10 @@ class ServerTaskEmpezar(IServerTask[EmpezarTaskData]):
         client.server.set_misiles_habilitados(activados=self._misiles_habilitados)
         LOGGER.debug("Misiles habilitados: %s", self._misiles_habilitados)
 
-        if client.server.estado.esperar_jugadores():
+        if (
+            client.server.estado.es_inicial()
+            and client.server.estado.esperar_jugadores()
+        ) or client.server.estado.es_esperando_jugadores():
             client.server.enviar_estado()
         else:
             LOGGER.warning(

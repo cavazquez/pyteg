@@ -29,7 +29,7 @@ from pyteg.utils import get_resource_path
 from pyteg.version import NAME, VERSION
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable, Sequence
     from random import Random
 
     from pyteg.server.conexion.cliente import Client
@@ -509,6 +509,38 @@ class Server:
         self._pending_admin_user_id = None
         self._admin_succession_anchor = None
         self._promover_administrador()
+
+    def preparar_revancha(self, jugadores: Sequence[Any]) -> None:
+        """Limpia sesiones y colores de jugadores ausentes antes de una revancha.
+
+        Las conexiones activas conservan su identidad, token y color. Un
+        jugador que se desconectó y no volvió antes del final libera su color;
+        su siguiente conexión será una identidad nueva en el lobby.
+        """
+        ids_conectados = {int(cliente.userid()) for cliente in self.dame_clientes()}
+        for jugador in jugadores:
+            if int(jugador.userid()) in ids_conectados:
+                continue
+            color_actual = getattr(jugador, "color_actual", None)
+            color = color_actual() if callable(color_actual) else None
+            self.color.liberar_color(color)
+
+        for cliente in self.dame_clientes():
+            limpiar_cache = getattr(cliente, "limpiar_cache_comandos", None)
+            if callable(limpiar_cache):
+                limpiar_cache()
+            transmisor = getattr(cliente, "transmisor", None)
+            if transmisor is None:
+                continue
+            enviar_tarjetas = getattr(transmisor, "enviar_tarjetas_jugador", None)
+            if callable(enviar_tarjetas):
+                enviar_tarjetas([])
+            enviar_unidades = getattr(transmisor, "enviar_unidades_disponibles", None)
+            if callable(enviar_unidades):
+                enviar_unidades({})
+            enviar_objetivo = getattr(transmisor, "enviar_objetivo_secreto", None)
+            if callable(enviar_objetivo):
+                enviar_objetivo("", "")
 
     def registrar_reconexion_pendiente(self, user_id: int, client: Client) -> bool:
         """Registra una conexión temporal sin asignarle un color nuevo.

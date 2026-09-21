@@ -203,6 +203,11 @@ class Client:
             if isinstance(payload, dict):
                 self._command_payloads[command_id] = deepcopy(payload)
 
+    def limpiar_cache_comandos(self) -> None:
+        """Descarta resultados idempotentes al comenzar una nueva partida."""
+        self._command_results.clear()
+        self._command_payloads.clear()
+
     def reasignar_userid(self, user_id: int) -> None:
         """Reasigna el identificador tras validar una reconexión."""
         self._user_id = int(user_id)
@@ -298,7 +303,7 @@ class Client:
 
         Maneja la recepción de datos y el encolado de tareas validadas.
         """
-        try:
+        try:  # noqa: PLW0717 - el ciclo procesa handshake y comandos TCP juntos
             protocol_version = getattr(self.server, "protocol_version", "1")
             if not isinstance(protocol_version, str):
                 protocol_version = "1"

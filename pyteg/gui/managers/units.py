@@ -90,9 +90,11 @@ class UnitsManager:
         label = self.main_window.value_labels[key]
         label.setText(format_unit_label(key, 0))
         label.setStyleSheet(_STYLE_INACTIVE)
+        self.main_window.last_units[key] = 0
 
     def _update_generales(self, unidades: dict[str, int]) -> None:
         if "infanteria" not in unidades:
+            self._reset_unit_row("Generales")
             return
         self._sync_unit_row(
             "Generales",

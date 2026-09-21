@@ -174,3 +174,58 @@ class TestProtocolFeatures(unittest.TestCase):
             model.apply_event({**snapshot, "revision": 3, "resync": True}).applied
         )
         self.assertFalse(model.needs_snapshot())
+
+    def test_state_model_clears_private_state_when_rematch_returns_to_lobby(
+        self,
+    ) -> None:
+        """El snapshot de lobby no hereda cartas, objetivo ni victoria."""
+        model = ClientStateModel()
+        model.apply_event({
+            "mensaje": "tarjetas_jugador",
+            "tarjetas": [{"pais": "A", "simbolo": "Globo"}],
+        })
+        model.apply_event({
+            "mensaje": "unidades_disponibles",
+            "unidades": {"infanteria": 4, "misiles": 1},
+        })
+        model.apply_event({
+            "mensaje": "objetivo_secreto",
+            "objetivo_id": "objetivo-1",
+            "descripcion": "Conquistar",
+        })
+        model.apply_event({"mensaje": "victoria", "ganador_id": 1})
+
+        lobby = {
+            "mensaje": "snapshot",
+            "snapshot_version": 1,
+            "revision": 1,
+            "estado": "EsperarJugadores",
+            "theme": "classic",
+            "map_hash": "hash",
+            "configuracion": {},
+            "players": [],
+            "countries": {},
+            "fase": None,
+            "turno": None,
+            "refuerzos_pendientes": 0,
+        }
+        self.assertTrue(model.apply_event(lobby).applied)
+        self.assertEqual(model.private_cards, [])
+        self.assertEqual(model.private_units, {})
+        self.assertIsNone(model.private_objective)
+        self.assertIsNone(model.victory)
+
+    def test_state_model_accepts_empty_objective_as_clear_event(self) -> None:
+        """El evento privado vacío borra el objetivo de la partida anterior."""
+        model = ClientStateModel()
+        model.apply_event({
+            "mensaje": "objetivo_secreto",
+            "objetivo_id": "objetivo-1",
+            "descripcion": "Conquistar",
+        })
+        model.apply_event({
+            "mensaje": "objetivo_secreto",
+            "objetivo_id": "",
+            "descripcion": "",
+        })
+        self.assertIsNone(model.private_objective)

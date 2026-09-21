@@ -68,3 +68,17 @@ class TestClienteEjecutarMensaje(unittest.TestCase):
             "Esta conexión debe completar el handshake antes de enviar comandos.",
         )
         server.encolar_comando.assert_not_called()
+
+    def test_limpiar_cache_comandos_descarta_resultados_y_payloads(self) -> None:
+        """Una revancha no reutiliza idempotencia de la partida anterior."""
+        client, _server = self._make_client()
+        client.remember_command_result(
+            "partida-1",
+            {"command_id": "partida-1", "accepted": True, "revision": 2},
+            {"mensaje": "set_username", "username": "Anterior"},
+        )
+
+        client.limpiar_cache_comandos()
+
+        self.assertIsNone(client.command_result("partida-1"))
+        self.assertIsNone(client.command_payload("partida-1"))
