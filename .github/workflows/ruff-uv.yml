@@ -63,6 +63,11 @@ jobs:
           run: uv run ruff format --check .
         - name: Mypy
           run: uv run mypy
+        - name: Build and smoke test wheel
+          run: |
+            uv build --wheel
+            uv run python scripts/verify_wheel.py dist/*.whl
+            uv run python scripts/smoke_wheel.py dist/*.whl
         - name: Coverage
           run: |
             uv run coverage run --branch -m unittest discover

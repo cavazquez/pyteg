@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import importlib
 import os
+from importlib import metadata
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -24,6 +25,25 @@ def _get_toml_loader() -> ModuleType:
 
 
 _toml_loader = _get_toml_loader()
+
+
+def _get_version_from_pyproject() -> str | None:
+    """Lee la versión del archivo de proyecto si está disponible.
+
+    Returns:
+        Versión declarada o ``None`` cuando no se puede leer.
+
+    """
+    pyproject_path = Path(__file__).parent.parent / "pyproject.toml"
+    if not pyproject_path.exists():
+        return None
+    try:
+        with pyproject_path.open("rb") as file:
+            data = _toml_loader.load(file)
+    except OSError, ValueError, KeyError:
+        return None
+    version = data.get("project", {}).get("version")
+    return version if isinstance(version, str) else None
 
 
 def get_version() -> str:
@@ -44,19 +64,16 @@ def get_version() -> str:
         return version
 
     # Intentar leer desde pyproject.toml (para desarrollo)
-    try:
-        project_root = Path(__file__).parent.parent
-        pyproject_path = project_root / "pyproject.toml"
+    version = _get_version_from_pyproject()
+    if version is not None:
+        return version
 
-        if pyproject_path.exists():
-            with pyproject_path.open("rb") as f:
-                data = _toml_loader.load(f)
-                version = data.get("project", {}).get("version", "unknown")
-                if isinstance(version, str):
-                    return version
-                return "unknown"
-    except OSError, ValueError, KeyError:
-        # Error al leer archivo o parsear TOML
+    # En un wheel instalado no se distribuye pyproject.toml. En ese caso, usar
+    # la metadata estándar del paquete para conservar la versión visible en
+    # los entry points y en los logs.
+    try:
+        return metadata.version("pyteg")
+    except metadata.PackageNotFoundError:
         pass
 
     return "unknown"

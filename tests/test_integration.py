@@ -597,8 +597,10 @@ class TestIntegration(unittest.TestCase):
         self.assertIsNotNone(
             replacement.wait_for(
                 "misil_agregado",
-                extra_check=lambda data: data.get("pais") == missile_country
-                and data.get("cantidad_misiles") == 1,
+                extra_check=lambda data: (
+                    data.get("pais") == missile_country
+                    and data.get("cantidad_misiles") == 1
+                ),
             ),
             "No se sincronizó el inventario de misiles",
         )
