@@ -1,5 +1,6 @@
 """Tests para el módulo de objetivos secretos."""
 
+import random
 import unittest
 from typing import cast
 from unittest.mock import Mock
@@ -56,6 +57,32 @@ class TestObjetivosSecretos(unittest.TestCase):
                 int(jugador.userid()),
                 self.objetivos_secretos.objetivos_asignados,
             )
+
+    def test_asignar_objetivos_usa_rng_inyectado(self) -> None:
+        """Dos partidas con la misma fuente producen el mismo reparto."""
+        jugadores = []
+        for i in range(3):
+            mock_jugador = Mock()
+            mock_jugador.userid.return_value = i + 1
+            mock_jugador.username.return_value = f"Player{i + 1}"
+            jugadores.append(mock_jugador)
+
+        primero = ObjetivosSecretos(
+            self.mock_toml_reader,
+            rng=random.Random(41),  # noqa: S311 -- secuencia reproducible del test
+        )
+        segundo = ObjetivosSecretos(
+            self.mock_toml_reader,
+            rng=random.Random(41),  # noqa: S311 -- secuencia reproducible del test
+        )
+
+        primero.asignar_objetivos_aleatorios(jugadores)
+        segundo.asignar_objetivos_aleatorios(jugadores)
+
+        self.assertEqual(
+            primero.objetivos_asignados,
+            segundo.objetivos_asignados,
+        )
 
     def test_get_objetivo_jugador(self) -> None:
         """Test de obtención de objetivo de un jugador."""

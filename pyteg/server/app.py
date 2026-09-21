@@ -29,6 +29,9 @@ from pyteg.utils import get_resource_path
 from pyteg.version import NAME, VERSION
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+    from random import Random
+
     from pyteg.server.conexion.cliente import Client
     from pyteg.server.juego.game import Game
     from pyteg.server.msg.types import BattleResultPayload, MissileResultPayload
@@ -44,8 +47,18 @@ class Server:
     y sus conexiones.
     """
 
-    def __init__(self, theme: str = DEFAULT_MAP_THEME) -> None:
-        """Inicializa el servidor con mapa, mazo y configuración inicial."""
+    def __init__(
+        self,
+        theme: str = DEFAULT_MAP_THEME,
+        *,
+        objective_rng: Random | None = None,
+    ) -> None:
+        """Inicializa el servidor con mapa, mazo y configuración inicial.
+
+        ``objective_rng`` permite inyectar una secuencia reproducible en
+        simulaciones y pruebas. El servidor real lo omite y usa entropía del
+        sistema.
+        """
         self.protocol_version = PROTOCOL_VERSION
         self.theme = theme
         self._state_revision = 0
@@ -57,7 +70,10 @@ class Server:
         toml_reader = TomlReader.from_theme(theme, strict=True)
         self.mapa = Mapa(lambda: build_mapa_from_reader(toml_reader))
         self.mazo = Mazo(self.mapa.paises(), toml_reader.get_simbolos())
-        self.objetivos_secretos = ObjetivosSecretos(toml_reader)
+        self.objetivos_secretos = ObjetivosSecretos(
+            toml_reader,
+            rng=objective_rng,
+        )
 
         # Inicializar coordinador de partidas
         self._game_coordinator = ServerGameCoordinator(
@@ -692,7 +708,7 @@ def parse_arguments() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def main() -> None:
+def main(server_factory: Callable[..., Server] | None = None) -> None:
     """Función principal del servidor."""
     args = parse_arguments()
     logger = configure_server_logging(args)
@@ -711,7 +727,8 @@ def main() -> None:
 
     server: Server | None = None
     try:
-        server = Server(theme=args.theme)
+        factory = server_factory or Server
+        server = factory(theme=args.theme)
         registrar_jugadores(server, host=args.host, port=args.port)
     except KeyboardInterrupt:
         logger.info("Servidor detenido por el usuario")
