@@ -290,7 +290,7 @@ soportadas antes de sus pruebas.
 - [x] [#194 — Usar un identificador de turno inmutable para la recompensa de conquista](https://github.com/cavazquez/pyteg/issues/194) (Reglas; implementado).
 - [x] [#195 — Mantener la sucesión de administrador tras desconexión o eliminación](https://github.com/cavazquez/pyteg/issues/195) (Sala; implementado).
 - [x] [#196 — Reiniciar una revancha sin heredar estado de la partida anterior](https://github.com/cavazquez/pyteg/issues/196) (Partida; implementado).
-- [ ] [#197 — Completar CI con fragmentación, resincronización y smoke Qt](https://github.com/cavazquez/pyteg/issues/197) (Pruebas; pendiente).
+- [x] [#197 — Completar CI con fragmentación, resincronización y smoke Qt](https://github.com/cavazquez/pyteg/issues/197) (Pruebas; implementado).
 
 ## Cambios dejados en este trabajo
 
