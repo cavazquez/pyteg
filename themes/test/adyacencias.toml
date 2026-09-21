@@ -3,3 +3,8 @@
 [Adyacencias]
 Circulo = ["Rectangulo"]
 Rectangulo = ["Circulo"]
+
+[[ConexionesVisuales]]
+origen = "Circulo"
+destino = "Rectangulo"
+puntos = [[-100.0, 40.0]]

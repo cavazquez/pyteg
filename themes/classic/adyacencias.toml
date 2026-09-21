@@ -64,3 +64,56 @@ Australia = ["Sumatra", "Java", "Borneo"]
 Borneo = ["Australia", "Java", "Sumatra"]
 Java = ["Australia", "Borneo", "Sumatra"]
 Sumatra = ["Australia", "Borneo", "Java", "Malasia"]
+
+# Conexiones marítimas que se dibujan sólo en la escena Qt. El grafo de reglas
+# sigue siendo la sección Adyacencias y el servidor no consulta estas tablas.
+[[ConexionesVisuales]]
+origen = "Alaska"
+destino = "Kamchatka"
+puntos = [[120.0, 0.0], [450.0, -15.0]]
+
+[[ConexionesVisuales]]
+origen = "Canada"
+destino = "Groenlandia"
+
+[[ConexionesVisuales]]
+origen = "Groenlandia"
+destino = "Islandia"
+
+[[ConexionesVisuales]]
+origen = "GranBretana"
+destino = "Islandia"
+
+[[ConexionesVisuales]]
+origen = "Japon"
+destino = "Kamchatka"
+
+[[ConexionesVisuales]]
+origen = "Sumatra"
+destino = "Malasia"
+puntos = [[580.0, 220.0]]
+
+[[ConexionesVisuales]]
+origen = "Australia"
+destino = "Sumatra"
+
+[[ConexionesVisuales]]
+origen = "Australia"
+destino = "Borneo"
+
+[[ConexionesVisuales]]
+origen = "Australia"
+destino = "Java"
+puntos = [[650.0, 300.0]]
+
+[[ConexionesVisuales]]
+origen = "Borneo"
+destino = "Java"
+
+[[ConexionesVisuales]]
+origen = "Borneo"
+destino = "Sumatra"
+
+[[ConexionesVisuales]]
+origen = "Java"
+destino = "Sumatra"

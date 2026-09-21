@@ -136,8 +136,13 @@ El juego utiliza archivos TOML para la configuración:
 
 - `themes/classic/paises.toml`: Configuración de países, continentes y sus propiedades visuales
 - `themes/classic/cartas.toml`: Configuración de cartas del juego (separado desde v1.x)
-- `themes/classic/adyacencias.toml`: Configuración de adyacencias entre países (separado desde v1.x)
+- `themes/classic/adyacencias.toml`: Configuración de adyacencias entre países y conexiones visuales opcionales (separado desde v1.x)
 - `themes/classic/objetivos_secretos.toml`: Configuración de objetivos secretos del TEG clásico
+
+Las conexiones visuales se declaran con tablas `[[ConexionesVisuales]]` y los
+campos `origen`, `destino` y `puntos`. Se dibujan detrás de los países; no
+modifican las adyacencias que usa el servidor para validar ataques y
+movimientos.
 
 ### Arquitectura modular de la GUI
 La interfaz vive en el paquete **`pyteg/gui/`** (subdominios: `managers/`, `widgets/`, `dialogs/`, `windows/`, `mapa/`, `toolbar/`, `tarjetas/`, `status_bar/`):

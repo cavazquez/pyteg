@@ -70,6 +70,11 @@ Este documento registra decisiones de arquitectura y sus motivaciones.
 - Decisión: `ConnectionClient.esta_ocupada()` bloquea nuevos intentos en la misma instancia durante los estados conectado, conectando o resolviendo host. En el servidor, `userid` y token son la identidad; un intento de reconectar una identidad que ya está registrada se rechaza y deja intacto el socket activo. `username` sólo es presentación y sus duplicados se rechazan al cambiar el nombre.
 - Consecuencias: Dos procesos distintos pueden entrar como jugadores distintos usando nombres únicos. La reconexión válida después de una baja conserva usuario, color, territorios y caché idempotente; no se agrega una política heurística basada en IP o nombre.
 
+## ADR-014: Conexiones marítimas visuales separadas del grafo de reglas
+- Contexto: El mapa clásico necesita mostrar algunos enlaces sobre el agua, pero el servidor debe seguir usando un único grafo de adyacencias para validar ataques y movimientos.
+- Decisión: Los temas pueden declarar `[[ConexionesVisuales]]` en `adyacencias.toml`, con `origen`, `destino` y una lista opcional de `puntos` intermedios. `TomlReader` valida que ambos países existan, que el par sea una adyacencia y que las coordenadas sean finitas. La escena Qt crea polilíneas con z-order inferior y sin eventos del mouse.
+- Consecuencias: El trazado se puede ajustar sin tocar reglas ni protocolo. Una conexión visual no crea una ruta jugable; para cambiar las reglas hay que modificar `Adyacencias` y sus validaciones.
+
 ## Cómo proponer nuevas decisiones
 1. Agregar una nueva sección ADR-00X con contexto, decisión, consecuencias y referencias.
 2. Enlazar commits/PRs cuando sea posible.

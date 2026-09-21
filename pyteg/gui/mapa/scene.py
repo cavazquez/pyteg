@@ -11,6 +11,7 @@ from PySide6.QtGui import (
     QColor,
 )
 from PySide6.QtWidgets import (
+    QGraphicsPathItem,
     QGraphicsScene,
     QGraphicsSceneContextMenuEvent,
     QGraphicsSceneMouseEvent,
@@ -27,6 +28,7 @@ from pyteg.gui.mapa.overlap_check import (
 )
 from pyteg.gui.mapa.pais import Pais
 from pyteg.gui.mapa.selection_manager import CountrySelectionManager
+from pyteg.gui.mapa.visual_connections import add_visual_connections
 from pyteg.i18n import translate as _
 from pyteg.toml_reader import TomlReader
 from pyteg.utils import get_resource_path
@@ -54,6 +56,7 @@ class QCustomGraphicsScene(QGraphicsScene):
         self.main_window = main_window
         self.map_theme = theme
         self.paises: dict[str, Pais] = {}
+        self.visual_connections: list[QGraphicsPathItem] = []
         self.setBackgroundBrush(QBrush(QColor("#87CEEB")))
         self.selection_manager = CountrySelectionManager(main_window, self)
         self.load_map_data(theme=theme)
@@ -188,6 +191,9 @@ class QCustomGraphicsScene(QGraphicsScene):
                 self.paises[pais] = pixmap_item
                 self.addItem(pixmap_item)
 
+        self.visual_connections = add_visual_connections(
+            self, reader.get_conexiones_visuales(), self.paises
+        )
         self._apply_country_z_order()
         self._elevate_army_markers()
 
