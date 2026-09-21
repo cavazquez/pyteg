@@ -223,6 +223,22 @@ class TestTcpConnectionFraming(unittest.TestCase):
         self.assertFalse(fake_socket.disconnected)
 
     @patch("pyteg.client.conexion.connection.QTcpSocket")
+    def test_qtcp_connection_reports_busy_while_connected_or_connecting(
+        self,
+        qtcp_socket: MagicMock,
+    ) -> None:
+        """El diálogo puede distinguir un socket libre de uno en curso."""
+        fake_socket = _FakeQtSocket([])
+        qtcp_socket.return_value = fake_socket
+        connection = ConnectionClient(MagicMock())
+
+        self.assertTrue(connection.esta_ocupada())
+        fake_socket.state = MagicMock(
+            return_value=QAbstractSocket.SocketState.UnconnectedState
+        )
+        self.assertFalse(connection.esta_ocupada())
+
+    @patch("pyteg.client.conexion.connection.QTcpSocket")
     @patch("pyteg.client.conexion.connection.ClientTaskManager.msg_to_task")
     def test_qtcp_adapter_ignores_invalid_messages_and_keeps_reading(
         self,

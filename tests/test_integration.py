@@ -664,6 +664,52 @@ class TestIntegration(unittest.TestCase):
         pending.close()
         self._wait_for_client_count(2)
 
+    def test_duplicate_reconnection_does_not_replace_active_identity(self) -> None:
+        """Un token válido no abre dos sockets para el mismo jugador activo."""
+        first = self._new_client()
+        second = self._new_client()
+        first_id, _second_id = self._start_two_player_game(first, second)
+        active_server_client = next(
+            client
+            for client in self._server.dame_clientes()
+            if client.userid() == first_id
+        )
+        token_message = first.wait_for(
+            "session_token", extra_check=lambda data: data.get("user_id") == first_id
+        )
+        self.assertIsNotNone(token_message, "Faltó el token del jugador activo")
+        if token_message is None:
+            return
+
+        pending = self._new_client()
+        self.assertIsNotNone(pending.wait_for("session_token"))
+        self._wait_for_client_count(3)
+        received_before = len(pending.snapshot_received())
+        pending.send({
+            "mensaje": "reconectar",
+            "user_id": first_id,
+            "token": token_message["token"],
+        })
+        error = self._wait_for_new_protocol_error(
+            pending, received_before, "reconnect_rejected"
+        )
+
+        self.assertIsNotNone(error, "No se rechazó la segunda reconexión")
+        self.assertIs(
+            next(
+                client
+                for client in self._server.dame_clientes()
+                if client.userid() == first_id
+            ),
+            active_server_client,
+        )
+        game = self._server.game
+        self.assertIsNotNone(
+            game, "La partida desapareció tras una reconexión duplicada"
+        )
+        if game is not None:
+            self.assertFalse(game.jugador_esta_desconectado(first_id))
+
     def test_disconnected_client_can_reconnect_with_same_identity(  # noqa: PLR0914
         self,
     ) -> None:

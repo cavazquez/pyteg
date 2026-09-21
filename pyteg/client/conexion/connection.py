@@ -119,6 +119,19 @@ class ConnectionClient(QWidget):
         _LOG.debug("Socket state=%s connected=%s", self._socket.state(), connected)
         return connected
 
+    def esta_ocupada(self) -> bool:
+        """Indica si este objeto ya tiene una conexión abierta o en curso.
+
+        ``esta_conectado`` sólo informa el estado establecido; el diálogo de
+        conexión también debe bloquear un segundo intento mientras Qt todavía
+        resuelve el host o negocia el socket.
+
+        Returns:
+            ``True`` si el socket está conectado o en proceso de conexión.
+
+        """
+        return self._socket.state() != QAbstractSocket.SocketState.UnconnectedState
+
     def get_main_window(self) -> Any:
         """Obtiene la ventana principal.
 
