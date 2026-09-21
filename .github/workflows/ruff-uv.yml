@@ -81,8 +81,9 @@ jobs:
           run: uv run mypy
         - name: Build and smoke test wheel
           run: |
-            uv build --wheel
+            uv build --wheel --sdist
             uv run python scripts/verify_wheel.py dist/*.whl
+            uv run python scripts/verify_sdist.py dist/*.tar.gz
             uv run python scripts/smoke_wheel.py dist/*.whl
         - name: Coverage
           run: |

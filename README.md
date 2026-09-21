@@ -104,7 +104,7 @@ uv sync --group dev
 Compilar binarios (modo onefile + standalone) para servidor y cliente:
 ```bash
 # ⚙️ Nuitka; las entradas y los recursos se validan antes de compilar
-uv run python scripts/build_binaries.py --version 0.0.9
+uv run python scripts/build_binaries.py --version 0.1.0
 ```
 
 Los ejecutables quedarán en `dist/`.
@@ -114,6 +114,7 @@ Build de wheel/sdist (empaquetado Python estándar):
 # wheel / sdist
 uv build --wheel --sdist
 uv run python scripts/verify_wheel.py dist/pyteg-*.whl
+uv run python scripts/verify_sdist.py dist/pyteg-*.tar.gz
 uv run python scripts/smoke_wheel.py dist/pyteg-*.whl
 ```
 
@@ -251,7 +252,7 @@ Los binarios compilados para múltiples plataformas están disponibles en la [p�
 
 Los binarios son standalone (no requieren Python instalado) e incluyen todos los assets necesarios.
 Los nombres usan la versión sin el prefijo `v` del tag, por ejemplo
-`pyteg-0.0.9-linux-x86_64.tar.gz` para `v0.0.9`.
+`pyteg-0.1.0-linux-x86_64.tar.gz` para `v0.1.0`.
 
 ### Crear un nuevo release
 Para crear un nuevo release con binarios compilados:
@@ -266,11 +267,11 @@ Para crear un nuevo release con binarios compilados:
 
 3. **Crear y pushear el tag**:
    ```bash
-   git add pyproject.toml docs/CHANGELOG.md
-   git commit -m "Bump version to 1.0.0"
-   git tag v1.0.0
-   git push origin main
-   git push origin v1.0.0
+   git add pyproject.toml uv.lock docs/CHANGELOG.md
+   git commit -m "release: 0.1.0"
+   git tag v0.1.0
+   git push origin master
+   git push origin v0.1.0
    ```
 
 4. **🔄 GitHub Actions automáticamente**:

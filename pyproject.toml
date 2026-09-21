@@ -1,6 +1,6 @@
 [project]
 name = "pyteg"
-version = "0.0.9"
+version = "0.1.0"
 requires-python = ">=3.14,<3.15"
 dependencies = [
     "polib==1.2.0",
