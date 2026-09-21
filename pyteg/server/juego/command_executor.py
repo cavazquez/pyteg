@@ -5,7 +5,7 @@ from __future__ import annotations
 import queue
 import threading
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 from pyteg.exceptions import EstadoInvalidoError, MensajeNoValidoError
 from pyteg.logger import get_logger
@@ -146,17 +146,34 @@ class GameCommandExecutor:
         """Construye y ejecuta una tarea del servidor dentro del serializador."""
         command_name = command.payload.get("mensaje")
         command_id = command.payload.get("command_id")
-        if isinstance(command_id, str):
-            cached = getattr(command.client, "command_result", lambda _: None)(
-                command_id
-            )
-            if cached is not None:
-                command.client.transmisor.enviar_resultado_comando(**cached)
-                return
-        accepted = True
-        error_code: str | None = None
+        if self._requires_command_id(command_name, command_id):
+            self._reject_missing_command_id(command.client)
+            return
+        cached = self._cached_command_result(command)
+        if cached is not None:
+            self._replay_or_reject_conflict(command, cached)
+            return
         revision_getter = getattr(self._server, "state_revision", None)
         revision_before = revision_getter() if callable(revision_getter) else None
+        accepted, error_code = self._run_task(command)
+
+        if accepted and command_name not in _NON_MUTATING_COMMANDS:
+            self._publish_revision_if_needed(revision_before)
+        self._send_command_result(
+            command,
+            accepted=accepted,
+            error_code=error_code,
+        )
+
+    def _run_task(self, command: _ClientCommand) -> tuple[bool, str | None]:
+        """Construye y ejecuta la tarea, traduciendo sus errores de protocolo.
+
+        Returns:
+            Tupla ``(aceptado, código_de_error)`` de la ejecución.
+
+        """
+        accepted = True
+        error_code: str | None = None
         try:
             task = ServerTaskManager.msg_to_task(command.payload)
             accepted = bool(task.run(command.client))
@@ -177,21 +194,100 @@ class GameCommandExecutor:
             accepted = False
             error_code = "internal_error"
             LOGGER.exception("Fallo ejecutando comando del cliente")
+        return accepted, error_code
 
-        if accepted and command_name not in _NON_MUTATING_COMMANDS:
-            self._publish_revision_if_needed(revision_before)
-        if isinstance(command_id, str):
+    def _send_command_result(
+        self,
+        command: _ClientCommand,
+        *,
+        accepted: bool,
+        error_code: str | None,
+    ) -> None:
+        """Cachea y transmite el resultado correlacionado de una mutación."""
+        command_id = command.payload.get("command_id")
+        if not isinstance(command_id, str):
+            return
+        result = {
+            "command_id": command_id,
+            "accepted": accepted,
+            "revision": self._server.state_revision(),
+        }
+        if not accepted:
+            result["error_code"] = error_code or "rejected"
+        remember = getattr(command.client, "remember_command_result", None)
+        command_name = command.payload.get("mensaje")
+        if callable(remember) and command_name not in _NON_MUTATING_COMMANDS:
+            try:
+                remember(command_id, result, command.payload)
+            except TypeError:
+                remember(command_id, result)
+        command.client.transmisor.enviar_resultado_comando(**result)
+
+    @staticmethod
+    def _requires_command_id(command_name: object, command_id: object) -> bool:
+        """Indica si una mutación carece de un identificador válido.
+
+        Returns:
+            ``True`` si el comando es mutante y el ID falta o está vacío.
+
+        """
+        return command_name not in _NON_MUTATING_COMMANDS and (
+            not isinstance(command_id, str) or not command_id.strip()
+        )
+
+    @staticmethod
+    def _cached_command_result(
+        command: _ClientCommand,
+    ) -> dict[str, Any] | None:
+        """Obtiene el resultado previo de una mutación, si existe.
+
+        Returns:
+            Resultado cacheado o ``None`` para un comando nuevo/no mutante.
+
+        """
+        command_name = command.payload.get("mensaje")
+        command_id = command.payload.get("command_id")
+        if (
+            command_name in _NON_MUTATING_COMMANDS
+            or not isinstance(command_id, str)
+            or not command_id.strip()
+        ):
+            return None
+        get_result = getattr(command.client, "command_result", None)
+        if not callable(get_result):
+            return None
+        return cast("dict[str, Any] | None", get_result(command_id))
+
+    def _reject_missing_command_id(self, client: IClientProtocol) -> None:
+        """Rechaza una mutación sin correlación antes de construir la tarea."""
+        transmisor = getattr(client, "transmisor", None)
+        enviar_error = getattr(transmisor, "enviar_error", None)
+        if callable(enviar_error):
+            enviar_error(
+                "command_id_required",
+                "Las mutaciones requieren un command_id no vacío.",
+            )
+
+    def _replay_or_reject_conflict(
+        self, command: _ClientCommand, cached: dict[str, Any]
+    ) -> None:
+        """Reproduce un resultado o rechaza la reutilización con otro payload."""
+        command_id = command.payload["command_id"]
+        get_payload = getattr(command.client, "command_payload", None)
+        cached_payload = get_payload(command_id) if callable(get_payload) else None
+        current_payload = {
+            key: value for key, value in command.payload.items() if key != "command_id"
+        }
+        if cached_payload is not None and cached_payload != current_payload:
             result = {
                 "command_id": command_id,
-                "accepted": accepted,
+                "accepted": False,
                 "revision": self._server.state_revision(),
+                "error_code": "command_id_conflict",
             }
-            if not accepted:
-                result["error_code"] = error_code or "rejected"
             command.client.transmisor.enviar_resultado_comando(**result)
-            remember = getattr(command.client, "remember_command_result", None)
-            if callable(remember):
-                remember(command_id, result)
+            return
+        command.client.transmisor.enviar_resultado_comando(**cached)
 
     def _publish_revision_if_needed(self, revision_before: int | None) -> None:
         """Publica una única revisión para una mutación aceptada.

@@ -101,11 +101,24 @@ y modelo que el cliente Qt. Un hueco de revisión solicita `solicitar_snapshot`,
 el snapshot de resincronización reemplaza el estado completo y los snapshots
 viejos o duplicados no retroceden la revisión.
 
+## Estado tras implementar #193
+
+Toda mutación TCP exige un `command_id` no vacío antes de construir o ejecutar
+su tarea. Las consultas de snapshot, tarjetas, chat y el handshake siguen siendo
+mensajes no mutantes y conservan su contrato independiente.
+
+El servidor guarda por sesión los últimos resultados junto con el payload sin
+su identificador. Si una conexión reintenta el mismo ID y payload, reproduce el
+resultado anterior sin repetir la tarea, la mutación ni la revisión. Si reutiliza
+el ID con otro payload, devuelve `command_id_conflict` y conserva el estado. La
+caché se transfiere al reemplazar una conexión durante una reconexión autenticada,
+por lo que un cliente puede reintentar después de perder la respuesta TCP.
+
 ## Evidencia ejecutada
 
 - Python 3.14.0 y el entorno PySide6 existente.
-- **406 tests pasan** con `QT_QPA_PLATFORM=offscreen`; Ruff, formato y mypy también
-  pasan sobre 308 archivos fuente.
+- **411 tests pasan** con `QT_QPA_PLATFORM=offscreen`; Ruff, formato y mypy también
+  pasan (mypy verificó 231 archivos fuente).
 - Regresiones de red cubren fragmentación y coalescencia TCP, JSON y payloads
   inválidos, ciclo de conexión/color, permisos de administrador, una carrera
   determinista acción/timeout, vencimientos obsoletos, cola de salida saturada,
@@ -236,7 +249,7 @@ soportadas antes de sus pruebas.
 
 - [x] [#191 — Completar el contrato público de snapshots versionados](https://github.com/cavazquez/pyteg/issues/191) (Red; implementado).
 - [x] [#192 — Convertir `ClientStateModel` en la fuente única de GUI y bots](https://github.com/cavazquez/pyteg/issues/192) (Cliente; implementado).
-- [ ] [#193 — Exigir `command_id` y hacer idempotentes los reintentos](https://github.com/cavazquez/pyteg/issues/193) (Red; pendiente).
+- [x] [#193 — Exigir `command_id` y hacer idempotentes los reintentos](https://github.com/cavazquez/pyteg/issues/193) (Red; implementado).
 
 ### P1
 

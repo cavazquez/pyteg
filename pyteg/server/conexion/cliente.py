@@ -6,6 +6,7 @@ import json
 import secrets
 import threading
 from collections import OrderedDict
+from copy import deepcopy
 from typing import TYPE_CHECKING, Any
 
 from pyteg.logger import get_logger
@@ -51,6 +52,7 @@ class Client:
         self._cleanup_lock = threading.Lock()
         self._cleanup_completed = False
         self._command_results: OrderedDict[str, dict[str, Any]] = OrderedDict()
+        self._command_payloads: OrderedDict[str, dict[str, Any]] = OrderedDict()
 
     def asignar_color(self, color: IColor | None) -> None:
         """Asigna un color al cliente.
@@ -122,16 +124,44 @@ class Client:
         result = self._command_results.get(command_id)
         if result is not None:
             self._command_results.move_to_end(command_id)
-        return result
+            if command_id in self._command_payloads:
+                self._command_payloads.move_to_end(command_id)
+            return deepcopy(result)
+        return None
+
+    def command_payload(self, command_id: str) -> dict[str, Any] | None:
+        """Obtiene el payload asociado a un resultado cacheado.
+
+        Returns:
+            Payload sin ``command_id`` o ``None`` si no hay registro.
+
+        """
+        payload = self._command_payloads.get(command_id)
+        if payload is None:
+            return None
+        self._command_payloads.move_to_end(command_id)
+        return deepcopy(payload)
 
     def remember_command_result(
-        self, command_id: str, result: dict[str, Any], *, limit: int = 256
+        self,
+        command_id: str,
+        result: dict[str, Any],
+        payload: dict[str, Any] | None = None,
+        *,
+        limit: int = 256,
     ) -> None:
         """Guarda resultados recientes con retención acotada."""
-        self._command_results[command_id] = dict(result)
+        self._command_results[command_id] = deepcopy(result)
         self._command_results.move_to_end(command_id)
+        if payload is not None:
+            payload_without_id = {
+                key: value for key, value in payload.items() if key != "command_id"
+            }
+            self._command_payloads[command_id] = deepcopy(payload_without_id)
+            self._command_payloads.move_to_end(command_id)
         while len(self._command_results) > limit:
-            self._command_results.popitem(last=False)
+            expired_id, _ = self._command_results.popitem(last=False)
+            self._command_payloads.pop(expired_id, None)
 
     def export_command_results(self) -> dict[str, dict[str, Any]]:
         """Exporta la caché para transferirla durante una reconexión.
@@ -140,11 +170,38 @@ class Client:
             Copia de los resultados recientes.
 
         """
-        return {key: dict(value) for key, value in self._command_results.items()}
+        return {key: deepcopy(value) for key, value in self._command_results.items()}
 
     def import_command_results(self, values: dict[str, dict[str, Any]]) -> None:
         """Restaura resultados de la conexión histórica."""
-        self._command_results.update(values)
+        for key, value in values.items():
+            self._command_results[key] = deepcopy(value)
+
+    def export_command_cache(self) -> dict[str, dict[str, Any]]:
+        """Exporta resultados y payloads para una reconexión idempotente.
+
+        Returns:
+            Copia de los registros recientes indexados por ``command_id``.
+
+        """
+        return {
+            command_id: {
+                "result": deepcopy(result),
+                "payload": deepcopy(self._command_payloads.get(command_id, {})),
+            }
+            for command_id, result in self._command_results.items()
+        }
+
+    def import_command_cache(self, values: dict[str, dict[str, Any]]) -> None:
+        """Restaura resultados y payloads cacheados de una sesión histórica."""
+        for command_id, record in values.items():
+            result = record.get("result")
+            payload = record.get("payload")
+            if not isinstance(result, dict):
+                continue
+            self._command_results[command_id] = deepcopy(result)
+            if isinstance(payload, dict):
+                self._command_payloads[command_id] = deepcopy(payload)
 
     def reasignar_userid(self, user_id: int) -> None:
         """Reasigna el identificador tras validar una reconexión."""
