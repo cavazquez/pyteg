@@ -18,6 +18,7 @@ from typing import Any
 
 from pyteg.codecs_utils import FrameCodecError, NulDelimitedUtf8Codec
 from pyteg.config import MIN_UNITS_FOR_ATTACK
+from pyteg.core.turnos.unit_pool import unidades_disponibles_en_pais
 from pyteg.protocol import PROTOCOL_VERSION, map_hash_for_theme
 from pyteg.server.app import Server
 from pyteg.server.conexion.build_cliente import ServerBuildClient
@@ -1320,27 +1321,39 @@ class TestIntegration(unittest.TestCase):
         client = self._client_for_user(c1, c2, uid1, uid2, active_id)
 
         if game.fase_actual() == "colocacion":
-            pending = int(game.refuerzos_pendientes())
-            country = next(
-                (
-                    pais
-                    for pais in game.mapa().paises()
-                    if game.mapa().ocupado_por(pais) == active_id
-                ),
-                None,
-            )
-            self.assertIsNotNone(country, "El jugador de turno no tiene países")
-            if country is None or pending <= 0:
-                return active_id, client
-            client.send({
-                "mensaje": "agregar_unidad",
-                "pais": country,
-                "tipo_unidad": "infanteria",
-                "cantidad": pending,
-            })
             deadline = time.monotonic() + _READ_TIMEOUT
-            while time.monotonic() < deadline and game.fase_actual() == "colocacion":
-                time.sleep(0.05)
+            while game.fase_actual() == "colocacion" and time.monotonic() < deadline:
+                turno_actual = game.turno_actual()
+                country = next(
+                    (
+                        pais
+                        for pais in game.mapa().paises()
+                        if (
+                            game.mapa().ocupado_por(pais) == active_id
+                            and unidades_disponibles_en_pais(
+                                turno_actual, game.mapa().continente(pais)
+                            )
+                            > 0
+                        )
+                    ),
+                    None,
+                )
+                self.assertIsNotNone(country, "El jugador de turno no tiene países")
+                if country is None:
+                    return active_id, client
+                pending_before = int(game.refuerzos_pendientes())
+                client.send({
+                    "mensaje": "agregar_unidad",
+                    "pais": country,
+                    "tipo_unidad": "infanteria",
+                    "cantidad": 1,
+                })
+                while (
+                    time.monotonic() < deadline
+                    and game.fase_actual() == "colocacion"
+                    and int(game.refuerzos_pendientes()) >= pending_before
+                ):
+                    time.sleep(0.05)
             self.assertEqual(game.fase_actual(), "acciones")
 
         return active_id, client
