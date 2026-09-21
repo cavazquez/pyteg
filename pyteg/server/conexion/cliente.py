@@ -6,11 +6,9 @@ import json
 import threading
 from typing import TYPE_CHECKING, Any
 
-from pyteg.exceptions import EstadoInvalidoError, MensajeNoValidoError
 from pyteg.logger import get_logger
 from pyteg.protocol_validation import MessageValidationError, validate_server_command
 from pyteg.server.conexion.transmisor import ServerTransmisor
-from pyteg.server.tasks.manager import ServerTaskManager
 
 if TYPE_CHECKING:
     from pyteg.colores import IColor
@@ -118,12 +116,17 @@ class Client:
             return None
         return [str(item) for item in result]
 
-    def cerrar(self) -> None:
+    def cerrar(self, *, flush_outgoing: bool = False) -> None:
         """Libera una conexión y su registro de forma idempotente.
 
         El objeto conserva identidad, nombre y color para que una partida ya
         iniciada siga teniendo sus jugadores y territorios aunque el socket
         asociado se haya cerrado.
+
+        Args:
+            flush_outgoing: Entrega, dentro de un plazo, el error terminal ya
+                encolado antes de cerrar el socket.
+
         """
         with self._cleanup_lock:
             if self._cleanup_completed:
@@ -131,6 +134,8 @@ class Client:
             self._cleanup_completed = True
 
         try:
+            if flush_outgoing:
+                self._conn.flush_outgoing()
             self._conn.close()
         finally:
             self.server.quitarme(self._user_id, self)
@@ -138,7 +143,7 @@ class Client:
     def run(self) -> None:
         """Ejecuta el ciclo principal del cliente.
 
-        Maneja la recepción de datos y la ejecución de tareas.
+        Maneja la recepción de datos y el encolado de tareas validadas.
         """
         try:
             self.server.enviar_userid()
@@ -182,7 +187,7 @@ class Client:
         self.transmisor.enviar_error(code, message)
 
     def ejecutar_mensaje(self, data: object) -> None:
-        """Ejecuta una tarea basada en el mensaje recibido.
+        """Valida y encola una tarea basada en el mensaje recibido.
 
         Args:
             data: Valor JSON recibido desde la conexión TCP.
@@ -197,14 +202,7 @@ class Client:
             self._enviar_error_protocolo(error.code, str(error))
             return
 
-        task = ServerTaskManager.msg_to_task(validated_data)
-        try:
-            task.run(self)
-        except MensajeNoValidoError:
-            self._logger.exception("Mensaje no válido del cliente %s", self._user_id)
-        except EstadoInvalidoError as e:
-            self._logger.warning("Error de estado del cliente %s: %s", self._user_id, e)
-            self._enviar_error_protocolo("invalid_state", str(e))
+        self.server.encolar_comando(self, validated_data)
 
         mensaje = validated_data["mensaje"]
         if mensaje:

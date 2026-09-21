@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import argparse
 import sys
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from pyteg.config import DEFAULT_MAP_THEME
 from pyteg.core.cartas.mazo import Mazo
@@ -17,6 +17,7 @@ from pyteg.server.conexion.registrar_jugadores import registrar_jugadores
 from pyteg.server.conexion.registry import ServerClientRegistry
 from pyteg.server.juego import session_sync
 from pyteg.server.juego.color import ServerColor
+from pyteg.server.juego.command_executor import GameCommandExecutor
 from pyteg.server.juego.coordinator import ServerGameCoordinator
 from pyteg.server.juego.estado import Estado
 from pyteg.server.juego.mapa import Mapa
@@ -64,6 +65,8 @@ class Server:
             self._broadcaster,
             self.color,
         )
+        self._command_executor = GameCommandExecutor(self)
+        self._command_executor.start()
 
     @property
     def game(self) -> Game | None:
@@ -74,6 +77,28 @@ class Server:
 
         """
         return self._game_coordinator.game()
+
+    def encolar_comando(self, client: Client, data: dict[str, Any]) -> None:
+        """Encola un comando TCP para ejecutarlo en la transición serializada."""
+        self._command_executor.enqueue_command(client, data)
+
+    def encolar_vencimiento_turno(self, generation: int) -> None:
+        """Encola un vencimiento asociado al turno que lo originó."""
+        self._command_executor.enqueue_turn_expired(generation)
+
+    def turno_snapshot(self) -> tuple[int, int] | None:
+        """Obtiene ``(jugador_actual, generación)`` sin leer el juego en el timer.
+
+        Returns:
+            El jugador del turno actual y su generación, o ``None`` sin partida.
+
+        """
+        return self._command_executor.turn_snapshot()
+
+    def detener(self) -> None:
+        """Detiene el temporizador y el ejecutor de transiciones del servidor."""
+        self._game_coordinator.detener()
+        self._command_executor.stop()
 
     def set_segundos_por_turno(self, segundos: int) -> None:
         """Configura la cantidad de segundos por turno.
@@ -389,6 +414,7 @@ def main() -> None:
         logger.error("Tema de mapa no encontrado: themes/%s/paises.toml", args.theme)
         sys.exit(1)
 
+    server: Server | None = None
     try:
         server = Server(theme=args.theme)
         registrar_jugadores(server, host=args.host, port=args.port)
@@ -398,6 +424,9 @@ def main() -> None:
     except OSError, ValueError, RuntimeError:
         logger.exception("Error al iniciar el servidor")
         sys.exit(1)
+    finally:
+        if server is not None:
+            server.detener()
 
 
 if __name__ == "__main__":

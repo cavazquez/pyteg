@@ -109,7 +109,7 @@ class _ServerThread:
                         "room_full",
                         "La sala está completa. Intenta nuevamente más tarde.",
                     )
-                    client.cerrar()
+                    client.cerrar(flush_outgoing=True)
                     continue
                 t = threading.Thread(target=client.run, daemon=True)
                 t.start()
@@ -129,6 +129,7 @@ class _ServerThread:
                 self._sock.close()
         if self._thread:
             self._thread.join(timeout=2.0)
+        self._server.detener()
 
 
 class _TestClient:

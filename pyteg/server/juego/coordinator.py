@@ -232,3 +232,11 @@ class ServerGameCoordinator:
 
         """
         return self._turno_timer
+
+    def detener(self) -> None:
+        """Detiene y espera el temporizador activo, si existe."""
+        if self._turno_timer is None:
+            return
+        self._turno_timer.detener()
+        if self._turno_timer.is_alive():
+            self._turno_timer.join(timeout=2.0)

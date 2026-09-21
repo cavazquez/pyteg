@@ -1,6 +1,6 @@
 # Revisión de PyTeg y ruta para terminarlo
 
-Fecha local: 20 de septiembre de 2026. Base revisada: `56b3ced991f14c6a0f4974b0b95494008e3c1c3b`.
+Fecha local: 21 de septiembre de 2026. Base revisada: `56b3ced991f14c6a0f4974b0b95494008e3c1c3b`.
 
 ## Diagnóstico de la base revisada
 
@@ -16,64 +16,57 @@ dependencias. No había issues abiertos al iniciar la revisión. Las prioridades
 son relativas a entregar una partida local fiable; no representan una certificación
 de seguridad ni compatibilidad completa con todas las reglas del TEG clásico.
 
-## Estado tras implementar #171
+## Estado tras implementar #163–#168 y #171
 
-El cierre de victoria ya está implementado localmente: al detectar un ganador el
-servidor pasa una sola vez a `Finalizado`, detiene el temporizador y difunde el
-estado antes de anunciar la victoria. Los envíos de turno y refuerzos se cortan,
-las acciones de juego posteriores se rechazan y el cliente limpia el temporizador,
-anula la selección y deshabilita atacar, mover y finalizar turno. El chat queda
-disponible después de la partida.
+La capa TCP ahora reconstruye tramas UTF-8/NUL incrementales, valida el contrato
+antes de construir tareas y libera socket, registro y color de forma idempotente.
+Sólo el administrador puede configurar o iniciar la sala.
 
-La verificación añadió pruebas unitarias, GUI e integración TCP. La corrida
-estricta de seis clientes clásico con semilla 45 alcanzó victoria tras 108 turnos
-y 322 conquistas; los seis clientes terminaron en `Finalizado`, coincidieron en
-el tablero y no recibieron errores.
+Las acciones TCP validadas y los vencimientos se serializan en un único ejecutor.
+El temporizador publica `TurnExpired` con una generación del turno, por lo que un
+vencimiento obsoleto no puede avanzar dos veces ni intercalarse entre validar y
+mutar una acción. Las salidas pasan por una cola FIFO de hasta 128 tramas por
+conexión; un cliente lento agota su propia cola y se desconecta después del plazo
+de envío, sin bloquear la transición del juego.
+
+El cierre de victoria conserva `Finalizado`, detiene el temporizador y difunde el
+estado antes de anunciar la victoria. Las acciones posteriores se rechazan y el
+chat sigue disponible después de la partida.
 
 ## Evidencia ejecutada
 
-- Python 3.14.0 y PySide6 6.11.1 del entorno existente.
-- **332 tests pasan** con `QT_QPA_PLATFORM=offscreen`. Aparecen `ResourceWarning`
-  por sockets sin cerrar, relacionados con el issue de limpieza.
-- Ruff, formato y mypy pasan en la base revisada. La cobertura total con ramas
-  habilitadas es **56%**; esa cifra no sustituye pruebas de partida completa.
-- **Tres clientes Qt reales en modo offscreen** conectaron al servidor, recibieron
-  el mapa clásico de 50 países, mostraron estado En Juego y el mismo jugador activo.
-  No hubo excepciones Qt ni diálogos de error. Este smoke sólo cubrió inicio,
-  no una partida completa por la interfaz ni validación visual.
-- **Partida clásica por TCP**, servidor productivo en subprocess y tres bots:
-  30 turnos, 223 ataques, 133 conquistas, 17,493 segundos. Ganó Bot_1 con 31 países;
-  Bot_2 terminó con 11 y Bot_3 con 8. Los tres observaron el mismo mapa y ganador,
-  sin mensajes de error. Se conservaron los dados productivos con `secrets`.
-- **Partida reducida**, dos bots y objetivo de dos países: victoria tras seis
-  turnos y nueve ataques. El mapa `test` actual tiene dos países, no seis.
-- Ambos escenarios de la base conservaron **`JUGANDO` después de la victoria**.
-  El modo `--require-finalized` detecta el problema y devuelve código 2.
-- Dos corridas con dados instrumentados y semilla 7 produjeron el mismo tablero,
-  hash y comandos. Un timeout forzado devuelve 1 y verifica cleanup del proceso.
-- Se reconstruyó independientemente la traza clásica para corroborar mapa,
-  ganador, ataques y conquistas publicados por el harness.
+- Python 3.14.0 y el entorno PySide6 existente.
+- **366 tests pasan** con `QT_QPA_PLATFORM=offscreen`; Ruff, formato y mypy también
+  pasan sobre 290 archivos fuente.
+- Regresiones de red cubren fragmentación y coalescencia TCP, JSON y payloads
+  inválidos, ciclo de conexión/color, permisos de administrador, una carrera
+  determinista acción/timeout, vencimientos obsoletos y cola de salida saturada.
+- **Partida clásica por TCP**, servidor productivo en subprocess y seis bots:
+  semilla 45, victoria a 30 países, 78 turnos y 224 conquistas en 32,825 segundos.
+  Los seis clientes terminaron en `Finalizado`, coincidieron en el tablero y no
+  recibieron errores.
 
 Los JSON y trazas completos quedan en `logs/simulations/`, ignorados por Git.
 Los comandos y límites están en [SIMULATION.md](SIMULATION.md).
 No se probaron partidas completas de Qt, tarjetas/canjes, objetivos secretos,
-misiles, desconexiones, concurrencia adversaria ni red WAN. El consenso del mapa
-comprueba replicación entre clientes; no es un oráculo de todas las reglas.
+misiles, reconexión ni red WAN. El consenso del mapa comprueba replicación entre
+clientes; no es un oráculo de todas las reglas.
 
 ## Fallos reproducidos que explican las prioridades
 
-1. Un JSON fragmentado entre dos lecturas se pierde. UTF-8 partido puede lanzar
-   `UnicodeDecodeError`; una raíz JSON `[]` termina el handler y deja la conexión
-   registrada. Cada lectura TCP se está tratando como un mensaje completo.
-2. Después de ocho altas/bajas quedan cero clientes y cero colores disponibles;
-   la novena alta falla. Falta limpieza de sockets, registro y colores.
-3. Un usuario no administrador puede configurar/iniciar. Un jugador puede mover
-   fuera de turno. Mover `-5` unidades transforma dos países con `2/2` en `7/-3`.
-4. Una intercalación controlada entre agregar unidades y vencer el turno aplica
-   una acción del jugador anterior consumiendo el pool del siguiente jugador.
-5. La base sólo emitía la victoria: no congelaba estado, no detenía el timer y
-   no cambiaba a `Estado.FINALIZADO` (valor wire `Finalizado`). Resuelto
-   localmente por #171.
+1. Resuelto por #163 y #164: un JSON fragmentado, UTF-8 partido o una raíz JSON
+   inválida ya no se interpreta como un mensaje completo ni deja una conexión
+   registrada al fallar la validación.
+2. Resuelto por #166: altas y bajas repetidas liberan socket, registro y color;
+   el noveno cliente puede entrar después de ocho desconexiones.
+3. Resuelto por #165 para la sala: sólo el administrador puede configurar o
+   iniciar. Quedan pendientes #169 y #170 para rechazar movimientos fuera de
+   turno y cantidades inválidas.
+4. Resuelto por #167: una intercalación entre agregar unidades y vencer el turno
+   queda ordenada en el mismo ejecutor FIFO; una generación obsoleta no puede
+   avanzar dos veces ni consumir el pool del jugador siguiente.
+5. Resuelto por #171: la victoria congela estado, detiene el temporizador y
+   cambia a `Estado.FINALIZADO` (valor wire `Finalizado`).
 6. Los eliminados siguen recibiendo turnos/refuerzos. El orden deja de rotar
    después de la segunda ronda. Se pueden reclamar dos cartas en un mismo turno.
 7. Continentes vacíos dan bonus; los refuerzos se calculan antes del turno real.
@@ -152,12 +145,12 @@ soportadas antes de sus pruebas.
 
 ### P1
 
-- [#163 — Reconstruir mensajes TCP fragmentados con un codec incremental compartido](https://github.com/cavazquez/pyteg/issues/163) (Red).
-- [#164 — Validar el contrato de mensajes entrantes antes de construir tareas](https://github.com/cavazquez/pyteg/issues/164) (Red).
-- [#165 — Exigir rol de administrador para configurar e iniciar la partida](https://github.com/cavazquez/pyteg/issues/165) (Sala).
-- [#166 — Liberar socket, registro y color de forma idempotente al desconectar](https://github.com/cavazquez/pyteg/issues/166) (Red).
-- [#167 — Serializar comandos de juego y vencimientos de turno en un único ejecutor](https://github.com/cavazquez/pyteg/issues/167) (Red).
-- [#168 — Enviar eventos por una cola FIFO acotada por conexión](https://github.com/cavazquez/pyteg/issues/168) (Red).
+- [x] [#163 — Reconstruir mensajes TCP fragmentados con un codec incremental compartido](https://github.com/cavazquez/pyteg/issues/163) (Red; implementado).
+- [x] [#164 — Validar el contrato de mensajes entrantes antes de construir tareas](https://github.com/cavazquez/pyteg/issues/164) (Red; implementado).
+- [x] [#165 — Exigir rol de administrador para configurar e iniciar la partida](https://github.com/cavazquez/pyteg/issues/165) (Sala; implementado).
+- [x] [#166 — Liberar socket, registro y color de forma idempotente al desconectar](https://github.com/cavazquez/pyteg/issues/166) (Red; implementado).
+- [x] [#167 — Serializar comandos de juego y vencimientos de turno en un único ejecutor](https://github.com/cavazquez/pyteg/issues/167) (Red; implementado).
+- [x] [#168 — Enviar eventos por una cola FIFO acotada por conexión](https://github.com/cavazquez/pyteg/issues/168) (Red; implementado).
 - [#169 — Rechazar movimientos fuera del turno del jugador](https://github.com/cavazquez/pyteg/issues/169) (Reglas).
 - [#170 — Impedir cantidades no positivas o no enteras al mover unidades](https://github.com/cavazquez/pyteg/issues/170) (Reglas).
 - [x] [#171 — Pasar a FINALIZADO y detener el juego al declarar victoria](https://github.com/cavazquez/pyteg/issues/171) (Partida; implementado localmente).
@@ -189,3 +182,7 @@ soportadas antes de sus pruebas.
 - Este informe y enlaces a los issues.
 - Cierre de victoria en servidor, temporizador y GUI, con regresiones unitarias
   e integración TCP para #171.
+- Ejecutor FIFO único para comandos y vencimientos, con generación de turno y
+  regresiones deterministas para #167.
+- Escritor FIFO acotado por conexión, plazo de envío y desconexión del cliente
+  lento, con regresiones de orden y saturación para #168.
