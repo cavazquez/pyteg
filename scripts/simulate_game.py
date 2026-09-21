@@ -16,7 +16,8 @@ This exercises the server protocol and the shared headless client transport/mode
 not QWidget rendering. Chat echoes remain synchronization barriers while command
 results and snapshots are recorded. Victory consensus and the server's terminal
 state are reported separately; use ``--require-finalized`` to make a missing
-terminal transition fail the run.
+terminal transition fail the run. ``--secret-objectives`` also checks private
+objective assignment and recovery without exposing objectives in public state.
 """
 
 from __future__ import annotations
@@ -36,6 +37,7 @@ import tomllib
 import uuid
 from collections import Counter, deque
 from dataclasses import dataclass, field
+from functools import partial
 from operator import itemgetter
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -127,6 +129,12 @@ class Bot:
             and isinstance(card.get("pais"), str)
             and isinstance(card.get("simbolo"), str)
         ]
+
+    @property
+    def secret_objective(self) -> dict[str, str] | None:
+        """Devuelve el objetivo privado recibido por este cliente."""
+        objective = self.state_model.private_objective
+        return dict(objective) if objective is not None else None
 
     @property
     def missiles(self) -> dict[str, int]:
@@ -915,7 +923,7 @@ class Simulation:
             "empezar",
             segundos=max(3600, int(self.args.timeout) + 1),
             paises_para_victoria=self.target,
-            objetivos_secretos=False,
+            objetivos_secretos=self.args.secret_objectives,
             misiles_habilitados=self.exercise_missiles,
         )
         self.command(admin, "empezar_partida")
@@ -1001,7 +1009,9 @@ class Simulation:
             raise RuntimeError(msg)
         winner = victory["ganador_id"]
         controlled = sum(owner == winner for owner, _ in peers[0].countries.values())
-        if controlled < self.target or self.conquests == 0:
+        if not self.args.secret_objectives and (
+            controlled < self.target or self.conquests == 0
+        ):
             msg = "Victory was not backed by the country target and actual conquest"
             raise RuntimeError(msg)
 
@@ -1024,6 +1034,25 @@ class Simulation:
         if self.exercise_missiles and self.missile_launches == 0:
             msg = "Missile exercise requested but no missile was launched"
             raise RuntimeError(msg)
+        if self.args.secret_objectives:
+            latest_by_id = {bot.userid: bot for bot in self.bots}
+            objectives = {
+                userid: bot.secret_objective for userid, bot in latest_by_id.items()
+            }
+            missing = [
+                userid for userid, objective in objectives.items() if objective is None
+            ]
+            if missing:
+                msg = f"Secret objective missing for clients: {missing}"
+                raise RuntimeError(msg)
+            objective_ids = {
+                objective["objetivo_id"]
+                for objective in objectives.values()
+                if objective is not None
+            }
+            if len(objective_ids) != len(objectives):
+                msg = "Secret objectives leaked or were duplicated between clients"
+                raise RuntimeError(msg)
 
     def play(self) -> None:
         """Play until victory, bounded by time and a maximum number of rounds."""
@@ -1058,6 +1087,7 @@ class Simulation:
             "seed": self.args.seed,
             "seed_source": self.args.seed_source,
             "deterministic_dice": self.args.deterministic_dice,
+            "secret_objectives": self.args.secret_objectives,
             "victory_observed": connected_victories,
             "all_clients_victory_observed": bool(self.bots)
             and all(bot.victory for bot in identity_bots),
@@ -1095,6 +1125,11 @@ class Simulation:
             "maps_equal": all(bot.countries == board for bot in peers),
             "board_sha256": hashlib.sha256(board_json).hexdigest(),
             "country_counts": ordered_country_counts,
+            "secret_objective_ids": {
+                str(bot.userid): bot.secret_objective["objetivo_id"]
+                for bot in identity_bots
+                if bot.secret_objective is not None
+            },
             "final_board": board,
             "received_messages": [dict(bot.counts) for bot in self.bots],
             "errors": [error for bot in self.bots for error in bot.errors],
@@ -1104,7 +1139,12 @@ class Simulation:
                 "Sequential commands; no fragmentation/load testing",
                 "Optional real TCP client disconnect; remaining players continue",
                 "Optional authenticated TCP reconnection with session state sync",
-                "Country victory; secret objectives remain unused",
+                (
+                    "Secret objectives assigned privately and checked after "
+                    "reconnection"
+                    if self.args.secret_objectives
+                    else "Country victory; secret objectives remain unused"
+                ),
                 "Placement, battle, conquest, transfer and turn completion exercised",
                 "Chat echoes synchronize commands; no direct server state access",
                 "Seeded RNG instrumentation is confined to the child when enabled",
@@ -1127,6 +1167,11 @@ def _arguments() -> argparse.Namespace:  # noqa: C901
     parser.add_argument("--command-timeout", type=float, default=10)
     parser.add_argument("--max-rounds", type=int, default=200)
     parser.add_argument("--output-dir", type=Path)
+    parser.add_argument(
+        "--secret-objectives",
+        action="store_true",
+        help="Activar objetivos secretos y verificar su entrega privada.",
+    )
     dice_group = parser.add_mutually_exclusive_group()
     dice_group.add_argument(
         "--deterministic-dice",
@@ -1207,10 +1252,13 @@ def _arguments() -> argparse.Namespace:  # noqa: C901
 
 
 def _server_child(args: argparse.Namespace) -> None:
+    from pyteg.server.app import Server  # noqa: PLC0415
     from pyteg.server.app import main as server_main  # noqa: PLC0415
 
     random.seed(args.seed)
-    seeded = random.Random(args.seed)  # noqa: S311 -- deterministic simulation only
+    dice_rng = random.Random(args.seed)  # noqa: S311 -- deterministic simulation only
+    objective_rng = random.Random(args.seed)  # noqa: S311 -- deterministic simulation only
+    server_factory = partial(Server, objective_rng=objective_rng)
     sys.argv = [
         "pyteg-server",
         "--host",
@@ -1222,10 +1270,10 @@ def _server_child(args: argparse.Namespace) -> None:
         "--quiet",
     ]
     if args.deterministic_dice:
-        with patch("secrets.randbelow", seeded.randrange):
-            server_main()
+        with patch("secrets.randbelow", dice_rng.randrange):
+            server_main(server_factory=server_factory)
     else:
-        server_main()
+        server_main(server_factory=server_factory)
 
 
 def main() -> int:
@@ -1268,6 +1316,8 @@ def main() -> int:
                 command.append("--deterministic-dice")
             else:
                 command.append("--random-dice")
+            if args.secret_objectives:
+                command.append("--secret-objectives")
             environment = dict(
                 os.environ,
                 PYTHONHASHSEED=str(args.seed % (2**32)),
@@ -1310,6 +1360,7 @@ def main() -> int:
                     "seed",
                     "seed_source",
                     "deterministic_dice",
+                    "secret_objectives",
                     "victory_observed",
                     "failure",
                     "turns_played",

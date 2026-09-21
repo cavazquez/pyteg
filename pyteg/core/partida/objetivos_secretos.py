@@ -16,15 +16,18 @@ LOGGER = get_logger("server.objetivos_secretos")
 class ObjetivosSecretos:
     """Maneja la asignación y verificación de objetivos secretos para los jugadores."""
 
-    def __init__(self, toml_reader: Any) -> None:
+    def __init__(self, toml_reader: Any, *, rng: random.Random | None = None) -> None:
         """Inicializa el sistema de objetivos secretos.
 
         Args:
             toml_reader: Instancia de TomlReader con objetivos secretos cargados
+            rng: Fuente aleatoria para barajar objetivos. Si no se proporciona,
+                se usa ``SystemRandom`` para conservar entropía del sistema.
 
         """
         self.toml_reader = toml_reader
         self.objetivos_disponibles = toml_reader.get_objetivos_secretos()
+        self._rng = rng if rng is not None else random.SystemRandom()
         # client_userid (int) -> objetivo_id (str)
         self.objetivos_asignados: dict[int, str] = {}
 
@@ -51,7 +54,7 @@ class ObjetivosSecretos:
             )
             return
 
-        random.shuffle(objetivos_ids)
+        self._rng.shuffle(objetivos_ids)
 
         LOGGER.info("=== ASIGNANDO OBJETIVOS SECRETOS ===")
         LOGGER.info("Objetivos disponibles: %s", objetivos_ids)

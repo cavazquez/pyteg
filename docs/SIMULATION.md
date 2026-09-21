@@ -34,6 +34,11 @@ ajustar con `--timeout`, `--command-timeout` y `--max-rounds`. El tiempo de turn
 se configura largo para que los bots avancen mediante comandos y no dependan del
 timer para jugar.
 
+`--secret-objectives` activa los objetivos secretos. El servidor de la simulación
+recibe una fuente aleatoria derivada de `--seed`, mientras que el servidor real
+usa entropía del sistema. El reporte incluye el objetivo asignado a cada identidad
+y falla si falta, se duplica o se filtra entre clientes.
+
 ## Qué se comprueba
 
 Cada comando lleva un `command_id` y el servidor responde con `command_result`;
@@ -43,9 +48,12 @@ snapshots públicos con una revisión monotónica. Después de cada acción espe
 la confirmación y comprueban que todos observen el mismo tablero, con
 propietarios válidos, todos los países presentes y al menos una unidad por país.
 
-Para aceptar la victoria, todos los clientes deben recibir el mismo ganador,
-ese jugador debe controlar el objetivo configurado y debe haber ocurrido al
-menos una conquista. No alcanza con elegir un umbral que ya se cumple al repartir.
+Para aceptar una victoria por países, todos los clientes deben recibir el mismo
+ganador, ese jugador debe controlar el objetivo configurado y debe haber ocurrido
+al menos una conquista. No alcanza con elegir un umbral que ya se cumple al
+repartir. Con `--secret-objectives`, el servidor también puede terminar por un
+objetivo secreto antes de alcanzar ese umbral; el harness acepta ambas condiciones
+y verifica además que cada cliente conserve su objetivo privado.
 
 Cada ejecución guarda:
 
@@ -95,8 +103,9 @@ Si se omite `--seed`, el script obtiene una semilla de `secrets.randbits` y la
 guarda en `result.json` junto con `seed_source: "generated_by_secrets"`.
 `--random-dice` mantiene los dados productivos y hace que esa corrida no sea
 repetible aunque se indique una semilla. El servidor real nunca recibe una
-semilla ni se parchea: usa `secrets` para dados y colores. `--deterministic-dice`
-es el modo reproducible del proceso hijo del harness.
+semilla ni se parchea: usa `secrets` para dados y colores y `SystemRandom` para
+objetivos secretos. `--deterministic-dice` es el modo reproducible del proceso
+hijo del harness.
 
 Para probar una baja durante la partida:
 
