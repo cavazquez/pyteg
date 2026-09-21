@@ -59,6 +59,20 @@ jobs:
             uv run ruff check --config=pyproject.toml --output-format=github .
         - name: Test with unittest
           run: uv run python -m unittest discover
+        - name: Network and rematch integration smoke
+          run: |
+            uv run python -m unittest \
+              tests.test_integration.TestIntegration.test_server_reassembles_fragmented_utf8_command \
+              tests.test_integration.TestIntegration.test_server_handles_coalesced_frames_and_invalid_json \
+              tests.test_integration.TestIntegration.test_snapshot_contract_is_complete_equal_and_resyncable \
+              tests.test_integration.TestIntegration.test_disconnected_client_can_reconnect_with_same_identity \
+              tests.test_integration.TestIntegration.test_rematch_isolates_state_after_disconnect_and_reconnect
+        - name: Client state and Qt adapter smoke
+          run: |
+            uv run python -m unittest \
+              tests.test_client_state_adapter \
+              tests.test_protocol_features \
+              tests.test_tcp_framing
         - name: Ruff Formatter
           run: uv run ruff format --check .
         - name: Mypy
@@ -84,7 +98,11 @@ jobs:
               --theme classic \
               --clients 3 \
               --victory 30 \
-              --seed 186 \
+              --seed 197 \
+              --secret-objectives \
+              --disconnect-client 2 \
+              --disconnect-after-turn 5 \
+              --reconnect-client 2 \
               --exercise-exchanges \
               --require-finalized \
               --timeout 240
@@ -93,5 +111,5 @@ jobs:
           uses: actions/upload-artifact@v4
           with:
             name: pyteg-multiclient-simulation
-            path: logs/simulations/classic-186
+            path: logs/simulations/classic-197
             if-no-files-found: error

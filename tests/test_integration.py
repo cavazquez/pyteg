@@ -908,6 +908,43 @@ class TestIntegration(unittest.TestCase):
         )
         self.assertIsNotNone(message, "El servidor descartó el comando fragmentado")
 
+    def test_server_handles_coalesced_frames_and_invalid_json(self) -> None:
+        """Varios frames en un recv y JSON inválido no rompen la sesión."""
+        client = self._new_client()
+        self.assertIsNotNone(client.wait_for("user_id"), "Cliente sin user_id")
+        first = NulDelimitedUtf8Codec.encode_frame(
+            json.dumps({
+                "mensaje": "set_username",
+                "username": "Coalesced uno",
+                "command_id": "coalesced-1",
+            })
+        )
+        second = NulDelimitedUtf8Codec.encode_frame(
+            json.dumps({
+                "mensaje": "set_username",
+                "username": "Coalesced dos",
+                "command_id": "coalesced-2",
+            })
+        )
+        received_before = len(client.snapshot_received())
+        split_at = max(1, len(first) // 2)
+        client.send_bytes(first[:split_at])
+        client.send_bytes(first[split_at:] + second + b'{"mensaje":\0')
+
+        first_result = self._wait_for_new_command_result(
+            client, received_before, "coalesced-1"
+        )
+        second_result = self._wait_for_new_command_result(
+            client, received_before, "coalesced-2"
+        )
+        self.assertIsNotNone(first_result, "Se perdió el primer frame coalescido")
+        self.assertIsNotNone(second_result, "Se perdió el segundo frame coalescido")
+        self.assertIsNotNone(
+            self._wait_for_new_protocol_error(client, received_before, "invalid_json"),
+            "El JSON inválido no generó error estructurado",
+        )
+        self.assertEqual(self._server.cant_clients(), 1)
+
     def test_invalid_tcp_messages_return_errors_and_connection_recovers(self) -> None:
         """JSON inválido y escalares no tumban el lector ni alteran el registro."""
         client = self._new_client()
