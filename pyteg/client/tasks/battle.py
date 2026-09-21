@@ -50,6 +50,8 @@ class ClientTaskResultadoBatalla(IClientTask[ResultadoBatallaTaskData]):
             soy_atacante = mi_nombre == self._atacante
 
             main_window.sound_manager.play_attack()
+            if self._dados_atacante or self._dados_defensor:
+                main_window.sound_manager.play_dice()
 
             if soy_atacante:
                 # SOY EL ATACANTE: Mostrar animación completa

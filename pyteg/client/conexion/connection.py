@@ -238,6 +238,8 @@ class ConnectionClient(QWidget):
     def display_error(self) -> None:
         """Maneja y muestra errores de conexión."""
         err = self._socket.errorString()
+        if hasattr(self._main_window, "sound_manager"):
+            self._main_window.sound_manager.play_error()
         if err == "Connection refused":
             QMessageBox.warning(
                 self,
