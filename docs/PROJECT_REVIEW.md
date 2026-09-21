@@ -188,7 +188,7 @@ soportadas antes de sus pruebas.
 - [x] [#168 — Enviar eventos por una cola FIFO acotada por conexión](https://github.com/cavazquez/pyteg/issues/168) (Red; implementado).
 - [x] [#169 — Rechazar movimientos fuera del turno del jugador](https://github.com/cavazquez/pyteg/issues/169) (Reglas; implementado).
 - [x] [#170 — Impedir cantidades no positivas o no enteras al mover unidades](https://github.com/cavazquez/pyteg/issues/170) (Reglas; implementado).
-- [x] [#171 — Pasar a FINALIZADO y detener el juego al declarar victoria](https://github.com/cavazquez/pyteg/issues/171) (Partida; implementado localmente).
+- [x] [#171 — Pasar a FINALIZADO y detener el juego al declarar victoria](https://github.com/cavazquez/pyteg/issues/171) (Partida; implementado).
 - [x] [#172 — Excluir jugadores sin territorios de los turnos y refuerzos](https://github.com/cavazquez/pyteg/issues/172) (Partida; implementado).
 - [x] [#173 — Empaquetar recursos y cargar el wheel fuera del checkout](https://github.com/cavazquez/pyteg/issues/173) (Entrega; implementado).
 - [x] [#174 — Actualizar las entradas de Nuitka a los módulos existentes](https://github.com/cavazquez/pyteg/issues/174) (Entrega; implementado).
