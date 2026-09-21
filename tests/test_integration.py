@@ -436,6 +436,30 @@ class TestIntegration(unittest.TestCase):
             time.sleep(0.05)
         return None
 
+    def _wait_for_new_snapshot_revision(
+        self,
+        client: _TestClient,
+        received_before: int,
+        revision: int,
+        timeout: float = _READ_TIMEOUT,
+    ) -> dict[str, Any] | None:
+        """Espera un snapshot de una revisión concreta en un cliente.
+
+        Returns:
+            Snapshot encontrado o ``None`` si vence el plazo.
+
+        """
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
+            for message in client.snapshot_received()[received_before:]:
+                if (
+                    message.get("mensaje") == "snapshot"
+                    and int(message.get("revision", -1)) == revision
+                ):
+                    return message
+            time.sleep(0.05)
+        return None
+
     def _wait_for_new_state(
         self,
         client: _TestClient,
@@ -1705,19 +1729,42 @@ class TestIntegration(unittest.TestCase):
                 self.assertIsNotNone(country, "El jugador de turno no tiene países")
                 if country is None:
                     return active_id, client
-                pending_before = int(game.refuerzos_pendientes())
+                received_before = {
+                    id(observer): len(observer.snapshot_received())
+                    for observer in (c1, c2)
+                }
+                command_id = f"placement-{uuid.uuid4().hex}"
                 client.send({
                     "mensaje": "agregar_unidad",
                     "pais": country,
                     "tipo_unidad": "infanteria",
                     "cantidad": 1,
+                    "command_id": command_id,
                 })
-                while (
-                    time.monotonic() < deadline
-                    and game.fase_actual() == "colocacion"
-                    and int(game.refuerzos_pendientes()) >= pending_before
-                ):
-                    time.sleep(0.05)
+                result = self._wait_for_new_command_result(
+                    client,
+                    received_before[id(client)],
+                    command_id,
+                    timeout=max(0.1, deadline - time.monotonic()),
+                )
+                self.assertIsNotNone(
+                    result,
+                    f"No se confirmó la colocación {command_id}",
+                )
+                if result is None:
+                    return active_id, client
+                self.assertTrue(result.get("accepted"), result)
+                revision = int(result.get("revision", -1))
+                for observer in (c1, c2):
+                    self.assertIsNotNone(
+                        self._wait_for_new_snapshot_revision(
+                            observer,
+                            received_before[id(observer)],
+                            revision,
+                            timeout=max(0.1, deadline - time.monotonic()),
+                        ),
+                        f"{observer!r} no recibió la revisión {revision}",
+                    )
             self.assertEqual(game.fase_actual(), "acciones")
 
         return active_id, client
@@ -1742,7 +1789,30 @@ class TestIntegration(unittest.TestCase):
             int(game.turno_actual().jugador_actual()),
         )
 
-        client.send({"mensaje": "finalizar_turno"})
+        received_before = {
+            id(observer): len(observer.snapshot_received()) for observer in (c1, c2)
+        }
+        command_id = f"finish-{uuid.uuid4().hex}"
+        client.send({"mensaje": "finalizar_turno", "command_id": command_id})
+        result = self._wait_for_new_command_result(
+            client,
+            received_before[id(client)],
+            command_id,
+        )
+        self.assertIsNotNone(result, f"No se confirmó finalizar_turno {command_id}")
+        if result is None:
+            return
+        self.assertTrue(result.get("accepted"), result)
+        revision = int(result.get("revision", -1))
+        for observer in (c1, c2):
+            self.assertIsNotNone(
+                self._wait_for_new_snapshot_revision(
+                    observer,
+                    received_before[id(observer)],
+                    revision,
+                ),
+                f"{observer!r} no recibió la revisión {revision}",
+            )
         deadline = time.monotonic() + _READ_TIMEOUT
         while time.monotonic() < deadline:
             if self._server.estado.es_finalizado():
