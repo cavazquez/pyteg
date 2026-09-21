@@ -37,7 +37,11 @@ class ClientTaskTarjetasJugador(IClientTask[TarjetasJugadorTaskData]):
 
         """
         try:
+            tarjetas_anteriores = getattr(main_window, "tarjetas_jugador", [])
             main_window.tarjetas_jugador = self._tarjetas
+
+            if tarjetas_anteriores != self._tarjetas:
+                main_window.sound_manager.play_card()
 
             CLIENT_TASKS_LOG.info(
                 "Tarjetas del jugador actualizadas: %s tarjetas", len(self._tarjetas)

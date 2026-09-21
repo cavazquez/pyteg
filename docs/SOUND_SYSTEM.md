@@ -28,24 +28,26 @@ Se ha implementado un sistema completo de efectos de sonido para PyTeg que propo
 
 ## Eventos con sonido
 
-### Implementados
+Todos los eventos relevantes tienen un WAV registrado y se reproducen desde el
+flujo que recibe o confirma el evento. La reproducción es local: el servidor
+nunca envía audio por TCP.
 
-| Evento | Sonido | Ubicación |
-|--------|--------|-----------|
-| **Ataque/Batalla** | `attack.wav` | `pyteg/client/tasks/battle.py` - `ClientTaskResultadoBatalla` |
-| **Movimiento de unidades** | `move.wav` | `pyteg/client/conexion/transmisor/transmisor.py` - `mover_unidad()` |
-| **Cambio de turno** | `turn.wav` | `pyteg/client/tasks/game_flow/turno.py` - `ClientTaskTurno` |
-| **Victoria** | `victory.wav` | `pyteg/client/tasks/game_flow/partida.py` - `ClientTaskVictoria` |
-| **Conexión** | `connect.wav` | `pyteg/client/conexion/connection.py` - `on_connected()` |
-| **Desconexión** | `disconnect.wav` | `pyteg/client/conexion/connection.py` - `on_state_changed()` |
+| Evento | Sonido | Integración |
+|--------|--------|-------------|
+| **Ataque/Batalla** | `attack.wav` | `ClientTaskResultadoBatalla` |
+| **Dados de batalla** | `dice.wav` | `ClientTaskResultadoBatalla`, cuando el resultado trae dados |
+| **Movimiento de unidades** | `move.wav` | `ClientTransmisor.mover_unidad()` |
+| **Cambio de turno** | `turn.wav` | `ClientTaskTurno` |
+| **Victoria / derrota** | `victory.wav` / `defeat.wav` | `ClientTaskVictoria` |
+| **Conexión / desconexión** | `connect.wav` / `disconnect.wav` | `ConnectionClient` |
+| **Tarjetas** | `card.wav` | `ClientTaskTarjetasJugador`, solo cuando cambia la mano |
+| **Error de servidor o socket** | `error.wav` | `ClientTaskError` y `ConnectionClient.display_error()` |
+| **Control de sonido** | `button.wav` | Confirmación al reactivar el audio |
 
-### Preparados (sin archivos de audio aún)
-
-- `defeat.wav` - Derrota
-- `card.wav` - Canje de tarjetas
-- `dice.wav` - Lanzamiento de dados
-- `button.wav` - Clic en botones
-- `error.wav` - Errores
+El sonido de botón no se conecta globalmente a cada `QPushButton`: hacerlo
+produciría clics para controles de navegación y diálogos que no representan una
+acción de juego. Las acciones de tarjetas se confirman con `card.wav` cuando el
+servidor devuelve la mano actualizada.
 
 ## Archivos de sonido
 
@@ -95,6 +97,11 @@ sound_manager.play_attack()
 sound_manager.play_move()
 sound_manager.play_turn()
 sound_manager.play_victory()
+sound_manager.play_defeat()
+sound_manager.play_card()
+sound_manager.play_dice()
+sound_manager.play_button()
+sound_manager.play_error()
 sound_manager.play_connect()
 sound_manager.play_disconnect()
 
@@ -136,36 +143,40 @@ sound_manager.play("attack")
 - Los reproductores se crean bajo demanda
 - Limpieza automática de recursos al cerrar
 
-## Archivos modificados/creados
+## Archivos relevantes
 
-### Nuevos archivos
-- `pyteg/sound_manager.py` - Gestor de sonidos
-- `pyteg/gui/widgets/sound_control.py` - Widget de control
-- `sounds/README.md` - Documentación de sonidos
-- `docs/SOUND_SYSTEM.md` - Esta documentación
+- `pyteg/sound_manager.py` - Gestor, cache, volumen, mute y fallback.
+- `pyteg/gui/widgets/sound_control.py` - Control de sesión y sonido de botón.
+- `pyteg/client/tasks/battle.py` - Ataque y dados.
+- `pyteg/client/tasks/cards_missiles.py` - Cambios de mano.
+- `pyteg/client/tasks/lobby/chat.py` - Errores del servidor.
+- `pyteg/client/tasks/game_flow/turno.py` y `partida.py` - Turno y victoria/derrota.
+- `pyteg/client/conexion/transmisor/transmisor.py` y `connection.py` - Movimiento,
+  conexión, desconexión y errores de socket.
+- `tests/test_sound_manager.py` y `tests/test_client_task_sound_events.py` -
+  Recursos e integración de eventos sin hardware de audio.
 
-### Archivos modificados
-- `pyteg/gui/main_window.py` - Integración del SoundManager
-- `pyteg/client/tasks/battle.py`, `pyteg/client/tasks/game_flow/turno.py`,
-  `pyteg/client/tasks/game_flow/partida.py` - Sonidos en eventos (ataque, turno, victoria)
-- `pyteg/client/conexion/transmisor/transmisor.py` - Sonido de movimiento
-- `pyteg/client/conexion/connection.py` - Sonidos de conexión/desconexión
-- `README.md` - Actualizada lista de características
+## Recursos y ejecución sin audio
 
-## Testing
+`pyproject.toml` incluye `sounds/` en `force-include`, por lo que los WAV se
+copian al wheel y a los artefactos de Nuitka junto con `themes/`, `locales/` e
+`icons/`. `SoundManager` resuelve la ruta con `get_resource_path`, crea los
+reproductores bajo demanda y continúa en silencio si un archivo falta. La
+prueba `test_todos_los_eventos_tienen_recurso_empaquetado` verifica el inventario
+completo sin abrir un dispositivo de audio; también se prueba el fallback para
+un recurso ausente.
 
-- ✅ **161 tests pasan** sin errores
-- ✅ **Linting limpio** (ruff)
-- ✅ **Formato correcto** (ruff format)
-- ✅ **Sin regresiones** en funcionalidad existente
+El volumen y el mute son preferencias de la sesión actual (por defecto 50% y
+activos); todavía no se persisten entre ejecuciones. La interfaz funciona en
+modo `QT_QPA_PLATFORM=offscreen` porque la reproducción no se inicializa hasta
+que se dispara un evento.
 
 ## Próximos pasos
 
-1. **Agregar archivos de audio reales** al directorio `sounds/`
-2. **Ajustar volúmenes** de cada sonido individualmente si es necesario
-3. **Agregar más eventos** (canje de tarjetas, lanzamiento de misiles, etc.)
-4. **Configuración persistente** (guardar preferencias de volumen)
-5. **Efectos de sonido adicionales** (hover, selección, etc.)
+1. Persistir volumen y mute con la configuración de usuario si se necesita
+   conservarlos entre ejecuciones.
+2. Añadir un sonido específico para misiles si la interfaz requiere una
+   diferencia audible respecto de una batalla.
 
 ## Notas
 

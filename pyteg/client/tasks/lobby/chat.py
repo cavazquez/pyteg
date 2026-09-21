@@ -55,6 +55,8 @@ class ClientTaskError(IClientTask[ErrorTaskData]):
         Maneja errores enviados por el servidor mostrando un diálogo
         de error al usuario.
         """
+        main_window.sound_manager.play_error()
+
         if self._error_type == "duplicate_username":
             msg_box = QMessageBox(cast("QWidget", main_window))
             msg_box.setIcon(QMessageBox.Icon.Warning)

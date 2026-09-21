@@ -402,7 +402,7 @@ class Server:
         client.marcar_reconexion_pendiente(pendiente=False)
         return False
 
-    def reconectar_cliente(  # noqa: C901, PLR0911
+    def reconectar_cliente(  # noqa: C901, PLR0911, PLR0912
         self, client: Client, user_id: int, token: str
     ) -> bool:
         """Autentica una conexión pendiente y restaura su sesión de juego.

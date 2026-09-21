@@ -117,6 +117,9 @@ class SoundControlWidget(QWidget):
         """Alterna entre silenciar y activar sonidos."""
         enabled = self.sound_manager.is_enabled()
         self.sound_manager.set_enabled(not enabled)
+        if not enabled:
+            # Al reactivar el audio confirmamos el cambio con un clic breve.
+            self.sound_manager.play_button()
         self._update_display()
 
     def _on_volume_changed(self, value: int) -> None:
