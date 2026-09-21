@@ -21,6 +21,9 @@ if TYPE_CHECKING:
     from pyteg.protocols import IClientProtocol, IJugador
 
 
+_TURN_KEY_PARTS = 2
+
+
 class CardManager:
     """Gestiona las tarjetas y canjes del juego.
 
@@ -61,9 +64,14 @@ class CardManager:
         """Devuelve una clave estable para el turno actual.
 
         Returns:
-            Tupla ``(ronda, índice de turno)``.
+            Tupla ``(ronda, identidad lógica del turno)``.
 
         """
+        clave_turno = getattr(self._turn_manager, "clave_turno", None)
+        if callable(clave_turno):
+            clave = clave_turno()
+            if isinstance(clave, tuple) and len(clave) == _TURN_KEY_PARTS:
+                return int(clave[0]), int(clave[1])
         return (
             int(self._turn_manager.num_ronda()),
             int(self._turn_manager.id_turno_actual()),

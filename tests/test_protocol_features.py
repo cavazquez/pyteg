@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Any, cast
 from pyteg.client.state_model import ClientStateModel
 from pyteg.core.cartas.mazo import Mazo
 from pyteg.core.partida.card_manager import CardManager
+from pyteg.core.partida.turn_manager import TurnManager
 from pyteg.exceptions import InvalidActionError
 from pyteg.server.juego.fase import (
     COMANDOS_POR_FASE,
@@ -16,6 +17,7 @@ from pyteg.server.juego.fase import (
     FASE_COLOCACION,
     FASE_POR_COMANDO,
 )
+from pyteg.server.juego.mapa import Mapa
 from pyteg.server.juego.validators import PhaseValidator
 
 if TYPE_CHECKING:
@@ -64,6 +66,7 @@ class TestProtocolFeatures(unittest.TestCase):
         manager.marcar_jugador_puede_reclamar(player)
         manager.marcar_jugador_puede_reclamar(player)
         self.assertTrue(manager.puede_reclamar_tarjeta(player))
+
         manager.reclamar_tarjeta_jugador(player)
         self.assertFalse(manager.puede_reclamar_tarjeta(player))
 
@@ -74,6 +77,28 @@ class TestProtocolFeatures(unittest.TestCase):
         turn_manager.round = 2
         manager.marcar_jugador_puede_reclamar(player)
         self.assertTrue(manager.puede_reclamar_tarjeta(player))
+
+    def test_eliminar_jugador_anterior_no_abre_un_segundo_reclamo(self) -> None:
+        """Quitar un jugador previo no cambia la identidad del turno activo."""
+        mapa = Mapa(lambda: {"A": [1, "America", None]})
+        turn_manager = TurnManager(mapa)
+        turn_manager.inicializar_turnos([1, 2, 3])
+        turn_manager.avanzar_turno()  # El jugador 2 está activo.
+
+        cards = Mazo(["A"], ["Globo"])
+        manager = CardManager(cards, turn_manager)
+        player = cast("IClientProtocol", _Player(2))
+        manager.inicializar_canjes([player.userid()])
+
+        clave_antes = turn_manager.clave_turno()
+        manager.marcar_jugador_puede_reclamar(player)
+        manager.reclamar_tarjeta_jugador(player)
+
+        turn_manager.eliminar_jugador(1)
+
+        self.assertEqual(turn_manager.clave_turno(), clave_antes)
+        manager.marcar_jugador_puede_reclamar(player)
+        self.assertFalse(manager.puede_reclamar_tarjeta(player))
 
     def test_phase_validator_rejects_actions_before_placement_finishes(self) -> None:
         """El servidor distingue colocación de las acciones del turno."""
