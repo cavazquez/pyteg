@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
 
 from pyteg.core.partida.context import GameContext
 from pyteg.exceptions import GameRuleViolationError, MensajeNoValidoError, PyTegError
@@ -12,6 +12,16 @@ from pyteg.server.juego.state_validator import ServerStateValidator
 from pyteg.server.tasks.types import BaseTaskData
 
 LOGGER = get_logger("server.tasks")
+
+
+@runtime_checkable
+class _AdminClientProtocol(Protocol):
+    """Capacidad de administrar la configuración de una sala."""
+
+    def es_admin(self) -> bool:
+        """Indica si el cliente controla la configuración de la sala."""
+        ...
+
 
 if TYPE_CHECKING:
     from pyteg.protocols import IClientProtocol
@@ -24,6 +34,9 @@ class IServerTask[TData: BaseTaskData](ABC):
     subclase tipi su `data` con el `TypedDict` correspondiente y mypy
     detecte campos mal escritos o no soportados.
     """
+
+    requires_admin = False
+    """Si la acción sólo puede ser ejecutada por el administrador de la sala."""
 
     def __init__(self, data: TData) -> None:
         """Inicializa la tarea del servidor.
@@ -59,6 +72,19 @@ class IServerTask[TData: BaseTaskData](ABC):
 
         """
         try:
+            is_admin = isinstance(client, _AdminClientProtocol) and client.es_admin()
+            if self.requires_admin and not is_admin:
+                client.transmisor.enviar_error(
+                    "not_admin",
+                    "Solo el administrador puede configurar o iniciar la partida.",
+                )
+                LOGGER.warning(
+                    "Cliente no administrador %s intentó ejecutar %s",
+                    client.userid(),
+                    self._action_name,
+                )
+                return
+
             # Validar estado usando TaskValidator cuando corresponda
             if self._action_name is not None:
                 self._validator.validar_accion(self._action_name, client.server)
