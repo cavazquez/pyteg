@@ -27,6 +27,7 @@ from pyteg.server.tasks.lobby import (
     ServerTaskSeleccionarColor,
     ServerTaskSetUsername,
 )
+from pyteg.server.tasks.reconectar import ServerTaskReconectar
 from pyteg.server.tasks.types import BaseTaskData
 
 # Cada factory acepta `BaseTaskData` (el TypedDict mínimo) y devuelve una
@@ -50,6 +51,7 @@ dict_task: dict[str, TaskFactory] = {
     "canjear_tarjetas": ServerTaskCanjearTarjetas,
     "canjear_misil": ServerTaskCanjearMisil,
     "lanzar_misil": ServerTaskLanzarMisil,
+    "reconectar": ServerTaskReconectar,
 }
 
 __all__ = [
@@ -68,6 +70,7 @@ __all__ = [
     "ServerTaskMoverUnidad",
     "ServerTaskNull",
     "ServerTaskReclamarTarjeta",
+    "ServerTaskReconectar",
     "ServerTaskSeleccionarColor",
     "ServerTaskSetUsername",
     "ServerTaskSolicitarTarjetas",

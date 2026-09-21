@@ -137,6 +137,50 @@ class MsgUserId(IMsg):
         return json.dumps(data)
 
 
+class MsgSessionToken(IMsg):
+    """Entrega al cliente su token privado de reconexión."""
+
+    def __init__(self, user_id: int, token: str) -> None:
+        """Inicializa el mensaje con identidad y token privado."""
+        self._user_id = user_id
+        self._token = token
+
+    def to_json(self) -> str:
+        """Serializa el token de sesión.
+
+        Returns:
+            Representación JSON del token.
+
+        """
+        return json.dumps({
+            "mensaje": "session_token",
+            "user_id": self._user_id,
+            "token": self._token,
+        })
+
+
+class MsgReconexion(IMsg):
+    """Confirma el reemplazo de una conexión temporal."""
+
+    def __init__(self, user_id: int, temporary_user_id: int) -> None:
+        """Inicializa la confirmación con ambos identificadores."""
+        self._user_id = user_id
+        self._temporary_user_id = temporary_user_id
+
+    def to_json(self) -> str:
+        """Serializa la confirmación de reconexión.
+
+        Returns:
+            Representación JSON de la confirmación.
+
+        """
+        return json.dumps({
+            "mensaje": "reconexion",
+            "user_id": self._user_id,
+            "temporary_user_id": self._temporary_user_id,
+        })
+
+
 class MsgUsername(IMsg):
     """Mensaje para actualizar el nombre de usuario de un jugador."""
 

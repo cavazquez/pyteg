@@ -282,9 +282,13 @@ class Mapa:
             True si el jugador controla todo el continente.
 
         """
-        return self.cantidad_de_paises_del_jugador_por_continente(
-            jugador, continente
-        ) == self.cantidad_de_paises_por_continente(continente)
+        cantidad_total = self.cantidad_de_paises_por_continente(continente)
+        if cantidad_total == 0:
+            return False
+        return (
+            self.cantidad_de_paises_del_jugador_por_continente(jugador, continente)
+            == cantidad_total
+        )
 
     def __str__(self) -> str:
         """Retorna representación en JSON del mapa.

@@ -108,6 +108,21 @@ certifica a los clientes que siguieron conectados; `all_clients_finalized` queda
 en `false` si alguno fue desconectado, y `disconnected_clients` deja la evidencia
 del evento.
 
+Para comprobar la recuperación autenticada de esa misma sesión, agregá
+`--reconnect-client` con el mismo número:
+
+```bash
+uv run python -m scripts.simulate_game \
+  --theme classic --clients 3 --victory 30 --seed 123 \
+  --disconnect-client 1 --disconnect-after-turn 2 \
+  --reconnect-client 1 --require-finalized
+```
+
+El reemplazo recibe un ID temporal durante el handshake y sólo recupera el
+ID original, color, países, nombre, tarjetas y turno después de presentar el
+token privado de sesión. `reconnections` cuenta las recuperaciones observadas;
+el reporte mantiene una sola identidad por jugador en `country_counts`.
+
 ## Canjes y misiles
 
 El modo base no ejecuta acciones privadas de tarjetas ni misiles. Para probarlas
@@ -166,6 +181,10 @@ Con el código revisado y sin sustituir los dados productivos:
   2 se desconectó después del turno 5; los cuatro clientes restantes continuaron
   hasta la victoria con 35 países, 317 conquistas, 24 canjes normales, 66
   forzosos, 28 especiales, 53 canjes de misil y 22 lanzamientos.
+- **Desconexión y reconexión autenticada — clásico estricto, tres clientes,
+  semilla 123:** el cliente 1 se desconectó después del turno 2, recuperó su
+  identidad y continuó la partida; hubo una reconexión, 67 conquistas y los
+  tres clientes observaron `Finalizado`.
 
 Los números son evidencia de esas corridas; no son una predicción para futuras
 corridas con dados productivos.
@@ -178,9 +197,10 @@ su transporte ni su interfaz gráfica**, por lo que esta simulación no demuestr
 que un usuario pueda jugar la misma partida sin problemas de interfaz o red.
 
 Las acciones se envían secuencialmente en conexiones locales. No se simulan
-fragmentación adversaria, reconexión, clientes lentos, comandos simultáneos,
-latencia WAN ni vencimiento del timer. La opción de desconexión sí ejercita el
-cierre real de un socket y la continuidad de los clientes restantes. Los
-objetivos secretos siguen fuera de alcance. La estrategia utiliza colocación,
+fragmentación adversaria, clientes lentos, comandos simultáneos, latencia WAN
+ni vencimiento del timer. Las opciones de desconexión y reconexión ejercitan el
+cierre real de un socket, la continuidad de los clientes restantes y el
+handshake autenticado de recuperación. Los objetivos secretos siguen fuera de
+alcance. La estrategia utiliza colocación,
 ataque, transferencia, tarjetas/canjes y misiles según el modo elegido; no
 valida que esas reglas reproduzcan todo el reglamento del TEG clásico.

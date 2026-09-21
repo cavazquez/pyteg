@@ -91,7 +91,7 @@ class _ServerThread:
                     break
 
                 estado = self._server.estado
-                if estado.es_jugando() or estado.es_finalizado():
+                if estado.es_finalizado():
                     rejection = MsgError(
                         "game_in_progress",
                         "El juego ya está en progreso. "
@@ -104,10 +104,23 @@ class _ServerThread:
 
                 connection = ConnectionServer(conn, addr)
                 uid, client = build_client.build(connection, self._server)
-                if not self._server.registrar_cliente(uid, client):
+                if estado.es_jugando():
+                    accepted = self._server.registrar_reconexion_pendiente(uid, client)
+                    error_type = "game_in_progress"
+                    error_message = (
+                        "La partida ya comenzó. Sólo se aceptan reconexiones de "
+                        "jugadores desconectados."
+                    )
+                else:
+                    accepted = self._server.registrar_cliente(uid, client)
+                    error_type = "room_full"
+                    error_message = (
+                        "La sala está completa. Intenta nuevamente más tarde."
+                    )
+                if not accepted:
                     client.transmisor.enviar_error(
-                        "room_full",
-                        "La sala está completa. Intenta nuevamente más tarde.",
+                        error_type,
+                        error_message,
                     )
                     client.cerrar(flush_outgoing=True)
                     continue
@@ -498,19 +511,114 @@ class TestIntegration(unittest.TestCase):
         self.assertNotIn(first_id, game.lista_jugadores_orden_turno())
 
     def test_game_in_progress_rejection_uses_structured_error(self) -> None:
-        """Una conexión tardía recibe error JSON, no texto libre del servidor."""
+        """Una conexión tardía sólo puede autenticarse como reconexión."""
         first = self._new_client()
         second = self._new_client()
         self._start_two_player_game(first, second)
 
-        rejected = self._new_client()
-        error = rejected.wait_for(
+        pending = self._new_client()
+        self.assertIsNotNone(pending.wait_for("session_token"))
+        received_before = len(pending.snapshot_received())
+        pending.send({"mensaje": "chat", "msg": "no soy una reconexión"})
+        error = pending.wait_for(
             "error",
-            extra_check=lambda data: data.get("error_type") == "game_in_progress",
+            extra_check=lambda data: data.get("error_type") == "reconnect_required",
         )
 
         self.assertIsNotNone(error, "No se recibió rechazo estructurado")
-        self.assertEqual(self._server.cant_clients(), 2)
+        self.assertGreaterEqual(len(pending.snapshot_received()), received_before)
+        pending.close()
+        self._wait_for_client_count(2)
+
+    def test_disconnected_client_can_reconnect_with_same_identity(self) -> None:
+        """Una reconexión recupera color, territorios y turno sin duplicarlo."""
+        first = self._new_client()
+        second = self._new_client()
+        self._new_client()  # Mantiene dos jugadores activos tras la baja.
+        first_id, _second_id = self._start_two_player_game(first, second)
+        token_message = first.wait_for(
+            "session_token", extra_check=lambda data: data.get("user_id") == first_id
+        )
+        self.assertIsNotNone(token_message, "El jugador no recibió token de sesión")
+        if token_message is None:
+            return
+        token = str(token_message["token"])
+
+        game = self._server.game
+        self.assertIsNotNone(game, "No se creó la partida")
+        if game is None:
+            return
+        old_player = next(
+            player for player in game.lista_jugadores() if player.userid() == first_id
+        )
+        old_color = old_player.color_actual()
+        old_countries = [
+            pais
+            for pais in game.mapa().paises()
+            if game.mapa().ocupado_por(pais) == first_id
+        ]
+        self.assertTrue(old_countries, "El jugador no recibió territorios")
+        card = game.mazo().asignar_tarjeta(first_id)
+        self.assertIsNotNone(card, "No se pudo preparar una tarjeta para sincronizar")
+        if card is None:
+            return
+        missile_country = old_countries[0]
+        game.mapa().agregar_misil(missile_country)
+
+        first.close()
+        self._wait_for_client_count(2)
+        deadline = time.monotonic() + _READ_TIMEOUT
+        while time.monotonic() < deadline and not game.jugador_esta_desconectado(
+            first_id
+        ):
+            time.sleep(0.05)
+        self.assertTrue(game.jugador_esta_desconectado(first_id))
+
+        replacement = self._new_client()
+        self.assertIsNotNone(replacement.wait_for("session_token"))
+        replacement.send({"mensaje": "reconectar", "user_id": first_id, "token": token})
+        self.assertIsNotNone(
+            replacement.wait_for(
+                "reconexion",
+                extra_check=lambda data: data.get("user_id") == first_id,
+            ),
+            "No se confirmó la reconexión",
+        )
+        self.assertIsNotNone(
+            replacement.wait_for(
+                "tarjetas_jugador",
+                extra_check=lambda data: any(
+                    card_data.get("pais") == card.pais
+                    for card_data in data.get("tarjetas", [])
+                ),
+            ),
+            "No se sincronizaron las tarjetas privadas",
+        )
+        self.assertIsNotNone(
+            replacement.wait_for(
+                "misil_agregado",
+                extra_check=lambda data: data.get("pais") == missile_country
+                and data.get("cantidad_misiles") == 1,
+            ),
+            "No se sincronizó el inventario de misiles",
+        )
+        self._wait_for_client_count(3)
+
+        current_player = next(
+            player for player in game.lista_jugadores() if player.userid() == first_id
+        )
+        self.assertIsNot(current_player, old_player)
+        self.assertFalse(game.jugador_esta_desconectado(first_id))
+        self.assertEqual(current_player.color_actual(), old_color)
+        self.assertEqual(
+            [
+                pais
+                for pais in game.mapa().paises()
+                if game.mapa().ocupado_por(pais) == first_id
+            ],
+            old_countries,
+        )
+        self.assertIn(first_id, game.lista_jugadores_orden_turno())
 
     # ------------------------------------------------------------------
     # Test 2: dos clientes se conectan y ambos reciben user_id distintos

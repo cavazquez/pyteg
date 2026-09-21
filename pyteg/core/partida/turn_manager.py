@@ -67,18 +67,23 @@ class TurnManager:
             ``True`` si se retiró un turno; ``False`` si ya no estaba presente.
 
         """
-        for indice, turno in enumerate(self._turnos):
-            if int(turno.jugador_actual()) != int(jugador_id):
-                continue
+        indice = next(
+            (
+                indice
+                for indice, turno in enumerate(self._turnos)
+                if int(turno.jugador_actual()) == int(jugador_id)
+            ),
+            None,
+        )
+        if indice is None:
+            return False
 
-            self._turnos.pop(indice)
-            if indice < self._num_turno:
-                self._num_turno -= 1
-            if not self._turnos:
-                self._num_turno = 0
-            return True
-
-        return False
+        self._turnos.pop(indice)
+        if indice < self._num_turno:
+            self._num_turno -= 1
+        if not self._turnos:
+            self._num_turno = 0
+        return True
 
     def turnos(self) -> list[TurnoType]:
         """Obtiene la lista de turnos.
@@ -108,6 +113,15 @@ class TurnManager:
 
         """
         return self._num_turno
+
+    def ronda_completada(self) -> bool:
+        """Indica si el índice actual ya no apunta a un turno pendiente.
+
+        Returns:
+            ``True`` cuando no quedan turnos después del índice actual.
+
+        """
+        return bool(self._turnos) and self._num_turno >= len(self._turnos)
 
     def num_ronda(self) -> int:
         """Obtiene el número de ronda actual.
@@ -180,7 +194,51 @@ class TurnManager:
             Lista de jugadores rotada.
 
         """
-        jugadores_list = list(jugadores)
+        jugadores_por_id = {int(jugador.userid()): jugador for jugador in jugadores}
+        orden_actual = [
+            int(jugador_id)
+            for jugador_id in self.lista_jugadores_orden_turno()
+            if int(jugador_id) in jugadores_por_id
+        ]
+        # La lista histórica conserva identidades, pero no representa el orden
+        # de la ronda vigente después de la primera rotación. Los jugadores que
+        # aún no tengan turno (por ejemplo, una reconexión) quedan al final.
+        ids_ordenados = orden_actual + [
+            jugador_id
+            for jugador_id in jugadores_por_id
+            if jugador_id not in orden_actual
+        ]
+        jugadores_list = [jugadores_por_id[jugador_id] for jugador_id in ids_ordenados]
         if len(jugadores_list) > 1:
             return jugadores_list[1:] + jugadores_list[:1]
         return jugadores_list
+
+    def reintegrar_jugador(self, jugador_id: int) -> bool:
+        """Agrega un jugador reconectado al final de la ronda vigente.
+
+        El jugador no se inserta delante del turno actual: así la reconexión no
+        repite el turno en curso ni desplaza el índice que ya está siendo
+        consumido. En la siguiente ronda participa con el orden resultante.
+
+        Returns:
+            ``True`` si se añadió el turno; ``False`` si ya estaba presente o
+            todavía no había una ronda inicializada.
+
+        """
+        if any(
+            int(turno.jugador_actual()) == int(jugador_id) for turno in self._turnos
+        ):
+            return False
+
+        if not self._turnos:
+            return False
+
+        turno_actual = self._turnos[0]
+        if isinstance(turno_actual, PrimerTurno):
+            turno: TurnoType = PrimerTurno(jugador_id)
+        elif isinstance(turno_actual, SegundoTurno):
+            turno = SegundoTurno(jugador_id)
+        else:
+            turno = SiguientesTurnos(jugador_id, self._mapa)
+        self._turnos.append(turno)
+        return True

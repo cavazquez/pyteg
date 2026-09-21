@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import secrets
 import threading
 from typing import TYPE_CHECKING, Any
 
@@ -17,8 +18,15 @@ if TYPE_CHECKING:
 class Client:
     """Representa un cliente conectado al servidor."""
 
-    def __init__(
-        self, user_id: int, conn: Any, server: Any, username: str, *, soy_admin: bool
+    def __init__(  # noqa: PLR0913
+        self,
+        user_id: int,
+        conn: Any,
+        server: Any,
+        username: str,
+        *,
+        soy_admin: bool,
+        reconnect_token: str | None = None,
     ) -> None:
         """Inicializa un nuevo cliente.
 
@@ -33,6 +41,8 @@ class Client:
         self.server: Any = server
         self._username = username
         self._soy_admin = soy_admin
+        self._reconnect_token = reconnect_token or secrets.token_urlsafe(32)
+        self._pending_reconnect = False
         self._color: IColor | None = None
         self.transmisor = ServerTransmisor(self._conn)
         self._logger = get_logger(f"server.client.{user_id}")
@@ -54,6 +64,37 @@ class Client:
 
         """
         return self._soy_admin
+
+    def reconnect_token(self) -> str:
+        """Devuelve el token privado que permite recuperar la sesión.
+
+        Returns:
+            Token privado de la identidad.
+
+        """
+        return self._reconnect_token
+
+    def set_reconnect_token(self, token: str) -> None:
+        """Actualiza el token después de recuperar una identidad."""
+        self._reconnect_token = token
+
+    def marcar_reconexion_pendiente(self, *, pendiente: bool = True) -> None:
+        """Marca la conexión como pendiente de autenticación de reconexión."""
+        self._pending_reconnect = pendiente
+
+    def es_reconexion_pendiente(self) -> bool:
+        """Indica si la conexión todavía no recuperó una identidad.
+
+        Returns:
+            ``True`` mientras espera el comando de reconexión.
+
+        """
+        return self._pending_reconnect
+
+    def reasignar_userid(self, user_id: int) -> None:
+        """Reasigna el identificador tras validar una reconexión."""
+        self._user_id = int(user_id)
+        self._soy_admin = self._user_id == 1
 
     def cambiar_color(self, color: str) -> None:
         """Cambia el color del cliente.
@@ -146,15 +187,27 @@ class Client:
         Maneja la recepción de datos y el encolado de tareas validadas.
         """
         try:
-            self.server.enviar_userid()
-            self.server.enviar_username()
+            if self.es_reconexion_pendiente():
+                # Una conexión pendiente no debe anunciar su ID temporal ni
+                # consumir colores antes de autenticarse.
+                self.transmisor.enviar_userid(self.userid())
+                self.transmisor.enviar_session_token(
+                    self.userid(), self.reconnect_token()
+                )
+                self.transmisor.enviar_estado(self.server.estado.estado_actual())
+            else:
+                self.server.enviar_userid()
+                self.transmisor.enviar_session_token(
+                    self.userid(), self.reconnect_token()
+                )
+                self.server.enviar_username()
 
-            if self.es_admin():
-                self.transmisor.sos_admin()
+                if self.es_admin():
+                    self.transmisor.sos_admin()
 
-            self.transmisor.enviar_colores(self.server.color.colores())
-            self.server.enviar_colores_asignados()
-            self.transmisor.enviar_estado(self.server.estado.estado_actual())
+                self.transmisor.enviar_colores(self.server.color.colores())
+                self.server.enviar_colores_asignados()
+                self.transmisor.enviar_estado(self.server.estado.estado_actual())
 
             while True:
                 datas = self.recibir()
@@ -200,6 +253,15 @@ class Client:
                 "Comando inválido de cliente %s: %s", self._user_id, error
             )
             self._enviar_error_protocolo(error.code, str(error))
+            return
+
+        mensaje = validated_data["mensaje"]
+        if self.es_reconexion_pendiente() and mensaje != "reconectar":
+            self._enviar_error_protocolo(
+                "reconnect_required",
+                "Esta conexión debe autenticarse con reconectar antes de enviar "
+                "acciones.",
+            )
             return
 
         self.server.encolar_comando(self, validated_data)

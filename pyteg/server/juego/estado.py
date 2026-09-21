@@ -110,6 +110,7 @@ class Estado:
             "empezar_partida": [cls.ESPERAR_JUGADORES],
             "seleccionar_color": [cls.INICIAL, cls.ESPERAR_JUGADORES],
             "set_username": [cls.INICIAL, cls.ESPERAR_JUGADORES],
+            "reconectar": [cls.JUGANDO],
             "chat": [
                 cls.INICIAL,
                 cls.ESPERAR_JUGADORES,

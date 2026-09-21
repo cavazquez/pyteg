@@ -19,6 +19,13 @@ class BaseTaskData(TypedDict):
     mensaje: str
 
 
+class ReconectarTaskData(BaseTaskData):
+    """`data` del comando que recupera una sesión de juego desconectada."""
+
+    user_id: int
+    token: str
+
+
 class _OptEmpezar(TypedDict, total=False):
     """Campos opcionales de configuración inicial de la partida."""
 

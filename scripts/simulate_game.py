@@ -82,6 +82,11 @@ class Bot:
     counts: Counter[str] = field(default_factory=Counter)
     disconnected: bool = False
     disconnect_turn: int | None = None
+    reconnected: bool = False
+    player_ids: list[int] = field(default_factory=list)
+    players_initialized: bool = False
+    session_token: str | None = None
+    pending_session_token: str | None = None
 
     def receive(self) -> list[dict[str, Any]]:
         """Read complete frames, retaining partial bytes across TCP receives.
@@ -133,6 +138,9 @@ class Bot:
             "victoria": self._apply_victory,
             "estado": self._apply_state,
             "chat": self._apply_chat,
+            "session_token": self._apply_session_token,
+            "reconexion": self._apply_reconnection,
+            "actualizar_lista_jugadores": self._apply_player_list,
         }
         handler = handlers.get(kind)
         if handler is not None:
@@ -186,6 +194,26 @@ class Bot:
     def _apply_chat(self, data: dict[str, Any]) -> None:
         self.barrier = data["msg"]
 
+    def _apply_session_token(self, data: dict[str, Any]) -> None:
+        if int(data.get("user_id", 0)) == self.userid:
+            self.session_token = str(data["token"])
+        elif self.pending_session_token is None:
+            self.pending_session_token = str(data["token"])
+
+    def _apply_reconnection(self, data: dict[str, Any]) -> None:
+        self.userid = int(data["user_id"])
+        self.reconnected = True
+
+    def _apply_player_list(self, data: dict[str, Any]) -> None:
+        players = data.get("jugadores", [])
+        if isinstance(players, list):
+            self.player_ids = [
+                int(player["userid"])
+                for player in players
+                if isinstance(player, dict) and isinstance(player.get("userid"), int)
+            ]
+            self.players_initialized = True
+
 
 class Simulation:
     """Run bounded bot turns against the production server over loopback TCP."""
@@ -211,9 +239,11 @@ class Simulation:
         self.special_exchanges = 0
         self.missile_exchanges = 0
         self.missile_launches = 0
+        self.reconnections = 0
         self.exercise_cards = bool(args.exercise_cards or args.exercise_exchanges)
         self.exercise_missiles = bool(args.exercise_missiles or args.exercise_exchanges)
         self._disconnect_done = False
+        self.port = 0
         theme_dir = ROOT / "themes" / args.theme
         with (theme_dir / "adyacencias.toml").open("rb") as file:
             self.adjacency = tomllib.load(file)["Adyacencias"]
@@ -311,6 +341,11 @@ class Simulation:
         self.commands[kind] += 1
         self._send(bot, {"mensaje": kind, **fields})
         marker = f"SIM_BARRIER_{sum(self.commands.values())}"
+        if kind == "reconectar":
+            self._wait(
+                lambda: bot.reconnected,
+                "reconnection confirmation",
+            )
         self._send(bot, {"mensaje": "chat", "msg": marker})
         self._wait(
             lambda: (
@@ -363,6 +398,7 @@ class Simulation:
             TimeoutError: If the server does not listen before timeout.
 
         """
+        self.port = port
         for _ in range(self.args.clients):
             while True:
                 if process.poll() is not None:
@@ -413,6 +449,62 @@ class Simulation:
             pass
         finally:
             bot.connection.close()
+
+        if self.args.reconnect_client == client_number:
+            self._reconnect_client(bot)
+
+    def _reconnect_client(self, disconnected_bot: Bot) -> None:
+        """Reconnect a bot with its saved session token.
+
+        Raises:
+            RuntimeError: If the previous connection had no token.
+            TimeoutError: If the server does not accept the replacement in time.
+
+        """
+        token = disconnected_bot.session_token
+        if not token:
+            msg = "Disconnected bot did not receive a session token"
+            raise RuntimeError(msg)
+
+        old_userid = disconnected_bot.userid
+        self._wait(
+            lambda: (
+                self.reference_bot().players_initialized
+                and old_userid not in self.reference_bot().player_ids
+            ),
+            "server to remove the disconnected player",
+        )
+
+        while True:
+            if time.monotonic() >= self.deadline:
+                msg = "Timed out reconnecting a simulation client"
+                raise TimeoutError(msg)
+            try:
+                connection = socket.create_connection(("127.0.0.1", self.port), 0.2)
+                break
+            except (ConnectionRefusedError, OSError):
+                time.sleep(0.05)
+        connection.settimeout(self.args.command_timeout)
+        connection.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+        replacement = Bot(connection, userid=old_userid)
+        self.bots.append(replacement)
+        self._wait(
+            lambda: bool(replacement.state and replacement.pending_session_token),
+            "reconnection handshake",
+        )
+        self.command(
+            replacement,
+            "reconectar",
+            user_id=old_userid,
+            token=token,
+        )
+        disconnected_bot.reconnected = True
+        self.reconnections += 1
+        self._record(
+            "simulation",
+            replacement,
+            {"event": "client_reconnected", "userid": old_userid},
+        )
 
     def _frontier(self, bot: Bot, country: str) -> bool:
         return any(
@@ -816,6 +908,8 @@ class Simulation:
         reference = peers[0] if peers else (self.bots[0] if self.bots else None)
         board = reference.countries if reference is not None else {}
         board_json = json.dumps(board, sort_keys=True).encode("utf-8")
+        latest_by_id = {bot.userid: bot for bot in self.bots}
+        identity_bots = list(latest_by_id.values())
         country_counts = Counter({str(bot.userid): 0 for bot in self.bots})
         country_counts.update(str(owner) for owner, _ in board.values())
         ordered_country_counts = dict(
@@ -832,18 +926,20 @@ class Simulation:
             "deterministic_dice": self.args.deterministic_dice,
             "victory_observed": connected_victories,
             "all_clients_victory_observed": bool(self.bots)
-            and all(bot.victory for bot in self.bots),
-            "clients": len(self.bots),
+            and all(bot.victory for bot in identity_bots),
+            "clients": len(identity_bots),
             "connected_clients": len(peers),
             "disconnected_clients": [
                 {
                     "userid": bot.userid,
                     "client_number": self.bots.index(bot) + 1,
                     "turn": bot.disconnect_turn,
+                    "reconnected": bot.reconnected,
                 }
                 for bot in self.bots
                 if bot.disconnected
             ],
+            "reconnections": self.reconnections,
             "countries": self.total_countries,
             "victory_target": self.target,
             "elapsed_seconds": round(time.monotonic() - self.started, 3),
@@ -860,7 +956,7 @@ class Simulation:
             "victories": [bot.victory for bot in self.bots],
             "server_states": [bot.state for bot in self.bots],
             "all_clients_finalized": bool(self.bots)
-            and all(bot.state == "Finalizado" for bot in self.bots),
+            and all(bot.state == "Finalizado" for bot in identity_bots),
             "connected_clients_finalized": connected_finalized,
             "maps_equal": all(bot.countries == board for bot in peers),
             "board_sha256": hashlib.sha256(board_json).hexdigest(),
@@ -873,6 +969,7 @@ class Simulation:
                 "Bots buffer NUL frames; Qt client/GUI is not exercised",
                 "Sequential commands; no fragmentation/load testing",
                 "Optional real TCP client disconnect; remaining players continue",
+                "Optional authenticated TCP reconnection with session state sync",
                 "Country victory; secret objectives remain unused",
                 "Placement, battle, conquest, transfer and turn completion exercised",
                 "Chat echoes synchronize commands; no direct server state access",
@@ -881,7 +978,7 @@ class Simulation:
         }
 
 
-def _arguments() -> argparse.Namespace:
+def _arguments() -> argparse.Namespace:  # noqa: C901
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--theme", choices=("classic", "test"), default="classic")
     parser.add_argument("--clients", type=int, default=3)
@@ -922,6 +1019,11 @@ def _arguments() -> argparse.Namespace:
         help="Turno completado después del cual se desconecta el cliente.",
     )
     parser.add_argument(
+        "--reconnect-client",
+        type=int,
+        help="Vuelve a conectar este cliente después de desconectarlo.",
+    )
+    parser.add_argument(
         "--exercise-cards",
         action="store_true",
         help="Reclamar tarjetas y ejecutar canjes normal/especial durante la partida.",
@@ -953,6 +1055,13 @@ def _arguments() -> argparse.Namespace:
         args.seed_source = "explicit"
     if args.disconnect_client is None and args.disconnect_after_turn:
         parser.error("--disconnect-after-turn requires --disconnect-client")
+    if args.reconnect_client is not None and args.disconnect_client is None:
+        parser.error("--reconnect-client requires --disconnect-client")
+    if (
+        args.reconnect_client is not None
+        and args.reconnect_client != args.disconnect_client
+    ):
+        parser.error("--reconnect-client must equal --disconnect-client")
     if args.disconnect_client is not None:
         if not 1 <= args.disconnect_client <= args.clients:
             parser.error("--disconnect-client must identify an existing client")
@@ -1080,6 +1189,7 @@ def main() -> int:
                     "country_counts",
                     "connected_clients",
                     "disconnected_clients",
+                    "reconnections",
                     "connected_clients_finalized",
                     "all_clients_finalized",
                     "elapsed_seconds",

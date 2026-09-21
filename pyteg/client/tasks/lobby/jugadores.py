@@ -11,6 +11,8 @@ from pyteg.client.tasks.base import IClientTask
 from pyteg.client.tasks.logging_helper import CLIENT_TASKS_LOG
 from pyteg.client.tasks.types import (
     ActualizarListaJugadoresTaskData,
+    ReconexionTaskData,
+    SessionTokenTaskData,
     UserIdTaskData,
     UsernameTaskData,
 )
@@ -106,6 +108,31 @@ class ClientTaskUsername(IClientTask[UsernameTaskData]):
             jugadores.append((username, color))
 
         main_window.update_player_list(jugadores)
+
+
+class ClientTaskSessionToken(IClientTask[SessionTokenTaskData]):
+    """Guarda el token de la identidad propia."""
+
+    def run(self, main_window: GameWindowProtocol) -> None:
+        """Guarda el token cuando el evento corresponde a este cliente."""
+        user_id = self._raw_data.get("user_id")
+        token = self._raw_data.get("token")
+        if (
+            isinstance(user_id, int)
+            and isinstance(token, str)
+            and main_window.client.userid() == user_id
+        ):
+            main_window.client.set_reconnect_token(token)
+
+
+class ClientTaskReconexion(IClientTask[ReconexionTaskData]):
+    """Limpia el ID temporal después de recuperar la sesión."""
+
+    def run(self, main_window: GameWindowProtocol) -> None:
+        """Quita de la UI el ID temporal asignado durante el handshake."""
+        temporary_user_id = self._raw_data.get("temporary_user_id")
+        if isinstance(temporary_user_id, int):
+            main_window.client_by_id.pop(temporary_user_id, None)
 
 
 class ClientTaskActualizarListaJugadores(IClientTask[ActualizarListaJugadoresTaskData]):

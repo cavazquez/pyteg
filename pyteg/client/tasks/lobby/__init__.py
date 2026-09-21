@@ -11,6 +11,8 @@ from pyteg.client.tasks.lobby.colores import (
 from pyteg.client.tasks.lobby.estado import ClientTaskEstado
 from pyteg.client.tasks.lobby.jugadores import (
     ClientTaskActualizarListaJugadores,
+    ClientTaskReconexion,
+    ClientTaskSessionToken,
     ClientTaskUserId,
     ClientTaskUsername,
 )
@@ -27,7 +29,9 @@ __all__ = [
     "ClientTaskColorAsignado",
     "ClientTaskError",
     "ClientTaskEstado",
+    "ClientTaskReconexion",
     "ClientTaskSerAdmin",
+    "ClientTaskSessionToken",
     "ClientTaskUnidadesDisponibles",
     "ClientTaskUserId",
     "ClientTaskUsername",

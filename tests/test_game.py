@@ -56,6 +56,7 @@ class FakePlayer:
         self._user_id = user_id
         self._username = username
         self._color: IColor | None = None
+        self._reconnect_token: str | None = None
         self._server: ServerLikeProtocol = cast("ServerLikeProtocol", server)
         self._transmisor: ServerTransmisor = cast("ServerTransmisor", MagicMock())
 
@@ -87,6 +88,14 @@ class FakePlayer:
     def asignar_color(self, color: IColor | None) -> None:
         """Guarda el color asignado para que `color_actual` lo devuelva."""
         self._color = color
+
+    def reasignar_userid(self, user_id: int) -> None:
+        """Actualiza el ID para cubrir el protocolo de reconexión."""
+        self._user_id = int(user_id)
+
+    def set_reconnect_token(self, token: str) -> None:
+        """Guarda el token para cubrir el protocolo de reconexión."""
+        self._reconnect_token = token
 
     def color_actual(self) -> IColor | None:
         """Devuelve el color asignado, si lo hay.
@@ -323,6 +332,99 @@ class TestGame(unittest.TestCase):
         game.finalizar_turno()
         self.assertNotEqual(game.turnos()[0], turno1)
         self.assertNotEqual(game.turnos()[1], turno2)
+
+    def test_rotacion_acumula_el_orden_de_cada_ronda(self) -> None:
+        """Cada ronda empieza por el jugador siguiente, sin repetir el orden."""
+        jugadores = [
+            FakePlayer(1, "Uno", self.server),
+            FakePlayer(2, "Dos", self.server),
+            FakePlayer(3, "Tres", self.server),
+        ]
+        mapa = Mapa(
+            lambda: {
+                "Argentina": [1, "America", None],
+                "Brasil": [1, "America", None],
+                "Chile": [1, "America", None],
+            }
+        )
+        game = Game(mapa, Mazo(mapa.paises(), ["Globo"]), jugadores, self.server)
+        game.empezar()
+
+        ordenes: list[list[int]] = []
+        for _ in range(3):
+            ordenes.append(game.lista_jugadores_orden_turno())
+            for _ in range(game.cant_jugadores()):
+                game.finalizar_turno()
+
+        self.assertEqual(ordenes, [[1, 2, 3], [2, 3, 1], [3, 1, 2]])
+
+    def test_desconexion_del_ultimo_turno_no_repite_la_ronda(self) -> None:
+        """Retirar al último jugador inicia la rotación pendiente inmediatamente."""
+        jugadores = [
+            FakePlayer(1, "Uno", self.server),
+            FakePlayer(2, "Dos", self.server),
+            FakePlayer(3, "Tres", self.server),
+        ]
+        mapa = Mapa(
+            lambda: {
+                "Argentina": [1, "America", None],
+                "Brasil": [1, "America", None],
+                "Chile": [1, "America", None],
+                "Peru": [1, "America", None],
+                "Bolivia": [1, "America", None],
+                "Ecuador": [1, "America", None],
+            }
+        )
+        game = Game(mapa, Mazo(mapa.paises(), ["Globo"]), jugadores, self.server)
+        game.empezar()
+        game.finalizar_turno()
+        game.finalizar_turno()
+
+        self.assertEqual(game.turno_actual().jugador_actual(), 3)
+        self.assertTrue(game.desconectar_jugador(3))
+        self.assertEqual(game.num_ronda(), 2)
+        self.assertEqual(game.lista_jugadores_orden_turno(), [2, 1])
+        self.assertEqual(game.turno_actual().jugador_actual(), 2)
+
+    def test_desconexion_al_inicio_medio_y_final_no_saltea_turnos(self) -> None:
+        """Una baja en cada posición conserva el siguiente jugador correcto."""
+        casos = (
+            ("inicio", 0, 1, [2, 3], 2, 1),
+            ("medio", 1, 2, [1, 3], 3, 1),
+            ("final", 2, 3, [2, 1], 2, 2),
+        )
+
+        for nombre, avances, desconectado, orden, siguiente, ronda in casos:
+            with self.subTest(posicion=nombre):
+                jugadores = [
+                    FakePlayer(1, "Uno", self.server),
+                    FakePlayer(2, "Dos", self.server),
+                    FakePlayer(3, "Tres", self.server),
+                ]
+                mapa = Mapa(
+                    lambda: {
+                        "Argentina": [1, "America", None],
+                        "Brasil": [1, "America", None],
+                        "Chile": [1, "America", None],
+                        "Peru": [1, "America", None],
+                        "Bolivia": [1, "America", None],
+                        "Ecuador": [1, "America", None],
+                    }
+                )
+                game = Game(
+                    mapa,
+                    Mazo(mapa.paises(), ["Globo"]),
+                    jugadores,
+                    self.server,
+                )
+                game.empezar()
+                for _ in range(avances):
+                    game.finalizar_turno()
+
+                self.assertTrue(game.desconectar_jugador(desconectado))
+                self.assertEqual(game.lista_jugadores_orden_turno(), orden)
+                self.assertEqual(game.turno_actual().jugador_actual(), siguiente)
+                self.assertEqual(game.num_ronda(), ronda)
 
     def test_canje_tarjeta(self) -> None:
         """Prueba canjear tarjetas por primera vez."""

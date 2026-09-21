@@ -18,8 +18,10 @@ from pyteg.server.msg import (
     MsgMisilAgregado,
     MsgObjetivoSecreto,
     MsgPais,
+    MsgReconexion,
     MsgResultadoBatalla,
     MsgResultadoMisil,
+    MsgSessionToken,
     MsgSosAdmin,
     MsgTarjetasJugador,
     MsgTiempo,
@@ -113,6 +115,14 @@ class ServerTransmisor:
         """
         msg = MsgUserId(user_id)
         self._send_message(msg)
+
+    def enviar_session_token(self, user_id: int, token: str) -> None:
+        """Envía el token privado asociado a una identidad."""
+        self._send_message(MsgSessionToken(user_id, token))
+
+    def enviar_reconexion(self, user_id: int, temporary_user_id: int) -> None:
+        """Confirma al cliente el reemplazo de su conexión temporal."""
+        self._send_message(MsgReconexion(user_id, temporary_user_id))
 
     def enviar_username(self, userid: int, username: str) -> None:
         """Envía el nombre de usuario al cliente.

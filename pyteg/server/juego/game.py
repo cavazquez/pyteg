@@ -62,6 +62,7 @@ class Game:
         self._jugadores: list[IClientProtocol] = list(jugadores)
         self._eliminados: set[int] = set()
         self._desconectados: set[int] = set()
+        self._reconnect_tokens: dict[int, str] = {}
         self._server = server  # Referencia al servidor para notificar cambios
         self._paises_para_victoria = paises_para_victoria
 
@@ -91,6 +92,12 @@ class Game:
             for jugador_id in jugadores_userids
             if self._mapa.cantidad_de_paises_del_jugador(jugador_id) == 0
         }
+        self._reconnect_tokens = {}
+        for jugador in jugadores:
+            token_getter = getattr(jugador, "reconnect_token", None)
+            token = token_getter() if callable(token_getter) else None
+            if isinstance(token, str) and token:
+                self._reconnect_tokens[int(jugador.userid())] = token
         jugadores_activos = self.jugadores_activos()
         jugadores_activos_ids = [int(j.userid()) for j in jugadores_activos]
         self._turn_manager.inicializar_turnos(jugadores_activos_ids)
@@ -219,26 +226,27 @@ class Game:
         cant_jugadores = self.cant_jugadores()
 
         if num >= cant_jugadores or ronda_completada:
-            ganador = self._victory_checker.verificar_condicion_victoria(
-                jugadores_activos
-            )
-            if ganador:
-                self._finalizar_partida(ganador)
-                return
+            self._iniciar_nueva_ronda(jugadores_activos)
 
-            jugadores_rotados = self._turn_manager.rotar_jugadores(jugadores_activos)
+    def _iniciar_nueva_ronda(
+        self, jugadores_activos: Sequence[IClientProtocol]
+    ) -> None:
+        """Rota el orden y crea los turnos de una ronda nueva."""
+        ganador = self._victory_checker.verificar_condicion_victoria(jugadores_activos)
+        if ganador:
+            self._finalizar_partida(ganador)
+            return
 
-            jugadores_userids = [int(j.userid()) for j in jugadores_rotados]
-            es_segundo_turno = isinstance(
-                self._turn_manager.turno_actual(), PrimerTurno
-            )
-            self._turn_manager.iniciar_nueva_ronda(
-                jugadores_userids, es_segundo_turno=es_segundo_turno
-            )
+        jugadores_rotados = self._turn_manager.rotar_jugadores(jugadores_activos)
+        jugadores_userids = [int(j.userid()) for j in jugadores_rotados]
+        es_segundo_turno = isinstance(self._turn_manager.turno_actual(), PrimerTurno)
+        self._turn_manager.iniciar_nueva_ronda(
+            jugadores_userids, es_segundo_turno=es_segundo_turno
+        )
 
-            # Notificar al servidor que se completó una ronda
-            # para que actualice los colores de los jugadores
-            self._server.enviar_colores_asignados()
+        # Notificar al servidor que se completó una ronda para que actualice los
+        # colores, la lista de jugadores y el turno anunciado.
+        self._server.enviar_colores_asignados()
 
     def _finalizar_partida(self, ganador: IClientProtocol) -> None:
         """Cierra el juego y anuncia al ganador una única vez."""
@@ -314,6 +322,72 @@ class Game:
         jugadores_activos = self.jugadores_activos()
         if len(jugadores_activos) == 1:
             self._finalizar_partida(jugadores_activos[0])
+        elif self._turn_manager.ronda_completada():
+            self._iniciar_nueva_ronda(jugadores_activos)
+        return True
+
+    def puede_reconectar(self, jugador_id: int, token: str) -> bool:
+        """Valida una sesión desconectada sin cambiar todavía el estado.
+
+        Returns:
+            ``True`` si el jugador sigue recuperable y el token coincide.
+
+        """
+        return (
+            self.empezo()
+            and int(jugador_id) in self._desconectados
+            and int(jugador_id) not in self._eliminados
+            and self.token_de_sesion_valido(jugador_id, token)
+        )
+
+    def token_de_sesion_valido(self, jugador_id: int, token: str) -> bool:
+        """Comprueba el token de una identidad sin cambiar el estado de juego.
+
+        Returns:
+            ``True`` cuando el token corresponde a la identidad histórica.
+
+        """
+        esperado = self._reconnect_tokens.get(int(jugador_id))
+        return isinstance(esperado, str) and secrets.compare_digest(esperado, token)
+
+    def reconectar_jugador(
+        self, jugador_id: int, client: IClientProtocol, token: str
+    ) -> bool:
+        """Reemplaza el cliente histórico por una conexión autenticada.
+
+        El turno se agrega al final de la ronda vigente. De ese modo la nueva
+        conexión no repite el turno actual ni desplaza el índice que ya está en
+        ejecución.
+
+        Returns:
+            ``True`` si la identidad fue reemplazada y su turno reintegrado.
+
+        """
+        jugador_id = int(jugador_id)
+        if not self.puede_reconectar(jugador_id, token):
+            return False
+
+        indice = next(
+            (
+                indice
+                for indice, jugador in enumerate(self._jugadores)
+                if int(jugador.userid()) == jugador_id
+            ),
+            None,
+        )
+        if indice is None:
+            return False
+        if not self._turn_manager.reintegrar_jugador(jugador_id):
+            return False
+
+        anterior = self._jugadores[indice]
+        color = anterior.color_actual()
+        client.reasignar_userid(jugador_id)
+        client.set_reconnect_token(token)
+        client.set_username(anterior.username())
+        client.asignar_color(color)
+        self._jugadores[indice] = client
+        self._desconectados.remove(jugador_id)
         return True
 
     def jugador_esta_desconectado(self, jugador: IClientProtocol | int) -> bool:
