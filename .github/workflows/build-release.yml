@@ -50,6 +50,9 @@ jobs:
           uv sync --group dev
 
       - name: Compile gettext catalogs
+        # Windows no trae msgfmt; los catálogos .mo ya están versionados y
+        # fueron generados en el checkout de desarrollo/CI Linux.
+        if: runner.os != 'Windows'
         run: uv run python scripts/manage_translations.py compile
 
       - name: Install system dependencies (Linux)
