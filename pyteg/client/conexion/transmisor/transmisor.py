@@ -18,6 +18,7 @@ from pyteg.client.msg import (
     MsgLanzarMisil,
     MsgMoverUnidad,
     MsgReclamarTarjeta,
+    MsgReconectar,
     MsgSeleccionarColor,
     MsgSetUsername,
     MsgSolicitarTarjetas,
@@ -112,6 +113,10 @@ class ClientTransmisor(IClientTransmisor):
         """
         msg = MsgSetUsername(username)
         self._conn.send_data(msg.to_json())
+
+    def reconectar(self, user_id: int, token: str) -> None:
+        """Solicita recuperar una sesión de juego desconectada."""
+        self._conn.send_data(MsgReconectar(user_id, token).to_json())
 
     def agregar_unidad(self, pais: str, tipo_unidad: str, cantidad: int = 1) -> None:
         """Envía un mensaje al servidor para agregar unidades en un país específico.

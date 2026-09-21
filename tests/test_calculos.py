@@ -64,6 +64,33 @@ class TestCalculos(unittest.TestCase):
             0,
         )
 
+    def test_calcular_unidades_continente_vacio_no_da_bonus(self) -> None:
+        """Un continente inexistente no puede cumplir control total."""
+        mapa = Mapa(lambda: {"Argentina": [1, "America", J_MENGANO]})
+        self.assertFalse(mapa.jugador_controla_continente(J_MENGANO, "Europa"))
+        self.assertEqual(
+            Calculos.calcular_unidades_continente(mapa, J_MENGANO, "Europa"), 0
+        )
+
+    def test_bonus_continental_se_recalcula_al_perder_un_pais(self) -> None:
+        """Perder un país corta el bonus en el cálculo siguiente."""
+        mapa = Mapa(
+            lambda: {
+                "Francia": [1, "Europa", J_MENGANO],
+                "Italia": [1, "Europa", J_MENGANO],
+            }
+        )
+        self.assertEqual(
+            Calculos.calcular_unidades_continente(mapa, J_MENGANO, "Europa"),
+            BONIFICACIONES_CONTINENTE["Europa"],
+        )
+
+        mapa.asignar_pais(J_FULANO, "Italia")
+
+        self.assertEqual(
+            Calculos.calcular_unidades_continente(mapa, J_MENGANO, "Europa"), 0
+        )
+
     def test_calcular_unidades_con_toda_europa(self) -> None:
         """Prueba calcular unidades cuando el jugador tiene toda Europa."""
 

@@ -126,6 +126,12 @@ class ServerLikeProtocol(HasEstado, Protocol):
         """Envía los colores asignados a todos los clientes."""
         ...
 
+    def reconectar_cliente(
+        self, client: IClientProtocol, user_id: int, token: str
+    ) -> bool:
+        """Recupera una sesión desconectada desde una conexión pendiente."""
+        ...
+
     def empezar_partida(self) -> None:
         """Inicia la partida en el servidor."""
         ...

@@ -23,6 +23,7 @@ from pyteg.client.msg.lobby import (
     MsgChat,
     MsgEmpezar,
     MsgEmpezarPartida,
+    MsgReconectar,
     MsgSeleccionarColor,
     MsgSetUsername,
 )
@@ -42,6 +43,7 @@ __all__ = [
     "MsgLanzarMisil",
     "MsgMoverUnidad",
     "MsgReclamarTarjeta",
+    "MsgReconectar",
     "MsgSeleccionarColor",
     "MsgSetUsername",
     "MsgSolicitarTarjetas",

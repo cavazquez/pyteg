@@ -11,6 +11,7 @@ class Client:
         self._username: str | None = None
         self._userid: int | None = None
         self._es_admin = False
+        self._reconnect_token: str | None = None
 
     def set_username(self, username: str) -> None:
         """Establece el nombre de usuario del cliente."""
@@ -19,6 +20,19 @@ class Client:
     def set_userid(self, userid: int) -> None:
         """Establece el ID de usuario del cliente."""
         self._userid = int(userid)
+
+    def set_reconnect_token(self, token: str) -> None:
+        """Guarda el token para recuperar la sesión si se corta la red."""
+        self._reconnect_token = token
+
+    def reconnect_token(self) -> str | None:
+        """Devuelve el token de reconexión guardado.
+
+        Returns:
+            Token guardado o ``None`` si todavía no se recibió.
+
+        """
+        return self._reconnect_token
 
     def username(self) -> str | None:
         """Obtiene el nombre de usuario del cliente.

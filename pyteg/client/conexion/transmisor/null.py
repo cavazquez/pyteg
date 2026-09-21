@@ -66,6 +66,11 @@ class ClientNullTransmisor(IClientTransmisor):
         """
         _LOG.debug("No estas conectado")
 
+    def reconectar(self, user_id: int, token: str) -> None:
+        """No-op para el transmisor nulo."""
+        _, _ = user_id, token
+        _LOG.debug("No estas conectado")
+
     def agregar_unidad(self, _pais: str, _tipo_unidad: str, _cantidad: int = 1) -> None:
         """Agrega una unidad (no-op cuando no hay conexión).
 

@@ -128,6 +128,28 @@ class MsgSetUsername(IMsg):
         return json.dumps(data)
 
 
+class MsgReconectar(IMsg):
+    """Solicita recuperar una sesión desconectada."""
+
+    def __init__(self, user_id: int, token: str) -> None:
+        """Inicializa la solicitud con identidad y token de sesión."""
+        self._user_id = user_id
+        self._token = token
+
+    def to_json(self) -> str:
+        """Serializa la solicitud de reconexión.
+
+        Returns:
+            Representación JSON de la solicitud.
+
+        """
+        return json.dumps({
+            "mensaje": "reconectar",
+            "user_id": self._user_id,
+            "token": self._token,
+        })
+
+
 class MsgEmpezarPartida(IMsg):
     """Mensaje para iniciar la partida."""
 

@@ -191,6 +191,28 @@ class UserIdTaskData(BaseClientTaskData, _OptUserId):
     """`data` de `ClientTaskUserId`."""
 
 
+class _OptSessionToken(TypedDict, total=False):
+    """Campos del token privado de sesión."""
+
+    user_id: int
+    token: str
+
+
+class SessionTokenTaskData(BaseClientTaskData, _OptSessionToken):
+    """`data` de `session_token`."""
+
+
+class _OptReconexion(TypedDict, total=False):
+    """Campos de confirmación de reconexión."""
+
+    user_id: int
+    temporary_user_id: int
+
+
+class ReconexionTaskData(BaseClientTaskData, _OptReconexion):
+    """`data` de `reconexion`."""
+
+
 class _OptUsername(TypedDict, total=False):
     """Campos opcionales del payload de username."""
 

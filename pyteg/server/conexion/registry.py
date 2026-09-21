@@ -64,6 +64,25 @@ class ServerClientRegistry:
                 return None
             return self._clients.pop(user_id, None)
 
+    def reasignar_cliente(
+        self, temporary_user_id: int, user_id: int, client: Client
+    ) -> bool:
+        """Reemplaza un ID temporal por la identidad recuperada atomícamente.
+
+        Returns:
+            ``True`` si el registro coincidía y se reasignó; ``False`` si
+            cambió la conexión o el ID ya estaba ocupado.
+
+        """
+        with self._lock:
+            if self._clients.get(temporary_user_id) is not client:
+                return False
+            if user_id in self._clients:
+                return False
+            self._clients.pop(temporary_user_id)
+            self._clients[user_id] = client
+            return True
+
     def obtener_cliente(self, user_id: int) -> Client | None:
         """Obtiene un cliente por su ID.
 

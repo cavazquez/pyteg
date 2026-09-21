@@ -48,6 +48,14 @@ class IClientProtocol(Protocol):
         """Asigna directamente un objeto `IColor` al cliente."""
         ...
 
+    def reasignar_userid(self, user_id: int) -> None:
+        """Cambia el ID temporal por la identidad recuperada."""
+        ...
+
+    def set_reconnect_token(self, token: str) -> None:
+        """Guarda el token privado de la identidad recuperada."""
+        ...
+
     def color_actual(self) -> IColor | None:
         """Devuelve el color actual del cliente, si lo tiene."""
         ...

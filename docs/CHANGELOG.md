@@ -8,10 +8,20 @@ Todas las fechas en formato YYYY-MM-DD.
 - **Simulación TCP de canjes**: `simulate_game` puede ejecutar y verificar por
   sockets los reclamos de tarjetas, canjes normales, canjes especiales, canjes
   forzosos, canjes de misil y lanzamientos con `--exercise-exchanges`.
+- **Simulación TCP de reconexión**: `simulate_game` puede cerrar y recuperar
+  una sesión con `--disconnect-client` y `--reconnect-client`, verificando la
+  identidad, el estado y el cierre de la partida.
 
 ### Fixed
 - **Canje de misil**: exige conservar una unidad en el país; seis unidades ya
   no pueden dejar un país vacío.
+- **Rotación de turnos**: cada ronda parte del orden acumulado y las bajas al
+  inicio, medio o final del orden no repiten ni saltean jugadores.
+- **Bonificaciones continentales**: un continente sin países ya no satisface
+  el control total ni entrega un bonus fantasma.
+- **Reconexión de partida**: una sesión desconectada puede autenticarse con su
+  token y recuperar ID, color, países, tarjetas y turno sin consumir otro
+  color.
 
 ## [0.0.9] - 2026-06-17
 

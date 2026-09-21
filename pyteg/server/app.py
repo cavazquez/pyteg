@@ -207,6 +207,83 @@ class Server:
         LOGGER.warning("ID de cliente duplicado al registrar %s", user_id)
         return False
 
+    def registrar_reconexion_pendiente(self, user_id: int, client: Client) -> bool:
+        """Registra una conexión temporal sin asignarle un color nuevo.
+
+        Returns:
+            ``True`` si la conexión quedó pendiente; ``False`` si no hay partida
+            activa o capacidad para el handshake.
+
+        """
+        game = self.game
+        if not self.estado.es_jugando() or game is None or not game.empezo():
+            return False
+        if self.cant_clients() >= len(self.color.colores()):
+            return False
+        client.marcar_reconexion_pendiente()
+        if self._client_registry.registrar_cliente(user_id, client):
+            return True
+        client.marcar_reconexion_pendiente(pendiente=False)
+        return False
+
+    def reconectar_cliente(self, client: Client, user_id: int, token: str) -> bool:
+        """Autentica una conexión pendiente y restaura su sesión de juego.
+
+        Returns:
+            ``True`` si se reemplazó la conexión histórica; ``False`` si el
+            token o la identidad no son válidos.
+
+        """
+        game = self.game
+        if game is None or not client.es_reconexion_pendiente():
+            return False
+        if not game.token_de_sesion_valido(user_id, token):
+            return False
+
+        # La baja del socket y el comando de reconexión llegan desde hilos
+        # distintos. Si el comando gana esa carrera, registrar la desconexión
+        # dentro de la misma transición deja el estado listo para autenticar.
+        if self._client_registry.obtener_cliente(
+            int(user_id)
+        ) is None and not game.jugador_esta_desconectado(int(user_id)):
+            game.desconectar_jugador(int(user_id))
+        if not game.puede_reconectar(int(user_id), token):
+            return False
+
+        temporary_user_id = int(client.userid())
+        if not self._client_registry.reasignar_cliente(
+            temporary_user_id, int(user_id), client
+        ):
+            return False
+
+        client.reasignar_userid(int(user_id))
+        if not game.reconectar_jugador(int(user_id), client, token):
+            # El estado sólo puede fallar si cambió entre las dos validaciones;
+            # devolver el registro temporal evita dejar una conexión huérfana.
+            client.reasignar_userid(temporary_user_id)
+            self._client_registry.reasignar_cliente(
+                int(user_id), temporary_user_id, client
+            )
+            return False
+
+        client.marcar_reconexion_pendiente(pendiente=False)
+        client.transmisor.enviar_reconexion(int(user_id), temporary_user_id)
+        client.transmisor.enviar_session_token(int(user_id), client.reconnect_token())
+        client.transmisor.enviar_colores(self.color.colores())
+        self.enviar_userid()
+        self.enviar_username()
+        self.enviar_colores_asignados()
+        self.enviar_estado()
+        self.enviar_configuracion_partida()
+        self.enviar_turno_actual(incluir_mapa=False)
+        client.transmisor.enviar_mapa(self.mapa, game)
+        for pais in self.mapa.paises():
+            cantidad_misiles = self.mapa.cantidad_misiles(pais)
+            if cantidad_misiles > 0:
+                client.transmisor.enviar_misil_agregado(pais, cantidad_misiles)
+        self.enviar_tarjetas_jugador(client)
+        return True
+
     def dame_lista_jugadores(self) -> list[int]:
         """Obtiene la lista de IDs de jugadores conectados.
 
@@ -245,7 +322,7 @@ class Server:
         """Envía el estado actual del juego a todos los clientes."""
         self._broadcaster.enviar_estado(self.estado.estado_actual())
 
-    def enviar_turno_actual(self) -> None:
+    def enviar_turno_actual(self, *, incluir_mapa: bool = True) -> None:
         """Envía el número de turno y ronda actuales a todos los clientes."""
         if not self.estado.es_jugando() or not self.game:
             return
@@ -255,6 +332,7 @@ class Server:
             self._client_registry.obtener_cliente,
             self._broadcaster,
             self.mapa,
+            incluir_mapa=incluir_mapa,
         )
 
     def enviar_chat(self, username: str, msg: str) -> None:

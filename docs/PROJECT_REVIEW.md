@@ -43,10 +43,26 @@ conquistador, sin volver al mazo, y todos los clientes reciben un aviso de siste
 junto con la lista activa actualizada. El último superviviente gana incluso si el
 umbral de países configurado no se alcanza.
 
+## Estado tras implementar #175, #177 y #183
+
+La rotación conserva el orden de la ronda vigente y lo desplaza una posición en
+cada ronda nueva. Las eliminaciones y desconexiones se quitan del turno
+pendiente en cualquier posición; si se retira el último turno, la siguiente
+ronda comienza inmediatamente sin repetir al jugador anterior.
+
+Los bonus continentales se calculan contra la posesión actual del mapa y un
+continente sin países no puede cumplir control total. La simulación cubre
+conquistas, pérdidas y bajas mientras recalcula la ronda siguiente.
+
+Cada cliente recibe un token privado al entrar. Si pierde el socket durante una
+partida puede conectarse con un ID temporal, autenticarse con ese token y
+recuperar su identidad, color, países, tarjetas y turno. La reconexión no crea
+un jugador adicional ni consume un color nuevo.
+
 ## Evidencia ejecutada
 
 - Python 3.14.0 y el entorno PySide6 existente.
-- **380 tests pasan** con `QT_QPA_PLATFORM=offscreen`; Ruff, formato y mypy también
+- **386 tests pasan** con `QT_QPA_PLATFORM=offscreen`; Ruff, formato y mypy también
   pasan sobre 293 archivos fuente.
 - Regresiones de red cubren fragmentación y coalescencia TCP, JSON y payloads
   inválidos, ciclo de conexión/color, permisos de administrador, una carrera
@@ -59,11 +75,14 @@ umbral de países configurado no se alcanza.
 - **Partida clásica estricta por TCP**, cinco bots con semilla 900 y victoria a
   30 países: 60 turnos y 182 conquistas en 24,328 segundos. La victoria fue
   observada y los cinco clientes terminaron en `Finalizado`.
+- **Reconexión TCP autenticada**, cinco bots con canjes y misiles, semilla 800:
+  un cliente recuperó identidad, tarjetas e inventario de misiles después de
+  perder el socket; la partida alcanzó `Finalizado` en los cinco clientes.
 
 Los JSON y trazas completos quedan en `logs/simulations/`, ignorados por Git.
 Los comandos y límites están en [SIMULATION.md](SIMULATION.md).
-No se probaron partidas completas de Qt, tarjetas/canjes, objetivos secretos,
-misiles, reconexión ni red WAN. El consenso del mapa comprueba replicación entre
+No se probaron partidas completas de Qt, objetivos secretos ni red WAN. El
+consenso del mapa comprueba replicación entre
 clientes; no es un oráculo de todas las reglas.
 
 ## Fallos reproducidos que explican las prioridades
@@ -84,10 +103,8 @@ clientes; no es un oráculo de todas las reglas.
 6. Resuelto por #172: un jugador sin países ya no recibe turnos ni refuerzos, no
    puede ejecutar acciones y sus cartas se transfieren una única vez al
    conquistador.
-7. El orden deja de rotar después de la segunda ronda. Se pueden reclamar dos
-   cartas en un mismo turno.
-8. Continentes vacíos dan bonus; los refuerzos se calculan antes del turno real.
-   Las fases restringidas por la GUI no tienen las mismas garantías en servidor.
+7. Se pueden reclamar dos cartas en un mismo turno.
+8. Las fases restringidas por la GUI no tienen las mismas garantías en servidor.
 9. El wheel generado contiene 222 entradas sin mapas, iconos, idiomas ni sonidos.
    Extraído fuera del checkout falla al cargar el tema. Nuitka referencia dos
    módulos inexistentes y el release busca directorios distintos de los subidos.
@@ -177,15 +194,15 @@ soportadas antes de sus pruebas.
 
 ### P2
 
-- [#175 — Conservar la rotación acumulativa del orden entre rondas](https://github.com/cavazquez/pyteg/issues/175) (Reglas).
+- [x] [#175 — Conservar la rotación acumulativa del orden entre rondas](https://github.com/cavazquez/pyteg/issues/175) (Reglas; implementado).
 - [#176 — Limitar la recompensa de conquista a una tarjeta por turno](https://github.com/cavazquez/pyteg/issues/176) (Reglas).
-- [#177 — Evitar bonificaciones por continentes ausentes del mapa](https://github.com/cavazquez/pyteg/issues/177) (Reglas).
+- [x] [#177 — Evitar bonificaciones por continentes ausentes del mapa](https://github.com/cavazquez/pyteg/issues/177) (Reglas; implementado).
 - [#178 — Calcular los refuerzos con el mapa vigente al iniciar cada turno](https://github.com/cavazquez/pyteg/issues/178) (Reglas).
 - [#179 — Validar en el servidor las fases de colocación, ataque y movimiento](https://github.com/cavazquez/pyteg/issues/179) (Reglas).
 - [#180 — Reasignar administrador cuando abandona la sala](https://github.com/cavazquez/pyteg/issues/180) (Sala).
 - [#181 — Negociar versión de protocolo y mapa antes de entrar a la sala](https://github.com/cavazquez/pyteg/issues/181) (Red).
 - [#182 — Publicar snapshots atómicos con revisión y cambios coherentes](https://github.com/cavazquez/pyteg/issues/182) (Red).
-- [#183 — Recuperar una sesión de jugador después de perder la conexión](https://github.com/cavazquez/pyteg/issues/183) (Red).
+- [x] [#183 — Recuperar una sesión de jugador después de perder la conexión](https://github.com/cavazquez/pyteg/issues/183) (Red; implementado).
 - [#184 — Separar estado y procesamiento de eventos del cliente de QWidget](https://github.com/cavazquez/pyteg/issues/184) (Cliente).
 - [#185 — Adjuntar al release los archivos realmente generados por la matriz](https://github.com/cavazquez/pyteg/issues/185) (Entrega).
 - [#186 — Ejecutar una partida multicliente hasta el estado final en CI](https://github.com/cavazquez/pyteg/issues/186) (Pruebas).
@@ -208,3 +225,5 @@ soportadas antes de sus pruebas.
 - Eliminación idempotente con transferencia de cartas al conquistador, exclusión
   de turnos y acciones, actualización de la lista activa y victoria del último
   superviviente para #172.
+- Rotación acumulativa, bonus continentales contra el mapa vigente y
+  reconexión autenticada con sincronización de sesión para #175, #177 y #183.

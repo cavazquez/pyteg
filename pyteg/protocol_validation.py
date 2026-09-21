@@ -160,6 +160,9 @@ _SERVER_COMMAND_SCHEMAS: dict[str, _MessageSchema] = {
     "empezar_partida": _MessageSchema({}, {}),
     "seleccionar_color": _MessageSchema({"color": _is_nonempty_string}, {}),
     "set_username": _MessageSchema({"username": _is_nonempty_string}, {}),
+    "reconectar": _MessageSchema(
+        {"user_id": _POSITIVE_INTEGER, "token": _is_nonempty_string}, {}
+    ),
     "agregar_unidad": _MessageSchema(
         {
             "pais": _is_nonempty_string,
@@ -217,6 +220,16 @@ _CLIENT_EVENT_SCHEMAS: dict[str, _MessageSchema] = {
         {},
     ),
     "user_id": _MessageSchema({"user_id": _POSITIVE_INTEGER}, {}),
+    "session_token": _MessageSchema(
+        {"user_id": _POSITIVE_INTEGER, "token": _is_nonempty_string}, {}
+    ),
+    "reconexion": _MessageSchema(
+        {
+            "user_id": _POSITIVE_INTEGER,
+            "temporary_user_id": _POSITIVE_INTEGER,
+        },
+        {},
+    ),
     "username": _MessageSchema(
         {"username": _is_string, "user_id": _POSITIVE_INTEGER}, {}
     ),

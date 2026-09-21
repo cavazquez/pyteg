@@ -64,6 +64,10 @@ class IClientTransmisor(ABC):
         """
 
     @abstractmethod
+    def reconectar(self, user_id: int, token: str) -> None:
+        """Solicita recuperar una sesión de juego desconectada."""
+
+    @abstractmethod
     def agregar_unidad(self, pais: str, tipo_unidad: str, cantidad: int = 1) -> None:
         """Envía un mensaje al servidor para agregar unidades en un país específico.
 

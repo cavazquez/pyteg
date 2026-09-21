@@ -36,6 +36,10 @@ class ServerLike(Protocol):
         """
         ...
 
+    def registrar_reconexion_pendiente(self, user_id: Any, client: Any) -> bool:
+        """Registra una conexión temporal durante una partida."""
+        ...
+
 
 def _rechazar_conexion(
     conn: socket.socket,
@@ -65,9 +69,22 @@ def _iniciar_cliente(
     client: Client | None = None
     try:
         user_id, client = builder.build(connection, server)
-        if not server.registrar_cliente(user_id, client):
+        if server.estado.es_jugando():
+            accepted = server.registrar_reconexion_pendiente(user_id, client)
+            error_type = "game_in_progress"
+            error_message = (
+                "La partida ya comenzó. Sólo se aceptan reconexiones de jugadores "
+                "desconectados."
+            )
+        else:
+            accepted = server.registrar_cliente(user_id, client)
+            error_type = "room_full"
+            error_message = "La sala está completa. Intenta nuevamente más tarde."
+
+        if not accepted:
             client.transmisor.enviar_error(
-                "room_full", "La sala está completa. Intenta nuevamente más tarde."
+                error_type,
+                error_message,
             )
             client.cerrar(flush_outgoing=True)
             return
@@ -111,7 +128,7 @@ def registrar_jugadores(
 
             logger.info("Nueva conexión aceptada desde %s", addr)
             try:
-                if server.estado.es_jugando() or server.estado.es_finalizado():
+                if server.estado.es_finalizado():
                     estado_actual = server.estado.estado_actual()
                     logger.warning(
                         "Rechazando conexión de %s: "
@@ -122,12 +139,10 @@ def registrar_jugadores(
                     _rechazar_conexion(
                         conn,
                         "game_in_progress",
-                        "El juego ya está en progreso. "
-                        "No se pueden conectar nuevos jugadores.",
+                        "El juego ya está en progreso y ya finalizó.",
                         logger,
                     )
                     continue
-
                 _iniciar_cliente(server, server_build_client, conn, addr, logger)
             except Exception:
                 logger.exception("Error al manejar la conexión")

@@ -128,14 +128,16 @@ def enviar_unidades_disponibles(game: Game, get_client: GetClientById) -> None:
         cliente.transmisor.enviar_unidades_disponibles(unidades)
 
 
-def enviar_turno_actual(
+def enviar_turno_actual(  # noqa: PLR0913
     game: Game,
     get_clients: GetClients,
     get_client: GetClientById,
     broadcaster: ServerMessageBroadcaster,
     mapa: Mapa,
+    *,
+    incluir_mapa: bool = True,
 ) -> None:
-    """Envía turno, ronda, unidades y mapa actualizados a los clientes."""
+    """Envía turno y unidades, y opcionalmente el mapa, a los clientes."""
     turno_num = game.id_turno_actual()
     por_id = clientes_por_id(get_clients())
     jugador_id, jugador_nombre, jugador_color = _jugador_actual_en_turno(game, por_id)
@@ -150,4 +152,5 @@ def enviar_turno_actual(
         )
 
     enviar_unidades_disponibles(game, get_client)
-    broadcaster.enviar_mapa(mapa, game)
+    if incluir_mapa:
+        broadcaster.enviar_mapa(mapa, game)

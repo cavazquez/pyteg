@@ -64,6 +64,11 @@ class ConnectionClient(QWidget):
         # Actualizar estado en la interfaz
         self._main_window.update_game_state("Conectado")
         # Usar el transmisor de main_window
+        user_id = self._main_window.client.userid()
+        token_getter = getattr(self._main_window.client, "reconnect_token", None)
+        token = token_getter() if callable(token_getter) else None
+        if user_id is not None and token:
+            self._main_window.transmisor.reconectar(user_id, token)
         self._main_window.transmisor.set_username(self._username)
 
     def esta_conectado(self) -> bool:
