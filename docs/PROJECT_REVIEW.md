@@ -292,6 +292,14 @@ soportadas antes de sus pruebas.
 - [x] [#196 — Reiniciar una revancha sin heredar estado de la partida anterior](https://github.com/cavazquez/pyteg/issues/196) (Partida; implementado).
 - [x] [#197 — Completar CI con fragmentación, resincronización y smoke Qt](https://github.com/cavazquez/pyteg/issues/197) (Pruebas; implementado).
 
+## Análisis de producto y distribución
+
+Las decisiones de los análisis #198–#207 están documentadas en
+[ANALYSIS_BACKLOG.md](ANALYSIS_BACKLOG.md). #199 y #203 ya tienen cambios de
+código; #198 quedó separado en el follow-up #213 para no mezclar reglas con
+renderizado. #200, #201, #202, #205 y #207 quedan diferidos con criterios
+explícitos para retomarlos.
+
 ## Cambios dejados en este trabajo
 
 - `scripts/simulate_game.py`: harness local acotado con evidencia y cleanup.

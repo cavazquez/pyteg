@@ -15,7 +15,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from pyteg.config import DEFAULT_TURN_SECONDS
+from pyteg.config import DEFAULT_TURN_SECONDS, DEFAULT_VICTORY_COUNTRIES
 from pyteg.i18n import translate as _
 
 
@@ -51,7 +51,7 @@ class VentanaAdmin(QWidget):
 
         # Checkbox para habilitar objetivo específico de países
         self.countries_checkbox = QCheckBox(_("Objetivo específico de países"))
-        self.countries_checkbox.setChecked(True)  # habilitado por defecto (50 países)
+        self.countries_checkbox.setChecked(True)
         self.countries_checkbox.setToolTip(
             _(
                 "Activar para usar un objetivo específico de países "
@@ -67,7 +67,7 @@ class VentanaAdmin(QWidget):
         self.countries_input.setPlaceholderText(_("p. ej., 30, 50, 42"))
         self.countries_input.setToolTip(_("Cantidad de países necesarios para ganar"))
         self.countries_input.setValidator(QIntValidator(1, 999, self))
-        self.countries_input.setText("50")  # valor por defecto
+        self.countries_input.setText(str(DEFAULT_VICTORY_COUNTRIES))
 
         self.countries_layout.addWidget(self.countries_label)
         self.countries_layout.addWidget(self.countries_input)

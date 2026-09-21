@@ -9,6 +9,8 @@ from PySide6.QtWidgets import QGridLayout, QHBoxLayout, QLabel, QWidget
 
 from pyteg.config import (
     CARD_SELECTION_ORANGE_THRESHOLD,
+    CARD_WIDGET_HEIGHT,
+    CARD_WIDGET_WIDTH,
     CARDS_FOR_EXCHANGE,
     DEFAULT_MAP_THEME,
 )
@@ -56,7 +58,7 @@ class TarjetasSelectionMixin:
             placeholder = QLabel(_("Vacío"))
             placeholder.setAlignment(Qt.AlignmentFlag.AlignCenter)
             placeholder.setStyleSheet(styles.STYLE_PLACEHOLDER_VACIO)
-            placeholder.setFixedSize(120, 80)
+            placeholder.setFixedSize(CARD_WIDGET_WIDTH, CARD_WIDGET_HEIGHT)
             row = i // 2
             col = i % 2
             grid_layout.addWidget(placeholder, row, col)

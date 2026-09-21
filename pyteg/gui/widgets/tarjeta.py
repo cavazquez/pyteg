@@ -6,7 +6,12 @@ from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QMouseEvent, QPixmap
 from PySide6.QtWidgets import QLabel, QVBoxLayout, QWidget
 
-from pyteg.config import DEFAULT_MAP_THEME
+from pyteg.config import (
+    CARD_SYMBOL_SIZE,
+    CARD_WIDGET_HEIGHT,
+    CARD_WIDGET_WIDTH,
+    DEFAULT_MAP_THEME,
+)
 from pyteg.core.theme_resources import get_card_image_path
 
 
@@ -66,8 +71,8 @@ class TarjetaWidget(QWidget):
             pixmap = QPixmap(imagen_path)
             if not pixmap.isNull():
                 scaled_pixmap = pixmap.scaled(
-                    32,
-                    32,
+                    CARD_SYMBOL_SIZE,
+                    CARD_SYMBOL_SIZE,
                     Qt.AspectRatioMode.KeepAspectRatio,
                     Qt.TransformationMode.SmoothTransformation,
                 )
@@ -89,7 +94,7 @@ class TarjetaWidget(QWidget):
         self.setLayout(layout)
 
         self._actualizar_estilo()
-        self.setFixedSize(120, 80)
+        self.setFixedSize(CARD_WIDGET_WIDTH, CARD_WIDGET_HEIGHT)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
 
     def _actualizar_estilo(self) -> None:

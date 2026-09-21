@@ -188,7 +188,7 @@ class _TestClient:
     def _read_loop(self) -> None:
         r"""Lee bytes del socket y parsea mensajes JSON separados por ``\0``."""
         while self._running and self._sock:
-            try:  # noqa: PLW0717 - el doble mantiene el socket hasta cerrar la prueba
+            try:
                 chunk = self._sock.recv(_RECV_SIZE)
                 if not chunk:
                     break
