@@ -41,6 +41,9 @@ class TurnManager:
         self._turnos: list[TurnoType] = [PrimerTurno(_USERID_PLACEHOLDER)]
         self._num_turno = 0
         self._num_ronda = 1
+        # Identidad lógica del turno actual. No depende de la posición en
+        # ``_turnos``, que puede cambiar al quitar jugadores.
+        self._turno_logico = 0
 
     def inicializar_turnos(self, jugadores_userids: list[int]) -> None:
         """Inicializa los turnos del juego con los jugadores.
@@ -51,6 +54,7 @@ class TurnManager:
         """
         self._turnos = [PrimerTurno(j) for j in jugadores_userids]
         self._num_turno = 0
+        self._turno_logico = 0
 
     def eliminar_jugador(self, jugador_id: int) -> bool:
         """Quita a un jugador de los turnos pendientes de la ronda.
@@ -78,9 +82,14 @@ class TurnManager:
         if indice is None:
             return False
 
+        era_turno_actual = indice == self._num_turno
         self._turnos.pop(indice)
         if indice < self._num_turno:
             self._num_turno -= 1
+        elif era_turno_actual:
+            # El jugador que sigue ocupa el turno activo sin pasar por
+            # ``avanzar_turno`` (por ejemplo, después de una desconexión).
+            self._turno_logico += 1
         if not self._turnos:
             self._num_turno = 0
         return True
@@ -119,6 +128,19 @@ class TurnManager:
         """
         return self._num_turno
 
+    def clave_turno(self) -> tuple[int, int]:
+        """Devuelve una identidad estable para el turno vigente.
+
+        La posición de ``_num_turno`` es sólo un índice de presentación y
+        puede retroceder cuando se quita un jugador anterior. ``_turno_logico``
+        cambia únicamente al pasar al siguiente turno real.
+
+        Returns:
+            Tupla ``(ronda, identidad lógica del turno)``.
+
+        """
+        return self._num_ronda, self._turno_logico
+
     def ronda_completada(self) -> bool:
         """Indica si el índice actual ya no apunta a un turno pendiente.
 
@@ -145,6 +167,7 @@ class TurnManager:
 
         """
         self._num_turno += 1
+        self._turno_logico += 1
         return False
 
     def iniciar_nueva_ronda(
