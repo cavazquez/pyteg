@@ -12,10 +12,11 @@ one from ``secrets``; ``--random-dice`` restores production-style dice for a
 stochastic run. The real server never receives a seed and always uses its
 production random sources.
 
-This exercises the server protocol, not the Qt GUI/client transport. Chat echoes
-act as synchronization barriers because the protocol has no command IDs/acks.
-Victory consensus and the server's terminal state are reported separately; use
-``--require-finalized`` to make the missing terminal transition fail the run.
+This exercises the server protocol and the shared headless client transport/model,
+not QWidget rendering. Chat echoes remain synchronization barriers while command
+results and snapshots are recorded. Victory consensus and the server's terminal
+state are reported separately; use ``--require-finalized`` to make a missing
+terminal transition fail the run.
 """
 
 from __future__ import annotations
@@ -40,6 +41,9 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
+from pyteg.client.event_processor import ClientEventProcessor
+from pyteg.client.state_model import ClientStateModel
+from pyteg.codecs_utils import NulDelimitedUtf8Codec
 from pyteg.config import (
     CARDS_FOR_EXCHANGE,
     MAX_CARDS_BEFORE_FORCE_EXCHANGE,
@@ -50,6 +54,7 @@ from pyteg.config import (
     MISSILE_MAX_DISTANCE,
 )
 from pyteg.protocol import PROTOCOL_VERSION, map_hash_for_theme
+from pyteg.protocol_validation import MessageValidationError, validate_client_event
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -65,31 +70,130 @@ FIRST_COMBAT_ROUND = 3
 
 @dataclass
 class Bot:
-    """A buffered TCP peer whose state consists only of received messages."""
+    """A TCP peer backed by the same codec, validator and state model as Qt."""
 
     connection: socket.socket
     userid: int = 0
-    buffer: bytes = b""
-    countries: dict[str, tuple[int, int]] = field(default_factory=dict)
-    units: dict[str, int] = field(default_factory=dict)
-    cards: list[dict[str, str]] = field(default_factory=list)
-    missiles: dict[str, int] = field(default_factory=dict)
+    codec: NulDelimitedUtf8Codec = field(
+        default_factory=lambda: NulDelimitedUtf8Codec(max_frame_bytes=MAX_FRAME_BYTES)
+    )
+    state_model: ClientStateModel = field(default_factory=ClientStateModel)
+    event_processor: ClientEventProcessor = field(init=False)
     special_exchanges: list[dict[str, Any]] = field(default_factory=list)
     missile_results: list[dict[str, Any]] = field(default_factory=list)
-    turn: dict[str, Any] = field(default_factory=dict)
-    victory: dict[str, Any] | None = None
-    state: str = ""
     barrier: str = ""
     errors: list[dict[str, Any]] = field(default_factory=list)
     counts: Counter[str] = field(default_factory=Counter)
     disconnected: bool = False
     disconnect_turn: int | None = None
     reconnected: bool = False
-    player_ids: list[int] = field(default_factory=list)
-    players_initialized: bool = False
-    session_token: str | None = None
-    pending_session_token: str | None = None
-    handshake_accepted: bool = False
+    resync_requested: bool = False
+
+    def __post_init__(self) -> None:
+        """Inicializa el procesador común de eventos del cliente."""
+        self.event_processor = ClientEventProcessor(self.state_model)
+
+    @property
+    def countries(self) -> dict[str, tuple[int, int]]:
+        """Devuelve el tablero público proyectado por el modelo compartido."""
+        countries = self.state_model.snapshot.get("countries", {})
+        if not isinstance(countries, dict):
+            return {}
+        result: dict[str, tuple[int, int]] = {}
+        for name, raw in countries.items():
+            if not isinstance(name, str) or not isinstance(raw, dict):
+                continue
+            owner = raw.get("userid")
+            units = raw.get("unidades")
+            if isinstance(owner, int) and isinstance(units, int) and units > 0:
+                result[name] = (owner, units)
+        return result
+
+    @property
+    def units(self) -> dict[str, int]:
+        """Devuelve las unidades privadas propias del modelo."""
+        return dict(self.state_model.private_units)
+
+    @property
+    def cards(self) -> list[dict[str, str]]:
+        """Devuelve las tarjetas privadas propias del modelo."""
+        return [
+            {
+                "pais": str(card["pais"]),
+                "simbolo": str(card["simbolo"]),
+            }
+            for card in self.state_model.private_cards
+            if isinstance(card, dict)
+            and isinstance(card.get("pais"), str)
+            and isinstance(card.get("simbolo"), str)
+        ]
+
+    @property
+    def missiles(self) -> dict[str, int]:
+        """Devuelve misiles públicos por país desde el snapshot compartido."""
+        countries = self.state_model.snapshot.get("countries", {})
+        if not isinstance(countries, dict):
+            return {}
+        return {
+            name: int(raw["misiles"])
+            for name, raw in countries.items()
+            if isinstance(name, str)
+            and isinstance(raw, dict)
+            and isinstance(raw.get("misiles"), int)
+            and raw["misiles"] > 0
+        }
+
+    @property
+    def turn(self) -> dict[str, Any]:
+        """Devuelve el turno con los nombres de campos históricos del bot."""
+        turn = self.state_model.snapshot.get("turno", {})
+        if not isinstance(turn, dict):
+            return {}
+        return {
+            "num_turno": turn.get("num_turno", 0),
+            "num_ronda": turn.get("num_ronda", 1),
+            "jugador_actual_id": turn.get("jugador_id"),
+        }
+
+    @property
+    def victory(self) -> dict[str, Any] | None:
+        """Devuelve la victoria pública observada por el modelo."""
+        return self.state_model.victory
+
+    @property
+    def state(self) -> str:
+        """Devuelve el estado público actual."""
+        return str(self.state_model.snapshot.get("estado", ""))
+
+    @property
+    def player_ids(self) -> list[int]:
+        """Devuelve las identidades públicas del snapshot."""
+        players = self.state_model.snapshot.get("players", [])
+        return [
+            int(player["userid"])
+            for player in players
+            if isinstance(player, dict) and isinstance(player.get("userid"), int)
+        ]
+
+    @property
+    def players_initialized(self) -> bool:
+        """Indica si el modelo recibió una lista pública de jugadores."""
+        return bool(self.player_ids)
+
+    @property
+    def session_token(self) -> str | None:
+        """Devuelve el token privado de sesión del bot."""
+        return self.state_model.session_token
+
+    @property
+    def pending_session_token(self) -> str | None:
+        """Alias de compatibilidad para el token de la conexión temporal."""
+        return self.state_model.session_token
+
+    @property
+    def handshake_accepted(self) -> bool:
+        """Indica si el handshake fue aceptado por el servidor."""
+        return self.state_model.handshake_accepted
 
     def receive(self) -> list[dict[str, Any]]:
         """Read complete frames, retaining partial bytes across TCP receives.
@@ -106,29 +210,29 @@ class Bot:
         if not data:
             msg = f"Client {self.userid}: unexpected server EOF"
             raise RuntimeError(msg)
-        self.buffer += data
         result: list[dict[str, Any]] = []
-        while b"\0" in self.buffer:
-            raw, self.buffer = self.buffer.split(b"\0", 1)
-            if len(raw) > MAX_FRAME_BYTES:
-                msg = "Oversized server frame"
-                raise RuntimeError(msg)
+        for raw in self.codec.feed(data):
             if not raw:
                 continue
-            payload = json.loads(raw.decode("utf-8"))
+            payload = json.loads(raw)
             if not isinstance(payload, dict):
                 msg = "Server message is not an object"
                 raise TypeError(msg)
+            try:
+                payload = validate_client_event(payload)
+            except MessageValidationError as error:
+                msg = f"Invalid server event: {error}"
+                raise RuntimeError(msg) from error
             result.append(payload)
             self._apply(payload)
-        if len(self.buffer) > MAX_FRAME_BYTES:
-            msg = "Unterminated server frame exceeds size limit"
-            raise RuntimeError(msg)
         return result
 
     def _apply(self, data: dict[str, Any]) -> None:
         kind = str(data.get("mensaje", ""))
         self.counts[kind] += 1
+        applied = self.event_processor.process(data)
+        if applied.gap:
+            self.resync_requested = False
         handlers = {
             "user_id": self._apply_user_id,
             "pais": self._apply_country,
@@ -152,8 +256,6 @@ class Bot:
             self.errors.append(data)
         if kind == "command_result" and data.get("accepted") is False:
             self.errors.append(data)
-        if kind == "hello_ack" and data.get("accepted") is True:
-            self.handshake_accepted = True
 
     def _apply_user_id(self, data: dict[str, Any]) -> None:
         # The first ID is ours; subsequent IDs describe other players.
@@ -161,27 +263,16 @@ class Bot:
             self.userid = int(data["user_id"])
 
     def _apply_country(self, data: dict[str, Any]) -> None:
-        self.countries[data["pais"]] = (data["userid"], data["unidades"])
+        _ = data
 
     def _apply_units(self, data: dict[str, Any]) -> None:
-        self.units = data["unidades"]
+        _ = data
 
     def _apply_cards(self, data: dict[str, Any]) -> None:
-        cards = data.get("tarjetas")
-        if isinstance(cards, list):
-            self.cards = [
-                {"pais": str(card["pais"]), "simbolo": str(card["simbolo"])}
-                for card in cards
-                if isinstance(card, dict)
-                and isinstance(card.get("pais"), str)
-                and isinstance(card.get("simbolo"), str)
-            ]
+        _ = data
 
     def _apply_missile(self, data: dict[str, Any]) -> None:
-        country = data.get("pais")
-        amount = data.get("cantidad_misiles")
-        if isinstance(country, str) and isinstance(amount, int):
-            self.missiles[country] = amount
+        _ = data
 
     def _apply_special_exchange(self, data: dict[str, Any]) -> None:
         self.special_exchanges.append(data)
@@ -190,36 +281,26 @@ class Bot:
         self.missile_results.append(data)
 
     def _apply_turn(self, data: dict[str, Any]) -> None:
-        self.turn = data
+        _ = data
 
     def _apply_victory(self, data: dict[str, Any]) -> None:
-        self.victory = data
+        _ = data
 
     def _apply_state(self, data: dict[str, Any]) -> None:
-        self.state = data["estado"]
+        _ = data
 
     def _apply_chat(self, data: dict[str, Any]) -> None:
         self.barrier = data["msg"]
 
     def _apply_session_token(self, data: dict[str, Any]) -> None:
-        if int(data.get("user_id", 0)) == self.userid:
-            self.session_token = str(data["token"])
-        elif self.pending_session_token is None:
-            self.pending_session_token = str(data["token"])
+        _ = data
 
     def _apply_reconnection(self, data: dict[str, Any]) -> None:
         self.userid = int(data["user_id"])
         self.reconnected = True
 
     def _apply_player_list(self, data: dict[str, Any]) -> None:
-        players = data.get("jugadores", [])
-        if isinstance(players, list):
-            self.player_ids = [
-                int(player["userid"])
-                for player in players
-                if isinstance(player, dict) and isinstance(player.get("userid"), int)
-            ]
-            self.players_initialized = True
+        _ = data
 
 
 class Simulation:
@@ -332,6 +413,20 @@ class Simulation:
                 if bot.connection in readable:
                     for payload in bot.receive():
                         self._record("receive", bot, payload)
+                        if (
+                            bot.state_model.needs_snapshot()
+                            and not bot.resync_requested
+                        ):
+                            bot.resync_requested = True
+                            self._send(
+                                bot,
+                                {
+                                    "mensaje": "solicitar_snapshot",
+                                    "command_id": uuid.uuid4().hex,
+                                },
+                            )
+                        elif not bot.state_model.needs_snapshot():
+                            bot.resync_requested = False
 
     def _send(self, bot: Bot, payload: dict[str, Any]) -> None:
         self._record("send", bot, payload)

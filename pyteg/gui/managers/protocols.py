@@ -80,6 +80,9 @@ class MainWindowProtocol(GameWindowProtocol, Protocol):
     config_manager: ConfigManager
     layout_manager: LayoutManager
     language_manager: LanguageManager
+    client_state_model: Any
+    client_public_revision: int
+    client_command_results: dict[str, dict[str, Any]]
     card_manager: CardManager
     window_manager: WindowManager
     game_actions_manager: GameActionsManager

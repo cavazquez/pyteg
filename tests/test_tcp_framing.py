@@ -246,3 +246,52 @@ class TestTcpConnectionFraming(unittest.TestCase):
         self.assertEqual(msg_to_task.call_args_list, [call(valid_payload)])
         valid_task.run.assert_called_once()
         self.assertFalse(fake_socket.disconnected)
+
+    @patch("pyteg.client.conexion.connection.QTcpSocket")
+    @patch("pyteg.client.conexion.connection.ClientTaskManager.msg_to_task")
+    def test_qt_state_events_bypass_legacy_task_dispatch(
+        self,
+        msg_to_task: MagicMock,
+        qtcp_socket: MagicMock,
+    ) -> None:
+        """Snapshot y command_result sólo actualizan el modelo compartido."""
+        snapshot = {
+            "mensaje": "snapshot",
+            "snapshot_version": 1,
+            "revision": 0,
+            "estado": "Inicial",
+            "theme": "test",
+            "map_hash": "hash",
+            "configuracion": {
+                "segundos_por_turno": 20,
+                "paises_para_victoria": 2,
+                "objetivos_secretos": False,
+                "misiles_habilitados": False,
+            },
+            "players": [],
+            "countries": {},
+            "fase": None,
+            "turno": None,
+            "refuerzos_pendientes": 0,
+        }
+        result = {
+            "mensaje": "command_result",
+            "command_id": "cmd-1",
+            "accepted": True,
+            "revision": 0,
+        }
+        fake_socket = _FakeQtSocket([
+            NulDelimitedUtf8Codec.encode_frame(json.dumps(snapshot))
+            + NulDelimitedUtf8Codec.encode_frame(json.dumps(result))
+        ])
+        qtcp_socket.return_value = fake_socket
+
+        main_window = MagicMock()
+        connection = ConnectionClient(main_window)
+        connection.read_data()
+
+        msg_to_task.assert_not_called()
+        self.assertEqual(connection.state_model.revision, 0)
+        self.assertEqual(
+            connection.state_model.command_results["cmd-1"]["accepted"], True
+        )

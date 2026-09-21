@@ -71,7 +71,7 @@ class GameWindowProtocol(Protocol):
     tarjetas_jugador: list[TarjetaItem]
     misiles_habilitados: bool
     partida_finalizada: bool
-    fase_actual: str
+    fase_actual: str | None
     unidades_pendientes_servidor: int
 
     def update_unidades_disponibles(self, unidades: dict[str, int]) -> None:

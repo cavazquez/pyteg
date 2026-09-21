@@ -143,7 +143,9 @@ class TestProtocolFeatures(unittest.TestCase):
         self.assertEqual(model.revision, 0)
         self.assertTrue(model.apply_event({**snapshot, "revision": 2}).gap)
         self.assertTrue(model.needs_snapshot())
+        self.assertTrue(model.apply_event({**snapshot, "revision": 3}).applied)
+        self.assertTrue(model.needs_snapshot())
         self.assertTrue(
-            model.apply_event({**snapshot, "revision": 2, "resync": True}).applied
+            model.apply_event({**snapshot, "revision": 3, "resync": True}).applied
         )
         self.assertFalse(model.needs_snapshot())

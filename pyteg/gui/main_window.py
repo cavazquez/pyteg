@@ -107,6 +107,10 @@ class Gui(QMainWindow, MainWindowDelegatesMixin):
         self.tarjetas_jugador: list[TarjetaItem] = []
         self.misiles_habilitados: bool = False
         self.partida_finalizada: bool = False
+        self.fase_actual: str | None = None
+        self.unidades_pendientes_servidor: int = 0
+        self.client_public_revision: int = -1
+        self.client_command_results: dict[str, dict[str, object]] = {}
         self.row_widgets: dict[str, object] = {}
         self.last_units: dict[str, object] = {}
         self.status_temp_label: object = None
