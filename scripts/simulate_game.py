@@ -32,11 +32,22 @@ import subprocess  # noqa: S404 -- launches only the local server process
 import sys
 import time
 import tomllib
-from collections import Counter
+from collections import Counter, deque
 from dataclasses import dataclass, field
+from operator import itemgetter
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
+
+from pyteg.config import (
+    CARDS_FOR_EXCHANGE,
+    MAX_CARDS_BEFORE_FORCE_EXCHANGE,
+    MIN_UNITS_FOR_MISSILE_EXCHANGE,
+    MISSILE_DAMAGE_DISTANCE_1,
+    MISSILE_DAMAGE_DISTANCE_2,
+    MISSILE_DAMAGE_DISTANCE_3,
+    MISSILE_MAX_DISTANCE,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -59,6 +70,10 @@ class Bot:
     buffer: bytes = b""
     countries: dict[str, tuple[int, int]] = field(default_factory=dict)
     units: dict[str, int] = field(default_factory=dict)
+    cards: list[dict[str, str]] = field(default_factory=list)
+    missiles: dict[str, int] = field(default_factory=dict)
+    special_exchanges: list[dict[str, Any]] = field(default_factory=list)
+    missile_results: list[dict[str, Any]] = field(default_factory=list)
     turn: dict[str, Any] = field(default_factory=dict)
     victory: dict[str, Any] | None = None
     state: str = ""
@@ -106,23 +121,70 @@ class Bot:
     def _apply(self, data: dict[str, Any]) -> None:
         kind = str(data.get("mensaje", ""))
         self.counts[kind] += 1
-        if kind == "user_id" and self.userid == 0:
-            # The first ID is ours; subsequent IDs describe other players.
-            self.userid = int(data["user_id"])
-        elif kind == "pais":
-            self.countries[data["pais"]] = (data["userid"], data["unidades"])
-        elif kind == "unidades_disponibles":
-            self.units = data["unidades"]
-        elif kind == "turno":
-            self.turn = data
-        elif kind == "victoria":
-            self.victory = data
-        elif kind == "estado":
-            self.state = data["estado"]
-        elif kind == "chat":
-            self.barrier = data["msg"]
+        handlers = {
+            "user_id": self._apply_user_id,
+            "pais": self._apply_country,
+            "unidades_disponibles": self._apply_units,
+            "tarjetas_jugador": self._apply_cards,
+            "misil_agregado": self._apply_missile,
+            "canje_especial": self._apply_special_exchange,
+            "resultado_misil": self._apply_missile_result,
+            "turno": self._apply_turn,
+            "victoria": self._apply_victory,
+            "estado": self._apply_state,
+            "chat": self._apply_chat,
+        }
+        handler = handlers.get(kind)
+        if handler is not None:
+            handler(data)
         if kind == "error" or data.get("msg_type") == "error":
             self.errors.append(data)
+
+    def _apply_user_id(self, data: dict[str, Any]) -> None:
+        # The first ID is ours; subsequent IDs describe other players.
+        if self.userid == 0:
+            self.userid = int(data["user_id"])
+
+    def _apply_country(self, data: dict[str, Any]) -> None:
+        self.countries[data["pais"]] = (data["userid"], data["unidades"])
+
+    def _apply_units(self, data: dict[str, Any]) -> None:
+        self.units = data["unidades"]
+
+    def _apply_cards(self, data: dict[str, Any]) -> None:
+        cards = data.get("tarjetas")
+        if isinstance(cards, list):
+            self.cards = [
+                {"pais": str(card["pais"]), "simbolo": str(card["simbolo"])}
+                for card in cards
+                if isinstance(card, dict)
+                and isinstance(card.get("pais"), str)
+                and isinstance(card.get("simbolo"), str)
+            ]
+
+    def _apply_missile(self, data: dict[str, Any]) -> None:
+        country = data.get("pais")
+        amount = data.get("cantidad_misiles")
+        if isinstance(country, str) and isinstance(amount, int):
+            self.missiles[country] = amount
+
+    def _apply_special_exchange(self, data: dict[str, Any]) -> None:
+        self.special_exchanges.append(data)
+
+    def _apply_missile_result(self, data: dict[str, Any]) -> None:
+        self.missile_results.append(data)
+
+    def _apply_turn(self, data: dict[str, Any]) -> None:
+        self.turn = data
+
+    def _apply_victory(self, data: dict[str, Any]) -> None:
+        self.victory = data
+
+    def _apply_state(self, data: dict[str, Any]) -> None:
+        self.state = data["estado"]
+
+    def _apply_chat(self, data: dict[str, Any]) -> None:
+        self.barrier = data["msg"]
 
 
 class Simulation:
@@ -143,6 +205,14 @@ class Simulation:
         self.commands: Counter[str] = Counter()
         self.turns_played = 0
         self.conquests = 0
+        self.card_claims = 0
+        self.card_exchanges = 0
+        self.forced_card_exchanges = 0
+        self.special_exchanges = 0
+        self.missile_exchanges = 0
+        self.missile_launches = 0
+        self.exercise_cards = bool(args.exercise_cards or args.exercise_exchanges)
+        self.exercise_missiles = bool(args.exercise_missiles or args.exercise_exchanges)
         self._disconnect_done = False
         theme_dir = ROOT / "themes" / args.theme
         with (theme_dir / "adyacencias.toml").open("rb") as file:
@@ -269,6 +339,14 @@ class Simulation:
         if any(bot.countries != board for bot in peers):
             msg = "Client maps diverged after a command barrier"
             raise RuntimeError(msg)
+        missiles = peers[0].missiles
+        if any(bot.missiles != missiles for bot in peers):
+            msg = "Clients disagree on public missile inventory"
+            raise RuntimeError(msg)
+        missile_results = peers[0].missile_results
+        if any(bot.missile_results != missile_results for bot in peers):
+            msg = "Clients disagree on missile result events"
+            raise RuntimeError(msg)
         if board:
             player_ids = {bot.userid for bot in self.bots}
             if set(board) != set(self.continents) or any(
@@ -342,6 +420,196 @@ class Simulation:
             for neighbor in self.adjacency[country]
         )
 
+    def sync_cards(self, bot: Bot) -> None:
+        """Refresh the active player's private card hand from the server."""
+        if self.exercise_cards:
+            self.command(bot, "solicitar_tarjetas")
+
+    def claim_card(self, bot: Bot) -> None:
+        """Claim the card earned by a conquest and detect forced exchanges.
+
+        Raises:
+            RuntimeError: If the server does not update the bot's card hand.
+
+        """
+        if not self.exercise_cards or bot.victory:
+            return
+        cards_before = len(bot.cards)
+        self.command(bot, "reclamar_tarjeta")
+        self.card_claims += 1
+        if len(bot.cards) == cards_before:
+            msg = "Card claim did not update the requesting client's hand"
+            raise RuntimeError(msg)
+        if (
+            cards_before >= MAX_CARDS_BEFORE_FORCE_EXCHANGE
+            and len(bot.cards) < cards_before
+        ):
+            self.forced_card_exchanges += 1
+
+    @staticmethod
+    def _card_selection(bot: Bot) -> list[dict[str, str]]:
+        """Select a valid three-card exchange from a public card snapshot.
+
+        Returns:
+            Three cards with one valid symbol combination, or an empty list.
+
+        """
+        cards_by_symbol: dict[str, list[dict[str, str]]] = {}
+        for card in bot.cards:
+            cards_by_symbol.setdefault(card["simbolo"], []).append(card)
+        for cards in cards_by_symbol.values():
+            if len(cards) >= CARDS_FOR_EXCHANGE:
+                return cards[:CARDS_FOR_EXCHANGE]
+        distinct: list[dict[str, str]] = []
+        seen_symbols: set[str] = set()
+        for card in bot.cards:
+            if card["simbolo"] not in seen_symbols:
+                distinct.append(card)
+                seen_symbols.add(card["simbolo"])
+        return (
+            distinct[:CARDS_FOR_EXCHANGE] if len(distinct) == CARDS_FOR_EXCHANGE else []
+        )
+
+    def exchange_cards(self, bot: Bot) -> None:
+        """Perform one valid normal card exchange when the hand allows it.
+
+        Raises:
+            RuntimeError: If the server does not consume the selected cards.
+
+        """
+        if not self.exercise_cards:
+            return
+        selection = self._card_selection(bot)
+        if len(selection) != CARDS_FOR_EXCHANGE:
+            return
+        cards_before = len(bot.cards)
+        self.command(bot, "canjear_tarjetas", tarjetas=selection)
+        if len(bot.cards) != cards_before - CARDS_FOR_EXCHANGE:
+            msg = "Card exchange did not consume the selected cards"
+            raise RuntimeError(msg)
+        self.card_exchanges += 1
+
+    def exchange_special_card(self, bot: Bot) -> None:
+        """Use a country card matching a country currently owned by the bot.
+
+        Raises:
+            RuntimeError: If the server does not consume the country card.
+
+        """
+        if not self.exercise_cards:
+            return
+        matching = [
+            card
+            for card in bot.cards
+            if bot.countries.get(card["pais"], (None, 0))[0] == bot.userid
+        ]
+        if not matching:
+            return
+        cards_before = len(bot.cards)
+        self.command(bot, "canje_especial", pais=matching[0]["pais"])
+        if len(bot.cards) != cards_before - 1:
+            msg = "Special exchange did not consume the country card"
+            raise RuntimeError(msg)
+        self.special_exchanges += 1
+
+    def _distance(self, origin: str, target: str) -> int:
+        """Return the public-map shortest path length between two countries.
+
+        Returns:
+            Number of adjacency hops, or ``-1`` when no path exists.
+
+        """
+        if origin == target:
+            return 0
+        queue: deque[tuple[str, int]] = deque([(origin, 0)])
+        visited = {origin}
+        while queue:
+            country, distance = queue.popleft()
+            for neighbor in self.adjacency[country]:
+                if neighbor == target:
+                    return distance + 1
+                if neighbor not in visited:
+                    visited.add(neighbor)
+                    queue.append((neighbor, distance + 1))
+        return -1
+
+    @staticmethod
+    def _missile_damage(distance: int) -> int:
+        """Return the configured damage for a missile distance.
+
+        Returns:
+            Configured damage, or zero for a distance outside missile range.
+
+        """
+        return {
+            1: MISSILE_DAMAGE_DISTANCE_1,
+            2: MISSILE_DAMAGE_DISTANCE_2,
+            3: MISSILE_DAMAGE_DISTANCE_3,
+        }.get(distance, 0)
+
+    def exchange_missile(self, bot: Bot) -> None:
+        """Convert six units in one owned country into a missile.
+
+        Raises:
+            RuntimeError: If the server does not publish the new missile.
+
+        """
+        if not self.exercise_missiles:
+            return
+        options = [
+            (country, units)
+            for country, (owner, units) in bot.countries.items()
+            if owner == bot.userid and units >= MIN_UNITS_FOR_MISSILE_EXCHANGE
+        ]
+        if not options:
+            return
+        country = max(options, key=itemgetter(1, 0))[0]
+        missiles_before = bot.missiles.get(country, 0)
+        self.command(bot, "canjear_misil", pais=country)
+        if bot.missiles.get(country, 0) != missiles_before + 1:
+            msg = "Missile exchange did not publish the added missile"
+            raise RuntimeError(msg)
+        self.missile_exchanges += 1
+
+    def launch_missile(self, bot: Bot) -> None:
+        """Launch one available missile at a reachable enemy country.
+
+        Raises:
+            RuntimeError: If consumption or the result event is not observed.
+
+        """
+        if not self.exercise_missiles:
+            return
+        options: list[tuple[int, int, str, str]] = []
+        for origin, (owner, _) in bot.countries.items():
+            if owner != bot.userid or bot.missiles.get(origin, 0) <= 0:
+                continue
+            for target, (target_owner, target_units) in bot.countries.items():
+                if target_owner == bot.userid:
+                    continue
+                distance = self._distance(origin, target)
+                damage = self._missile_damage(distance)
+                if 1 <= distance <= MISSILE_MAX_DISTANCE and target_units > damage:
+                    options.append((target_units, -distance, origin, target))
+        if not options:
+            return
+        _, _, origin, target = max(options)
+        missiles_before = bot.missiles.get(origin, 0)
+        results_before = len(bot.missile_results)
+        self.command(
+            bot,
+            "lanzar_misil",
+            pais_origen=origin,
+            pais_destino=target,
+        )
+        if bot.missiles.get(origin, 0) != missiles_before - 1:
+            msg = "Missile launch did not consume the source missile"
+            raise RuntimeError(msg)
+        if len(bot.missile_results) != results_before + 1:
+            msg = "Missile launch did not publish a result event"
+            raise RuntimeError(msg)
+        self.missile_launches += 1
+
     def reinforce(self, bot: Bot) -> None:
         """Spend all available infantry/continent pools on useful owned countries."""
         while True:
@@ -411,14 +679,10 @@ class Simulation:
                         destino=target,
                         cantidad=remaining,
                     )
+                self.claim_card(bot)
 
-    def play(self) -> None:
-        """Play until victory, bounded by time and a maximum number of rounds.
-
-        Raises:
-            RuntimeError: If no winner is found within the configured round cap.
-
-        """
+    def _start_game(self) -> None:
+        """Start a configured game through the public admin protocol."""
         admin = self.reference_bot()
         self.command(
             admin,
@@ -426,40 +690,72 @@ class Simulation:
             segundos=max(3600, int(self.args.timeout) + 1),
             paises_para_victoria=self.target,
             objetivos_secretos=False,
-            misiles_habilitados=False,
+            misiles_habilitados=self.exercise_missiles,
         )
         self.command(admin, "empezar_partida")
+
+    def _turn_bot(self) -> tuple[Bot, dict[str, Any]] | None:
+        """Resolve the connected bot that owns the currently advertised turn.
+
+        Returns:
+            The active bot and its public turn payload, or ``None`` while waiting
+            for a disconnected player's turn to be removed from the rotation.
+
+        Raises:
+            RuntimeError: If the round limit is exceeded or no client remains.
+
+        """
+        reference = self.reference_bot()
+        turn = reference.turn
+        if int(turn["num_ronda"]) > self.args.max_rounds:
+            msg = "No victory within maximum rounds"
+            raise RuntimeError(msg)
+        try:
+            bot = next(
+                peer
+                for peer in self.connected_bots()
+                if peer.userid == turn["jugador_actual_id"]
+            )
+        except StopIteration:
+
+            def connected_turn_available() -> bool:
+                current_turn = self.reference_bot().turn.get("jugador_actual_id")
+                return self.has_connected_turn(current_turn)
+
+            self._wait(
+                connected_turn_available,
+                "a connected player to receive the next turn",
+            )
+            return None
+        return bot, turn
+
+    def _play_turn(self, bot: Bot, turn: dict[str, Any]) -> None:
+        """Execute one bot turn using only the received public messages."""
+        self.sync_cards(bot)
+        self.exchange_special_card(bot)
+        self.exchange_cards(bot)
+        self.reinforce(bot)
+        self.exchange_missile(bot)
+        self.launch_missile(bot)
+        if int(turn["num_ronda"]) >= FIRST_COMBAT_ROUND:
+            self.attack(bot)
+        self.command(bot, "finalizar_turno")
+        self.turns_played += 1
+        self.disconnect_client()
+
+    def _play_until_victory(self) -> None:
+        """Play turns until victory, then validate winner and consensus.
+
+        Raises:
+            RuntimeError: If the round limit, winner, or map consensus is invalid.
+
+        """
         while not all(bot.victory for bot in self.connected_bots()):
-            reference = self.reference_bot()
-            turn = reference.turn
-            if int(turn["num_ronda"]) > self.args.max_rounds:
-                msg = "No victory within maximum rounds"
-                raise RuntimeError(msg)
-            try:
-                bot = next(
-                    peer
-                    for peer in self.connected_bots()
-                    if peer.userid == turn["jugador_actual_id"]
-                )
-            except StopIteration:
-                expected_turn = reference.turn.get("jugador_actual_id")
-
-                def connected_turn_available(
-                    expected_turn: Any = expected_turn,
-                ) -> bool:
-                    return self.has_connected_turn(expected_turn)
-
-                self._wait(
-                    connected_turn_available,
-                    "a connected player to receive the next turn",
-                )
+            selected = self._turn_bot()
+            if selected is None:
                 continue
-            self.reinforce(bot)
-            if int(turn["num_ronda"]) >= FIRST_COMBAT_ROUND:
-                self.attack(bot)
-            self.command(bot, "finalizar_turno")
-            self.turns_played += 1
-            self.disconnect_client()
+            self._play_turn(*selected)
+
         self._wait(
             lambda: all(
                 peer.barrier.endswith(f"SIM_BARRIER_{sum(self.commands.values())}")
@@ -482,6 +778,32 @@ class Simulation:
         if controlled < self.target or self.conquests == 0:
             msg = "Victory was not backed by the country target and actual conquest"
             raise RuntimeError(msg)
+
+    def _validate_exercise_coverage(self) -> None:
+        """Fail a requested exercise mode when its wire action never occurred.
+
+        Raises:
+            RuntimeError: If a requested exchange action was not observed.
+
+        """
+        if self.exercise_cards and self.card_claims == 0:
+            msg = "Card exercise requested but no card was claimed"
+            raise RuntimeError(msg)
+        if self.exercise_cards and self.card_exchanges == 0:
+            msg = "Card exercise requested but no normal exchange was observed"
+            raise RuntimeError(msg)
+        if self.exercise_missiles and self.missile_exchanges == 0:
+            msg = "Missile exercise requested but no missile was exchanged"
+            raise RuntimeError(msg)
+        if self.exercise_missiles and self.missile_launches == 0:
+            msg = "Missile exercise requested but no missile was launched"
+            raise RuntimeError(msg)
+
+    def play(self) -> None:
+        """Play until victory, bounded by time and a maximum number of rounds."""
+        self._start_game()
+        self._play_until_victory()
+        self._validate_exercise_coverage()
 
     def report(self) -> dict[str, Any]:
         """Report outcomes and coverage limits.
@@ -529,6 +851,12 @@ class Simulation:
             "last_turn": reference.turn if reference is not None else None,
             "commands": dict(self.commands),
             "conquests": self.conquests,
+            "card_claims": self.card_claims,
+            "card_exchanges": self.card_exchanges,
+            "forced_card_exchanges": self.forced_card_exchanges,
+            "special_exchanges": self.special_exchanges,
+            "missile_exchanges": self.missile_exchanges,
+            "missile_launches": self.missile_launches,
             "victories": [bot.victory for bot in self.bots],
             "server_states": [bot.state for bot in self.bots],
             "all_clients_finalized": bool(self.bots)
@@ -545,7 +873,7 @@ class Simulation:
                 "Bots buffer NUL frames; Qt client/GUI is not exercised",
                 "Sequential commands; no fragmentation/load testing",
                 "Optional real TCP client disconnect; remaining players continue",
-                "Country victory; secret objectives, cards and missiles unused",
+                "Country victory; secret objectives remain unused",
                 "Placement, battle, conquest, transfer and turn completion exercised",
                 "Chat echoes synchronize commands; no direct server state access",
                 "Seeded RNG instrumentation is confined to the child when enabled",
@@ -592,6 +920,21 @@ def _arguments() -> argparse.Namespace:
         type=int,
         default=0,
         help="Turno completado después del cual se desconecta el cliente.",
+    )
+    parser.add_argument(
+        "--exercise-cards",
+        action="store_true",
+        help="Reclamar tarjetas y ejecutar canjes normal/especial durante la partida.",
+    )
+    parser.add_argument(
+        "--exercise-missiles",
+        action="store_true",
+        help="Habilitar misiles y ejecutar canje/lanzamiento durante la partida.",
+    )
+    parser.add_argument(
+        "--exercise-exchanges",
+        action="store_true",
+        help="Ejercitar todos los canjes: tarjetas, especial y misiles.",
     )
     parser.add_argument("--require-finalized", action="store_true")
     parser.add_argument("--server-child", type=int, help=argparse.SUPPRESS)
@@ -728,6 +1071,12 @@ def main() -> int:
                     "failure",
                     "turns_played",
                     "conquests",
+                    "card_claims",
+                    "card_exchanges",
+                    "forced_card_exchanges",
+                    "special_exchanges",
+                    "missile_exchanges",
+                    "missile_launches",
                     "country_counts",
                     "connected_clients",
                     "disconnected_clients",

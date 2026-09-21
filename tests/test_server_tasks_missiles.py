@@ -6,6 +6,7 @@ import unittest
 from typing import TYPE_CHECKING, Any, cast
 from unittest.mock import MagicMock
 
+from pyteg.config import MISSILE_UNIT_COST
 from pyteg.core.turnos.turnos import PrimerTurno
 from pyteg.server.juego.estado import Estado
 from pyteg.server.juego.mapa import Mapa
@@ -28,7 +29,7 @@ def _mapa_dos_paises() -> Mapa:
 
     def build() -> dict[str, list[int | str | list[str] | None]]:
         return {
-            "Argentina": [6, "America", 1, ["Brasil"]],
+            "Argentina": [7, "America", 1, ["Brasil"]],
             "Brasil": [4, "America", 2, ["Argentina"]],
         }
 
@@ -113,11 +114,21 @@ class TestServerTaskCanjearMisil(unittest.TestCase):
 
         self.assertEqual(
             self.mapa.cantidad_unidades("Argentina"),
-            unidades_antes - 6,
+            unidades_antes - MISSILE_UNIT_COST,
         )
         self.assertEqual(self.mapa.cantidad_misiles("Argentina"), 1)
         self.client.transmisor.enviar_sistema.assert_called_once()
         self.assertTrue(self.server.sent_map)
+
+    def test_canje_rechazado_si_dejaria_pais_vacio(self) -> None:
+        """El canje exige conservar al menos una unidad en el país."""
+        self.mapa.restar_una_unidad("Argentina")
+
+        self._run_canjear({"mensaje": "canjear_misil", "pais": "Argentina"})
+
+        self.client.transmisor.enviar_error_chat.assert_called_once()
+        self.assertEqual(self.mapa.cantidad_unidades("Argentina"), 6)
+        self.assertEqual(self.mapa.cantidad_misiles("Argentina"), 0)
 
     def test_canje_rechazado_si_misiles_desactivados(self) -> None:
         """Sin misiles habilitados, se envía error al chat."""
