@@ -66,8 +66,7 @@ class ServerTaskAtacar(IServerTask[AtacarTaskData]):
             return
 
         GameStateValidator.validate_game_started(context.game)
-        if self._phase_negotiated(client):
-            PhaseValidator.validate_actions(context.game)
+        PhaseValidator.validate_command(context.game, "atacar")
 
         if context.game is None:
             return
@@ -164,8 +163,3 @@ class ServerTaskAtacar(IServerTask[AtacarTaskData]):
             )
             if context.game is not None:
                 context.game.marcar_jugador_puede_reclamar(client)
-
-    @staticmethod
-    def _phase_negotiated(client: IClientProtocol) -> bool:
-        status = getattr(client, "handshake_status", None)
-        return callable(status) and status() is not None

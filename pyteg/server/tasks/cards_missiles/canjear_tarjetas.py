@@ -6,7 +6,11 @@ from typing import TYPE_CHECKING, Any, cast
 
 from pyteg.config import CARDS_FOR_EXCHANGE
 from pyteg.exceptions import InvalidActionError, MissingFieldError
-from pyteg.server.juego.validators import GameStateValidator, TurnValidator
+from pyteg.server.juego.validators import (
+    GameStateValidator,
+    PhaseValidator,
+    TurnValidator,
+)
 from pyteg.server.tasks.base import LOGGER, IServerTask
 from pyteg.server.tasks.types import CanjearTarjetasTaskData
 
@@ -73,6 +77,7 @@ class ServerTaskCanjearTarjetas(IServerTask[CanjearTarjetasTaskData]):
             return
 
         TurnValidator.validate_turn(client, context.game)
+        PhaseValidator.validate_command(context.game, "canjear_tarjetas")
 
         if self._tarjetas_payload is None:
             msg = "tarjetas"

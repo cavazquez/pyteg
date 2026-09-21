@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, cast
 
 from pyteg.core.cartas.mazo import Mazo
 from pyteg.server.juego.estado import Estado
+from pyteg.server.juego.fase import FASE_ACCIONES
 from pyteg.server.juego.game import Game
 from pyteg.server.juego.mapa import Mapa
 from pyteg.server.juego.state_validator import ServerStateValidator
@@ -135,6 +136,24 @@ class TestServerTaskCanjearTarjetas(unittest.TestCase):
 
         cast("MagicMock", self.client.transmisor).enviar_error_chat.assert_called_once()
         self.assertEqual(self.mazo.cant_tarjetas_asignadas(self.jugador), 3)
+
+    def test_canje_rechazado_durante_acciones_sin_consumir_tarjetas(self) -> None:
+        """El canje de unidades sólo puede ocurrir en colocación."""
+        self.game._fase = FASE_ACCIONES  # noqa: SLF001
+        unidades_antes = self.game.turno_actual().cant_unidades()
+        tarjetas_antes = self.mazo.cant_tarjetas_asignadas(self.jugador)
+        payload: CanjearTarjetasTaskData = {
+            "mensaje": "canjear_tarjetas",
+            "tarjetas": [{"pais": t.pais, "simbolo": t.simbolo} for t in self.tarjetas],
+        }
+
+        self._run_canjear(payload)
+
+        cast("MagicMock", self.client.transmisor).enviar_error_chat.assert_called_once()
+        self.assertEqual(self.game.turno_actual().cant_unidades(), unidades_antes)
+        self.assertEqual(
+            self.mazo.cant_tarjetas_asignadas(self.jugador), tarjetas_antes
+        )
 
 
 if __name__ == "__main__":

@@ -10,7 +10,11 @@ from pyteg.exceptions import (
     InvalidActionError,
     MissingFieldError,
 )
-from pyteg.server.juego.validators import GameStateValidator
+from pyteg.server.juego.validators import (
+    GameStateValidator,
+    PhaseValidator,
+    TurnValidator,
+)
 from pyteg.server.tasks.base import IServerTask
 from pyteg.server.tasks.types import CanjeEspecialTaskData
 
@@ -50,6 +54,9 @@ class ServerTaskCanjeEspecial(IServerTask[CanjeEspecialTaskData]):
 
         if context.game is None:
             return
+
+        TurnValidator.validate_turn(client, context.game)
+        PhaseValidator.validate_command(context.game, "canje_especial")
 
         mapa = context.game.mapa()
         mazo = context.game.mazo()

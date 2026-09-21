@@ -9,6 +9,13 @@ from pyteg.client.state_model import ClientStateModel
 from pyteg.core.cartas.mazo import Mazo
 from pyteg.core.partida.card_manager import CardManager
 from pyteg.exceptions import InvalidActionError
+from pyteg.server.juego.fase import (
+    COMANDOS_POR_FASE,
+    COMANDOS_SIN_FASE,
+    FASE_ACCIONES,
+    FASE_COLOCACION,
+    FASE_POR_COMANDO,
+)
 from pyteg.server.juego.validators import PhaseValidator
 
 if TYPE_CHECKING:
@@ -74,6 +81,41 @@ class TestProtocolFeatures(unittest.TestCase):
         PhaseValidator.validate_placement(game)  # type: ignore[arg-type]
         with self.assertRaises(InvalidActionError):
             PhaseValidator.validate_actions(game)  # type: ignore[arg-type]
+
+    def test_phase_matrix_assigns_each_mutating_command_once(self) -> None:
+        """La tabla central no deja comandos mutantes sin fase ni duplicados."""
+        self.assertEqual(
+            set(FASE_POR_COMANDO),
+            {
+                "agregar_unidad",
+                "atacar",
+                "mover_unidad",
+                "finalizar_turno",
+                "reclamar_tarjeta",
+                "canjear_tarjetas",
+                "canje_especial",
+                "canjear_misil",
+                "lanzar_misil",
+            },
+        )
+        self.assertEqual(FASE_POR_COMANDO["canjear_tarjetas"], FASE_COLOCACION)
+        self.assertEqual(FASE_POR_COMANDO["canjear_misil"], FASE_ACCIONES)
+        self.assertEqual(COMANDOS_SIN_FASE, frozenset({"solicitar_tarjetas"}))
+        self.assertEqual(
+            set().union(*COMANDOS_POR_FASE.values()), set(FASE_POR_COMANDO)
+        )
+
+    def test_phase_matrix_rejects_command_without_mutating(self) -> None:
+        """Un comando fuera de fase se rechaza antes de cualquier tarea."""
+        placement = _GameWithPhase(FASE_COLOCACION)
+        actions = _GameWithPhase(FASE_ACCIONES)
+
+        PhaseValidator.validate_command(placement, "canjear_tarjetas")  # type: ignore[arg-type]
+        PhaseValidator.validate_command(actions, "lanzar_misil")  # type: ignore[arg-type]
+        with self.assertRaises(InvalidActionError):
+            PhaseValidator.validate_command(placement, "lanzar_misil")  # type: ignore[arg-type]
+        with self.assertRaises(InvalidActionError):
+            PhaseValidator.validate_command(actions, "canje_especial")  # type: ignore[arg-type]
 
     def test_state_model_applies_revision_zero_and_reports_gaps(self) -> None:
         """El primer snapshot puede ser cero y los huecos piden resincronización."""

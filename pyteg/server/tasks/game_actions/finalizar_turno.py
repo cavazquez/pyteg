@@ -28,9 +28,7 @@ class ServerTaskFinalizarTurno(IServerTask[BaseTaskData]):
 
     def _execute(self, client: IClientProtocol, context: GameContext) -> None:
         TurnValidator.validate_turn(client, context.game)
-        status = getattr(client, "handshake_status", None)
-        if callable(status) and status() is not None:
-            PhaseValidator.validate_actions(context.game)
+        PhaseValidator.validate_command(context.game, "finalizar_turno")
 
         if context.game is not None:
             context.game.limpiar_elegibilidad_reclamar()

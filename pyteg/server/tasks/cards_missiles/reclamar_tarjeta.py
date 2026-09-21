@@ -5,7 +5,11 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from pyteg.exceptions import InvalidActionError
-from pyteg.server.juego.validators import GameStateValidator, TurnValidator
+from pyteg.server.juego.validators import (
+    GameStateValidator,
+    PhaseValidator,
+    TurnValidator,
+)
 from pyteg.server.tasks.base import LOGGER, IServerTask
 from pyteg.server.tasks.types import BaseTaskData
 
@@ -40,6 +44,7 @@ class ServerTaskReclamarTarjeta(IServerTask[BaseTaskData]):
             return
 
         TurnValidator.validate_turn(client, context.game)
+        PhaseValidator.validate_command(context.game, "reclamar_tarjeta")
 
         if not context.game.puede_reclamar_tarjeta(client):
             msg = "No has conquistado ningún país en este turno"

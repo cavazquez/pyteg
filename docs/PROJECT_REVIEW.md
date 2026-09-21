@@ -11,7 +11,7 @@ empaquetado también impide distribuir la aplicación tal como está documentada
 La división actual en dominio, tareas, mensajes y gestores GUI es una base útil;
 no hace falta reescribir todo el proyecto.
 
-Se crearon **26 issues atómicos: 12 P1 y 14 P2**, con evidencia, aceptación y
+Se crearon **35 issues atómicos**, con evidencia, aceptación y
 dependencias. No había issues abiertos al iniciar la revisión. Las prioridades
 son relativas a entregar una partida local fiable; no representan una certificación
 de seguridad ni compatibilidad completa con todas las reglas del TEG clásico.
@@ -59,6 +59,19 @@ partida puede conectarse con un ID temporal, autenticarse con ese token y
 recuperar su identidad, color, países, tarjetas y turno. La reconexión no crea
 un jugador adicional ni consume un color nuevo.
 
+## Estado tras implementar #189 y #190
+
+El servidor exige que toda conexión negocie versión, tema y mapa antes de
+aceptar comandos o iniciar la partida. Las tareas de juego no dependen de que
+el cliente haya anunciado una fase: consultan una matriz única y rechazan el
+comando antes de validar o modificar recursos si la fase no corresponde.
+
+La política vigente es: `agregar_unidad`, `canjear_tarjetas` y `canje_especial`
+durante `colocacion`; `atacar`, `mover_unidad`, `reclamar_tarjeta`,
+`canjear_misil`, `lanzar_misil` y `finalizar_turno` durante `acciones`.
+`solicitar_tarjetas` es una consulta sin fase. La simulación TCP cubre los
+canjes y misiles respetando ese orden.
+
 ## Evidencia ejecutada
 
 - Python 3.14.0 y el entorno PySide6 existente.
@@ -104,7 +117,9 @@ clientes; no es un oráculo de todas las reglas.
    puede ejecutar acciones y sus cartas se transfieren una única vez al
    conquistador.
 7. Se pueden reclamar dos cartas en un mismo turno.
-8. Las fases restringidas por la GUI no tienen las mismas garantías en servidor.
+8. Resuelto por #190: los comandos mutantes de cartas, misiles y turno pasan
+   por una matriz de fases autoritativa y no dejan mutaciones parciales cuando
+   se reciben fuera de fase.
 9. El wheel ahora incluye mapas, iconos, idiomas y sonidos; el smoke test lo
    extrae fuera del checkout e inicia servidor y cliente Qt offscreen. Las
    entradas Nuitka y los cuatro artefactos del release se validan antes de
@@ -209,6 +224,8 @@ soportadas antes de sus pruebas.
 - [x] [#186 — Ejecutar una partida multicliente hasta el estado final en CI](https://github.com/cavazquez/pyteg/issues/186) (Pruebas; implementado).
 - [x] [#187 — Volver al lobby e iniciar una revancha sin reiniciar el servidor](https://github.com/cavazquez/pyteg/issues/187) (Partida; implementado).
 - [x] [#188 — Correlacionar comandos y evitar ejecución duplicada al reintentar](https://github.com/cavazquez/pyteg/issues/188) (Red; implementado).
+- [x] [#189 — Exigir handshake antes de aceptar comandos o iniciar la partida](https://github.com/cavazquez/pyteg/issues/189) (Red; implementado).
+- [x] [#190 — Hacer obligatoria la matriz de fases para todas las acciones TCP](https://github.com/cavazquez/pyteg/issues/190) (Reglas; implementado).
 
 ## Cambios dejados en este trabajo
 
@@ -234,6 +251,8 @@ soportadas antes de sus pruebas.
   reiniciar el proceso para #180 y #187.
 - Handshake de protocolo/tema/mapa, snapshots públicos versionados y resultados
   idempotentes de comandos, con modelo de estado Qt-independiente para #181,
-  #182, #184 y #188.
+  #182, #184, #188 y #189.
+- Matriz única de fases para colocación, acciones, canjes, reclamos y misiles,
+  con rechazos antes de mutar el estado para #190.
 - Simulación TCP multicliente estricta en CI, incluyendo canjes, misiles,
   desconexión, reconexión y artefactos de evidencia para #186.

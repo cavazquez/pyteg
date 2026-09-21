@@ -9,6 +9,7 @@ from unittest.mock import MagicMock
 from pyteg.config import MISSILE_UNIT_COST
 from pyteg.core.turnos.turnos import PrimerTurno
 from pyteg.server.juego.estado import Estado
+from pyteg.server.juego.fase import FASE_COLOCACION
 from pyteg.server.juego.mapa import Mapa
 from pyteg.server.juego.state_validator import ServerStateValidator
 from pyteg.server.tasks.cards_missiles.canjear_misil import ServerTaskCanjearMisil
@@ -55,11 +56,18 @@ class _FakeClient:
 class _FakeGame:
     """Juego mínimo: turno del jugador 1."""
 
-    def __init__(self, jugador_id: int) -> None:
+    def __init__(self, jugador_id: int, phase: str = "acciones") -> None:
         self._turno = PrimerTurno(jugador_id)
+        self._phase = phase
 
     def turno_actual(self) -> PrimerTurno:
         return self._turno
+
+    def fase_actual(self) -> str:
+        return self._phase
+
+    def set_phase(self, phase: str) -> None:
+        self._phase = phase
 
 
 class _FakeServer:
@@ -139,6 +147,17 @@ class TestServerTaskCanjearMisil(unittest.TestCase):
         self.client.transmisor.enviar_error_chat.assert_called_once()
         self.assertEqual(self.mapa.cantidad_misiles("Argentina"), 0)
 
+    def test_canje_rechazado_durante_colocacion_sin_mutar_mapa(self) -> None:
+        """El canje de misil pertenece a acciones, después de colocar."""
+        self.server.game.set_phase(FASE_COLOCACION)
+        unidades_antes = self.mapa.cantidad_unidades("Argentina")
+
+        self._run_canjear({"mensaje": "canjear_misil", "pais": "Argentina"})
+
+        self.client.transmisor.enviar_error_chat.assert_called_once()
+        self.assertEqual(self.mapa.cantidad_unidades("Argentina"), unidades_antes)
+        self.assertEqual(self.mapa.cantidad_misiles("Argentina"), 0)
+
 
 class TestServerTaskLanzarMisil(unittest.TestCase):
     """Lanzamiento de misil entre países."""
@@ -173,6 +192,19 @@ class TestServerTaskLanzarMisil(unittest.TestCase):
     def test_lanzamiento_a_propio_pais_falla(self) -> None:
         """No se puede lanzar un misil a un país propio."""
         self.mapa.asignar_pais(1, "Brasil")
+
+        self._run_lanzar({
+            "mensaje": "lanzar_misil",
+            "pais_origen": "Argentina",
+            "pais_destino": "Brasil",
+        })
+
+        self.client.transmisor.enviar_error_chat.assert_called_once()
+        self.assertEqual(self.mapa.cantidad_misiles("Argentina"), 1)
+
+    def test_lanzamiento_rechazado_durante_colocacion_sin_consumir_misil(self) -> None:
+        """El lanzamiento no puede saltarse la colocación pendiente."""
+        self.server.game.set_phase(FASE_COLOCACION)
 
         self._run_lanzar({
             "mensaje": "lanzar_misil",

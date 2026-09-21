@@ -8,6 +8,7 @@ from pyteg.config import MIN_UNITS_FOR_MISSILE_EXCHANGE, MISSILE_UNIT_COST
 from pyteg.server.juego.validators import (
     CountryOwnershipValidator,
     GameStateValidator,
+    PhaseValidator,
     TurnValidator,
     UnitValidator,
     ValidationError,
@@ -73,6 +74,7 @@ class ServerTaskCanjearMisil(IServerTask[CanjearMisilTaskData]):
 
         TurnValidator.validate_turn(client, context.game)
         GameStateValidator.validate_game_started(context.game)
+        PhaseValidator.validate_command(context.game, "canjear_misil")
 
         CountryOwnershipValidator.validate_ownership(client, context.mapa, self._pais)
 
