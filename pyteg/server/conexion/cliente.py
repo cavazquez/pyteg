@@ -99,11 +99,11 @@ class Client:
         return self._pending_reconnect
 
     def handshake_status(self) -> bool | None:
-        """Estado de la negociación: ``None`` mantiene compatibilidad legacy.
+        """Estado de la negociación del protocolo.
 
         Returns:
-            ``True`` o ``False`` para una negociación explícita; ``None`` para
-            clientes legacy que todavía no la enviaron.
+            ``True`` si el cliente fue aceptado, ``False`` si fue rechazado y
+            ``None`` mientras todavía no envió un ``hello`` válido.
 
         """
         return self._handshake_status
@@ -328,7 +328,26 @@ class Client:
             return
 
         mensaje = validated_data["mensaje"]
-        if self.es_reconexion_pendiente() and mensaje not in {"reconectar", "hello"}:
+        if mensaje == "hello":
+            # El handshake actualiza la capacidad de la conexión que se usa
+            # para validar los siguientes frames. Procesarlo aquí, antes de
+            # encolar el resto del buffer TCP, evita que un ``reconectar`` o
+            # un comando posterior vea todavía el estado ``UNNEGOTIATED``.
+            validar = getattr(self.server, "validar_handshake", None)
+            if callable(validar):
+                validar(self, dict(validated_data))
+            else:
+                self.marcar_handshake(True)  # noqa: FBT003
+            return
+
+        if mensaje != "hello" and self.handshake_status() is not True:
+            self._enviar_error_protocolo(
+                "handshake_required",
+                "Esta conexión debe completar el handshake antes de enviar comandos.",
+            )
+            return
+
+        if self.es_reconexion_pendiente() and mensaje != "reconectar":
             self._enviar_error_protocolo(
                 "reconnect_required",
                 "Esta conexión debe autenticarse con reconectar antes de enviar "

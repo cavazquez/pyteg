@@ -11,7 +11,12 @@ from pyteg.server.conexion.cliente import Client
 class TestClienteEjecutarMensaje(unittest.TestCase):
     """Tests para Client.ejecutar_mensaje."""
 
-    def _make_client(self, username: str = "TestUser") -> tuple[Client, MagicMock]:
+    def _make_client(
+        self,
+        username: str = "TestUser",
+        *,
+        handshake_accepted: bool | None = True,
+    ) -> tuple[Client, MagicMock]:
         conn = MagicMock()
         server = MagicMock()
         server.mapa = MagicMock()
@@ -20,6 +25,8 @@ class TestClienteEjecutarMensaje(unittest.TestCase):
         server.estado.puede_ejecutar_accion.return_value = True
         server.estado.estado_actual.return_value = "jugando"
         client = Client(1, conn, server, username, soy_admin=False)
+        if handshake_accepted is not None:
+            client.marcar_handshake(handshake_accepted)
         return client, server
 
     def test_mensaje_desconocido_envia_error_estructurado(self) -> None:
@@ -48,3 +55,16 @@ class TestClienteEjecutarMensaje(unittest.TestCase):
         client.ejecutar_mensaje(payload)
 
         server.encolar_comando.assert_called_once_with(client, payload)
+
+    def test_comando_sin_handshake_envia_error_y_no_se_encola(self) -> None:
+        """Un cliente TCP no puede operar antes de negociar el protocolo."""
+        client, server = self._make_client(handshake_accepted=None)
+
+        with patch.object(client.transmisor, "enviar_error") as enviar_error:
+            client.ejecutar_mensaje({"mensaje": "chat", "msg": "antes"})
+
+        enviar_error.assert_called_once_with(
+            "handshake_required",
+            "Esta conexión debe completar el handshake antes de enviar comandos.",
+        )
+        server.encolar_comando.assert_not_called()
