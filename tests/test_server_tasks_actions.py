@@ -430,6 +430,36 @@ class ServerTaskTests(unittest.TestCase):
 
         self.assertIn("no es adyacente", self.client.transmisor.error_chat_messages[0])
 
+    def test_mover_unidad_rejects_player_outside_the_active_turn(self) -> None:
+        """Un jugador fuera de turno no puede modificar países propios."""
+        other_player = FakeClient("Otro")
+        self.server.game.set_turno(FakeTurno(other_player))
+        payload = {"origen": "Origen", "destino": "Vecino", "cantidad": 1}
+        task = self._make_task(ServerTaskMoverUnidad, payload)
+
+        task.run(self.client)
+
+        self.assertIn("No es tu turno", self.client.transmisor.error_chat_messages[0])
+        self.assertEqual(self.mapa.cantidad_unidades("Origen"), 3)
+        self.assertEqual(self.mapa.cantidad_unidades("Vecino"), 1)
+        self.assertFalse(self.server.sent_map)
+
+    def test_mover_unidad_moves_own_adjacent_countries_on_active_turn(self) -> None:
+        """Un movimiento válido conserva unidades y deja una en el origen."""
+        payload = {"origen": "Origen", "destino": "Vecino", "cantidad": 1}
+        task = self._make_task(ServerTaskMoverUnidad, payload)
+
+        task.run(self.client)
+
+        self.assertEqual(self.mapa.cantidad_unidades("Origen"), 2)
+        self.assertEqual(self.mapa.cantidad_unidades("Vecino"), 2)
+        self.assertEqual(
+            self.mapa.cantidad_unidades("Origen")
+            + self.mapa.cantidad_unidades("Vecino"),
+            4,
+        )
+        self.assertTrue(self.server.sent_map)
+
     def test_atacar_bloqueado_en_primer_turno(self) -> None:
         """Prueba que atacar está bloqueado en el primer turno."""
         # Usar PrimerTurno real para que el código detecte que es el primer turno
