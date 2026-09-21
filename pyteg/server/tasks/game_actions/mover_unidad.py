@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 from pyteg.server.juego.validators import (
     AdjacencyValidator,
     CountryOwnershipValidator,
+    TurnValidator,
     UnitValidator,
     ValidationError,
 )
@@ -53,6 +54,8 @@ class ServerTaskMoverUnidad(IServerTask[MoverUnidadTaskData]):
 
         if self._origen is None or self._destino is None:
             return
+
+        TurnValidator.validate_turn(client, context.game)
 
         CountryOwnershipValidator.validate_ownership(client, context.mapa, self._origen)
 

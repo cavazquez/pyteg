@@ -304,6 +304,52 @@ class TestIntegration(unittest.TestCase):
             f"se esperaban {expected}"
         )
 
+    def _assign_adjacent_countries(self, user_id: int) -> tuple[str, str]:
+        """Asigna dos países vecinos al jugador y les fija unidades conocidas.
+
+        Returns:
+            País de origen y destino, ambos asignados a ``user_id``.
+
+        """
+        game = self._server.game
+        self.assertIsNotNone(game, "partida no iniciada")
+        if game is None:
+            self.fail("partida no iniciada")
+        mapa = game.mapa()
+        for origin in mapa.paises():
+            neighbors = mapa.obtener_paises_adyacentes(origin)
+            if not neighbors:
+                continue
+            destination = neighbors[0]
+            mapa.asignar_pais(user_id, origin)
+            mapa.asignar_pais(user_id, destination)
+            mapa.set_unidades(origin, 3)
+            mapa.set_unidades(destination, 1)
+            return origin, destination
+        self.fail("el mapa no tiene países adyacentes")
+        return "", ""
+
+    def _wait_for_new_error_chat(
+        self, client: _TestClient, received_before: int, expected_message: str
+    ) -> dict[str, Any] | None:
+        """Espera un error de chat emitido después del índice indicado.
+
+        Returns:
+            El mensaje de error esperado, o ``None`` al vencer el plazo.
+
+        """
+        deadline = time.monotonic() + _READ_TIMEOUT
+        while time.monotonic() < deadline:
+            for message in client.snapshot_received()[received_before:]:
+                if (
+                    message.get("mensaje") == "chat"
+                    and message.get("msg_type") == "error"
+                    and message.get("msg") == expected_message
+                ):
+                    return message
+            time.sleep(0.05)
+        return None
+
     # ------------------------------------------------------------------
     # Test 1: un cliente recibe MsgUserId al conectarse
     # ------------------------------------------------------------------
@@ -553,6 +599,46 @@ class TestIntegration(unittest.TestCase):
             self.assertEqual(config["paises_para_victoria"], 0)
             self.assertFalse(config["objetivos_secretos"])
             self.assertFalse(config["misiles_habilitados"])
+
+    def test_move_outside_active_turn_returns_error_without_mutating_map(self) -> None:
+        """Un movimiento TCP de otro jugador conserva el mapa y devuelve error."""
+        first = self._new_client()
+        second = self._new_client()
+        first_id, second_id = self._start_two_player_game(first, second)
+        turn = self._wait_latest_turno(first, second)
+        active_id = turn.get("jugador_actual_id")
+        self.assertIsNotNone(active_id, "turno sin jugador_actual_id")
+        if active_id is None:
+            return
+
+        inactive_id = second_id if int(active_id) == first_id else first_id
+        inactive_client = second if inactive_id == second_id else first
+        origin, destination = self._assign_adjacent_countries(inactive_id)
+        game = self._server.game
+        if game is None:
+            return
+        mapa = game.mapa()
+        units_before = (
+            mapa.cantidad_unidades(origin),
+            mapa.cantidad_unidades(destination),
+        )
+
+        received_before = len(inactive_client.snapshot_received())
+        inactive_client.send({
+            "mensaje": "mover_unidad",
+            "origen": origin,
+            "destino": destination,
+            "cantidad": 1,
+        })
+        error = self._wait_for_new_error_chat(
+            inactive_client, received_before, "No es tu turno"
+        )
+
+        self.assertIsNotNone(error, "El movimiento fuera de turno no devolvió error")
+        self.assertEqual(
+            (mapa.cantidad_unidades(origin), mapa.cantidad_unidades(destination)),
+            units_before,
+        )
 
     # ------------------------------------------------------------------
     # Test 5: flujo completo — inicio de partida con dos jugadores
