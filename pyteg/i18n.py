@@ -79,7 +79,7 @@ class I18nManager:
             self.current_language = language
             _LOG.info("Idioma establecido: %s", language)
 
-        except (OSError, ValueError):
+        except OSError, ValueError:
             _LOG.exception("Error al establecer idioma '%s'", language)
             # Fallback a español
             self._translation = gettext.NullTranslations()
@@ -152,7 +152,7 @@ def get_system_language() -> str:
             available_languages = get_available_languages()
             if lang_code in available_languages:
                 return lang_code
-    except (OSError, ValueError, TypeError):
+    except OSError, ValueError, TypeError:
         # Manejar errores específicos de locale
         pass
 

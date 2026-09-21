@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import unittest
-from typing import TYPE_CHECKING, TypeVar, cast
+from typing import TYPE_CHECKING, cast
 
 from pyteg.core.cartas.mazo import Mazo
 from pyteg.server.juego.estado import Estado
@@ -21,10 +21,8 @@ if TYPE_CHECKING:
     from pyteg.server.app import Server
     from pyteg.server.tasks.types import CanjearTarjetasTaskData
 
-T = TypeVar("T")
 
-
-def _no_none(value: T | None) -> T:
+def _no_none[T](value: T | None) -> T:
     """Devuelve `value` si no es `None`.
 
     Returns:

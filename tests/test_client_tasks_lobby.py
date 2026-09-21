@@ -42,7 +42,11 @@ def _fake_main_window() -> SimpleNamespace:
         client_by_id={},
         colores=colores,
         w=None,
+        toolbar=None,
+        scene=None,
+        partida_finalizada=False,
         update_game_state=MagicMock(),
+        update_timer_display=MagicMock(),
         ventana_esperar_jugadores=MagicMock(),
         update_player_list=MagicMock(),
         update_mi_jugador_info=MagicMock(),
@@ -103,6 +107,25 @@ class TestClientTaskEstado(unittest.TestCase):
         main_window.update_player_list.assert_called_once_with([
             ("Bob", {"r": 10, "g": 20, "b": 30})
         ])
+        main_window.update.assert_called_once()
+
+    def test_finalizado_deshabilita_acciones_y_limpia_timer(self) -> None:
+        """El estado terminal bloquea la interfaz de juego local."""
+        main_window = _fake_main_window()
+        toolbar = MagicMock()
+        scene = SimpleNamespace(selection_manager=MagicMock())
+        main_window.toolbar = toolbar
+        main_window.scene = scene
+        task = ClientTaskEstado(
+            cast("EstadoTaskData", {"mensaje": "estado", "estado": "Finalizado"})
+        )
+
+        task.run(cast("GameWindowProtocol", main_window))
+
+        self.assertTrue(main_window.partida_finalizada)
+        main_window.update_timer_display.assert_called_once_with("")
+        toolbar.deshabilitar_acciones_juego.assert_called_once()
+        scene.selection_manager.cancelar_seleccion.assert_called_once()
         main_window.update.assert_called_once()
 
     def test_actualizar_lista_jugadores_ignora_sin_username(self) -> None:

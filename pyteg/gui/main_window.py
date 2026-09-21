@@ -106,6 +106,7 @@ class Gui(QMainWindow, MainWindowDelegatesMixin):
         self.toolbar: ToolBar | None = None
         self.tarjetas_jugador: list[TarjetaItem] = []
         self.misiles_habilitados: bool = False
+        self.partida_finalizada: bool = False
         self.row_widgets: dict[str, object] = {}
         self.last_units: dict[str, object] = {}
         self.status_temp_label: object = None

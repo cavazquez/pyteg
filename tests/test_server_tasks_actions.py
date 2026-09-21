@@ -303,7 +303,7 @@ class FakeServer:
         for client in self.dame_clientes():
             client.transmisor.enviar_resultado_batalla(resultado_data)
 
-    def dame_clientes(self) -> list["FakeClient"]:
+    def dame_clientes(self) -> list[FakeClient]:
         """Obtiene la lista de clientes.
 
         Returns:
@@ -312,7 +312,7 @@ class FakeServer:
         """
         return self._clientes
 
-    def add_client(self, client: "FakeClient") -> None:
+    def add_client(self, client: FakeClient) -> None:
         """Agrega un cliente al servidor.
 
         Args:

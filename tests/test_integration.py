@@ -15,10 +15,12 @@ import time
 import unittest
 from typing import Any
 
+from pyteg.codecs_utils import FrameCodecError, NulDelimitedUtf8Codec
 from pyteg.config import MIN_UNITS_FOR_ATTACK
 from pyteg.server.app import Server
 from pyteg.server.conexion.build_cliente import ServerBuildClient
 from pyteg.server.conexion.connection import ConnectionServer
+from pyteg.server.msg import MsgError
 
 # ---------------------------------------------------------------------------
 # Constantes
@@ -90,12 +92,25 @@ class _ServerThread:
 
                 estado = self._server.estado
                 if estado.es_jugando() or estado.es_finalizado():
+                    rejection = MsgError(
+                        "game_in_progress",
+                        "El juego ya está en progreso. "
+                        "No se pueden conectar nuevos jugadores.",
+                    ).to_json()
+                    with contextlib.suppress(OSError):
+                        conn.sendall(NulDelimitedUtf8Codec.encode_frame(rejection))
                     conn.close()
                     continue
 
                 connection = ConnectionServer(conn, addr)
                 uid, client = build_client.build(connection, self._server)
-                self._server.registrar_cliente(uid, client)
+                if not self._server.registrar_cliente(uid, client):
+                    client.transmisor.enviar_error(
+                        "room_full",
+                        "La sala está completa. Intenta nuevamente más tarde.",
+                    )
+                    client.cerrar()
+                    continue
                 t = threading.Thread(target=client.run, daemon=True)
                 t.start()
 
@@ -126,7 +141,7 @@ class _TestClient:
         """Inicializa el cliente de test."""
         self._sock: socket.socket | None = None
         self.received: list[dict[str, Any]] = []
-        self._buf = ""
+        self._codec = NulDelimitedUtf8Codec()
         self._lock = threading.Lock()
         self._reader: threading.Thread | None = None
         self._running = False
@@ -154,10 +169,8 @@ class _TestClient:
                 chunk = self._sock.recv(_RECV_SIZE)
                 if not chunk:
                     break
-                self._buf += chunk.decode("utf-8")
-                while "\0" in self._buf:
-                    msg_str, self._buf = self._buf.split("\0", 1)
-                    msg_str = msg_str.strip()
+                for raw_message in self._codec.feed(chunk):
+                    msg_str = raw_message.strip()
                     if not msg_str:
                         continue
                     try:
@@ -166,6 +179,8 @@ class _TestClient:
                             self.received.append(msg)
                     except json.JSONDecodeError:
                         pass
+            except FrameCodecError:
+                break
             except TimeoutError:
                 continue
             except OSError:
@@ -181,6 +196,16 @@ class _TestClient:
         if self._sock:
             payload = json.dumps(data) + "\0"
             self._sock.sendall(payload.encode("utf-8"))
+
+    def send_bytes(self, data: bytes) -> None:
+        """Envía bytes sin aplicar framing adicional.
+
+        Args:
+            data: Fragmento de una o más tramas TCP para enviar al servidor.
+
+        """
+        if self._sock:
+            self._sock.sendall(data)
 
     def wait_for(
         self,
@@ -266,6 +291,18 @@ class TestIntegration(unittest.TestCase):
         self._clients.append(c)
         return c
 
+    def _wait_for_client_count(self, expected: int, timeout: float = 3.0) -> None:
+        """Espera a que el registro alcance una cantidad concreta de clientes."""
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
+            if self._server.cant_clients() == expected:
+                return
+            time.sleep(0.05)
+        self.fail(
+            f"El servidor retuvo {self._server.cant_clients()} clientes; "
+            f"se esperaban {expected}"
+        )
+
     # ------------------------------------------------------------------
     # Test 1: un cliente recibe MsgUserId al conectarse
     # ------------------------------------------------------------------
@@ -277,6 +314,90 @@ class TestIntegration(unittest.TestCase):
         if msg is not None:
             self.assertIn("user_id", msg)
             self.assertIsInstance(msg["user_id"], int)
+
+    def test_lobby_disconnect_cycles_return_all_colors(self) -> None:
+        """Veinte altas y bajas no agotan colores ni retienen jugadores."""
+        total_colores = len(self._server.color.colores())
+
+        for _ in range(20):
+            client = self._new_client()
+            self.assertIsNotNone(client.wait_for("user_id"), "Cliente sin user_id")
+            client.close()
+            self._wait_for_client_count(0)
+
+        self.assertEqual(self._server.dame_clientes(), [])
+        self.assertEqual(len(self._server.color.colores_disponibles()), total_colores)
+
+    def test_ninth_lobby_client_is_rejected_without_consuming_a_color(self) -> None:
+        """La conexión que excede los ocho colores recibe room_full y se cierra."""
+        total_colores = len(self._server.color.colores())
+        accepted = [self._new_client() for _ in range(total_colores)]
+        for client in accepted:
+            self.assertIsNotNone(client.wait_for("user_id"), "Cliente sin user_id")
+
+        rejected = self._new_client()
+        error = rejected.wait_for(
+            "error", extra_check=lambda data: data.get("error_type") == "room_full"
+        )
+        self.assertIsNotNone(error, "La sala llena no informó room_full")
+        self.assertEqual(self._server.cant_clients(), total_colores)
+        self.assertEqual(len(self._server.color.colores_disponibles()), 0)
+
+        accepted[0].close()
+        self._wait_for_client_count(total_colores - 1)
+        replacement = self._new_client()
+        self.assertIsNotNone(
+            replacement.wait_for("user_id"), "No se reutilizó el color liberado"
+        )
+        self.assertEqual(self._server.cant_clients(), total_colores)
+
+    def test_disconnect_during_game_keeps_player_identity_and_color(self) -> None:
+        """Una baja en partida conserva color, jugador y ocupación del mapa."""
+        first = self._new_client()
+        second = self._new_client()
+        first_id, _second_id = self._start_two_player_game(first, second)
+        game = self._server.game
+        self.assertIsNotNone(game, "No se creó la partida")
+        if game is None:
+            return
+
+        player = next(
+            player for player in game.lista_jugadores() if player.userid() == first_id
+        )
+        color = player.color_actual()
+        countries_before = [
+            pais
+            for pais in game.mapa().paises()
+            if game.mapa().ocupado_por(pais) == first_id
+        ]
+        self.assertTrue(countries_before, "El jugador no recibió territorios")
+
+        first.close()
+        self._wait_for_client_count(1)
+
+        countries_after = [
+            pais
+            for pais in game.mapa().paises()
+            if game.mapa().ocupado_por(pais) == first_id
+        ]
+        self.assertIn(player, game.lista_jugadores())
+        self.assertEqual(countries_after, countries_before)
+        self.assertIn(color, self._server.color.colores_usados())
+
+    def test_game_in_progress_rejection_uses_structured_error(self) -> None:
+        """Una conexión tardía recibe error JSON, no texto libre del servidor."""
+        first = self._new_client()
+        second = self._new_client()
+        self._start_two_player_game(first, second)
+
+        rejected = self._new_client()
+        error = rejected.wait_for(
+            "error",
+            extra_check=lambda data: data.get("error_type") == "game_in_progress",
+        )
+
+        self.assertIsNotNone(error, "No se recibió rechazo estructurado")
+        self.assertEqual(self._server.cant_clients(), 2)
 
     # ------------------------------------------------------------------
     # Test 2: dos clientes se conectan y ambos reciben user_id distintos
@@ -314,6 +435,53 @@ class TestIntegration(unittest.TestCase):
         self.assertIsNotNone(msg, "No se recibió difusión de username")
         if msg is not None:
             self.assertEqual(msg["username"], "Alice")
+
+    def test_server_reassembles_fragmented_utf8_command(self) -> None:
+        """Un comando partido dentro de UTF-8 no desconecta ni pierde datos."""
+        client = self._new_client()
+        self.assertIsNotNone(client.wait_for("user_id"), "Cliente sin user_id")
+        payload = json.dumps(
+            {"mensaje": "set_username", "username": "Café"}, ensure_ascii=False
+        )
+        frame = NulDelimitedUtf8Codec.encode_frame(payload)
+        split_at = frame.index("é".encode()) + 1
+
+        client.send_bytes(frame[:split_at])
+        time.sleep(0.05)
+        client.send_bytes(frame[split_at:])
+
+        message = client.wait_for(
+            "username",
+            extra_check=lambda data: data.get("username") == "Café",
+        )
+        self.assertIsNotNone(message, "El servidor descartó el comando fragmentado")
+
+    def test_invalid_tcp_messages_return_errors_and_connection_recovers(self) -> None:
+        """JSON inválido y escalares no tumban el lector ni alteran el registro."""
+        client = self._new_client()
+        self.assertIsNotNone(client.wait_for("user_id"), "Cliente sin user_id")
+
+        client.send_bytes(b'{"mensaje":\0')
+        malformed_error = client.wait_for(
+            "error",
+            extra_check=lambda data: data.get("error_type") == "invalid_json",
+        )
+        self.assertIsNotNone(malformed_error, "No se informó el JSON inválido")
+
+        client.send_bytes(b"[]\0")
+        scalar_error = client.wait_for(
+            "error",
+            extra_check=lambda data: data.get("error_type") == "invalid_payload",
+        )
+        self.assertIsNotNone(scalar_error, "No se informó el payload escalar")
+        self.assertEqual(self._server.cant_clients(), 1)
+
+        client.send({"mensaje": "set_username", "username": "Recuperado"})
+        recovered = client.wait_for(
+            "username",
+            extra_check=lambda data: data.get("username") == "Recuperado",
+        )
+        self.assertIsNotNone(recovered, "El lector no se recuperó tras el error")
 
     # ------------------------------------------------------------------
     # Test 4: el servidor no acepta empezar_partida sin pasar por empezar
@@ -553,6 +721,48 @@ class TestIntegration(unittest.TestCase):
         if victoria_c1 is not None:
             self.assertIn("ganador_id", victoria_c1)
             self.assertIn("ganador_nombre", victoria_c1)
+
+        self.assertIsNotNone(
+            c1.wait_for(
+                "estado",
+                timeout=5.0,
+                extra_check=lambda m: m.get("estado") == "Finalizado",
+            ),
+            "c1 no recibió estado Finalizado",
+        )
+        self.assertIsNotNone(
+            c2.wait_for(
+                "estado",
+                timeout=5.0,
+                extra_check=lambda m: m.get("estado") == "Finalizado",
+            ),
+            "c2 no recibió estado Finalizado",
+        )
+        self.assertTrue(self._server.estado.es_finalizado())
+        timer = self._server._game_coordinator.turno_timer()  # noqa: SLF001
+        self.assertIsNotNone(timer)
+        if timer is not None:
+            self.assertTrue(timer._stop_event.is_set())  # noqa: SLF001
+
+        turnos_antes = [
+            len([m for m in client.snapshot_received() if m.get("mensaje") == "turno"])
+            for client in (c1, c2)
+        ]
+        c1.send({"mensaje": "finalizar_turno"})
+        self.assertIsNotNone(
+            c1.wait_for(
+                "chat",
+                timeout=2.0,
+                extra_check=lambda m: m.get("msg_type") == "error",
+            ),
+            "el servidor aceptó finalizar un turno después de la victoria",
+        )
+        time.sleep(0.3)
+        turnos_despues = [
+            len([m for m in client.snapshot_received() if m.get("mensaje") == "turno"])
+            for client in (c1, c2)
+        ]
+        self.assertEqual(turnos_despues, turnos_antes)
 
     def test_attack_sends_battle_result(self) -> None:
         """Tras los turnos iniciales, un ataque válido difunde resultado_batalla."""

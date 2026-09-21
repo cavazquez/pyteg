@@ -17,12 +17,15 @@ class ServerLike(Protocol):
 
     estado: Estado
 
-    def registrar_cliente(self, user_id: Any, client: Any) -> None:
+    def registrar_cliente(self, user_id: Any, client: Any) -> bool:
         """Registra un cliente en el servidor.
 
         Args:
             user_id: ID del usuario.
             client: Cliente a registrar.
+
+        Returns:
+            ``True`` si el cliente fue aceptado.
 
         """
         ...

@@ -134,6 +134,35 @@ class TestTurnoTimerRun(unittest.TestCase):
         game.finalizar_turno.assert_called()
         server.enviar_turno_actual.assert_called()
 
+    @patch("pyteg.core.turnos.timer.time.sleep")
+    def test_tiempo_agotado_no_envia_turno_si_la_partida_finaliza(
+        self, _: MagicMock
+    ) -> None:
+        """Una victoria por timeout no difunde un turno posterior."""
+        turno = MagicMock()
+        turno.jugador_actual.return_value = 7
+
+        game = MagicMock()
+        game.empezo.return_value = True
+        game.turno_actual.return_value = turno
+
+        server = MagicMock()
+        server.game = game
+        server.dame_clientes.return_value = []
+        server.estado.es_jugando.return_value = True
+        timer = TurnoTimer(server, segundos_por_turno=1)
+
+        def finalizar_partida() -> None:
+            server.estado.es_jugando.return_value = False
+            timer.detener()
+
+        game.finalizar_turno.side_effect = finalizar_partida
+
+        timer.run()
+
+        game.finalizar_turno.assert_called_once()
+        server.enviar_turno_actual.assert_not_called()
+
     def test_detener_marca_evento(self) -> None:
         """detener() activa el evento de parada del hilo."""
         timer = TurnoTimer(MagicMock(), segundos_por_turno=1)

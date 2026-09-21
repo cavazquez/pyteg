@@ -43,6 +43,16 @@ class ToolBarActionsMixin:
             if self.button_mover:
                 self.button_mover.setEnabled(hay_dos_paises_seleccionados)
 
+    def deshabilitar_acciones_juego(self) -> None:
+        """Deshabilita las acciones que modifican la partida."""
+        for button in (
+            self.button_atacar,
+            self.button_mover,
+            self.button_finalizar_turno,
+        ):
+            if button:
+                button.setEnabled(False)
+
     def actualizar_estado_conexion(self, *, conectado: bool) -> None:
         """Actualiza el estado de los botones según el estado de conexión."""
         if conectado:

@@ -1,13 +1,17 @@
 """Módulo para manejar el mapa del juego en el servidor."""
 
+from __future__ import annotations
+
 import json
-from collections.abc import Callable
 from random import shuffle
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from pyteg.core.combate.missile_system import MissileSystem
 from pyteg.core.mapa.country_data import CountryData
 from pyteg.exceptions import CountryNotFoundError
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 
 class Mapa:

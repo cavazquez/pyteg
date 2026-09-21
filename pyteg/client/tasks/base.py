@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Generic, TypeVar
+from typing import TYPE_CHECKING
 
 from pyteg.client.tasks.logging_helper import CLIENT_TASKS_LOG
 from pyteg.client.tasks.types import BaseClientTaskData
@@ -11,10 +11,8 @@ from pyteg.client.tasks.types import BaseClientTaskData
 if TYPE_CHECKING:
     from pyteg.client.tasks.protocols import GameWindowProtocol
 
-TData = TypeVar("TData", bound=BaseClientTaskData)
 
-
-class IClientTask(ABC, Generic[TData]):
+class IClientTask[TData: BaseClientTaskData](ABC):
     """Interfaz base para todas las tareas del cliente.
 
     Parametrizada por `TData` (subtipo de `BaseClientTaskData`) para que

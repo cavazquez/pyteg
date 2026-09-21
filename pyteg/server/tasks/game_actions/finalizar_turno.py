@@ -34,5 +34,8 @@ class ServerTaskFinalizarTurno(IServerTask[BaseTaskData]):
 
             context.game.finalizar_turno()
 
+        if not client.server.estado.es_jugando():
+            return
+
         context.enviar_turno_actual()
         context.enviar_mapa()

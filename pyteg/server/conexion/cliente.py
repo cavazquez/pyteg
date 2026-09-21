@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 import json
+import threading
 from typing import TYPE_CHECKING, Any
 
 from pyteg.exceptions import EstadoInvalidoError, MensajeNoValidoError
 from pyteg.logger import get_logger
+from pyteg.protocol_validation import MessageValidationError, validate_server_command
 from pyteg.server.conexion.transmisor import ServerTransmisor
 from pyteg.server.tasks.manager import ServerTaskManager
 
@@ -36,6 +38,8 @@ class Client:
         self._color: IColor | None = None
         self.transmisor = ServerTransmisor(self._conn)
         self._logger = get_logger(f"server.client.{user_id}")
+        self._cleanup_lock = threading.Lock()
+        self._cleanup_completed = False
 
     def asignar_color(self, color: IColor | None) -> None:
         """Asigna un color al cliente.
@@ -101,79 +105,108 @@ class Client:
         """
         self._conn.send(data)
 
-    def recibir(self) -> list[str]:
+    def recibir(self) -> list[str] | None:
         """Recibe datos del cliente.
 
         Returns:
-            Lista de datos recibidos.
+            Lista de tramas completas, ``[]`` cuando queda una trama parcial, o
+            ``None`` si la conexión terminó.
 
         """
         result = self._conn.receiver()
-        if isinstance(result, list):
-            return [str(item) for item in result]
-        return []
+        if result is None:
+            return None
+        return [str(item) for item in result]
 
     def cerrar(self) -> None:
-        """Cierra la conexión del cliente."""
-        self._conn.close()
+        """Libera una conexión y su registro de forma idempotente.
+
+        El objeto conserva identidad, nombre y color para que una partida ya
+        iniciada siga teniendo sus jugadores y territorios aunque el socket
+        asociado se haya cerrado.
+        """
+        with self._cleanup_lock:
+            if self._cleanup_completed:
+                return
+            self._cleanup_completed = True
+
+        try:
+            self._conn.close()
+        finally:
+            self.server.quitarme(self._user_id, self)
 
     def run(self) -> None:
         """Ejecuta el ciclo principal del cliente.
 
         Maneja la recepción de datos y la ejecución de tareas.
         """
-        vivo = True
+        try:
+            self.server.enviar_userid()
+            self.server.enviar_username()
 
-        self.server.enviar_userid()
-        self.server.enviar_username()
+            if self.es_admin():
+                self.transmisor.sos_admin()
 
-        if self.es_admin():
-            self.transmisor.sos_admin()
+            self.transmisor.enviar_colores(self.server.color.colores())
+            self.server.enviar_colores_asignados()
+            self.transmisor.enviar_estado(self.server.estado.estado_actual())
 
-        self.transmisor.enviar_colores(self.server.color.colores())
-        self.server.enviar_colores_asignados()
-        self.transmisor.enviar_estado(self.server.estado.estado_actual())
+            while True:
+                datas = self.recibir()
+                if datas is None:
+                    break
 
-        while vivo:
-            datas = self.recibir()
+                for data in datas:
+                    if not data:
+                        continue
+                    try:
+                        data_json = json.loads(data)
+                        self.ejecutar_mensaje(data_json)
+                    except json.JSONDecodeError:
+                        self._logger.warning("Mensaje no JSON recibido: %r", data)
+                        self._enviar_error_protocolo(
+                            "invalid_json", "El mensaje no contiene JSON válido"
+                        )
+        except Exception:
+            self._logger.exception(
+                "Fallo no recuperable en el cliente %s", self._user_id
+            )
+        finally:
+            self._logger.info(
+                "Cliente %s (%s) se ha desconectado", self._user_id, self._username
+            )
+            self.cerrar()
 
-            if not datas or (len(datas) == 1 and not datas[0]):
-                vivo = False
-                continue
+    def _enviar_error_protocolo(self, code: str, message: str) -> None:
+        """Envía un error de protocolo sin interrumpir el lector TCP."""
+        self.transmisor.enviar_error(code, message)
 
-            for data in datas:
-                # split("\0") deja un fragmento "" tras cada mensaje bien cerrado con \0
-                if not data:
-                    continue
-                try:
-                    data_json = json.loads(data)
-                    self.ejecutar_mensaje(data_json)
-                except json.JSONDecodeError:
-                    self._logger.warning("Mensaje no JSON recibido: %r", data)
-
-        # Cuando el cliente se desconecta, quitarlo del servidor
-        self._logger.info(
-            "Cliente %s (%s) se ha desconectado", self._user_id, self._username
-        )
-        self.server.quitarme(self._user_id)
-
-    def ejecutar_mensaje(self, data: dict[str, Any]) -> None:
+    def ejecutar_mensaje(self, data: object) -> None:
         """Ejecuta una tarea basada en el mensaje recibido.
 
-        :param data: Datos del mensaje en formato JSON
+        Args:
+            data: Valor JSON recibido desde la conexión TCP.
+
         """
-        task = ServerTaskManager.msg_to_task(data)
+        try:
+            validated_data = validate_server_command(data)
+        except MessageValidationError as error:
+            self._logger.warning(
+                "Comando inválido de cliente %s: %s", self._user_id, error
+            )
+            self._enviar_error_protocolo(error.code, str(error))
+            return
+
+        task = ServerTaskManager.msg_to_task(validated_data)
         try:
             task.run(self)
         except MensajeNoValidoError:
             self._logger.exception("Mensaje no válido del cliente %s", self._user_id)
         except EstadoInvalidoError as e:
             self._logger.warning("Error de estado del cliente %s: %s", self._user_id, e)
-            # Opcionalmente, enviar el error al cliente
-            if hasattr(self.server, "enviar_error"):
-                self.server.enviar_error(str(e))
+            self._enviar_error_protocolo("invalid_state", str(e))
 
-        mensaje = data.get("mensaje")
+        mensaje = validated_data["mensaje"]
         if mensaje:
             self._logger.debug(
                 "Mensaje recibido del cliente %s: %s", self._user_id, mensaje

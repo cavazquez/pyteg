@@ -55,7 +55,7 @@ def get_version() -> str:
                 if isinstance(version, str):
                     return version
                 return "unknown"
-    except (OSError, ValueError, KeyError):
+    except OSError, ValueError, KeyError:
         # Error al leer archivo o parsear TOML
         pass
 

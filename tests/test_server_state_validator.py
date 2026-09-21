@@ -42,6 +42,17 @@ class ServerStateValidatorTests(unittest.TestCase):
         self.assertIn("atacar", str(ctx.exception))
         self.assertIn(Estado.JUGANDO, ctx.exception.estados_validos)
 
+    def test_partida_finalizada_permite_chat_y_rechaza_acciones_de_juego(self) -> None:
+        """El chat queda disponible, pero no se puede modificar la partida."""
+        estado = Estado()
+        estado.esperar_jugadores()
+        estado.empezar_partida()
+        estado.finalizar_partida()
+        server = FakeServer(estado)
+
+        self.assertTrue(self.validator.puede_ejecutar("chat", server))
+        self.assertFalse(self.validator.puede_ejecutar("finalizar_turno", server))
+
 
 if __name__ == "__main__":
     unittest.main()

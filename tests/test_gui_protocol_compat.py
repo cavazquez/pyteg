@@ -51,6 +51,7 @@ _PROTOCOL_ATTRS = (
     "status_bar",
     "tarjetas_jugador",
     "misiles_habilitados",
+    "partida_finalizada",
 )
 
 

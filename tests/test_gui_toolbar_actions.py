@@ -118,3 +118,16 @@ class TestToolbarActionsMixin(unittest.TestCase):
         _, a, m = _btns(tb)
         a.setEnabled.assert_called_once_with(True)
         m.setEnabled.assert_called_once_with(True)
+
+    def test_deshabilitar_acciones_juego(self) -> None:
+        """El cierre de partida bloquea todas las acciones de turno."""
+        tb = _DummyToolbar(MagicMock())
+
+        tb.deshabilitar_acciones_juego()
+
+        _, atacar, mover = _btns(tb)
+        atacar.setEnabled.assert_called_once_with(False)
+        mover.setEnabled.assert_called_once_with(False)
+        cast("MagicMock", tb.button_finalizar_turno).setEnabled.assert_called_once_with(
+            False
+        )

@@ -1,7 +1,13 @@
 """Módulo para cálculos de unidades y bonificaciones del juego."""
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from pyteg.config import BONIFICACIONES_CONTINENTE, COUNTRIES_DIVISOR, MIN_GENERAL_UNITS
-from pyteg.core.combate.protocols import MapaCalculos
+
+if TYPE_CHECKING:
+    from pyteg.core.combate.protocols import MapaCalculos
 
 
 class Calculos:

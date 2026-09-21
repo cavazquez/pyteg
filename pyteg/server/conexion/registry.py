@@ -6,6 +6,7 @@ separando esta responsabilidad del Server principal.
 
 from __future__ import annotations
 
+import threading
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -23,25 +24,45 @@ class ServerClientRegistry:
     def __init__(self) -> None:
         """Inicializa el registro de clientes."""
         self._clients: dict[int, Client] = {}
+        self._lock = threading.RLock()
 
-    def registrar_cliente(self, user_id: int, client: Client) -> None:
+    def registrar_cliente(self, user_id: int, client: Client) -> bool:
         """Registra un nuevo cliente en el servidor.
 
         Args:
             user_id: ID único del cliente.
             client: Objeto cliente a registrar.
 
-        """
-        self._clients[user_id] = client
+        Returns:
+            ``True`` si se incorporó el cliente; ``False`` si el ID ya estaba
+            registrado.
 
-    def desconectar_cliente(self, user_id: int) -> None:
+        """
+        with self._lock:
+            if user_id in self._clients:
+                return False
+            self._clients[user_id] = client
+            return True
+
+    def desconectar_cliente(
+        self, user_id: int, expected_client: Client | None = None
+    ) -> Client | None:
         """Desconecta un cliente del servidor.
 
         Args:
             user_id: ID del cliente a desconectar.
+            expected_client: Cliente que solicita la baja. Si se indica, evita
+                retirar una conexión más nueva que reutilice el mismo ID.
+
+        Returns:
+            El cliente que se retiró, o ``None`` si ya había sido retirado.
 
         """
-        self._clients.pop(user_id, None)
+        with self._lock:
+            current_client = self._clients.get(user_id)
+            if expected_client is not None and current_client is not expected_client:
+                return None
+            return self._clients.pop(user_id, None)
 
     def obtener_cliente(self, user_id: int) -> Client | None:
         """Obtiene un cliente por su ID.
@@ -53,7 +74,8 @@ class ServerClientRegistry:
             Cliente si existe, None en caso contrario.
 
         """
-        return self._clients.get(user_id)
+        with self._lock:
+            return self._clients.get(user_id)
 
     def obtener_todos(self) -> list[Client]:
         """Obtiene la lista de todos los clientes conectados.
@@ -62,7 +84,8 @@ class ServerClientRegistry:
             Lista de clientes.
 
         """
-        return list(self._clients.values())
+        with self._lock:
+            return list(self._clients.values())
 
     def obtener_ids(self) -> list[int]:
         """Obtiene la lista de IDs de clientes conectados.
@@ -71,7 +94,8 @@ class ServerClientRegistry:
             Lista de IDs de clientes.
 
         """
-        return list(self._clients.keys())
+        with self._lock:
+            return list(self._clients.keys())
 
     def cantidad(self) -> int:
         """Obtiene la cantidad de clientes conectados.
@@ -80,7 +104,8 @@ class ServerClientRegistry:
             Cantidad de clientes conectados.
 
         """
-        return len(self._clients)
+        with self._lock:
+            return len(self._clients)
 
     def contiene(self, user_id: int) -> bool:
         """Verifica si un cliente está registrado.
@@ -92,4 +117,5 @@ class ServerClientRegistry:
             True si el cliente está registrado, False en caso contrario.
 
         """
-        return user_id in self._clients
+        with self._lock:
+            return user_id in self._clients

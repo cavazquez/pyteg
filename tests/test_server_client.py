@@ -22,17 +22,23 @@ class TestClienteEjecutarMensaje(unittest.TestCase):
         client = Client(1, conn, server, username, soy_admin=False)
         return client, server
 
-    def test_mensaje_desconocido_envia_error_chat(self) -> None:
-        """Un mensaje no registrado se traduce en error vía transmisor."""
+    def test_mensaje_desconocido_envia_error_estructurado(self) -> None:
+        """Un comando no registrado no llega al manager de tareas."""
         client, _server = self._make_client()
-        with (
-            patch.object(
-                client.transmisor, "enviar_error_chat", autospec=True
-            ) as enviar_error,
-            patch("pyteg.server.tasks.LOGGER.warning"),
-        ):
+        with patch.object(client.transmisor, "enviar_error") as enviar_error:
             client.ejecutar_mensaje({"mensaje": "noexiste"})
-            enviar_error.assert_called()
+            enviar_error.assert_called_once_with(
+                "unknown_message", "Mensaje desconocido: noexiste"
+            )
+
+    def test_payload_escalar_envia_error_sin_construir_tarea(self) -> None:
+        """Un array JSON no provoca AttributeError ni cambia el servidor."""
+        client, _server = self._make_client()
+        with patch.object(client.transmisor, "enviar_error") as enviar_error:
+            client.ejecutar_mensaje([])
+            enviar_error.assert_called_once_with(
+                "invalid_payload", "El comando debe ser un objeto JSON"
+            )
 
     def test_mensaje_chat_llama_enviar_chat(self) -> None:
         """El mensaje de chat reenvía el texto al broadcast del servidor."""

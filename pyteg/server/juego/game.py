@@ -57,6 +57,7 @@ class Game:
             paises_para_victoria = DEFAULT_VICTORY_COUNTRIES
         self._mapa = mapa
         self._start = False
+        self._finalizada = False
         self._jugadores: list[IClientProtocol] = list(jugadores)
         self._server = server  # Referencia al servidor para notificar cambios
         self._paises_para_victoria = paises_para_victoria
@@ -192,6 +193,9 @@ class Game:
 
     def finalizar_turno(self) -> None:
         """Finaliza el turno actual y avanza al siguiente."""
+        if self._finalizada:
+            return
+
         ronda_completada = self._turn_manager.avanzar_turno()
         num = self._turn_manager.id_turno_actual()
         cant_jugadores = self.cant_jugadores()
@@ -201,11 +205,7 @@ class Game:
                 self.lista_jugadores()
             )
             if ganador:
-                ganador_id = int(ganador.userid())
-                ganador_nombre = (
-                    ganador.username() if hasattr(ganador, "username") else str(ganador)
-                )
-                self._server.enviar_victoria(ganador_id, ganador_nombre)
+                self._finalizar_partida(ganador)
                 return
 
             jugadores = self.lista_jugadores()
@@ -222,6 +222,19 @@ class Game:
             # Notificar al servidor que se completó una ronda
             # para que actualice los colores de los jugadores
             self._server.enviar_colores_asignados()
+
+    def _finalizar_partida(self, ganador: IClientProtocol) -> None:
+        """Cierra el juego y anuncia al ganador una única vez."""
+        if self._finalizada or not self._server.finalizar_partida():
+            return
+
+        self._finalizada = True
+        self._start = False
+        ganador_id = int(ganador.userid())
+        ganador_nombre = (
+            ganador.username() if hasattr(ganador, "username") else str(ganador)
+        )
+        self._server.enviar_victoria(ganador_id, ganador_nombre)
 
     def jugadores(self) -> list[IClientProtocol]:
         """Obtiene la lista de jugadores.

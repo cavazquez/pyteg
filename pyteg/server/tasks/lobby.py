@@ -68,7 +68,7 @@ class ServerTaskEmpezar(IServerTask[EmpezarTaskData]):
                 segundos_int = int(self._segundos)
                 if segundos_int > 0:
                     client.server.set_segundos_por_turno(segundos_int)
-            except (TypeError, ValueError):
+            except TypeError, ValueError:
                 pass
 
         # Configurar países para victoria si se envió desde el cliente
@@ -77,7 +77,7 @@ class ServerTaskEmpezar(IServerTask[EmpezarTaskData]):
                 paises_int = int(self._paises_para_victoria)
                 if paises_int >= 0:  # Permitir 0 para desactivar objetivo específico
                     client.server.set_paises_para_victoria(paises_int)
-            except (TypeError, ValueError):
+            except TypeError, ValueError:
                 pass
 
         # Configurar objetivos secretos si se envió desde el cliente

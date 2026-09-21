@@ -18,7 +18,7 @@ def env_int(name: str, default: int) -> int:
     """
     try:
         return int(os.getenv(name, default))
-    except (TypeError, ValueError):
+    except TypeError, ValueError:
         return default
 
 

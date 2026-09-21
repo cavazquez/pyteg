@@ -10,9 +10,10 @@ from PySide6.QtWidgets import QMessageBox, QWidget
 
 from pyteg.client.conexion.transmisor import ClientTransmisor
 from pyteg.client.tasks.manager import ClientTaskManager
-from pyteg.codecs_utils import Utf8
+from pyteg.codecs_utils import FrameCodecError, NulDelimitedUtf8Codec
 from pyteg.i18n import translate as _
 from pyteg.logger import get_logger
+from pyteg.protocol_validation import MessageValidationError, validate_client_event
 
 _LOG = get_logger("client.connection")
 
@@ -42,6 +43,7 @@ class ConnectionClient(QWidget):
         self._username = username
         self._main_window = main_window
         self._socket = QTcpSocket()
+        self._codec = NulDelimitedUtf8Codec()
         self._socket.readyRead.connect(self.read_data)
         self._socket.errorOccurred.connect(self.display_error)
         self._socket.stateChanged.connect(self.on_state_changed)
@@ -55,6 +57,7 @@ class ConnectionClient(QWidget):
     def on_connected(self) -> None:
         """Maneja el evento de conexión exitosa al servidor."""
         _LOG.info("Conectado a %s:%s", self._host, self._port)
+        self._codec = NulDelimitedUtf8Codec()
         # Reproducir sonido de conexión
         if hasattr(self._main_window, "sound_manager"):
             self._main_window.sound_manager.play_connect()
@@ -91,47 +94,48 @@ class ConnectionClient(QWidget):
 
         """
         _LOG.debug("Enviando mensaje (%s bytes)", len(data))
-        # Agregar separador \0 al final del mensaje
-        encode_data = Utf8.encode(data + "\0")
+        encode_data = NulDelimitedUtf8Codec.encode_frame(data)
         self._socket.write(encode_data)
 
     def read_data(self) -> None:
         """Lee datos recibidos del servidor."""
         while self._socket.bytesAvailable():
             encode_datas = self._socket.readAll()
-            datas = Utf8.decode(bytes(encode_datas))
+            encoded_chunk = bytes(encode_datas)
+            try:
+                datas = self._codec.feed(encoded_chunk)
+            except FrameCodecError as error:
+                _LOG.warning("Trama TCP inválida recibida del servidor: %s", error)
+                self._socket.disconnectFromHost()
+                return
             _LOG.debug(
-                "Recibido chunk (%s caracteres)",
+                "Recibido chunk (%s bytes); %s trama(s) completa(s), %s pendiente(s)",
+                len(encoded_chunk),
                 len(datas),
+                self._codec.pending_bytes,
             )
-            for data in datas.split("\0"):
-                if data:
-                    _LOG.debug("Fragmento recibido (%s bytes)", len(data))
-                    # Verificar si es un mensaje de rechazo (texto plano)
-                    if "El juego ya está en progreso" in data:
-                        _LOG.warning("Servidor rechazó la conexión: %s", data)
-                        QMessageBox.warning(
-                            self._main_window,
-                            _("Conexión rechazada"),
-                            data,
-                        )
-                        self._socket.disconnectFromHost()
-                        return
+            for data in datas:
+                if not data:
+                    continue
+                _LOG.debug("Fragmento recibido (%s bytes)", len(data))
+                try:
+                    data_json = json.loads(data)
+                except json.JSONDecodeError:
+                    _LOG.warning("Mensaje no JSON del servidor: %s", data[:200])
+                    continue
 
-                    try:
-                        data_json = json.loads(data)
-                        _LOG.debug("JSON recibido: %s", data_json.get("mensaje"))
-                        task = ClientTaskManager.msg_to_task(data_json)
-                        task.run(self._main_window)
-                    except json.JSONDecodeError:
-                        _LOG.warning("Mensaje no JSON: %s", data[:200])
-                        # Podría ser un mensaje de rechazo u otro tipo de mensaje
-                        if data.strip():  # Si no está vacío
-                            QMessageBox.warning(
-                                self._main_window,
-                                _("Mensaje del servidor"),
-                                data,
-                            )
+                try:
+                    validated_data = validate_client_event(data_json)
+                except MessageValidationError as error:
+                    _LOG.warning("Evento inválido del servidor: %s", error)
+                    continue
+
+                _LOG.debug("JSON recibido: %s", validated_data["mensaje"])
+                try:
+                    task = ClientTaskManager.msg_to_task(validated_data)
+                    task.run(self._main_window)
+                except Exception:  # noqa: BLE001 - el slot Qt no debe caer por un peer.
+                    _LOG.exception("Error al procesar evento del servidor")
 
     def on_state_changed(self, state: QAbstractSocket.SocketState) -> None:
         """Maneja los cambios de estado de la conexión.

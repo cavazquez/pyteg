@@ -87,6 +87,7 @@ class StatusManager:
             "EsperarJugadores": _("Esperando Jugadores"),
             "JUGANDO": _("En Juego"),
             "FINALIZADO": _("Finalizado"),
+            "Finalizado": _("Finalizado"),
             "Conectado": _("Conectado"),
             "Desconectado": _("Desconectado"),
         }

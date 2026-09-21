@@ -3,7 +3,7 @@
 ¡Gracias por tu interés en contribuir! Este documento resume cómo configurar el entorno, el estilo de código y el flujo de trabajo recomendado.
 
 ## Requisitos
-- Python 3.11+
+- Python 3.14 (actualizaciones de parche dentro de la serie 3.14)
 - [UV](https://github.com/astral-sh/uv)
 
 ## Configuración

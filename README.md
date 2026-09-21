@@ -8,7 +8,7 @@ Implementación del juego Teg en Python
 [![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
-[![🐍 Python](https://img.shields.io/badge/🐍_Python-3.11%2B-3776AB?style=flat&logo=python&logoColor=white)](https://www.python.org/)
+[![🐍 Python](https://img.shields.io/badge/🐍_Python-3.14-3776AB?style=flat&logo=python&logoColor=white)](https://www.python.org/)
 [![📐 mypy](https://img.shields.io/badge/📐_mypy-tipos_estrictos-2C5282?style=flat)](https://github.com/python/mypy)
 [![🧪 unittest](https://img.shields.io/badge/🧪_unittest-suite_tests-0F9D58?style=flat)](https://docs.python.org/3/library/unittest.html)
 
@@ -49,8 +49,11 @@ gráfica en Python.
 - Suite 🧪 `unittest` (~175 casos con `python -m unittest discover`), 🪶 Ruff, 📐 mypy estricto y 📊 cobertura en CI y en `./run_tests.sh`
 
 ## Requisitos
-- 🐍 Python 3.11 o superior
+- 🐍 Python 3.14 (se aceptan actualizaciones de parche dentro de la serie 3.14)
 - ⚡ [UV](https://github.com/astral-sh/uv) para dependencias
+
+La versión local está fijada en [`.python-version`](.python-version). Después de
+instalar uv, `uv sync --group dev` instalará o seleccionará Python 3.14.
 - 🐳 Docker (opcional)
 
 ## ⚡ Instalación rápida
@@ -86,6 +89,11 @@ uv run pyteg-client
 Consejos:
 - Primero inicia el servidor. Luego abre uno o más clientes.
 - Si el juego ya está en curso, el servidor rechazará nuevas conexiones.
+
+Para ejecutar automáticamente un servidor y varios bots por TCP hasta verificar
+una victoria, consultá [la guía de simulación](docs/SIMULATION.md). El diagnóstico,
+las prioridades y los issues para completar el proyecto están en
+[la revisión técnica](docs/PROJECT_REVIEW.md).
 
 ## Build de binarios (🥚 Hatch + ⚙️ Nuitka)
 Requiere dependencias de desarrollo:
