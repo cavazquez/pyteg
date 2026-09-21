@@ -62,8 +62,9 @@ Cada ejecución guarda:
 - `wire.jsonl`: todos los mensajes enviados y recibidos, con cliente y tiempo.
 - `server.log`: salida del proceso servidor.
 
-El workflow de CI ejecuta el mismo flujo con tres clientes, canjes, misiles y
-`--require-finalized`, y conserva `logs/simulations/classic-186` como artefacto
+El workflow de CI ejecuta el mismo flujo con tres clientes, objetivos secretos,
+canjes, misiles y una desconexión/reconexión autenticada antes de exigir
+`--require-finalized`. Conserva `logs/simulations/classic-197` como artefacto
 cuando termina, también si la corrida falla.
 
 Los registros están bajo `logs/`, que el repositorio ignora en Git.
@@ -217,9 +218,9 @@ su transporte ni su interfaz gráfica**, por lo que esta simulación no demuestr
 que un usuario pueda jugar la misma partida sin problemas de interfaz o red.
 
 Las acciones se envían secuencialmente en conexiones locales. La fragmentación
-del framing y las colas acotadas tienen pruebas unitarias separadas; este
-harness no simula clientes lentos, comandos simultáneos, latencia WAN
-ni vencimiento del timer. Las opciones de desconexión y reconexión ejercitan el
+del framing, los frames coalescidos, JSON inválido y las colas acotadas se
+prueban en la suite TCP; este harness no simula clientes lentos, comandos
+simultáneos, latencia WAN ni vencimiento del timer. Las opciones de desconexión y reconexión ejercitan el
 cierre real de un socket, la continuidad de los clientes restantes y el
 handshake autenticado de recuperación. Los objetivos secretos siguen fuera de
 alcance. La estrategia utiliza colocación,
