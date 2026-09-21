@@ -1,6 +1,6 @@
 # Revisión de PyTeg y ruta para terminarlo
 
-Fecha local: 21 de septiembre de 2026. Base revisada: `56b3ced991f14c6a0f4974b0b95494008e3c1c3b`.
+Fecha local: 21 de septiembre de 2026. Base revisada: `27b4c81`.
 
 ## Diagnóstico de la base revisada
 
@@ -72,11 +72,27 @@ durante `colocacion`; `atacar`, `mover_unidad`, `reclamar_tarjeta`,
 `solicitar_tarjetas` es una consulta sin fase. La simulación TCP cubre los
 canjes y misiles respetando ese orden.
 
+## Estado tras implementar #191
+
+El snapshot público ahora tiene el esquema versionado `snapshot_version = 1`.
+Incluye revisión, estado, tema y hash del mapa, configuración, jugadores con
+color/administración/conexión/eliminación, países con misiles, fase, turno y
+refuerzos pendientes. Las cartas y los objetivos secretos siguen viajando sólo
+por sus mensajes privados.
+
+Toda mutación aceptada desde el executor publica una sola revisión. Las
+transiciones que ya publican internamente (inicio, victoria y revancha)
+reutilizan esa revisión, mientras que un rechazo no cambia el snapshot. La
+solicitud `solicitar_snapshot` devuelve al cliente un snapshot completo marcado
+como `resync`, sin avanzar la revisión. El modelo independiente de Qt acepta
+esa resincronización incluso cuando repite la revisión que había detectado
+incompleta.
+
 ## Evidencia ejecutada
 
 - Python 3.14.0 y el entorno PySide6 existente.
-- **386 tests pasan** con `QT_QPA_PLATFORM=offscreen`; Ruff, formato y mypy también
-  pasan sobre 293 archivos fuente.
+- **403 tests pasan** con `QT_QPA_PLATFORM=offscreen`; Ruff, formato y mypy también
+  pasan sobre 308 archivos fuente.
 - Regresiones de red cubren fragmentación y coalescencia TCP, JSON y payloads
   inválidos, ciclo de conexión/color, permisos de administrador, una carrera
   determinista acción/timeout, vencimientos obsoletos, cola de salida saturada,
@@ -91,6 +107,12 @@ canjes y misiles respetando ese orden.
 - **Reconexión TCP autenticada**, cinco bots con canjes y misiles, semilla 800:
   un cliente recuperó identidad, tarjetas e inventario de misiles después de
   perder el socket; la partida alcanzó `Finalizado` en los cinco clientes.
+- **Snapshot público versionado**, tres clientes recibieron el mismo estado
+  inicial completo y uno se resincronizó con la misma revisión sin crear una
+  mutación adicional.
+- **Simulación actualizada**, cinco clientes con canjes y misiles alcanzaron
+  `victory_verified` en 74 turnos, 125 conquistas y 10 lanzamientos de misil;
+  los cinco finalizaron correctamente. Evidencia: `logs/simulations/classic-800`.
 
 Los JSON y trazas completos quedan en `logs/simulations/`, ignorados por Git.
 Los comandos y límites están en [SIMULATION.md](SIMULATION.md).
@@ -193,6 +215,12 @@ soportadas antes de sus pruebas.
 
 ## Backlog publicado
 
+### P0
+
+- [x] [#191 — Completar el contrato público de snapshots versionados](https://github.com/cavazquez/pyteg/issues/191) (Red; implementado).
+- [ ] [#192 — Convertir `ClientStateModel` en la fuente única de GUI y bots](https://github.com/cavazquez/pyteg/issues/192) (Cliente; pendiente).
+- [ ] [#193 — Exigir `command_id` y hacer idempotentes los reintentos](https://github.com/cavazquez/pyteg/issues/193) (Red; pendiente).
+
 ### P1
 
 - [x] [#163 — Reconstruir mensajes TCP fragmentados con un codec incremental compartido](https://github.com/cavazquez/pyteg/issues/163) (Red; implementado).
@@ -227,6 +255,13 @@ soportadas antes de sus pruebas.
 - [x] [#189 — Exigir handshake antes de aceptar comandos o iniciar la partida](https://github.com/cavazquez/pyteg/issues/189) (Red; implementado).
 - [x] [#190 — Hacer obligatoria la matriz de fases para todas las acciones TCP](https://github.com/cavazquez/pyteg/issues/190) (Reglas; implementado).
 
+### P1 siguiente
+
+- [ ] [#194 — Usar un identificador de turno inmutable para la recompensa de conquista](https://github.com/cavazquez/pyteg/issues/194) (Reglas; pendiente).
+- [ ] [#195 — Mantener la sucesión de administrador tras desconexión o eliminación](https://github.com/cavazquez/pyteg/issues/195) (Sala; pendiente).
+- [ ] [#196 — Reiniciar una revancha sin heredar estado de la partida anterior](https://github.com/cavazquez/pyteg/issues/196) (Partida; pendiente).
+- [ ] [#197 — Completar CI con fragmentación, resincronización y smoke Qt](https://github.com/cavazquez/pyteg/issues/197) (Pruebas; pendiente).
+
 ## Cambios dejados en este trabajo
 
 - `scripts/simulate_game.py`: harness local acotado con evidencia y cleanup.
@@ -254,5 +289,7 @@ soportadas antes de sus pruebas.
   #182, #184, #188 y #189.
 - Matriz única de fases para colocación, acciones, canjes, reclamos y misiles,
   con rechazos antes de mutar el estado para #190.
+- Contrato completo de snapshots públicos, publicación de revisión única y
+  resincronización explícita para #191.
 - Simulación TCP multicliente estricta en CI, incluyendo canjes, misiles,
   desconexión, reconexión y artefactos de evidencia para #186.

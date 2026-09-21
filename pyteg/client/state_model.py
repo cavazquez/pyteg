@@ -27,6 +27,7 @@ class ClientStateModel:
     # pública cero es válida para el lobby inicial y debe poder aplicarse.
     revision: int = -1
     snapshot: dict[str, Any] = field(default_factory=dict)
+    snapshot_version: int | None = None
     command_results: dict[str, dict[str, Any]] = field(default_factory=dict)
     last_phase: str | None = None
     protocol_version: str | None = None
@@ -53,15 +54,17 @@ class ClientStateModel:
             return ApplyEventResult(applied=True)
         if kind == "snapshot":
             revision = int(event["revision"])
-            if revision <= self.revision:
+            resync = event.get("resync") is True
+            if revision < self.revision or (revision == self.revision and not resync):
                 return ApplyEventResult(applied=False, duplicate=True)
-            gap = self.revision >= 0 and revision != self.revision + 1
+            gap = not resync and self.revision >= 0 and revision != self.revision + 1
             self.snapshot = {
                 key: value for key, value in event.items() if key != "mensaje"
             }
             self.revision = revision
+            self.snapshot_version = int(event["snapshot_version"])
             self.last_phase = event.get("fase")
-            self._gap_detected = gap
+            self._gap_detected = False if resync else gap
             return ApplyEventResult(applied=True, gap=gap)
         if kind == "command_result":
             command_id = str(event["command_id"])

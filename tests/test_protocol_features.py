@@ -122,14 +122,28 @@ class TestProtocolFeatures(unittest.TestCase):
         model = ClientStateModel()
         snapshot: dict[str, Any] = {
             "mensaje": "snapshot",
+            "snapshot_version": 1,
             "revision": 0,
             "estado": "Inicial",
             "theme": "classic",
             "map_hash": "hash",
+            "configuracion": {
+                "segundos_por_turno": 20,
+                "paises_para_victoria": 0,
+                "objetivos_secretos": False,
+                "misiles_habilitados": False,
+            },
             "players": [],
             "countries": {},
+            "fase": None,
+            "turno": None,
+            "refuerzos_pendientes": 0,
         }
         self.assertTrue(model.apply_event(snapshot).applied)
         self.assertEqual(model.revision, 0)
         self.assertTrue(model.apply_event({**snapshot, "revision": 2}).gap)
         self.assertTrue(model.needs_snapshot())
+        self.assertTrue(
+            model.apply_event({**snapshot, "revision": 2, "resync": True}).applied
+        )
+        self.assertFalse(model.needs_snapshot())

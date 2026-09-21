@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 from typing import TYPE_CHECKING, Any
 
@@ -12,7 +13,7 @@ from pyteg.core.mapa.build_mapa import build_mapa_from_reader
 from pyteg.core.partida.objetivos_secretos import ObjetivosSecretos
 from pyteg.log_cli import add_log_arguments
 from pyteg.logger import get_logger
-from pyteg.protocol import PROTOCOL_VERSION, map_hash_for_theme
+from pyteg.protocol import PROTOCOL_VERSION, SNAPSHOT_VERSION, map_hash_for_theme
 from pyteg.server.conexion.broadcaster import ServerMessageBroadcaster
 from pyteg.server.conexion.registrar_jugadores import registrar_jugadores
 from pyteg.server.conexion.registry import ServerClientRegistry
@@ -100,7 +101,11 @@ class Server:
         return self._state_revision
 
     def public_snapshot(self) -> dict[str, Any]:
-        """Construye el estado público sin filtrar cartas ni objetivos.
+        """Construye un snapshot público completo y autocontenido.
+
+        El snapshot se construye mientras el ejecutor de comandos posee la
+        transición. Nunca incluye cartas ni objetivos secretos; esos datos se
+        envían por mensajes privados separados.
 
         Returns:
             Diccionario JSON serializable del estado público.
@@ -111,36 +116,51 @@ class Server:
             pais: {
                 "userid": self.mapa.ocupado_por(pais),
                 "unidades": self.mapa.cantidad_unidades(pais),
+                "misiles": self.mapa.cantidad_misiles(pais),
             }
             for pais in self.mapa.paises()
         }
         historicos = game.jugadores() if game is not None else self.dame_clientes()
         conectados = {int(client.userid()) for client in self.dame_clientes()}
-        players = [
-            {
+        players: list[dict[str, Any]] = []
+        for client in historicos:
+            color = client.color_actual()
+            color_data = json.loads(color.to_json()) if color is not None else None
+            es_admin = getattr(client, "es_admin", lambda: False)
+            eliminado = game is not None and game.jugador_esta_eliminado(client)
+            players.append({
                 "userid": int(client.userid()),
                 "username": client.username(),
+                "color": color_data,
+                "admin": bool(es_admin()) if callable(es_admin) else False,
                 "connected": int(client.userid()) in conectados,
-                "eliminated": game is not None and game.jugador_esta_eliminado(client),
-            }
-            for client in historicos
-        ]
-        snapshot: dict[str, Any] = {
-            "revision": self.state_revision(),
-            "estado": self.estado.estado_actual(),
-            "theme": self.theme,
-            "map_hash": self.map_hash(),
-            "players": players,
-            "countries": countries,
-        }
+                "eliminated": bool(eliminado),
+            })
+        fase: str | None = None
+        turno_data: dict[str, int | None] | None = None
+        refuerzos_pendientes = 0
         if game is not None and game.empezo():
             turno = game.turno_actual()
-            snapshot["fase"] = game.fase_actual()
-            snapshot["turno"] = {
+            fase = game.fase_actual()
+            turno_data = {
                 "num_turno": game.id_turno_actual(),
                 "num_ronda": game.num_ronda(),
                 "jugador_id": int(turno.jugador_actual()),
             }
+            refuerzos_pendientes = game.refuerzos_pendientes()
+        snapshot: dict[str, Any] = {
+            "snapshot_version": SNAPSHOT_VERSION,
+            "revision": self.state_revision(),
+            "estado": self.estado.estado_actual(),
+            "theme": self.theme,
+            "map_hash": self.map_hash(),
+            "configuracion": self._game_coordinator.configuracion_partida(),
+            "players": players,
+            "countries": countries,
+            "fase": fase,
+            "turno": turno_data,
+            "refuerzos_pendientes": refuerzos_pendientes,
+        }
         return snapshot
 
     def enviar_snapshot(self) -> None:

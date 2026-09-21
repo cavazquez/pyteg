@@ -131,6 +131,20 @@ class ServerGameCoordinator:
             misiles_habilitados=self._misiles_habilitados,
         )
 
+    def configuracion_partida(self) -> dict[str, int | bool]:
+        """Devuelve la configuración pública vigente de la partida.
+
+        Returns:
+            Campos públicos de configuración, sin estado privado.
+
+        """
+        return {
+            "segundos_por_turno": self._segundos_por_turno,
+            "paises_para_victoria": self._paises_para_victoria,
+            "objetivos_secretos": self._objetivos_secretos_activados,
+            "misiles_habilitados": self._misiles_habilitados,
+        }
+
     def empezar_partida(self, server: Any) -> Game:
         """Inicia la partida con la configuración actual.
 
