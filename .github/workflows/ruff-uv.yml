@@ -73,6 +73,8 @@ jobs:
               tests.test_client_state_adapter \
               tests.test_protocol_features \
               tests.test_tcp_framing
+        - name: Dead-code audit
+          run: uv run vulture pyteg tests scripts --min-confidence 80 --sort-by-size
         - name: Ruff Formatter
           run: uv run ruff format --check .
         - name: Mypy
