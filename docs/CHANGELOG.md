@@ -4,13 +4,17 @@ Todas las fechas en formato YYYY-MM-DD.
 
 ## [Unreleased]
 
+Sin cambios publicados todavía.
+
+## [0.1.0] - 2026-09-21
+
 ### Changed
 - **Conexiones marítimas del mapa**: los temas pueden declarar
   `[[ConexionesVisuales]]` con puntos intermedios; la escena las dibuja detrás
   de los países sin modificar el grafo de reglas.
 - **Distribución reproducible**: el wheel y el sdist incluyen temas, iconos,
-  sonidos y catálogos `.mo`; `scripts/verify_wheel.py` y
-  `scripts/smoke_wheel.py` prueban la instalación fuera del checkout.
+  sonidos y catálogos; `scripts/verify_wheel.py`, `scripts/verify_sdist.py` y
+  `scripts/smoke_wheel.py` prueban los artefactos fuera del checkout.
 - **Build Nuitka unificado**: `scripts/build_binaries.py` valida y compila las
   entradas vigentes `pyteg/server/app.py` y `pyteg/client/run.py` con todos los
   recursos.
