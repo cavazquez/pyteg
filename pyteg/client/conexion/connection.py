@@ -12,6 +12,7 @@ from PySide6.QtWidgets import QMessageBox, QWidget
 
 from pyteg.client.conexion.transmisor import ClientTransmisor
 from pyteg.client.event_processor import ClientEventProcessor
+from pyteg.client.state_adapter import QtClientStateAdapter
 from pyteg.client.state_model import ClientStateModel
 from pyteg.client.tasks.manager import ClientTaskManager
 from pyteg.codecs_utils import FrameCodecError, NulDelimitedUtf8Codec
@@ -51,6 +52,7 @@ class ConnectionClient(QWidget):
         self._main_window = main_window
         self.state_model = ClientStateModel()
         self.event_processor = ClientEventProcessor(self.state_model)
+        self.state_adapter = QtClientStateAdapter(main_window, self.state_model)
         main_window.client_state_model = self.state_model
         self._socket = QTcpSocket()
         self._codec = NulDelimitedUtf8Codec()
@@ -186,6 +188,9 @@ class ConnectionClient(QWidget):
                             "command_id": uuid.uuid4().hex,
                         })
                     )
+                self.state_adapter.apply(validated_data, applied)
+                if self.state_adapter.handles(validated_data.get("mensaje")):
+                    continue
                 try:
                     task = ClientTaskManager.msg_to_task(validated_data)
                     task.run(self._main_window)

@@ -88,10 +88,23 @@ como `resync`, sin avanzar la revisión. El modelo independiente de Qt acepta
 esa resincronización incluso cuando repite la revisión que había detectado
 incompleta.
 
+## Estado tras implementar #192
+
+`ClientStateModel` ahora normaliza snapshots, mapa, jugadores, fase, turno,
+misiles, configuración y resultados correlacionados. `QtClientStateAdapter`
+proyecta ese estado hacia la GUI; los mensajes de cartas, objetivos y unidades
+propias siguen una vía privada explícita. Snapshots y `command_result` ya no
+caen en `ClientTaskNull` ni se ejecutan como acciones duplicadas.
+
+El simulador utiliza el mismo codec NUL/UTF-8 incremental, validador de eventos
+y modelo que el cliente Qt. Un hueco de revisión solicita `solicitar_snapshot`,
+el snapshot de resincronización reemplaza el estado completo y los snapshots
+viejos o duplicados no retroceden la revisión.
+
 ## Evidencia ejecutada
 
 - Python 3.14.0 y el entorno PySide6 existente.
-- **403 tests pasan** con `QT_QPA_PLATFORM=offscreen`; Ruff, formato y mypy también
+- **406 tests pasan** con `QT_QPA_PLATFORM=offscreen`; Ruff, formato y mypy también
   pasan sobre 308 archivos fuente.
 - Regresiones de red cubren fragmentación y coalescencia TCP, JSON y payloads
   inválidos, ciclo de conexión/color, permisos de administrador, una carrera
@@ -113,6 +126,10 @@ incompleta.
 - **Simulación actualizada**, cinco clientes con canjes y misiles alcanzaron
   `victory_verified` en 74 turnos, 125 conquistas y 10 lanzamientos de misil;
   los cinco finalizaron correctamente. Evidencia: `logs/simulations/classic-800`.
+- **Bot con modelo compartido**, cinco clientes alcanzaron `victory_verified`
+  en 98 turnos, 212 conquistas y 12 lanzamientos de misil; cuatro clientes
+  completaron además una desconexión/reconexión autenticada. Evidencia:
+  `logs/simulations/classic-192` y `logs/simulations/classic-193`.
 
 Los JSON y trazas completos quedan en `logs/simulations/`, ignorados por Git.
 Los comandos y límites están en [SIMULATION.md](SIMULATION.md).
@@ -218,7 +235,7 @@ soportadas antes de sus pruebas.
 ### P0
 
 - [x] [#191 — Completar el contrato público de snapshots versionados](https://github.com/cavazquez/pyteg/issues/191) (Red; implementado).
-- [ ] [#192 — Convertir `ClientStateModel` en la fuente única de GUI y bots](https://github.com/cavazquez/pyteg/issues/192) (Cliente; pendiente).
+- [x] [#192 — Convertir `ClientStateModel` en la fuente única de GUI y bots](https://github.com/cavazquez/pyteg/issues/192) (Cliente; implementado).
 - [ ] [#193 — Exigir `command_id` y hacer idempotentes los reintentos](https://github.com/cavazquez/pyteg/issues/193) (Red; pendiente).
 
 ### P1
@@ -291,5 +308,7 @@ soportadas antes de sus pruebas.
   con rechazos antes de mutar el estado para #190.
 - Contrato completo de snapshots públicos, publicación de revisión única y
   resincronización explícita para #191.
+- Modelo compartido para eventos públicos y datos privados, adaptador Qt y bot
+  headless con el mismo codec/validador para #192.
 - Simulación TCP multicliente estricta en CI, incluyendo canjes, misiles,
   desconexión, reconexión y artefactos de evidencia para #186.

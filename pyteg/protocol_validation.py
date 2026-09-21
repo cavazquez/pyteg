@@ -133,10 +133,21 @@ def _is_player_list(value: object) -> bool:
 
 
 def _is_battle_result(value: object) -> bool:
-    if not isinstance(value, dict) or set(value) != {"restar"}:
+    allowed = {"atacante", "defensor", "restar"}
+    if not isinstance(value, dict) or "restar" not in value:
+        return False
+    if not set(value).issubset(allowed):
         return False
     losses = value["restar"]
-    return isinstance(losses, list) and all(isinstance(name, str) for name in losses)
+    if not isinstance(losses, list) or not all(
+        isinstance(name, str) for name in losses
+    ):
+        return False
+    return all(
+        isinstance(value.get(name), str) and bool(value[name])
+        for name in ("atacante", "defensor")
+        if name in value
+    )
 
 
 def _is_integer_list(value: object) -> bool:
@@ -364,7 +375,7 @@ _CLIENT_EVENT_SCHEMAS: dict[str, _MessageSchema] = {
         {"username": _is_string, "user_id": _POSITIVE_INTEGER}, {}
     ),
     "turno": _MessageSchema(
-        {"num_turno": _POSITIVE_INTEGER, "num_ronda": _POSITIVE_INTEGER},
+        {"num_turno": _NONNEGATIVE_INTEGER, "num_ronda": _POSITIVE_INTEGER},
         {
             "jugador_actual_id": _POSITIVE_INTEGER,
             "jugador_actual_nombre": _is_string,

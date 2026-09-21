@@ -145,3 +145,25 @@ class TestClientEventValidation(unittest.TestCase):
         }
 
         self.assertEqual(validate_client_event(payload), payload)
+
+    def test_accepts_battle_result_with_public_participants(self) -> None:
+        """El resultado real incluye países además de la lista de pérdidas."""
+        payload = {
+            "mensaje": "resultado_batalla",
+            "origen": "A",
+            "destino": "B",
+            "atacante_id": 1,
+            "defensor_id": 2,
+            "atacante": "A",
+            "defensor": "B",
+            "dados_atacante": [6],
+            "dados_defensor": [1],
+            "resultado": {
+                "atacante": "1",
+                "defensor": "2",
+                "restar": ["2"],
+            },
+            "conquistado": False,
+        }
+
+        self.assertEqual(validate_client_event(payload), payload)
