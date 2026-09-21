@@ -463,6 +463,8 @@ class Server:
             if cantidad_misiles > 0:
                 client.transmisor.enviar_misil_agregado(pais, cantidad_misiles)
         self.enviar_tarjetas_jugador(client)
+        if self._game_coordinator.configuracion_partida()["objetivos_secretos"]:
+            self.enviar_objetivo_secreto(client)
         return True
 
     def dame_lista_jugadores(self) -> list[int]:
@@ -643,6 +645,12 @@ class Server:
             self.objetivos_secretos.get_objetivo_jugador,
         )
         LOGGER.debug("Objetivos secretos enviados")
+
+    def enviar_objetivo_secreto(self, client: Client) -> None:
+        """Reenvía el objetivo privado de un cliente concreto."""
+        objetivo = self.objetivos_secretos.get_objetivo_jugador(int(client.userid()))
+        if objetivo is not None:
+            self._broadcaster.enviar_objetivo_secreto(client, objetivo)
 
 
 def parse_arguments() -> argparse.Namespace:

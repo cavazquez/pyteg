@@ -755,6 +755,72 @@ class TestIntegration(unittest.TestCase):
         self.assertEqual(replayed, cached_result)
         self.assertEqual(self._server.state_revision(), revision_before_retry)
 
+    def test_reconnected_client_recovers_private_secret_objective(self) -> None:
+        """Una reconexión restaura el objetivo secreto sin filtrarlo."""
+        first = self._new_client()
+        second = self._new_client()
+        self._new_client()  # Conserva dos jugadores conectados tras la baja.
+        first_id, _second_id = self._start_two_player_game(
+            first,
+            second,
+            objetivos_secretos=True,
+        )
+
+        first_objective = first.wait_for("objetivo_secreto")
+        second_objective = second.wait_for("objetivo_secreto")
+        self.assertIsNotNone(first_objective, "Faltó el objetivo privado del jugador 1")
+        self.assertIsNotNone(
+            second_objective, "Faltó el objetivo privado del jugador 2"
+        )
+        if first_objective is None or second_objective is None:
+            return
+        self.assertNotEqual(
+            first_objective["objetivo_id"],
+            second_objective["objetivo_id"],
+            "Dos jugadores recibieron el mismo objetivo en la misma partida",
+        )
+        self.assertNotIn(
+            first_objective["objetivo_id"],
+            {
+                message.get("objetivo_id")
+                for message in second.snapshot_received()
+                if message.get("mensaje") == "objetivo_secreto"
+            },
+        )
+
+        token_message = first.wait_for("session_token")
+        self.assertIsNotNone(token_message, "El jugador no recibió token de sesión")
+        if token_message is None:
+            return
+        token = str(token_message["token"])
+
+        first.close()
+        self._wait_for_client_count(2)
+        replacement = self._new_client()
+        self.assertIsNotNone(replacement.wait_for("session_token"))
+        replacement.send({"mensaje": "reconectar", "user_id": first_id, "token": token})
+        self.assertIsNotNone(
+            replacement.wait_for(
+                "reconexion",
+                extra_check=lambda data: data.get("user_id") == first_id,
+            ),
+            "No se confirmó la reconexión",
+        )
+        recovered_objective = replacement.wait_for("objetivo_secreto")
+        self.assertIsNotNone(
+            recovered_objective,
+            "La reconexión no restauró el objetivo secreto privado",
+        )
+        if recovered_objective is not None:
+            self.assertEqual(
+                recovered_objective["objetivo_id"],
+                first_objective["objetivo_id"],
+            )
+            self.assertEqual(
+                recovered_objective["descripcion"],
+                first_objective["descripcion"],
+            )
+
     # ------------------------------------------------------------------
     # Test 2: dos clientes se conectan y ambos reciben user_id distintos
     # ------------------------------------------------------------------

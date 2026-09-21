@@ -261,6 +261,15 @@ class ServerMessageBroadcaster:
             user_id = int(client.userid())
             objetivo = get_objetivo_jugador(user_id)
             if objetivo:
-                client.transmisor.enviar_objetivo_secreto(
-                    objetivo["id"], objetivo["descripcion"]
-                )
+                self.enviar_objetivo_secreto(client, objetivo)
+
+    @staticmethod
+    def enviar_objetivo_secreto(client: Client, objetivo: dict[str, str]) -> None:
+        """Envía un objetivo secreto sólo a su propietario.
+
+        Mantener este envío separado del broadcast permite reutilizar la misma
+        garantía de privacidad durante una reconexión.
+        """
+        client.transmisor.enviar_objetivo_secreto(
+            objetivo["id"], objetivo["descripcion"]
+        )
