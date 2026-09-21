@@ -167,3 +167,12 @@ CARD_SELECTION_GREEN_THRESHOLD = 3
 
 CARDS_FOR_EXCHANGE = 3
 """Cantidad de tarjetas necesarias para realizar un canje."""
+
+CARD_SYMBOL_SIZE = 48
+"""Lado máximo del símbolo mostrado en una tarjeta de país."""
+
+CARD_WIDGET_WIDTH = 140
+"""Ancho fijo de una tarjeta de país en la mano del jugador."""
+
+CARD_WIDGET_HEIGHT = 120
+"""Alto fijo de una tarjeta de país en la mano del jugador."""

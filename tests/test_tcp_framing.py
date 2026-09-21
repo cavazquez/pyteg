@@ -78,6 +78,7 @@ class _FakeQtSocket:
         self._chunks = list(chunks)
         self.disconnected = False
         self.sent: list[bytes] = []
+        self.socket_state = QAbstractSocket.SocketState.ConnectedState
 
     def bytesAvailable(self) -> int:
         """Devuelve bytes disponibles en el chunk actual.
@@ -112,7 +113,7 @@ class _FakeQtSocket:
             El estado conectado de QAbstractSocket.
 
         """
-        return QAbstractSocket.SocketState.ConnectedState
+        return self.socket_state
 
 
 class TestNulDelimitedUtf8Codec(unittest.TestCase):
@@ -233,9 +234,7 @@ class TestTcpConnectionFraming(unittest.TestCase):
         connection = ConnectionClient(MagicMock())
 
         self.assertTrue(connection.esta_ocupada())
-        fake_socket.state = MagicMock(
-            return_value=QAbstractSocket.SocketState.UnconnectedState
-        )
+        fake_socket.socket_state = QAbstractSocket.SocketState.UnconnectedState
         self.assertFalse(connection.esta_ocupada())
 
     @patch("pyteg.client.conexion.connection.QTcpSocket")

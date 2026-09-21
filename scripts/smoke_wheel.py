@@ -105,7 +105,7 @@ def _run_server(root: Path, cwd: Path) -> None:
 
 
 def _run_client(root: Path, cwd: Path) -> None:
-    process = subprocess.Popen(  # noqa: S603 - executable is the active interpreter
+    process = subprocess.Popen(
         [sys.executable, "-m", "pyteg.client.run", "--quiet"],
         cwd=cwd,
         env=_environment(root),

@@ -33,6 +33,8 @@ ignore = [
 	"ERA001",  # commented-out-code
 	"D203",   # incompatible con D211 (blank line before class)
 	"D213",   # incompatible con D212 (summary en primera línea)
+	"PLW0717", # callbacks defensivos de Qt/TCP delimitan toda la operación
+	"RUF067",  # init públicos exponen registries y singletons de la API
 	]
 
 [dependency-groups]

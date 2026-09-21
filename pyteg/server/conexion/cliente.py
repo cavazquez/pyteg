@@ -303,7 +303,7 @@ class Client:
 
         Maneja la recepción de datos y el encolado de tareas validadas.
         """
-        try:  # noqa: PLW0717 - el ciclo procesa handshake y comandos TCP juntos
+        try:
             protocol_version = getattr(self.server, "protocol_version", "1")
             if not isinstance(protocol_version, str):
                 protocol_version = "1"
