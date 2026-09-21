@@ -33,6 +33,13 @@ class _TurnExpired:
     generation: int
 
 
+@dataclass(frozen=True)
+class _ClientDisconnected:
+    """Desconexión que debe mutar el juego dentro del hilo serializador."""
+
+    user_id: int
+
+
 _STOP = object()
 
 
@@ -83,6 +90,13 @@ class GameCommandExecutor:
                 return
             self._queue.put(_TurnExpired(generation))
 
+    def enqueue_client_disconnected(self, user_id: int) -> None:
+        """Encola una desconexión para mutar turnos en forma serializada."""
+        with self._state_lock:
+            if not self._accepting:
+                return
+            self._queue.put(_ClientDisconnected(user_id))
+
     def turn_snapshot(self) -> tuple[int, int] | None:
         """Devuelve ``(jugador_actual, generación)`` de forma atómica.
 
@@ -114,6 +128,8 @@ class GameCommandExecutor:
                     self._execute_client_command(item)
                 elif isinstance(item, _TurnExpired):
                     self._execute_turn_expired(item)
+                elif isinstance(item, _ClientDisconnected):
+                    self._execute_client_disconnected(item)
             except Exception:
                 LOGGER.exception("Error al ejecutar transición de juego")
             finally:
@@ -158,6 +174,19 @@ class GameCommandExecutor:
         if self._server.estado.es_jugando():
             self._server.enviar_turno_actual()
             self._server.enviar_mapa()
+
+    def _execute_client_disconnected(self, event: _ClientDisconnected) -> None:
+        """Quita una conexión de los turnos sin tocar su ocupación."""
+        game = self._server.game
+        if game is None or not game.empezo() or not self._server.estado.es_jugando():
+            return
+
+        if not game.desconectar_jugador(event.user_id):
+            return
+
+        if self._server.estado.es_jugando():
+            self._server.enviar_colores_asignados()
+            self._server.enviar_turno_actual()
 
     def _refresh_turn_snapshot(self) -> None:
         """Publica el turno actual y aumenta su generación al cambiarlo."""

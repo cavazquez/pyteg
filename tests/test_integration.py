@@ -480,6 +480,12 @@ class TestIntegration(unittest.TestCase):
         first.close()
         self._wait_for_client_count(1)
 
+        deadline = time.monotonic() + _READ_TIMEOUT
+        while time.monotonic() < deadline and not game.jugador_esta_desconectado(
+            first_id
+        ):
+            time.sleep(0.05)
+
         countries_after = [
             pais
             for pais in game.mapa().paises()
@@ -488,6 +494,8 @@ class TestIntegration(unittest.TestCase):
         self.assertIn(player, game.lista_jugadores())
         self.assertEqual(countries_after, countries_before)
         self.assertIn(color, self._server.color.colores_usados())
+        self.assertTrue(game.jugador_esta_desconectado(first_id))
+        self.assertNotIn(first_id, game.lista_jugadores_orden_turno())
 
     def test_game_in_progress_rejection_uses_structured_error(self) -> None:
         """Una conexión tardía recibe error JSON, no texto libre del servidor."""

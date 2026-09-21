@@ -215,6 +215,23 @@ class TestGame(unittest.TestCase):
         self.assertIsInstance(game.turnos()[0], PrimerTurno)
         self.assertIsInstance(game.turnos()[1], PrimerTurno)
 
+    def test_desconectar_jugador_retira_su_turno_y_conserva_su_estado(self) -> None:
+        """Una baja no elimina al jugador ni sus países, pero sí su turno."""
+        game = Game(
+            self.mapa,
+            self.mazo_placeholder,
+            self.default_jugadores,
+            self.server,
+        )
+        game.empezar()
+
+        self.assertTrue(game.desconectar_jugador(1))
+        self.assertTrue(game.jugador_esta_desconectado(1))
+        self.assertIn(self.default_jugadores[0], game.lista_jugadores())
+        self.assertEqual(game.cant_jugadores(), 1)
+        self.assertNotIn(1, game.lista_jugadores_orden_turno())
+        self.assertFalse(game.desconectar_jugador(1))
+
     def test_finalizar_turno(self) -> None:
         """Prueba finalizar un turno."""
         game = Game(
