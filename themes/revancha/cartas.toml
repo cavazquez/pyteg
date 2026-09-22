@@ -1,0 +1,10 @@
+# Símbolos de las 72 tarjetas de países de Revancha.
+# El mazo actual los recorre de forma cíclica; #229 definirá el reparto oficial.
+
+[Cartas]
+Soldado = "revancha/cards/Soldado.svg"
+Avion = "revancha/cards/Avion.svg"
+Tanque = "revancha/cards/Tanque.svg"
+Granada = "revancha/cards/Granada.svg"
+Barco = "revancha/cards/Barco.svg"
+Comodin = "revancha/cards/Comodin.svg"
