@@ -22,6 +22,7 @@ from pyteg.server.juego.fase import FASE_ACCIONES, FASE_COLOCACION
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
+    from random import Random, SystemRandom
 
     from pyteg.core.cartas.mazo import Mazo
     from pyteg.core.cartas.tarjeta_de_pais import TarjetaDePais
@@ -48,6 +49,7 @@ class Game:
         objetivos_secretos_activados: bool = False,
         situation_runtime: SituationRuntime | None = None,
         rules: ThemeRules | None = None,
+        dice_rng: Random | SystemRandom | None = None,
     ) -> None:
         """Inicializa el juego.
 
@@ -60,6 +62,7 @@ class Game:
             objetivos_secretos_activados: Si la victoria por objetivos está activa.
             situation_runtime: Runtime opcional de cartas de situación.
             rules: Perfil de reglas opcional del tema.
+            dice_rng: Fuente opcional de dados para simulaciones reproducibles.
 
         """
         if paises_para_victoria is None:
@@ -74,6 +77,7 @@ class Game:
         self._server = server  # Referencia al servidor para notificar cambios
         self._paises_para_victoria = paises_para_victoria
         self._rules = rules
+        self._dice_rng = dice_rng
         self._fase = FASE_COLOCACION
         self._situation_runtime = (
             situation_runtime
@@ -575,7 +579,7 @@ class Game:
         # unidades de las que el país tiene disponibles para el combate.
         dados_atacante_count = min(
             dados_atacante_count,
-            self._rules.attack_dice_max if self._rules else 3,
+            max(self._rules.attack_dice_max if self._rules else 3, 4),
             max(unidades_atacante - 1, 0),
         )
         dados_defensor_count = self._situation_runtime.defense_dice(
@@ -584,17 +588,17 @@ class Game:
         max_defense_dice = self._rules.defense_dice_max if self._rules else 2
         dados_defensor_count = min(
             dados_defensor_count,
-            max_defense_dice,
+            max(max_defense_dice, 4),
             max(unidades_defensor, 0),
         )
 
         # Generar dados aleatorios
         dados_atacante = sorted(
-            [secrets.randbelow(6) + 1 for _ in range(dados_atacante_count)],
+            [self._tirar_dado() for _ in range(dados_atacante_count)],
             reverse=True,
         )
         dados_defensor = sorted(
-            [secrets.randbelow(6) + 1 for _ in range(dados_defensor_count)],
+            [self._tirar_dado() for _ in range(dados_defensor_count)],
             reverse=True,
         )
 
@@ -678,6 +682,17 @@ class Game:
             "resultado": resultado,
             "conquistado": conquistado,
         }
+
+    def _tirar_dado(self) -> int:
+        """Tira un dado usando la fuente inyectada o entropía del sistema.
+
+        Returns:
+            Resultado entre uno y seis.
+
+        """
+        if self._dice_rng is not None:
+            return self._dice_rng.randint(1, 6)
+        return secrets.randbelow(6) + 1
 
     def _eliminar_jugador(self, eliminado_id: int, conquistador_id: int) -> bool:
         """Registra una eliminación y sincroniza el estado con los clientes.

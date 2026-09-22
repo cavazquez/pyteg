@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import inspect
 from typing import TYPE_CHECKING
 
 from pyteg.config import MIN_UNITS_FOR_ATTACK
@@ -18,6 +19,12 @@ from pyteg.server.juego.validators import (
 )
 from pyteg.server.tasks.base import LOGGER, IServerTask
 from pyteg.server.tasks.types import AtacarTaskData
+
+_POSITIONAL_PARAMETER_KINDS = frozenset({
+    inspect.Parameter.POSITIONAL_ONLY,
+    inspect.Parameter.POSITIONAL_OR_KEYWORD,
+})
+_RECLAMO_COUNTRY_PARAMETER_COUNT = 2
 
 if TYPE_CHECKING:
     from pyteg.core.partida.context import GameContext
@@ -170,4 +177,22 @@ class ServerTaskAtacar(IServerTask[AtacarTaskData]):
                 self._destino,
             )
             if context.game is not None:
-                context.game.marcar_jugador_puede_reclamar(client, self._destino)
+                marcar_reclamo = context.game.marcar_jugador_puede_reclamar
+                parametros = inspect.signature(marcar_reclamo).parameters.values()
+                acepta_pais = (
+                    any(
+                        parametro.kind is inspect.Parameter.VAR_POSITIONAL
+                        for parametro in parametros
+                    )
+                    or sum(
+                        parametro.kind in _POSITIONAL_PARAMETER_KINDS
+                        for parametro in parametros
+                    )
+                    >= _RECLAMO_COUNTRY_PARAMETER_COUNT
+                )
+                if acepta_pais:
+                    marcar_reclamo(client, self._destino)
+                else:
+                    # Compatibility with older game doubles/servers that only
+                    # tracked the generic per-turn card eligibility.
+                    marcar_reclamo(client)
