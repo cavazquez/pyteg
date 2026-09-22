@@ -55,6 +55,11 @@ class TomlReader:
         """
         self.strict = strict
         self.theme = theme
+        self.cartas_distribucion: dict[str, dict[str, str]] = {
+            "paises": {},
+            "continentes": {},
+            "especiales": {},
+        }
         self._init_load_paises(paises_toml_string)
         self._init_merge_cartas(cartas_toml_string)
         self.adyacencias: dict[str, list[str]] = {}
@@ -116,11 +121,13 @@ class TomlReader:
                     msg = "Archivo de cartas debe contener sección 'Cartas'"
                     raise TomlReaderError(msg)
                 self.cartas = cartas_parsed["Cartas"]
+                self._cargar_distribucion_cartas(cartas_parsed.get("Distribucion"))
             except tomllib.TOMLDecodeError as e:
                 msg = f"Error al parsear TOML de cartas: {e}"
                 raise TomlReaderError(msg) from e
         elif "Cartas" in self.parsed_toml:
             self.cartas = self.parsed_toml["Cartas"]
+            self._cargar_distribucion_cartas(self.parsed_toml.get("Distribucion"))
         else:
             msg = "No se encontró sección 'Cartas' en ningún archivo"
             raise TomlReaderError(msg)
@@ -171,6 +178,7 @@ class TomlReader:
         self._pais_a_continente: dict[str, str] = {}
         self._validar_cartas()
         self._procesar_continentes_y_paises()
+        self._validar_distribucion_cartas()
         self._validar_nombres_unicos()
         self._validar_consistencia_datos()
         self._validar_conexiones_visuales()
@@ -194,7 +202,8 @@ class TomlReader:
         continentes_encontrados = [
             key
             for key in self.parsed_toml
-            if key not in {"Cartas", "Adyacencias", "ConexionesVisuales"}
+            if key
+            not in {"Cartas", "Adyacencias", "ConexionesVisuales", "Distribucion"}
             and isinstance(self.parsed_toml[key], dict)
         ]
 
@@ -216,6 +225,75 @@ class TomlReader:
         for carta, valor in self.cartas.items():
             if not isinstance(valor, str):
                 msg = f"La carta '{carta}' debe ser una cadena"
+                raise TomlReaderError(msg)
+
+    def _cargar_distribucion_cartas(self, raw: object) -> None:
+        """Carga la distribución explícita opcional de cartas del tema.
+
+        Raises:
+            TomlReaderError: Si la tabla no tiene la estructura esperada.
+
+        """
+        if raw is None:
+            return
+        if not isinstance(raw, dict):
+            msg = "La sección 'Distribucion' debe ser una tabla"
+            raise TomlReaderError(msg)
+        for categoria in self.cartas_distribucion:
+            value = raw.get(categoria, {})
+            if not isinstance(value, dict):
+                msg = f"Distribucion.{categoria} debe ser una tabla"
+                raise TomlReaderError(msg)
+            self.cartas_distribucion[categoria] = {
+                str(key): str(symbol) for key, symbol in value.items()
+            }
+
+    def _validar_distribucion_cartas(self) -> None:  # noqa: C901
+        """Valida países, continentes y símbolos de la distribución.
+
+        Raises:
+            TomlReaderError: Si falta una carta o se usa un símbolo desconocido.
+
+        """
+        distribution = self.cartas_distribucion
+        symbols = set(self.cartas)
+        for category, entries in distribution.items():
+            for card_id, symbol in entries.items():
+                if symbol not in symbols:
+                    msg = (
+                        f"Distribucion.{category}.{card_id} usa símbolo desconocido "
+                        f"'{symbol}'"
+                    )
+                    raise TomlReaderError(msg)
+        country_entries = distribution["paises"]
+        if country_entries:
+            countries = set(self.todos_los_paises())
+            missing = countries - set(country_entries)
+            unknown = set(country_entries) - countries
+            if missing or unknown:
+                details = []
+                if missing:
+                    details.append(f"faltan: {', '.join(sorted(missing))}")
+                if unknown:
+                    details.append(f"sobran: {', '.join(sorted(unknown))}")
+                msg = "Distribución de países incompleta (" + "; ".join(details) + ")"
+                raise TomlReaderError(msg)
+        continent_entries = distribution["continentes"]
+        if continent_entries:
+            continents = set(self.get_continentes())
+            missing = continents - set(continent_entries)
+            unknown = set(continent_entries) - continents
+            if missing or unknown:
+                details = []
+                if missing:
+                    details.append(f"faltan: {', '.join(sorted(missing))}")
+                if unknown:
+                    details.append(f"sobran: {', '.join(sorted(unknown))}")
+                msg = (
+                    "Distribución de continentes incompleta ("
+                    + "; ".join(details)
+                    + ")"
+                )
                 raise TomlReaderError(msg)
 
     def _validar_adyacencias(self) -> None:
@@ -294,7 +372,12 @@ class TomlReader:
 
         """
         for continente in self.parsed_toml:
-            if continente in {"Cartas", "Adyacencias", "ConexionesVisuales"}:
+            if continente in {
+                "Cartas",
+                "Adyacencias",
+                "ConexionesVisuales",
+                "Distribucion",
+            }:
                 continue
 
             if not isinstance(self.parsed_toml[continente], dict):
@@ -725,6 +808,18 @@ class TomlReader:
 
         """
         return list(self.cartas.keys())
+
+    def get_cartas_distribucion(self) -> dict[str, dict[str, str]]:
+        """Obtiene la distribución explícita de cartas del tema.
+
+        Returns:
+            Copia de la distribución por categoría.
+
+        """
+        return {
+            categoria: dict(entries)
+            for categoria, entries in self.cartas_distribucion.items()
+        }
 
     def img_path(self, pais: str) -> str:
         """Obtiene ruta del archivo de imagen de un país.

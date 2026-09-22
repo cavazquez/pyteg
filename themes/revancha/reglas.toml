@@ -31,10 +31,20 @@ Oceania = 3
 [cards]
 exchange_units = [6, 10]
 exchange_multiplier = 5
+exchange_tail_from_last = true
 special_exchange_units = 2
 max_before_force_exchange = 5
 min_same_symbol = 3
 cards_for_exchange = 3
+
+[cards.continent_exchanges]
+AmericaDelNorte = []
+Europa = []
+Asia = []
+AmericaDelSur = ["Avion", "Tanque"]
+Africa = ["Avion", "Barco"]
+AmericaCentral = ["Tanque"]
+Oceania = ["Barco"]
 
 [missiles]
 enabled = true

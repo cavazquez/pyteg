@@ -283,6 +283,15 @@ class Game:
         self._validar_jugador_activo(jugador)
         self._card_manager.canjear(jugador, tarjetas)
 
+    def puede_canjear_tarjetas(self, jugador: IClientProtocol | int) -> bool:
+        """Indica si el jugador conserva su canje de la vuelta.
+
+        Returns:
+            ``True`` si todavía no canjeó en el turno vigente.
+
+        """
+        return self._card_manager.puede_canjear_en_turno(jugador)
+
     def cant_jugadores(self) -> int:
         """Obtiene la cantidad de jugadores.
 
@@ -636,6 +645,7 @@ class Game:
             self.mapa().agregar_una_unidad(pais_defensor)
             conquistado = True
 
+            self._card_manager.devolver_continentes_perdidos(self._mapa)
             if defensor_id is not None:
                 self._eliminar_jugador(defensor_id, atacante_id)
 
@@ -760,15 +770,27 @@ class Game:
             return None
         return str(to_hex()).lower()
 
-    def marcar_jugador_puede_reclamar(self, jugador: IClientProtocol) -> None:
+    def marcar_jugador_puede_reclamar(
+        self,
+        jugador: IClientProtocol,
+        pais_conquistado: str | None = None,
+    ) -> None:
         """Marca a un jugador como elegible para reclamar tarjeta.
 
         Args:
             jugador: Jugador a marcar como elegible.
+            pais_conquistado: País recién conquistado, si corresponde.
 
         """
         self._validar_jugador_activo(jugador)
-        self._card_manager.marcar_jugador_puede_reclamar(jugador)
+        continentes: tuple[str, ...] = ()
+        if pais_conquistado is not None:
+            continente = self._mapa.continente(pais_conquistado)
+            if self._mapa.jugador_controla_continente(
+                int(jugador.userid()), continente
+            ):
+                continentes = (continente,)
+        self._card_manager.marcar_jugador_puede_reclamar(jugador, continentes)
 
     def puede_reclamar_tarjeta(self, jugador: IClientProtocol) -> bool:
         """Verifica si un jugador puede reclamar tarjeta.

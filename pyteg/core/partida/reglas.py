@@ -68,6 +68,7 @@ class ThemeRules:
     max_cards_before_force_exchange: int
     min_cards_same_symbol_for_exchange: int
     cards_for_exchange: int
+    exchange_tail_from_last: bool
     missiles_enabled: bool
     missile_unit_cost: int
     missile_min_units_to_leave: int
@@ -75,11 +76,17 @@ class ThemeRules:
     missile_damage_by_distance: tuple[int, ...]
     objectives_enabled: bool
     situation_ruleset: str
+    continent_card_exchanges: tuple[tuple[str, tuple[str, ...]], ...] = ()
 
     @property
     def continent_bonus_map(self) -> dict[str, int]:
         """Bonos continentales como diccionario para los cálculos."""
         return dict(self.continent_bonuses)
+
+    @property
+    def continent_card_exchange_map(self) -> dict[str, tuple[str, ...]]:
+        """Equivalencias de las tarjetas de continente para un canje."""
+        return dict(self.continent_card_exchanges)
 
     def to_public_dict(self) -> dict[str, Any]:
         """Serializa el perfil que pueden consumir clientes y simuladores.
@@ -106,12 +113,17 @@ class ThemeRules:
             "continent_bonuses": self.continent_bonus_map,
             "exchange_units": list(self.exchange_units),
             "exchange_multiplier": self.exchange_multiplier,
+            "exchange_tail_from_last": self.exchange_tail_from_last,
             "special_exchange_units": self.special_exchange_units,
             "max_cards_before_force_exchange": self.max_cards_before_force_exchange,
             "min_cards_same_symbol_for_exchange": (
                 self.min_cards_same_symbol_for_exchange
             ),
             "cards_for_exchange": self.cards_for_exchange,
+            "continent_card_exchanges": {
+                continent: list(symbols)
+                for continent, symbols in self.continent_card_exchanges
+            },
             "missiles_enabled": self.missiles_enabled,
             "missile_unit_cost": self.missile_unit_cost,
             "missile_min_units_to_leave": self.missile_min_units_to_leave,
@@ -153,6 +165,8 @@ class ThemeRules:
             max_cards_before_force_exchange=MAX_CARDS_BEFORE_FORCE_EXCHANGE,
             min_cards_same_symbol_for_exchange=MIN_CARDS_SAME_SYMBOL_FOR_EXCHANGE,
             cards_for_exchange=CARDS_FOR_EXCHANGE,
+            continent_card_exchanges=(),
+            exchange_tail_from_last=False,
             missiles_enabled=False,
             missile_unit_cost=MISSILE_UNIT_COST,
             missile_min_units_to_leave=MIN_UNITS_TO_LEAVE,
@@ -299,6 +313,14 @@ def _build_rules(  # noqa: C901, PLR0914, PLR0915
         cards.get("cards_for_exchange", base.cards_for_exchange),
         "cards.cards_for_exchange",
     )
+    continent_card_exchanges = _parse_continent_card_exchanges(
+        cards.get("continent_exchanges", {}),
+        "cards.continent_exchanges",
+    )
+    exchange_tail_from_last = _bool(
+        cards.get("exchange_tail_from_last", False),
+        "cards.exchange_tail_from_last",
+    )
 
     damage_raw = missiles.get(
         "damage_by_distance", list(base.missile_damage_by_distance)
@@ -362,6 +384,8 @@ def _build_rules(  # noqa: C901, PLR0914, PLR0915
         max_cards_before_force_exchange=max_cards,
         min_cards_same_symbol_for_exchange=min_same,
         cards_for_exchange=cards_for_exchange,
+        continent_card_exchanges=continent_card_exchanges,
+        exchange_tail_from_last=exchange_tail_from_last,
         missiles_enabled=missile_enabled,
         missile_unit_cost=missile_cost,
         missile_min_units_to_leave=missile_leave,
@@ -370,6 +394,35 @@ def _build_rules(  # noqa: C901, PLR0914, PLR0915
         objectives_enabled=objectives_enabled,
         situation_ruleset=situation_ruleset,
     )
+
+
+def _parse_continent_card_exchanges(
+    value: object, field: str
+) -> tuple[tuple[str, tuple[str, ...]], ...]:
+    """Valida las variables que aporta cada tarjeta de continente.
+
+    Returns:
+        Equivalencias normalizadas por continente.
+
+    Raises:
+        ThemeRulesError: Si la tabla no tiene el formato esperado.
+
+    """
+    if not isinstance(value, Mapping):
+        raise ThemeRulesError(f"{field} debe ser una tabla")
+    parsed: list[tuple[str, tuple[str, ...]]] = []
+    for continent, symbols in value.items():
+        if not isinstance(continent, str) or not continent.strip():
+            raise ThemeRulesError(f"{field} contiene un continente inválido")
+        if not isinstance(symbols, list) or any(
+            not isinstance(symbol, str) or not symbol.strip() for symbol in symbols
+        ):
+            raise ThemeRulesError(
+                f"{field}.{continent} debe ser una lista de símbolos no vacía"
+                " o vacía para un canje completo"
+            )
+        parsed.append((continent, tuple(symbols)))
+    return tuple(parsed)
 
 
 def _positive_int(value: object, field: str) -> int:

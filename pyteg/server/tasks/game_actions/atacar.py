@@ -170,4 +170,4 @@ class ServerTaskAtacar(IServerTask[AtacarTaskData]):
                 self._destino,
             )
             if context.game is not None:
-                context.game.marcar_jugador_puede_reclamar(client)
+                context.game.marcar_jugador_puede_reclamar(client, self._destino)
