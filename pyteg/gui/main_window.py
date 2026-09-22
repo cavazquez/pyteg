@@ -62,6 +62,7 @@ class Gui(QMainWindow, MainWindowDelegatesMixin):
     mi_color_indicator: QLabel
     mi_username_label: QLabel
     estado_label: QLabel
+    contexto_partida_label: QLabel
     seleccion_label: QLabel
     language_selector: LanguageSelector
     sound_control: SoundControlWidget
@@ -149,6 +150,7 @@ class Gui(QMainWindow, MainWindowDelegatesMixin):
     def resizeEvent(self, event: QResizeEvent) -> None:  # noqa: N802
         """Ajusta la toolbar al ancho disponible sin alterar el mapa."""
         super().resizeEvent(event)
+        self.layout_manager.update_responsive_layout(self.width(), self.height())
         if self.toolbar is not None:
             self.toolbar.update_responsive_layout(self.width())
 

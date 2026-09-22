@@ -64,13 +64,13 @@ def _intersection_area(a: PaisBounds, b: PaisBounds) -> float:
 
 
 def load_pais_bounds(theme: str, *, folder: str = "themes/") -> list[PaisBounds]:
-    """Carga posición absoluta y tamaño de cada país desde TOML + PNG.
+    """Carga posición absoluta y tamaño de cada país desde TOML + asset.
 
     Returns:
         Lista de bounds en orden de apilamiento (z_index creciente).
 
     Raises:
-        OSError: Si algún PNG del tema no se puede cargar.
+        OSError: Si algún asset del tema no se puede cargar.
 
     """
     reader = TomlReader.from_theme(theme, strict=True)

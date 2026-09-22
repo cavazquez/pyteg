@@ -23,7 +23,9 @@ from pyteg.gui.mapa.overlap_check import (
 
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Detecta países superpuestos en el layout del mapa (TOML + PNG)."
+        description=(
+            "Detecta países superpuestos en el layout del mapa (TOML + SVG/PNG)."
+        )
     )
     parser.add_argument(
         "--theme",
