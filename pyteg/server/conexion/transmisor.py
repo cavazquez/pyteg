@@ -418,7 +418,7 @@ class ServerTransmisor:
         )
         self._send_message(msg)
 
-    def enviar_tarjetas_jugador(self, tarjetas: list[dict[str, str]]) -> None:
+    def enviar_tarjetas_jugador(self, tarjetas: list[dict[str, Any]]) -> None:
         """Envía las tarjetas del jugador al cliente.
 
         Args:

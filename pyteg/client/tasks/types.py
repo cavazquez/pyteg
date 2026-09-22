@@ -127,6 +127,8 @@ class TarjetaItem(TypedDict, total=False):
 
     pais: str
     simbolo: str
+    tipo: str
+    continente: str
 
 
 class _OptTarjetasJugador(TypedDict, total=False):

@@ -32,6 +32,11 @@ class ThemeRulesTests(unittest.TestCase):
             },
         )
         self.assertEqual(rules.exchange_units, (6, 10))
+        self.assertTrue(rules.exchange_tail_from_last)
+        self.assertEqual(
+            rules.continent_card_exchange_map["AmericaDelSur"],
+            ("Avion", "Tanque"),
+        )
         self.assertTrue(rules.missiles_enabled)
         self.assertEqual(rules.situation_ruleset, "revancha")
 

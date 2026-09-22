@@ -94,7 +94,21 @@ class Server:
         toml_reader = TomlReader.from_theme(theme, strict=True)
         self.mapa = Mapa(lambda: build_mapa_from_reader(toml_reader))
         self.mapa.configurar_reglas(self._reglas)
-        self.mazo = Mazo(self.mapa.paises(), toml_reader.get_simbolos())
+        card_distribution = toml_reader.get_cartas_distribucion()
+        extra_cards: list[tuple[str, str, str, str | None]] = [
+            (f"__continente__:{continent}", symbol, "continente", continent)
+            for continent, symbol in card_distribution["continentes"].items()
+        ]
+        extra_cards.extend(
+            (f"__especial__:{card_id}", symbol, "especial", None)
+            for card_id, symbol in card_distribution["especiales"].items()
+        )
+        self.mazo = Mazo(
+            self.mapa.paises(),
+            toml_reader.get_simbolos(),
+            simbolos_por_pais=card_distribution["paises"] or None,
+            cartas_extra=extra_cards,
+        )
         self.objetivos_secretos = ObjetivosSecretos(
             toml_reader,
             rng=objective_rng,
@@ -872,10 +886,17 @@ class Server:
     def enviar_tarjetas_jugador(self, client: Client) -> None:
         """Envía las tarjetas del jugador específico al cliente."""
         tarjetas_jugador = self.mazo.tarjetas_asignadas(client)
-        tarjetas_data = [
-            {"pais": tarjeta.pais, "simbolo": tarjeta.simbolo}
-            for tarjeta in tarjetas_jugador
-        ]
+        tarjetas_data: list[dict[str, Any]] = []
+        for tarjeta in tarjetas_jugador:
+            card_data: dict[str, Any] = {
+                "pais": tarjeta.pais,
+                "simbolo": tarjeta.simbolo,
+            }
+            if tarjeta.tipo != "pais":
+                card_data["tipo"] = tarjeta.tipo
+                if tarjeta.continente is not None:
+                    card_data["continente"] = tarjeta.continente
+            tarjetas_data.append(card_data)
         LOGGER.debug(
             "Enviando %s tarjetas a %s: %s",
             len(tarjetas_data),

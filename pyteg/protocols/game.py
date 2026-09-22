@@ -100,11 +100,15 @@ class IGameProtocol(Protocol):
         """
         ...
 
-    def marcar_jugador_puede_reclamar(self, jugador: IClientProtocol) -> None:
+    def marcar_jugador_puede_reclamar(
+        self, jugador: IClientProtocol, pais_conquistado: str | None = None
+    ) -> None:
         """Marca que un jugador puede reclamar una tarjeta.
 
         Args:
             jugador: Jugador que puede reclamar.
+            pais_conquistado: País conquistado, si también se debe evaluar su
+                tarjeta de continente.
 
         """
         ...
