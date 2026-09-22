@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import hashlib
 import json
 import uuid
 from typing import Any
@@ -10,7 +9,7 @@ from typing import Any
 from PySide6.QtNetwork import QAbstractSocket, QTcpSocket
 from PySide6.QtWidgets import QMessageBox, QWidget
 
-from pyteg.client.conexion.transmisor import ClientTransmisor
+from pyteg.client.conexion.transmisor import ClientNullTransmisor, ClientTransmisor
 from pyteg.client.event_processor import ClientEventProcessor
 from pyteg.client.state_adapter import QtClientStateAdapter
 from pyteg.client.state_model import ClientStateModel
@@ -19,9 +18,8 @@ from pyteg.codecs_utils import FrameCodecError, NulDelimitedUtf8Codec
 from pyteg.config import DEFAULT_MAP_THEME
 from pyteg.i18n import translate as _
 from pyteg.logger import get_logger
-from pyteg.protocol import PROTOCOL_VERSION
+from pyteg.protocol import PROTOCOL_VERSION, map_hash_for_theme
 from pyteg.protocol_validation import MessageValidationError, validate_client_event
-from pyteg.utils import get_resource_path
 
 _LOG = get_logger("client.connection")
 
@@ -89,24 +87,25 @@ class ConnectionClient(QWidget):
         if not isinstance(theme, str) or not theme:
             theme = DEFAULT_MAP_THEME
         try:
-            digest = hashlib.sha256()
-            theme_dir = get_resource_path(f"themes/{theme}")
-            for filename in ("paises.toml", "adyacencias.toml"):
-                digest.update(filename.encode("utf-8"))
-                digest.update((theme_dir / filename).read_bytes())
-            map_hash = digest.hexdigest()
+            map_hash = map_hash_for_theme(theme)
         except OSError:
             map_hash = "client-map-unknown"
         self._main_window.transmisor.hello(
             PROTOCOL_VERSION,
             theme,
             map_hash,
-            capabilities=["snapshots", "command_results", "reconnect"],
+            capabilities=[
+                "snapshots",
+                "command_results",
+                "reconnect",
+                "heartbeat",
+            ],
             rules=["validated_phases", "one_card_per_turn"],
         )
         if user_id is not None and token:
             self._main_window.transmisor.reconectar(user_id, token)
-        self._main_window.transmisor.set_username(self._username)
+        else:
+            self._main_window.transmisor.set_username(self._username)
 
     def esta_conectado(self) -> bool:
         """Verifica si el cliente está conectado al servidor.
@@ -159,7 +158,7 @@ class ConnectionClient(QWidget):
         encode_data = NulDelimitedUtf8Codec.encode_frame(data)
         self._socket.write(encode_data)
 
-    def read_data(self) -> None:
+    def read_data(self) -> None:  # noqa: C901
         """Lee datos recibidos del servidor."""
         while self._socket.bytesAvailable():
             encode_datas = self._socket.readAll()
@@ -193,6 +192,8 @@ class ConnectionClient(QWidget):
                     continue
 
                 _LOG.debug("JSON recibido: %s", validated_data["mensaje"])
+                if self._respond_to_ping(validated_data):
+                    continue
                 applied = self.event_processor.process(validated_data)
                 if applied.gap:
                     self.send_data(
@@ -209,6 +210,23 @@ class ConnectionClient(QWidget):
                     task.run(self._main_window)
                 except Exception:  # noqa: BLE001 - el slot Qt no debe caer por un peer.
                     _LOG.exception("Error al procesar evento del servidor")
+
+    def _respond_to_ping(self, event: dict[str, Any]) -> bool:
+        """Responde un heartbeat sin proyectarlo como evento de juego.
+
+        Returns:
+            ``True`` si el evento era un ping y se respondió.
+
+        """
+        if event.get("mensaje") != "ping":
+            return False
+        self.send_data(
+            json.dumps({
+                "mensaje": "pong",
+                "heartbeat_id": event["heartbeat_id"],
+            })
+        )
+        return True
 
     def on_state_changed(self, state: QAbstractSocket.SocketState) -> None:
         """Maneja los cambios de estado de la conexión.
@@ -232,6 +250,7 @@ class ConnectionClient(QWidget):
         elif state == QAbstractSocket.SocketState.UnconnectedState:
             _LOG.info("Socket desconectado")
             self._main_window.conexion = None
+            self._main_window.transmisor = ClientNullTransmisor()
             # Reproducir sonido de desconexión
             if hasattr(self._main_window, "sound_manager"):
                 self._main_window.sound_manager.play_disconnect()

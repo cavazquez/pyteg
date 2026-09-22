@@ -57,6 +57,50 @@ class TestServerTransmisor(unittest.TestCase):
         payload = json.loads(conn.sent[0].decode("utf-8"))
         self.assertEqual(payload.get("user_id"), 42)
 
+    def test_enviar_mapa_solo_difunde_paises_modificados(self) -> None:
+        """Una transición de una frontera no repite todo el tablero."""
+        conn = _RecordingConn()
+        tr = ServerTransmisor(conn)
+        mapa = MagicMock()
+        mapa.paises.return_value = ["Argentina", "Brasil"]
+        owners = {"Argentina": 1, "Brasil": 2}
+        units = {"Argentina": 3, "Brasil": 4}
+        mapa.ocupado_por.side_effect = owners.__getitem__
+        mapa.cantidad_unidades.side_effect = units.__getitem__
+
+        tr.enviar_mapa(mapa, None)
+        self.assertEqual(len(conn.sent), 2)
+
+        tr.enviar_mapa(mapa, None)
+        self.assertEqual(len(conn.sent), 2)
+
+        units["Argentina"] = 5
+        tr.enviar_mapa(mapa, None)
+        self.assertEqual(len(conn.sent), 3)
+        payload = json.loads(conn.sent[-1].decode("utf-8"))
+        self.assertEqual(payload["pais"], "Argentina")
+        self.assertEqual(payload["unidades"], 5)
+
+    def test_snapshot_actualiza_cache_del_mapa(self) -> None:
+        """Una resincronización no fuerza un mapa completo posterior."""
+        conn = _RecordingConn()
+        tr = ServerTransmisor(conn)
+        snapshot = {
+            "revision": 1,
+            "countries": {
+                "Argentina": {"userid": 1, "unidades": 3, "misiles": 0},
+            },
+        }
+        tr.enviar_snapshot(snapshot)
+
+        mapa = MagicMock()
+        mapa.paises.return_value = ["Argentina"]
+        mapa.ocupado_por.return_value = 1
+        mapa.cantidad_unidades.return_value = 3
+        tr.enviar_mapa(mapa, None)
+
+        self.assertEqual(len(conn.sent), 1)
+
 
 class TestServerMessageBroadcaster(unittest.TestCase):
     """Broadcast a clientes y eventos en MessageBus."""

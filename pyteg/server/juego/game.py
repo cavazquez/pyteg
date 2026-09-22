@@ -1,3 +1,5 @@
+# ruff: noqa: DOC201, DOC501, TRY003, EM101, EM102
+
 """Módulo para manejar la lógica del juego en el servidor."""
 
 from __future__ import annotations
@@ -10,15 +12,20 @@ from pyteg.config import (
 )
 from pyteg.core.combate.batalla import Batalla
 from pyteg.core.partida.card_manager import CardManager
+from pyteg.core.partida.objetivos_secretos import NO_SECRET_OBJECTIVES
+from pyteg.core.partida.pactos import PactManager
+from pyteg.core.partida.reglas import ThemeRules
 from pyteg.core.partida.turn_manager import TurnManager
 from pyteg.core.partida.victory_checker import VictoryChecker
+from pyteg.core.situaciones.runtime import SituationRuntime
 from pyteg.core.turnos.turnos import PrimerTurno, SegundoTurno, SiguientesTurnos
-from pyteg.exceptions import PlayerEliminatedError
+from pyteg.exceptions import InvalidActionError, PlayerEliminatedError
 from pyteg.logger import get_logger
 from pyteg.server.juego.fase import FASE_ACCIONES, FASE_COLOCACION
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
+    from random import Random, SystemRandom
 
     from pyteg.core.cartas.mazo import Mazo
     from pyteg.core.cartas.tarjeta_de_pais import TarjetaDePais
@@ -43,6 +50,9 @@ class Game:
         paises_para_victoria: int | None = None,
         *,
         objetivos_secretos_activados: bool = False,
+        situation_runtime: SituationRuntime | None = None,
+        rules: ThemeRules | None = None,
+        dice_rng: Random | SystemRandom | None = None,
     ) -> None:
         """Inicializa el juego.
 
@@ -53,6 +63,9 @@ class Game:
             server: Referencia al servidor.
             paises_para_victoria: Cantidad de países necesarios para ganar.
             objetivos_secretos_activados: Si la victoria por objetivos está activa.
+            situation_runtime: Runtime opcional de cartas de situación.
+            rules: Perfil de reglas opcional del tema.
+            dice_rng: Fuente opcional de dados para simulaciones reproducibles.
 
         """
         if paises_para_victoria is None:
@@ -66,25 +79,51 @@ class Game:
         self._reconnect_tokens: dict[int, str] = {}
         self._server = server  # Referencia al servidor para notificar cambios
         self._paises_para_victoria = paises_para_victoria
+        self._rules = rules
+        self._dice_rng = dice_rng
+        self._pact_manager = PactManager(mapa)
         self._fase = FASE_COLOCACION
+        self._situation_runtime = (
+            situation_runtime
+            if situation_runtime is not None
+            else SituationRuntime.none(mapa)
+        )
 
         # Inicializar gestor de turnos
-        self._turn_manager = TurnManager(mapa)
+        self._turn_manager = TurnManager(
+            mapa,
+            reinforcement_policy=self._situation_runtime,
+            rules=rules,
+        )
 
         # Inicializar gestor de tarjetas
-        self._card_manager = CardManager(mazo, self._turn_manager)
+        self._card_manager = CardManager(mazo, self._turn_manager, rules=rules)
 
         # Inicializar verificador de victoria
+        secret_objectives = NO_SECRET_OBJECTIVES
+        if objetivos_secretos_activados:
+            configured_objectives = getattr(
+                server, "objetivos_secretos", NO_SECRET_OBJECTIVES
+            )
+            if configured_objectives is not None:
+                secret_objectives = configured_objectives
+
         self._victory_checker = VictoryChecker(
             mapa,
             paises_para_victoria,
-            getattr(server, "objetivos_secretos", None),
-            objetivos_secretos_activados=objetivos_secretos_activados,
-            color_manager=getattr(server, "color", None),
+            secret_objectives=secret_objectives,
+            # El servidor expone tanto los clientes históricos como su color;
+            # pasar ese contexto permite resolver objetivos de destrucción y
+            # relativos incluso cuando el administrador de colores sólo
+            # conoce los colores disponibles.
+            color_manager=server,
+            player_order=self.lista_jugadores_orden_turno,
         )
 
     def empezar(self) -> None:
         """Inicia el juego asignando países y creando los primeros turnos."""
+        self._situation_runtime.reset()
+        self._pact_manager.reiniciar()
         jugadores = self.lista_jugadores()
         jugadores_userids = [int(j.userid()) for j in jugadores]
         self._mapa.asignar_paises(jugadores_userids)
@@ -92,7 +131,7 @@ class Game:
         self._eliminados = {
             jugador_id
             for jugador_id in jugadores_userids
-            if self._mapa.cantidad_de_paises_del_jugador(jugador_id) == 0
+            if not self._mapa.tiene_paises(jugador_id)
         }
         self._reconnect_tokens = {}
         for jugador in jugadores:
@@ -180,6 +219,40 @@ class Game:
         """
         return self._fase
 
+    def reglas(self) -> ThemeRules:
+        """Devuelve las reglas activas para validadores y tareas.
+
+        Returns:
+            Perfil de reglas de la partida.
+
+        """
+        return self._rules if self._rules is not None else ThemeRules.defaults()
+
+    def situacion_actual(self) -> dict[str, str | int | None]:
+        """Devuelve la carta de situación activa para snapshots públicos.
+
+        Returns:
+            Payload serializable de la carta activa.
+
+        """
+        return self._situation_runtime.public_snapshot()
+
+    def validar_accion_situacion(
+        self,
+        jugador: IClientProtocol,
+        accion: str,
+    ) -> None:
+        """Valida una acción contra la carta activa."""
+        color = jugador.color_actual()
+        color_key = color.to_hex().lower() if color is not None else None
+        self._situation_runtime.validate_action(
+            int(jugador.userid()), accion, color_key
+        )
+
+    def validar_ataque_situacion(self, origen: str, destino: str) -> None:
+        """Valida fronteras abiertas/cerradas de la carta activa."""
+        self._situation_runtime.validate_attack(origen, destino)
+
     def refuerzos_pendientes(self) -> int:
         """Cantidad de refuerzos que el jugador actual aún puede colocar.
 
@@ -224,6 +297,15 @@ class Game:
         self._validar_jugador_activo(jugador)
         self._card_manager.canjear(jugador, tarjetas)
 
+    def puede_canjear_tarjetas(self, jugador: IClientProtocol | int) -> bool:
+        """Indica si el jugador conserva su canje de la vuelta.
+
+        Returns:
+            ``True`` si todavía no canjeó en el turno vigente.
+
+        """
+        return self._card_manager.puede_canjear_en_turno(jugador)
+
     def cant_jugadores(self) -> int:
         """Obtiene la cantidad de jugadores.
 
@@ -241,6 +323,38 @@ class Game:
 
         """
         return self._mapa
+
+    def pactos(self) -> PactManager:
+        """Devuelve el gestor autoritativo de pactos de la partida."""
+        return self._pact_manager
+
+    def pactos_publicos(self) -> dict[str, object]:
+        """Devuelve pactos y bloqueos visibles para todos los clientes."""
+        return self._pact_manager.public_snapshot()
+
+    def validar_pacto_ataque(
+        self,
+        jugador: IClientProtocol | int,
+        origen: str,
+        destino: str,
+        defensor: int | None = None,
+    ) -> None:
+        """Rechaza ataques o misiles prohibidos por pactos vigentes."""
+        jugador_id = int(jugador if isinstance(jugador, int) else jugador.userid())
+        if defensor is None:
+            defensor = self._mapa.ocupado_por(destino)
+        if not self._pact_manager.puede_atacar(
+            jugador_id, defensor, origen, destino, self.num_ronda()
+        ):
+            raise InvalidActionError("Un pacto público impide atacar ese objetivo")
+
+    def validar_refuerzo(self, jugador: IClientProtocol | int, pais: str) -> None:
+        """Aplica la excepción oficial del único país frente a un bloqueo."""
+        jugador_id = int(jugador if isinstance(jugador, int) else jugador.userid())
+        if self._pact_manager.esta_bloqueado(pais, jugador_id):
+            raise InvalidActionError(
+                f"{pais} está bloqueado y no puede recibir refuerzos esta vuelta"
+            )
 
     def finalizar_turno(self) -> None:
         """Finaliza el turno actual y avanza al siguiente."""
@@ -275,6 +389,15 @@ class Game:
         es_segundo_turno = isinstance(self._turn_manager.turno_actual(), PrimerTurno)
         self._turn_manager.iniciar_nueva_ronda(
             jugadores_userids, es_segundo_turno=es_segundo_turno
+        )
+        self._pact_manager.expirar(self.num_ronda())
+        self._situation_runtime.begin_round(
+            self.num_ronda(),
+            jugadores_userids,
+            {
+                int(jugador.userid()): self._color_key(jugador)
+                for jugador in jugadores_rotados
+            },
         )
         self._actualizar_fase()
 
@@ -458,11 +581,13 @@ class Game:
         """
         return self._turn_manager.lista_jugadores_orden_turno(self.jugadores_activos())
 
-    def atacar(
+    def atacar(  # noqa: PLR0912, PLR0914, PLR0915, D417
         self,
         pais_atacante: str,
         pais_defensor: str,
         cantidad_unidades: int | None = None,
+        jugador_atacante: int | None = None,
+        jugador_defensor: int | None = None,
     ) -> dict[str, Any]:
         """Realiza un ataque entre dos países.
 
@@ -477,14 +602,28 @@ class Game:
             Diccionario con el resultado del ataque.
 
         """
-        # Obtener las unidades de cada país
-        unidades_atacante = self.mapa().cantidad_unidades(pais_atacante)
-        unidades_defensor = self.mapa().cantidad_unidades(pais_defensor)
+        mapa = self.mapa()
+        # Un ataque desde/hacia un condominio debe indicar qué color aporta
+        # las unidades. El camino histórico sigue usando el dueño exclusivo.
+        atacante_id = jugador_atacante or mapa.ocupado_por(pais_atacante)
+        defensor_id = jugador_defensor or mapa.ocupado_por(pais_defensor)
+        if atacante_id is None or defensor_id is None:
+            raise InvalidActionError("El ataque necesita atacante y defensor válidos")
+        unidades_atacante = (
+            mapa.cantidad_unidades_jugador(pais_atacante, atacante_id)
+            if mapa.es_condominio(pais_atacante)
+            else mapa.cantidad_unidades(pais_atacante)
+        )
+        unidades_defensor = (
+            mapa.cantidad_unidades_jugador(pais_defensor, defensor_id)
+            if mapa.es_condominio(pais_defensor)
+            else mapa.cantidad_unidades(pais_defensor)
+        )
 
         # Calcular cuántos dados usar
         if cantidad_unidades is not None:
-            # Validar que la cantidad esté en el rango válido (1-3)
-            cantidad_unidades = max(1, min(3, cantidad_unidades))
+            max_dice = self._rules.attack_dice_max if self._rules else 3
+            cantidad_unidades = max(1, min(max_dice, cantidad_unidades))
             # Validar que no exceda las unidades disponibles (menos 1 que debe quedar)
             max_unidades_disponibles = unidades_atacante - 1
             cantidad_unidades = min(cantidad_unidades, max_unidades_disponibles)
@@ -494,21 +633,34 @@ class Game:
                 unidades_atacante
             )
 
-        dados_defensor_count = Batalla.calcular_cant_dados_defensor(unidades_defensor)
+        dados_atacante_count = self._situation_runtime.attack_dice(dados_atacante_count)
+        # Una carta puede añadir dados, pero nunca puede permitir usar más
+        # unidades de las que el país tiene disponibles para el combate.
+        dados_atacante_count = min(
+            dados_atacante_count,
+            max(self._rules.attack_dice_max if self._rules else 3, 4),
+            max(unidades_atacante - 1, 0),
+        )
+        dados_defensor_count = self._situation_runtime.defense_dice(
+            Batalla.calcular_cant_dados_defensor(unidades_defensor)
+        )
+        max_defense_dice = self._rules.defense_dice_max if self._rules else 2
+        dados_defensor_count = min(
+            dados_defensor_count,
+            max(max_defense_dice, 4),
+            max(unidades_defensor, 0),
+        )
 
         # Generar dados aleatorios
         dados_atacante = sorted(
-            [secrets.randbelow(6) + 1 for _ in range(dados_atacante_count)],
+            [self._tirar_dado() for _ in range(dados_atacante_count)],
             reverse=True,
         )
         dados_defensor = sorted(
-            [secrets.randbelow(6) + 1 for _ in range(dados_defensor_count)],
+            [self._tirar_dado() for _ in range(dados_defensor_count)],
             reverse=True,
         )
 
-        # Obtener userids de los jugadores que ocupan cada país (canónico, int|None)
-        atacante_id = self.mapa().ocupado_por(pais_atacante)
-        defensor_id = self.mapa().ocupado_por(pais_defensor)
         # Resolver nombres solo para presentación (chat / log)
         atacante_nombre = self._username_de(atacante_id)
         defensor_nombre = self._username_de(defensor_id)
@@ -530,30 +682,89 @@ class Game:
                 LOGGER.debug(
                     "Restando 1 unidad a %s en %s", atacante_nombre, pais_atacante
                 )
-                self.mapa().restar_una_unidad(pais_atacante)
+                mapa.restar_unidad_jugador(pais_atacante, int(atacante_id))
             else:
                 LOGGER.debug(
                     "Restando 1 unidad a %s en %s", defensor_nombre, pais_defensor
                 )
-                self.mapa().restar_una_unidad(pais_defensor)
+                mapa.restar_unidad_jugador(
+                    pais_defensor,
+                    int(defensor_id),
+                    normalizar=not mapa.es_condominio(pais_defensor),
+                )
 
         conquistado = False
-        unidades_defensor_post_batalla = self.mapa().cantidad_unidades(pais_defensor)
+        unidades_defensor_post_batalla = (
+            mapa.cantidad_unidades_jugador(pais_defensor, int(defensor_id))
+            if mapa.es_condominio(pais_defensor)
+            else mapa.cantidad_unidades(pais_defensor)
+        )
         LOGGER.debug(
             "Unidades en %s después de batalla: %s",
             pais_defensor,
             unidades_defensor_post_batalla,
         )
 
-        if unidades_defensor_post_batalla == 0 and atacante_id is not None:
+        if unidades_defensor_post_batalla == 0:
+            pacto_agresion = self._pact_manager.aggression_for_conquest(
+                int(atacante_id), int(defensor_id), pais_defensor, self.num_ronda()
+            )
             LOGGER.info("Asignando %s a %s", pais_defensor, atacante_nombre)
-            self.mapa().asignar_pais(atacante_id, pais_defensor)
             LOGGER.debug("Moviendo 1 unidad de %s a %s", pais_atacante, pais_defensor)
-            self.mapa().restar_una_unidad(pais_atacante)
-            self.mapa().agregar_una_unidad(pais_defensor)
+            mapa.restar_unidad_jugador(pais_atacante, int(atacante_id))
+            if mapa.es_condominio(pais_defensor):
+                mapa.conquistar_condominio(
+                    pais_defensor,
+                    int(atacante_id),
+                    int(defensor_id),
+                    unidades=1,
+                )
+            else:
+                mapa.asignar_pais(int(atacante_id), pais_defensor)
+                mapa.agregar_una_unidad(pais_defensor)
             conquistado = True
 
-            if defensor_id is not None:
+            if pacto_agresion is not None and not mapa.es_condominio(pais_defensor):
+                # El país recién conquistado conserva la contribución de ambos
+                # aliados. Se toma una unidad del primer país limítrofe del
+                # aliado que todavía puede dejar una guarnición.
+                aliado = next(
+                    jugador
+                    for jugador in pacto_agresion.jugadores
+                    if jugador != int(atacante_id)
+                )
+                origen_aliado = next(
+                    (
+                        pais
+                        for pais in mapa.paises()
+                        if mapa.jugador_posee_pais(aliado, pais)
+                        and pais_defensor in mapa.obtener_paises_adyacentes(pais)
+                        and mapa.cantidad_unidades_jugador(pais, aliado) > 1
+                    ),
+                    None,
+                )
+                if origen_aliado is not None:
+                    mapa.restar_unidad_jugador(origen_aliado, aliado)
+                    mapa.agregar_una_unidad(pais_defensor)
+                    self._pact_manager.invalidar_por_conquista(pais_defensor)
+                    # La ficha del atacante ya quedó en el país; la segunda
+                    # ficha proviene del aliado recién trasladado.
+                    mapa.crear_condominio(
+                        pais_defensor,
+                        {int(atacante_id): 1, aliado: 1},
+                    )
+                    self._pact_manager.registrar_condominio(
+                        pais_defensor,
+                        (int(atacante_id), aliado),
+                        self.num_ronda(),
+                    )
+                else:
+                    self._pact_manager.invalidar_por_conquista(pais_defensor)
+            else:
+                self._pact_manager.invalidar_por_conquista(pais_defensor)
+
+            self._card_manager.devolver_continentes_perdidos(self._mapa)
+            if defensor_id is not None and not mapa.tiene_paises(defensor_id):
                 self._eliminar_jugador(defensor_id, atacante_id)
 
             LOGGER.info("%s ha conquistado %s", atacante_nombre, pais_defensor)
@@ -586,6 +797,17 @@ class Game:
             "conquistado": conquistado,
         }
 
+    def _tirar_dado(self) -> int:
+        """Tira un dado usando la fuente inyectada o entropía del sistema.
+
+        Returns:
+            Resultado entre uno y seis.
+
+        """
+        if self._dice_rng is not None:
+            return self._dice_rng.randint(1, 6)
+        return secrets.randbelow(6) + 1
+
     def _eliminar_jugador(self, eliminado_id: int, conquistador_id: int) -> bool:
         """Registra una eliminación y sincroniza el estado con los clientes.
 
@@ -601,10 +823,7 @@ class Game:
             ``True`` si se registró una eliminación nueva.
 
         """
-        if (
-            eliminado_id in self._eliminados
-            or self._mapa.cantidad_de_paises_del_jugador(eliminado_id) > 0
-        ):
+        if eliminado_id in self._eliminados or self._mapa.tiene_paises(eliminado_id):
             return False
 
         self._eliminados.add(eliminado_id)
@@ -661,15 +880,43 @@ class Game:
                 return j.username() if hasattr(j, "username") else str(j)
         return ""
 
-    def marcar_jugador_puede_reclamar(self, jugador: IClientProtocol) -> None:
+    @staticmethod
+    def _color_key(jugador: IClientProtocol) -> str | None:
+        """Normaliza el color de un jugador para las reglas de situación.
+
+        Returns:
+            Color hexadecimal normalizado o ``None``.
+
+        """
+        color = jugador.color_actual()
+        if color is None:
+            return None
+        to_hex = getattr(color, "to_hex", None)
+        if not callable(to_hex):
+            return None
+        return str(to_hex()).lower()
+
+    def marcar_jugador_puede_reclamar(
+        self,
+        jugador: IClientProtocol,
+        pais_conquistado: str | None = None,
+    ) -> None:
         """Marca a un jugador como elegible para reclamar tarjeta.
 
         Args:
             jugador: Jugador a marcar como elegible.
+            pais_conquistado: País recién conquistado, si corresponde.
 
         """
         self._validar_jugador_activo(jugador)
-        self._card_manager.marcar_jugador_puede_reclamar(jugador)
+        continentes: tuple[str, ...] = ()
+        if pais_conquistado is not None:
+            continente = self._mapa.continente(pais_conquistado)
+            if self._mapa.jugador_controla_continente(
+                int(jugador.userid()), continente
+            ):
+                continentes = (continente,)
+        self._card_manager.marcar_jugador_puede_reclamar(jugador, continentes)
 
     def puede_reclamar_tarjeta(self, jugador: IClientProtocol) -> bool:
         """Verifica si un jugador puede reclamar tarjeta.
@@ -681,9 +928,11 @@ class Game:
             True si el jugador puede reclamar tarjeta, False en caso contrario.
 
         """
-        return not self.jugador_esta_eliminado(
-            jugador
-        ) and self._card_manager.puede_reclamar_tarjeta(jugador)
+        return (
+            not self.jugador_esta_eliminado(jugador)
+            and self._situation_runtime.can_claim_country_card(int(jugador.userid()))
+            and self._card_manager.puede_reclamar_tarjeta(jugador)
+        )
 
     def reclamar_tarjeta_jugador(self, jugador: IClientProtocol) -> None:
         """Remueve al jugador de la lista de elegibles tras reclamar.

@@ -39,9 +39,7 @@ class GuiRadioButtonColor(QRadioButton):
 
         """
         if checked:
-            transmisor = getattr(self._main_window, "transmisor", None)
-            if transmisor is not None:
-                transmisor.seleccionar_color(self._color)
+            self._main_window.transmisor.seleccionar_color(self._color)
 
     def activar(self) -> None:
         """Habilita el botón."""

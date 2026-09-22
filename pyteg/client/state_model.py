@@ -34,6 +34,7 @@ class ClientStateModel:
     protocol_version: str | None = None
     theme: str | None = None
     map_hash: str | None = None
+    rules: dict[str, Any] | None = None
     handshake_accepted: bool = False
     local_userid: int | None = None
     private_cards: list[dict[str, Any]] = field(default_factory=list)
@@ -91,6 +92,8 @@ class ClientStateModel:
         self.snapshot = deepcopy({
             key: value for key, value in event.items() if key != "mensaje"
         })
+        raw_rules = event.get("reglas")
+        self.rules = deepcopy(raw_rules) if isinstance(raw_rules, dict) else None
         self.revision = revision
         self.snapshot_version = int(event["snapshot_version"])
         self.last_phase = event.get("fase")

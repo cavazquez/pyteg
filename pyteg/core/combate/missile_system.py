@@ -14,20 +14,23 @@ from pyteg.config import (
 )
 
 if TYPE_CHECKING:
+    from pyteg.core.partida.reglas import ThemeRules
     from pyteg.server.juego.mapa import Mapa
 
 
 class MissileSystem:
     """Sistema para gestionar misiles en el mapa del juego."""
 
-    def __init__(self, mapa: Mapa) -> None:
+    def __init__(self, mapa: Mapa, rules: ThemeRules | None = None) -> None:
         """Inicializa el sistema de misiles.
 
         Args:
             mapa: Referencia al mapa del juego.
+            rules: Perfil de reglas opcional del tema.
 
         """
         self._mapa = mapa
+        self._rules = rules
 
     def agregar_misil(self, pais: str) -> None:
         """Agrega un misil al país especificado.
@@ -105,9 +108,14 @@ class MissileSystem:
             Cantidad de unidades de daño (3, 2, 1, o 0 si fuera de rango).
 
         """
-        damage_map = {
-            1: MISSILE_DAMAGE_DISTANCE_1,
-            2: MISSILE_DAMAGE_DISTANCE_2,
-            3: MISSILE_DAMAGE_DISTANCE_3,
-        }
+        if self._rules is not None:
+            damage_map = dict(
+                enumerate(self._rules.missile_damage_by_distance, start=1)
+            )
+        else:
+            damage_map = {
+                1: MISSILE_DAMAGE_DISTANCE_1,
+                2: MISSILE_DAMAGE_DISTANCE_2,
+                3: MISSILE_DAMAGE_DISTANCE_3,
+            }
         return damage_map.get(distancia, 0)  # 0 si está fuera de rango

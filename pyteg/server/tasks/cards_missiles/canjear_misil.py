@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-from pyteg.config import MIN_UNITS_FOR_MISSILE_EXCHANGE, MISSILE_UNIT_COST
 from pyteg.server.juego.validators import (
     CountryOwnershipValidator,
     GameStateValidator,
@@ -78,18 +77,21 @@ class ServerTaskCanjearMisil(IServerTask[CanjearMisilTaskData]):
 
         CountryOwnershipValidator.validate_ownership(client, context.mapa, self._pais)
 
+        rules = context.reglas()
+        missile_cost = rules.missile_unit_cost
+        min_units = missile_cost + rules.missile_min_units_to_leave
         UnitValidator.validate_min_units(
             context.mapa,
             self._pais,
-            MIN_UNITS_FOR_MISSILE_EXCHANGE,
+            min_units,
             (
-                f"Se requieren al menos {MIN_UNITS_FOR_MISSILE_EXCHANGE} unidades "
+                f"Se requieren al menos {min_units} unidades "
                 f"para canjear un misil. {self._pais} tiene "
                 f"{context.mapa.cantidad_unidades(self._pais)} unidades."
             ),
         )
 
-        for _ in range(MISSILE_UNIT_COST):
+        for _ in range(missile_cost):
             context.mapa.restar_una_unidad(self._pais)
 
         context.mapa.agregar_misil(self._pais)
@@ -99,6 +101,6 @@ class ServerTaskCanjearMisil(IServerTask[CanjearMisilTaskData]):
         context.enviar_mapa()
 
         client.transmisor.enviar_sistema(
-            f"Misil canjeado en {self._pais}: -{MISSILE_UNIT_COST} unidades, +1 misil. "
+            f"Misil canjeado en {self._pais}: -{missile_cost} unidades, +1 misil. "
             f"Total: {cantidad_misiles} misiles"
         )
