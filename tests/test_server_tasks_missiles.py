@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any, cast
 from unittest.mock import MagicMock
 
 from pyteg.config import MISSILE_UNIT_COST
+from pyteg.core.partida.reglas import ThemeRules, load_theme_rules
 from pyteg.core.turnos.turnos import PrimerTurno
 from pyteg.server.juego.estado import Estado
 from pyteg.server.juego.fase import FASE_COLOCACION
@@ -35,6 +36,25 @@ def _mapa_dos_paises() -> Mapa:
         }
 
     return Mapa(build)
+
+
+def _mapa_tres_distancias() -> Mapa:
+    """Construye objetivos a una, dos y tres fronteras.
+
+    Returns:
+        Mapa Revancha mínimo para probar el daño por distancia.
+
+    """
+
+    def build() -> dict[str, list[int | str | list[str] | None]]:
+        return {
+            "Origen": [10, "America", 1, ["Uno"]],
+            "Uno": [4, "America", 2, ["Origen", "Dos"]],
+            "Dos": [3, "America", 2, ["Uno", "Tres"]],
+            "Tres": [2, "America", 2, ["Dos"]],
+        }
+
+    return Mapa(build, load_theme_rules("revancha"))
 
 
 class _FakeClient:
@@ -73,13 +93,20 @@ class _FakeGame:
 class _FakeServer:
     """Servidor mínimo para `GameContext` y validación de estado."""
 
-    def __init__(self, mapa: Mapa, *, misiles: bool = True) -> None:
+    def __init__(
+        self,
+        mapa: Mapa,
+        *,
+        misiles: bool = True,
+        rules: ThemeRules | None = None,
+    ) -> None:
         self.mapa = mapa
         self.game = _FakeGame(1)
         self.estado = Estado()
         self.estado.esperar_jugadores()
         self.estado.empezar_partida()
         self._misiles = misiles
+        self._rules = rules if rules is not None else ThemeRules.defaults()
         self.misiles_agregados: list[tuple[str, int]] = []
         self.resultados_misil: list[dict[str, Any]] = []
         self.sent_map = False
@@ -89,6 +116,9 @@ class _FakeServer:
 
     def misiles_habilitados(self) -> bool:
         return self._misiles
+
+    def reglas(self) -> ThemeRules:
+        return self._rules
 
     def enviar_misil_agregado(self, pais: str, cantidad: int) -> None:
         self.misiles_agregados.append((pais, cantidad))
@@ -189,6 +219,37 @@ class TestServerTaskLanzarMisil(unittest.TestCase):
         self.assertEqual(len(self.server.resultados_misil), 1)
         self.assertTrue(self.server.sent_map)
 
+    def test_lanzamiento_rechazado_si_no_deja_unidad_minima(self) -> None:
+        """El misil no puede eliminar todas las unidades del objetivo."""
+        self.mapa.restar_una_unidad("Brasil")
+        unidades_antes = self.mapa.cantidad_unidades("Brasil")
+
+        self._run_lanzar({
+            "mensaje": "lanzar_misil",
+            "pais_origen": "Argentina",
+            "pais_destino": "Brasil",
+        })
+
+        self.client.transmisor.enviar_error_chat.assert_called_once()
+        self.assertEqual(self.mapa.cantidad_unidades("Brasil"), unidades_antes)
+        self.assertEqual(self.mapa.cantidad_misiles("Argentina"), 1)
+
+    def test_lanzamiento_bloqueado_por_misiles_defensivos(self) -> None:
+        """Una defensa igual o mayor bloquea el lanzamiento ofensivo."""
+        self.mapa.agregar_misil("Brasil")
+        unidades_antes = self.mapa.cantidad_unidades("Brasil")
+
+        self._run_lanzar({
+            "mensaje": "lanzar_misil",
+            "pais_origen": "Argentina",
+            "pais_destino": "Brasil",
+        })
+
+        self.client.transmisor.enviar_error_chat.assert_called_once()
+        self.assertEqual(self.mapa.cantidad_unidades("Brasil"), unidades_antes)
+        self.assertEqual(self.mapa.cantidad_misiles("Argentina"), 1)
+        self.assertEqual(self.mapa.cantidad_misiles("Brasil"), 1)
+
     def test_lanzamiento_a_propio_pais_falla(self) -> None:
         """No se puede lanzar un misil a un país propio."""
         self.mapa.asignar_pais(1, "Brasil")
@@ -214,6 +275,44 @@ class TestServerTaskLanzarMisil(unittest.TestCase):
 
         self.client.transmisor.enviar_error_chat.assert_called_once()
         self.assertEqual(self.mapa.cantidad_misiles("Argentina"), 1)
+
+
+class TestServerTaskLanzarMisilRevancha(unittest.TestCase):
+    """El daño Revancha se aplica según la distancia del grafo."""
+
+    def setUp(self) -> None:
+        """Prepara un misil y tres objetivos enemigos."""
+        self.mapa = _mapa_tres_distancias()
+        for _ in range(3):
+            self.mapa.agregar_misil("Origen")
+        self.server = _FakeServer(
+            self.mapa,
+            rules=load_theme_rules("revancha"),
+        )
+        self.client = _FakeClient(1, self.server)
+
+    def test_lanzamientos_de_una_dos_y_tres_fronteras(self) -> None:
+        """Los daños observados son 3, 2 y 1 sin conquistar países."""
+        for target in ("Uno", "Dos", "Tres"):
+            task = ServerTaskLanzarMisil({
+                "mensaje": "lanzar_misil",
+                "pais_origen": "Origen",
+                "pais_destino": target,
+            })
+            task._validator = ServerStateValidator()  # noqa: SLF001
+            task.run(cast("IClientProtocol", self.client))
+
+        self.assertEqual(
+            [
+                (item["distancia"], item["dano"])
+                for item in self.server.resultados_misil
+            ],
+            [(1, 3), (2, 2), (3, 1)],
+        )
+        self.assertEqual(self.mapa.cantidad_unidades("Uno"), 1)
+        self.assertEqual(self.mapa.cantidad_unidades("Dos"), 1)
+        self.assertEqual(self.mapa.cantidad_unidades("Tres"), 1)
+        self.assertEqual(self.mapa.cantidad_misiles("Origen"), 0)
 
 
 if __name__ == "__main__":

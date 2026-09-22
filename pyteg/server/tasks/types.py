@@ -45,10 +45,40 @@ class _OptAtacar(TypedDict, total=False):
     origen: str | None
     destino: str | None
     cantidad_unidades: int | None
+    objetivo_jugador: int | None
 
 
 class AtacarTaskData(BaseTaskData, _OptAtacar):
     """`data` de la tarea `atacar`."""
+
+
+class _OptProponerPacto(TypedDict, total=False):
+    """Campos opcionales de una propuesta pública de pacto."""
+
+    tipo: str
+    jugador_objetivo: int
+    paises: list[str]
+    continentes: list[str]
+    pais_objetivo: str
+    duracion: int | None
+
+
+class ProponerPactoTaskData(BaseTaskData, _OptProponerPacto):
+    """`data` del comando `proponer_pacto`."""
+
+
+class _OptPactoId(TypedDict, total=False):
+    """Identificador de un pacto existente."""
+
+    pacto_id: str
+
+
+class AceptarPactoTaskData(BaseTaskData, _OptPactoId):
+    """`data` del comando `aceptar_pacto`."""
+
+
+class RomperPactoTaskData(BaseTaskData, _OptPactoId):
+    """`data` del comando `romper_pacto`."""
 
 
 class _OptAgregarUnidad(TypedDict, total=False):

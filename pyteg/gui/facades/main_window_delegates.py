@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from pyteg.gui.managers.cards import CardManager
     from pyteg.gui.managers.config import ConfigManager
     from pyteg.gui.managers.game_actions import GameActionsManager
-    from pyteg.gui.managers.players import PlayersManager
+    from pyteg.gui.managers.players import PlayersManager, PlayerStatus
     from pyteg.gui.managers.status import StatusManager
     from pyteg.gui.managers.units import UnitsManager
     from pyteg.gui.managers.window import WindowManager
@@ -42,6 +42,10 @@ class MainWindowDelegatesMixin:
     def update_player_list(self, players: Sequence[tuple[str, QColor]]) -> None:
         """Actualiza la lista de jugadores en el panel lateral."""
         self.players_manager.update_player_list(players)
+
+    def update_player_statuses(self, statuses: Sequence[PlayerStatus]) -> None:
+        """Actualiza conexión, administración y eliminación de jugadores."""
+        self.players_manager.update_player_statuses(statuses)
 
     def abrir_ventana_conectar(self) -> None:
         """Abre la ventana de conexión al servidor."""
@@ -87,6 +91,12 @@ class MainWindowDelegatesMixin:
     def update_game_state(self, estado: str) -> None:
         """Actualiza el estado del juego en la barra de estado."""
         self.status_manager.update_game_state(estado)
+
+    def refresh_gameplay_actions(self) -> None:
+        """Refresca fase, contexto y habilitación de acciones de juego."""
+        from pyteg.gui.gameplay_state import refresh_acciones_juego  # noqa: PLC0415
+
+        refresh_acciones_juego(self)
 
     def update_mi_jugador_info(self) -> None:
         """Refresca nombre y color del jugador local."""

@@ -5,9 +5,14 @@
 from __future__ import annotations
 
 import unittest
+from typing import cast
 from unittest.mock import MagicMock
 
-from pyteg.gui.gameplay_state import es_mi_turno, refresh_acciones_juego
+from pyteg.gui.gameplay_state import (
+    contexto_partida,
+    es_mi_turno,
+    refresh_acciones_juego,
+)
 
 
 class GameplayStateTests(unittest.TestCase):
@@ -32,6 +37,48 @@ class GameplayStateTests(unittest.TestCase):
         main_window.jugador_actual_id = 2
 
         self.assertFalse(es_mi_turno(main_window))
+
+    def test_contexto_muestra_fase_jugador_y_refuerzos(self) -> None:
+        main_window = MagicMock()
+        main_window.partida_finalizada = False
+        main_window.estado_actual = "JUGANDO"
+        main_window.fase_actual = "colocacion"
+        main_window.jugador_actual_nombre = "Ana"
+        main_window.jugador_actual_id = 2
+        main_window.unidades_pendientes_servidor = 4
+
+        contexto = contexto_partida(main_window)
+
+        contexto_texto = cast("str", contexto)
+        self.assertIn("Ana", contexto_texto)
+        self.assertIn("4", contexto_texto)
+
+    def test_contexto_muestra_situacion_publica(self) -> None:
+        """La situación activa se muestra desde el snapshot autoritativo."""
+        main_window = MagicMock()
+        main_window.partida_finalizada = False
+        main_window.estado_actual = "JUGANDO"
+        main_window.fase_actual = "acciones"
+        main_window.jugador_actual_nombre = "Ana"
+        main_window.unidades_pendientes_servidor = 0
+        main_window.client_state_model.snapshot = {
+            "situacion": {
+                "id": "snow_1",
+                "nombre": "Nieve",
+            }
+        }
+
+        contexto = contexto_partida(main_window)
+
+        self.assertIn("Nieve", cast("str", contexto))
+
+    def test_contexto_no_arrastra_fase_despues_de_desconectar(self) -> None:
+        main_window = MagicMock()
+        main_window.partida_finalizada = False
+        main_window.estado_actual = "Desconectado"
+        main_window.fase_actual = "colocacion"
+
+        self.assertIsNone(contexto_partida(main_window))
 
     def test_refresh_deshabilita_finalizar_fuera_de_turno(self) -> None:
         from PySide6.QtWidgets import QApplication, QMainWindow

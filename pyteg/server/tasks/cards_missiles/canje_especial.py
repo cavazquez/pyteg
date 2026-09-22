@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from pyteg.config import SPECIAL_EXCHANGE_UNITS
 from pyteg.exceptions import (
     CountryNotOwnedError,
     InvalidActionError,
@@ -83,16 +82,16 @@ class ServerTaskCanjeEspecial(IServerTask[CanjeEspecialTaskData]):
         tarjeta_encontrada.desasignar()
         tarjeta_encontrada.desusar()
 
-        for _ in range(SPECIAL_EXCHANGE_UNITS):
+        special_units = context.reglas().special_exchange_units
+        for _ in range(special_units):
             mapa.agregar_una_unidad(self._pais)
 
         context.enviar_mapa()
 
-        client.transmisor.enviar_canje_especial(self._pais, SPECIAL_EXCHANGE_UNITS)
+        client.transmisor.enviar_canje_especial(self._pais, special_units)
 
         context.enviar_tarjetas_jugador(client)
 
         client.transmisor.enviar_sistema(
-            f"Canje especial realizado: +{SPECIAL_EXCHANGE_UNITS} "
-            f"unidades en {self._pais}"
+            f"Canje especial realizado: +{special_units} unidades en {self._pais}"
         )
