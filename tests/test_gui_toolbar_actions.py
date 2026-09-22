@@ -131,3 +131,35 @@ class TestToolbarActionsMixin(unittest.TestCase):
         cast("MagicMock", tb.button_finalizar_turno).setEnabled.assert_called_once_with(
             False
         )
+
+    def test_finalizar_se_bloquea_durante_colocacion_y_explica_motivo(self) -> None:
+        mw = SimpleNamespace(
+            transmisor=_FakeConnectedTransmisor(),
+            client=MagicMock(),
+            jugador_actual_id=1,
+            fase_actual="colocacion",
+            unidades_pendientes_servidor=3,
+            partida_finalizada=False,
+        )
+        mw.client.userid.return_value = 1
+        tb = _DummyToolbar(mw)
+
+        tb.actualizar_botones_turno(
+            es_mi_turno=True,
+            puede_finalizar_turno=False,
+        )
+        tb.actualizar_motivos_acciones(
+            hay_dos_paises_seleccionados=False,
+            puede_actuar=False,
+            es_mi_turno=True,
+        )
+
+        cast("MagicMock", tb.button_finalizar_turno).setEnabled.assert_called_once_with(
+            False
+        )
+        cast("MagicMock", tb.button_finalizar_turno).setToolTip.assert_called_once_with(
+            "Colocá todas las unidades antes de finalizar el turno"
+        )
+        cast("MagicMock", tb.button_atacar).setToolTip.assert_called_once_with(
+            "Colocá todas las unidades antes de atacar o mover"
+        )

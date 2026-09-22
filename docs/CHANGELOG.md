@@ -8,6 +8,9 @@ Todas las fechas en formato YYYY-MM-DD.
 - **Contexto de países**: el mapa muestra nombre, continente, unidades y
   superposiciones en el tooltip y la barra de estado al pasar el cursor, sin
   llenar el tablero con etiquetas permanentes.
+- **Contexto de turno**: la barra de estado muestra fase, jugador activo y
+  refuerzos pendientes; las acciones deshabilitadas explican el motivo en su
+  tooltip y finalizar turno queda bloqueado durante la colocación.
 
 ## [0.1.0] - 2026-09-21
 

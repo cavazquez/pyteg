@@ -88,6 +88,12 @@ class MainWindowDelegatesMixin:
         """Actualiza el estado del juego en la barra de estado."""
         self.status_manager.update_game_state(estado)
 
+    def refresh_gameplay_actions(self) -> None:
+        """Refresca fase, contexto y habilitación de acciones de juego."""
+        from pyteg.gui.gameplay_state import refresh_acciones_juego  # noqa: PLC0415
+
+        refresh_acciones_juego(self)
+
     def update_mi_jugador_info(self) -> None:
         """Refresca nombre y color del jugador local."""
         self.status_manager.update_mi_jugador_info()

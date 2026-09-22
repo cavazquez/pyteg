@@ -107,6 +107,7 @@ class Gui(QMainWindow, MainWindowDelegatesMixin):
         self.tarjetas_jugador: list[TarjetaItem] = []
         self.misiles_habilitados: bool = False
         self.partida_finalizada: bool = False
+        self.estado_actual: str = "Desconectado"
         self.fase_actual: str | None = None
         self.unidades_pendientes_servidor: int = 0
         self.client_public_revision: int = -1
