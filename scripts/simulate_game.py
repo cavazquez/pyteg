@@ -92,6 +92,10 @@ class Bot:
     disconnect_turn: int | None = None
     reconnected: bool = False
     resync_requested: bool = False
+    received_wire_bytes: int = 0
+    received_wire_frames: int = 0
+    sent_wire_bytes: int = 0
+    sent_wire_frames: int = 0
 
     def __post_init__(self) -> None:
         """Inicializa el procesador común de eventos del cliente."""
@@ -220,8 +224,11 @@ class Bot:
         if not data:
             msg = f"Client {self.userid}: unexpected server EOF"
             raise RuntimeError(msg)
+        self.received_wire_bytes += len(data)
+        frames = self.codec.feed(data)
+        self.received_wire_frames += len(frames)
         result: list[dict[str, Any]] = []
-        for raw in self.codec.feed(data):
+        for raw in frames:
             if not raw:
                 continue
             payload = json.loads(raw)
@@ -234,13 +241,16 @@ class Bot:
                 msg = f"Invalid server event: {error}"
                 raise RuntimeError(msg) from error
             if payload.get("mensaje") == "ping":
-                self.connection.sendall(
+                frame = (
                     json.dumps({
                         "mensaje": "pong",
                         "heartbeat_id": payload["heartbeat_id"],
                     }).encode("utf-8")
                     + b"\0"
                 )
+                self.connection.sendall(frame)
+                self.sent_wire_bytes += len(frame)
+                self.sent_wire_frames += 1
                 continue
             result.append(payload)
             self._apply(payload)
@@ -451,6 +461,8 @@ class Simulation:
         self._record("send", bot, payload)
         frame = json.dumps(payload).encode("utf-8") + b"\0"
         bot.connection.sendall(frame)
+        bot.sent_wire_bytes += len(frame)
+        bot.sent_wire_frames += 1
 
     def command(self, bot: Bot, kind: str, **fields: Any) -> None:
         """Send one action and wait until all peers observe its chat barrier.
@@ -1103,6 +1115,9 @@ class Simulation:
         reference = peers[0] if peers else (self.bots[0] if self.bots else None)
         board = reference.countries if reference is not None else {}
         board_json = json.dumps(board, sort_keys=True).encode("utf-8")
+        received_message_totals: Counter[str] = Counter()
+        for bot in self.bots:
+            received_message_totals.update(bot.counts)
         latest_by_id = {bot.userid: bot for bot in self.bots}
         identity_bots = list(latest_by_id.values())
         country_counts = Counter({str(bot.userid): 0 for bot in self.bots})
@@ -1164,6 +1179,12 @@ class Simulation:
             },
             "final_board": board,
             "received_messages": [dict(bot.counts) for bot in self.bots],
+            "received_message_totals": dict(received_message_totals),
+            "country_update_messages": received_message_totals.get("pais", 0),
+            "received_wire_bytes": sum(bot.received_wire_bytes for bot in self.bots),
+            "received_wire_frames": sum(bot.received_wire_frames for bot in self.bots),
+            "sent_wire_bytes": sum(bot.sent_wire_bytes for bot in self.bots),
+            "sent_wire_frames": sum(bot.sent_wire_frames for bot in self.bots),
             "errors": [error for bot in self.bots for error in bot.errors],
             "scope": [
                 "Production server in a subprocess; actual loopback TCP sockets",
