@@ -5,6 +5,10 @@ Todas las fechas en formato YYYY-MM-DD.
 ## [Unreleased]
 
 ### Changed
+- **Diagnóstico estricto de fronteras**: el chequeo de mapas distingue el
+  interior sólido de los bordes antialiasados, detecta países que se cubren y
+  verifica que las fronteras terrestres declaradas se toquen; las rutas
+  marítimas siguen usando `ConexionesVisuales`.
 - **Heartbeat TCP negociado**: los clientes que anuncian `heartbeat` responden
   `ping`/`pong`; el servidor cierra peers silenciosos después de un límite y
   conserva compatibilidad con clientes que no anuncian la capacidad.

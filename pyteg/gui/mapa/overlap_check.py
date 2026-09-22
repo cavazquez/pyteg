@@ -4,13 +4,19 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from PySide6.QtGui import QImage
 
 from pyteg.toml_reader import TomlReader
 from pyteg.utils import get_resource_path
 
+if TYPE_CHECKING:
+    from collections.abc import Iterable, Mapping, Sequence
+
 _ALPHA_THRESHOLD = 32
+_SOLID_ALPHA_THRESHOLD = 128
+_PAIR_SIZE = 2
 
 
 @dataclass(frozen=True)
@@ -53,6 +59,14 @@ class PixelOverlap:
     top: PaisBounds
     bottom: PaisBounds
     opaque_pixels: int
+
+
+@dataclass(frozen=True)
+class BoundaryGap:
+    """Frontera terrestre declarada cuyos interiores no llegan a tocarse."""
+
+    first: PaisBounds
+    second: PaisBounds
 
 
 def _intersection_area(a: PaisBounds, b: PaisBounds) -> float:
@@ -123,19 +137,60 @@ def find_bbox_overlaps(bounds: list[PaisBounds]) -> list[BboxOverlap]:
     return overlaps
 
 
-def _opaque_at(image: QImage, local_x: int, local_y: int) -> bool:
-    if (
-        local_x < 0
-        or local_y < 0
-        or local_x >= image.width()
-        or local_y >= image.height()
-    ):
-        return False
-    return image.pixelColor(local_x, local_y).alpha() > _ALPHA_THRESHOLD
+def _mask_at(
+    bounds: PaisBounds, image: QImage, *, alpha_threshold: int
+) -> set[tuple[int, int]]:
+    """Construye la máscara opaca de un sprite en coordenadas de escena.
+
+    Returns:
+        Coordenadas de escena de los píxeles que superan el alpha indicado.
+
+    """
+    return {
+        (int(bounds.left) + x, int(bounds.top) + y)
+        for y in range(image.height())
+        for x in range(image.width())
+        if image.pixelColor(x, y).alpha() >= alpha_threshold
+    }
+
+
+def _masks(
+    bounds: list[PaisBounds], *, alpha_threshold: int
+) -> dict[str, set[tuple[int, int]]]:
+    images = {item.name: QImage(str(item.image_path)) for item in bounds}
+    return {
+        item.name: _mask_at(item, images[item.name], alpha_threshold=alpha_threshold)
+        for item in bounds
+    }
+
+
+def _masks_touch(
+    first: set[tuple[int, int]], second: set[tuple[int, int]], radius: int
+) -> bool:
+    """Indica si dos máscaras se tocan o quedan a ``radius`` píxeles.
+
+    Returns:
+        ``True`` si las máscaras se intersectan o están dentro del radio.
+
+    """
+    if first & second:
+        return True
+    smaller, larger = (first, second) if len(first) <= len(second) else (second, first)
+    for x, y in smaller:
+        for offset_x in range(-radius, radius + 1):
+            for offset_y in range(-radius, radius + 1):
+                if (x + offset_x, y + offset_y) in larger:
+                    return True
+    return False
 
 
 def count_opaque_overlap(
-    a: PaisBounds, image_a: QImage, b: PaisBounds, image_b: QImage
+    a: PaisBounds,
+    image_a: QImage,
+    b: PaisBounds,
+    image_b: QImage,
+    *,
+    alpha_threshold: int = _ALPHA_THRESHOLD,
 ) -> int:
     """Cuenta píxeles opacos compartidos en la intersección de dos países.
 
@@ -157,13 +212,19 @@ def count_opaque_overlap(
             ay = scene_y - int(a.top)
             bx = scene_x - int(b.left)
             by = scene_y - int(b.top)
-            if _opaque_at(image_a, ax, ay) and _opaque_at(image_b, bx, by):
+            if (
+                image_a.pixelColor(ax, ay).alpha() >= alpha_threshold
+                and image_b.pixelColor(bx, by).alpha() >= alpha_threshold
+            ):
                 count += 1
     return count
 
 
 def find_pixel_overlaps(
-    bounds: list[PaisBounds], *, min_pixels: int = 1
+    bounds: list[PaisBounds],
+    *,
+    min_pixels: int = 1,
+    alpha_threshold: int = _ALPHA_THRESHOLD,
 ) -> list[PixelOverlap]:
     """Pares con píxeles opacos superpuestos (más preciso que solo bbox).
 
@@ -171,12 +232,18 @@ def find_pixel_overlaps(
         Lista ordenada por cantidad de píxeles opacos descendente.
 
     """
-    images = {item.name: QImage(str(item.image_path)) for item in bounds}
     overlaps: list[PixelOverlap] = []
+    images = {item.name: QImage(str(item.image_path)) for item in bounds}
 
     for i, a in enumerate(bounds):
         for b in bounds[i + 1 :]:
-            pixels = count_opaque_overlap(a, images[a.name], b, images[b.name])
+            pixels = count_opaque_overlap(
+                a,
+                images[a.name],
+                b,
+                images[b.name],
+                alpha_threshold=alpha_threshold,
+            )
             if pixels < min_pixels:
                 continue
             top, bottom = (b, a) if b.z_index > a.z_index else (a, b)
@@ -184,6 +251,72 @@ def find_pixel_overlaps(
 
     overlaps.sort(key=lambda item: item.opaque_pixels, reverse=True)
     return overlaps
+
+
+def find_solid_overlaps(
+    bounds: list[PaisBounds], *, min_pixels: int = 1
+) -> list[PixelOverlap]:
+    """Encuentra solapamientos entre los interiores sólidos de los sprites.
+
+    La máscara sólida descarta el borde antialiasado y sirve para decidir si un
+    país tapa a otro. Un mapa correcto no debería tener ningún resultado,
+    incluso cuando los países sean adyacentes.
+
+    Returns:
+        Solapamientos ordenados por cantidad de píxeles sólidos compartidos.
+
+    """
+    return find_pixel_overlaps(
+        bounds,
+        min_pixels=min_pixels,
+        alpha_threshold=_SOLID_ALPHA_THRESHOLD,
+    )
+
+
+def find_unconnected_boundaries(
+    bounds: list[PaisBounds],
+    adjacencies: Mapping[str, Sequence[str]],
+    visual_connections: Iterable[tuple[str, str]] = (),
+    *,
+    max_gap: int = 1,
+) -> list[BoundaryGap]:
+    """Encuentra fronteras terrestres declaradas que no llegan a tocarse.
+
+    Las aristas representadas por ``visual_connections`` se excluyen porque
+    atraviesan agua o el salto de los extremos del mapa y deben unirse con una
+    línea, no con contacto entre las siluetas.
+
+    Returns:
+        Pares de países separados por más de ``max_gap`` píxeles.
+
+    Raises:
+        ValueError: Si ``max_gap`` es negativo.
+
+    """
+    if max_gap < 0:
+        msg = "max_gap debe ser mayor o igual que cero"
+        raise ValueError(msg)
+
+    by_name = {item.name: item for item in bounds}
+    masks = _masks(bounds, alpha_threshold=_SOLID_ALPHA_THRESHOLD)
+    visual_pairs = {frozenset(pair) for pair in visual_connections}
+    seen: set[frozenset[str]] = set()
+    gaps: list[BoundaryGap] = []
+
+    for origin, destinations in adjacencies.items():
+        for destination in destinations:
+            pair = frozenset((origin, destination))
+            if len(pair) != _PAIR_SIZE or pair in seen or pair in visual_pairs:
+                continue
+            seen.add(pair)
+            first = by_name.get(origin)
+            second = by_name.get(destination)
+            if first is None or second is None:
+                continue
+            if not _masks_touch(masks[origin], masks[destination], max_gap):
+                gaps.append(BoundaryGap(first=first, second=second))
+
+    return gaps
 
 
 def paises_en_punto(bounds: list[PaisBounds], x: float, y: float) -> list[str]:

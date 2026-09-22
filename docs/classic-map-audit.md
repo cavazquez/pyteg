@@ -51,3 +51,23 @@ La captura de regresión generada con Qt offscreen queda en
 La sección `Adyacencias` es la fuente de verdad para servidor, cliente y simulador. Las líneas dibujadas por Qt son una capa separada y se validan contra esa sección para impedir que una decoración sugiera un ataque inválido.
 
 Las regresiones de `tests/test_classic_map_audit.py` cubren países, continentes, aristas, simetría y puentes intercontinentales. Si se elimina un país, se cambia de continente o se sustituye una frontera, el test falla antes de que el cambio llegue al servidor.
+
+## Diagnóstico geométrico estricto
+
+La regla visual es que dos interiores sólidos nunca se cubren, aunque los
+países sean adyacentes. Las fronteras terrestres también deben tocarse dentro
+de un píxel; las rutas incluidas en `ConexionesVisuales` quedan fuera de esa
+exigencia porque se representan con una línea sobre el agua o el salto del
+mapa.
+
+El diagnóstico se ejecuta con:
+
+```bash
+QT_QPA_PLATFORM=offscreen uv run python scripts/check_map_overlaps.py \
+  --theme classic --strict-boundaries --max-contact-gap 1
+```
+
+`--strict-boundaries` usa el interior sólido (`alpha >= 128`) para no confundir
+antialiasing con cobertura. Mientras se corrige el layout heredado, el comando
+funciona como informe explícito: la CI de layout conserva por ahora el umbral
+histórico de bounding boxes y no oculta estos resultados.
