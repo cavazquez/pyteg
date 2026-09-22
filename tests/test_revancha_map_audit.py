@@ -5,6 +5,7 @@ from __future__ import annotations
 import tomllib
 import unittest
 from pathlib import Path
+from typing import Any, ClassVar
 
 FIXTURE = Path(__file__).parent / "fixtures" / "revancha_map_audit.toml"
 EXPECTED_COUNTS = {
@@ -108,6 +109,11 @@ EXPECTED_COUNTRIES = {
 
 class RevanchaMapAuditTests(unittest.TestCase):
     """Evita que el futuro tema Revancha pierda países o fronteras."""
+
+    audit: ClassVar[dict[str, Any]]
+    continents: ClassVar[dict[str, Any]]
+    countries: ClassVar[set[str]]
+    adjacency: ClassVar[dict[str, list[str]]]
 
     @classmethod
     def setUpClass(cls) -> None:
