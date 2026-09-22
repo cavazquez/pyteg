@@ -6,9 +6,10 @@ del juego (mapa, game, etc.) sin acoplamiento directo al servidor.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Protocol
+from typing import TYPE_CHECKING, Any, Protocol, cast
 
 if TYPE_CHECKING:
+    from pyteg.core.partida.reglas import ThemeRules
     from pyteg.protocols import IGameProtocol, IMapProtocol
     from pyteg.server.juego.game import Game
     from pyteg.server.juego.mapa import Mapa
@@ -48,6 +49,10 @@ class ServerLike(Protocol):
 
     def misiles_habilitados(self) -> bool:
         """Retorna si los misiles están habilitados."""
+        ...
+
+    def reglas(self) -> ThemeRules:
+        """Retorna el perfil de reglas público del tema."""
         ...
 
     def dame_clientes(self) -> list[Any]:
@@ -155,6 +160,20 @@ class GameContext:
 
         """
         return self._server.misiles_habilitados()
+
+    def reglas(self) -> ThemeRules:
+        """Obtiene el perfil de reglas sin acoplar las tareas al servidor.
+
+        Returns:
+            Perfil activo o el perfil heredado para dobles de pruebas.
+
+        """
+        getter = getattr(self._server, "reglas", None)
+        if callable(getter):
+            return cast("ThemeRules", getter())
+        from pyteg.core.partida.reglas import ThemeRules  # noqa: PLC0415
+
+        return ThemeRules.defaults()
 
     def dame_clientes(self) -> list[Any]:
         """Obtiene la lista de clientes.

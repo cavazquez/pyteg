@@ -11,8 +11,8 @@ from pyteg.config import DEFAULT_MAP_THEME
 from pyteg.core.cartas.mazo import Mazo
 from pyteg.core.mapa.build_mapa import build_mapa_from_reader
 from pyteg.core.partida.objetivos_secretos import ObjetivosSecretos
+from pyteg.core.partida.reglas import ThemeRules, load_theme_rules
 from pyteg.core.situaciones.catalog import (
-    DEFAULT_SITUATION_RULESET,
     available_situation_rulesets,
 )
 from pyteg.log_cli import add_log_arguments
@@ -56,7 +56,7 @@ class Server:
         theme: str = DEFAULT_MAP_THEME,
         *,
         objective_rng: Random | None = None,
-        situation_ruleset: str = DEFAULT_SITUATION_RULESET,
+        situation_ruleset: str | None = None,
         situation_rng: Random | None = None,
     ) -> None:
         """Inicializa el servidor con mapa, mazo y configuración inicial.
@@ -71,7 +71,10 @@ class Server:
         """
         self.protocol_version = PROTOCOL_VERSION
         self.theme = theme
-        normalized_situation_ruleset = situation_ruleset.strip().lower()
+        self._reglas = load_theme_rules(theme)
+        normalized_situation_ruleset = (
+            (situation_ruleset or self._reglas.situation_ruleset).strip().lower()
+        )
         if normalized_situation_ruleset not in available_situation_rulesets():
             msg = f"Ruleset de situaciones desconocido: {situation_ruleset}"
             raise ValueError(msg)
@@ -90,6 +93,7 @@ class Server:
 
         toml_reader = TomlReader.from_theme(theme, strict=True)
         self.mapa = Mapa(lambda: build_mapa_from_reader(toml_reader))
+        self.mapa.configurar_reglas(self._reglas)
         self.mazo = Mazo(self.mapa.paises(), toml_reader.get_simbolos())
         self.objetivos_secretos = ObjetivosSecretos(
             toml_reader,
@@ -107,6 +111,7 @@ class Server:
             self.color,
             self.situation_ruleset,
             situation_rng,
+            rules=self._reglas,
         )
         self._command_executor = GameCommandExecutor(self)
         self._command_executor.start()
@@ -119,6 +124,15 @@ class Server:
 
         """
         return map_hash_for_theme(self.theme)
+
+    def reglas(self) -> ThemeRules:
+        """Devuelve el perfil inmutable de reglas del tema activo.
+
+        Returns:
+            Perfil validado cargado desde el tema.
+
+        """
+        return self._reglas
 
     def state_revision(self) -> int:
         """Revisión pública actual del estado del juego.
@@ -205,6 +219,7 @@ class Server:
             "estado": self.estado.estado_actual(),
             "theme": self.theme,
             "map_hash": self.map_hash(),
+            "reglas": self._reglas.to_public_dict(),
             "configuracion": self._game_coordinator.configuracion_partida(),
             "players": players,
             "countries": countries,
@@ -917,8 +932,8 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument(
         "--situation-ruleset",
         choices=available_situation_rulesets(),
-        default=DEFAULT_SITUATION_RULESET,
-        help="Ruleset de cartas de situación (predeterminado: none)",
+        default=None,
+        help="Ruleset de cartas de situación (predeterminado: el del tema)",
     )
 
     add_log_arguments(

@@ -12,6 +12,7 @@ from pyteg.core.partida.reinforcement_policy import (
 )
 
 if TYPE_CHECKING:
+    from pyteg.core.partida.reglas import ThemeRules
     from pyteg.server.juego.mapa import Mapa
 
 
@@ -28,6 +29,7 @@ class SiguientesTurnos:
         jugador: int,
         mapa: Mapa,
         reinforcement_policy: ReinforcementPolicy = NO_EXTRA_REINFORCEMENTS,
+        rules: ThemeRules | None = None,
     ) -> None:
         """Inicializa un turno posterior al segundo.
 
@@ -35,13 +37,23 @@ class SiguientesTurnos:
             jugador: userid (int) del jugador en turno.
             mapa: Mapa del juego para calcular unidades.
             reinforcement_policy: Política de refuerzos adicionales.
+            rules: Perfil de reglas opcional del tema.
 
         """
         self._jugador = jugador
         self._mapa = mapa
         self._reinforcement_policy = reinforcement_policy
+        self._rules = rules
+        self._continent_bonuses = (
+            rules.continent_bonus_map
+            if rules is not None
+            else {spec.map_id: spec.bonus for spec in CONTINENTS}
+        )
         self._unidades = 0
         self._unidades_calculadas = False
+        self._unidades_continentes: dict[str, int] = dict.fromkeys(
+            self._continent_bonuses, 0
+        )
         for spec in CONTINENTS:
             setattr(self, f"_unidades_{spec.unit_suffix}", 0)
 
@@ -49,12 +61,22 @@ class SiguientesTurnos:
         """Calcula los refuerzos una sola vez al comenzar este turno."""
         if self._unidades_calculadas:
             return
-        self._unidades = Calculos.calcular_unidades_generales(self._mapa, self._jugador)
-        for spec in CONTINENTS:
+        self._unidades = Calculos.calcular_unidades_generales(
+            self._mapa, self._jugador, rules=self._rules
+        )
+        for continente in self._continent_bonuses:
             cantidad = Calculos.calcular_unidades_continente(
-                self._mapa, self._jugador, spec.map_id
+                self._mapa,
+                self._jugador,
+                continente,
+                bonuses=self._continent_bonuses,
             )
-            setattr(self, f"_unidades_{spec.unit_suffix}", cantidad)
+            self._unidades_continentes[continente] = cantidad
+            spec = next(
+                (item for item in CONTINENTS if item.map_id == continente), None
+            )
+            if spec is not None:
+                setattr(self, f"_unidades_{spec.unit_suffix}", cantidad)
         self._unidades += max(
             0, int(self._reinforcement_policy.extra_for(self._jugador))
         )
@@ -70,10 +92,11 @@ class SiguientesTurnos:
         """
         self.preparar()
         result: dict[str, int] = {"infanteria": self._unidades}
-        for spec in CONTINENTS:
-            cantidad = getattr(self, f"_unidades_{spec.unit_suffix}", 0)
-            if cantidad > 0:
-                result[spec.map_id] = cantidad
+        result.update({
+            continente: cantidad
+            for continente, cantidad in self._unidades_continentes.items()
+            if cantidad > 0
+        })
         return result
 
     def jugador_actual(self) -> int:
@@ -110,18 +133,20 @@ class SiguientesTurnos:
             Cantidad de unidades continentales disponibles.
 
         """
-        suffix = CONTINENT_UNIT_SUFFIX.get(map_id)
-        if suffix is None:
+        if map_id not in self._continent_bonuses:
             return 0
         self.preparar()
-        return int(getattr(self, f"_unidades_{suffix}", 0))
+        return self._unidades_continentes.get(map_id, 0)
 
     def usar_unidad_por_continente(self, map_id: str) -> None:
         """Consume una unidad de bonificación del continente indicado."""
         self.preparar()
-        suffix = CONTINENT_UNIT_SUFFIX[map_id]
-        attr = f"_unidades_{suffix}"
-        setattr(self, attr, getattr(self, attr) - 1)
+        if map_id not in self._unidades_continentes:
+            return
+        self._unidades_continentes[map_id] -= 1
+        suffix = CONTINENT_UNIT_SUFFIX.get(map_id)
+        if suffix is not None:
+            setattr(self, f"_unidades_{suffix}", self._unidades_continentes[map_id])
 
     def cant_unidades(self) -> int:
         """Obtiene la cantidad de unidades generales disponibles.
@@ -141,16 +166,18 @@ class SegundoTurno:
         self,
         jugador: int,
         reinforcement_policy: ReinforcementPolicy = NO_EXTRA_REINFORCEMENTS,
+        initial_units: int = 3,
     ) -> None:
         """Inicializa el segundo turno.
 
         Args:
             jugador: userid (int) del jugador en turno.
             reinforcement_policy: Política de refuerzos adicionales.
+            initial_units: Unidades iniciales de la ronda.
 
         """
         self._jugador = jugador
-        self._unidades = 3
+        self._unidades = initial_units
         self._reinforcement_policy = reinforcement_policy
         self._unidades_calculadas = False
 
@@ -211,15 +238,16 @@ class SegundoTurno:
 class PrimerTurno:
     """Representa el primer turno de un jugador."""
 
-    def __init__(self, jugador: int) -> None:
+    def __init__(self, jugador: int, initial_units: int = 6) -> None:
         """Inicializa el primer turno.
 
         Args:
             jugador: userid (int) del jugador en turno.
+            initial_units: Unidades iniciales de la ronda.
 
         """
         self._jugador = jugador
-        self._unidades = 6
+        self._unidades = initial_units
 
     def jugador_actual(self) -> int:
         """Obtiene el userid del jugador actual.

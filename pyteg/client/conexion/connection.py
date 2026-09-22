@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import hashlib
 import json
 import uuid
 from typing import Any
@@ -19,9 +18,8 @@ from pyteg.codecs_utils import FrameCodecError, NulDelimitedUtf8Codec
 from pyteg.config import DEFAULT_MAP_THEME
 from pyteg.i18n import translate as _
 from pyteg.logger import get_logger
-from pyteg.protocol import PROTOCOL_VERSION
+from pyteg.protocol import PROTOCOL_VERSION, map_hash_for_theme
 from pyteg.protocol_validation import MessageValidationError, validate_client_event
-from pyteg.utils import get_resource_path
 
 _LOG = get_logger("client.connection")
 
@@ -89,12 +87,7 @@ class ConnectionClient(QWidget):
         if not isinstance(theme, str) or not theme:
             theme = DEFAULT_MAP_THEME
         try:
-            digest = hashlib.sha256()
-            theme_dir = get_resource_path(f"themes/{theme}")
-            for filename in ("paises.toml", "adyacencias.toml"):
-                digest.update(filename.encode("utf-8"))
-                digest.update((theme_dir / filename).read_bytes())
-            map_hash = digest.hexdigest()
+            map_hash = map_hash_for_theme(theme)
         except OSError:
             map_hash = "client-map-unknown"
         self._main_window.transmisor.hello(

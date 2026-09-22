@@ -11,6 +11,7 @@ from pyteg.config import (
 from pyteg.core.combate.batalla import Batalla
 from pyteg.core.partida.card_manager import CardManager
 from pyteg.core.partida.objetivos_secretos import NO_SECRET_OBJECTIVES
+from pyteg.core.partida.reglas import ThemeRules
 from pyteg.core.partida.turn_manager import TurnManager
 from pyteg.core.partida.victory_checker import VictoryChecker
 from pyteg.core.situaciones.runtime import SituationRuntime
@@ -46,6 +47,7 @@ class Game:
         *,
         objetivos_secretos_activados: bool = False,
         situation_runtime: SituationRuntime | None = None,
+        rules: ThemeRules | None = None,
     ) -> None:
         """Inicializa el juego.
 
@@ -57,6 +59,7 @@ class Game:
             paises_para_victoria: Cantidad de países necesarios para ganar.
             objetivos_secretos_activados: Si la victoria por objetivos está activa.
             situation_runtime: Runtime opcional de cartas de situación.
+            rules: Perfil de reglas opcional del tema.
 
         """
         if paises_para_victoria is None:
@@ -70,6 +73,7 @@ class Game:
         self._reconnect_tokens: dict[int, str] = {}
         self._server = server  # Referencia al servidor para notificar cambios
         self._paises_para_victoria = paises_para_victoria
+        self._rules = rules
         self._fase = FASE_COLOCACION
         self._situation_runtime = (
             situation_runtime
@@ -81,10 +85,11 @@ class Game:
         self._turn_manager = TurnManager(
             mapa,
             reinforcement_policy=self._situation_runtime,
+            rules=rules,
         )
 
         # Inicializar gestor de tarjetas
-        self._card_manager = CardManager(mazo, self._turn_manager)
+        self._card_manager = CardManager(mazo, self._turn_manager, rules=rules)
 
         # Inicializar verificador de victoria
         secret_objectives = NO_SECRET_OBJECTIVES
@@ -199,6 +204,15 @@ class Game:
 
         """
         return self._fase
+
+    def reglas(self) -> ThemeRules:
+        """Devuelve las reglas activas para validadores y tareas.
+
+        Returns:
+            Perfil de reglas de la partida.
+
+        """
+        return self._rules if self._rules is not None else ThemeRules.defaults()
 
     def situacion_actual(self) -> dict[str, str | int | None]:
         """Devuelve la carta de situación activa para snapshots públicos.
@@ -511,7 +525,7 @@ class Game:
         """
         return self._turn_manager.lista_jugadores_orden_turno(self.jugadores_activos())
 
-    def atacar(
+    def atacar(  # noqa: PLR0914
         self,
         pais_atacante: str,
         pais_defensor: str,
@@ -536,8 +550,8 @@ class Game:
 
         # Calcular cuántos dados usar
         if cantidad_unidades is not None:
-            # Validar que la cantidad esté en el rango válido (1-3)
-            cantidad_unidades = max(1, min(3, cantidad_unidades))
+            max_dice = self._rules.attack_dice_max if self._rules else 3
+            cantidad_unidades = max(1, min(max_dice, cantidad_unidades))
             # Validar que no exceda las unidades disponibles (menos 1 que debe quedar)
             max_unidades_disponibles = unidades_atacante - 1
             cantidad_unidades = min(cantidad_unidades, max_unidades_disponibles)
@@ -552,13 +566,16 @@ class Game:
         # unidades de las que el país tiene disponibles para el combate.
         dados_atacante_count = min(
             dados_atacante_count,
+            self._rules.attack_dice_max if self._rules else 3,
             max(unidades_atacante - 1, 0),
         )
         dados_defensor_count = self._situation_runtime.defense_dice(
             Batalla.calcular_cant_dados_defensor(unidades_defensor)
         )
+        max_defense_dice = self._rules.defense_dice_max if self._rules else 2
         dados_defensor_count = min(
             dados_defensor_count,
+            max_defense_dice,
             max(unidades_defensor, 0),
         )
 
