@@ -202,7 +202,7 @@ class ConnectionServer:
                 sent_completely = self._send_frame_without_select(remaining_data)
                 break
             except OSError as error:
-                LOGGER.warning("Error esperando socket escribible: %s", error)
+                self._log_send_error("Error esperando socket escribible", error)
                 self.close()
                 sent_completely = False
                 break
@@ -216,7 +216,7 @@ class ConnectionServer:
             try:
                 sent = self._conn.send(remaining_data)
             except (ConnectionError, OSError) as error:
-                LOGGER.warning("Error de socket al enviar: %s", error)
+                self._log_send_error("Error de socket al enviar", error)
                 self.close()
                 sent_completely = False
                 break
@@ -230,6 +230,11 @@ class ConnectionServer:
 
         return sent_completely
 
+    def _log_send_error(self, message: str, error: Exception) -> None:
+        """Registra errores de salida salvo cuando el cierre ya fue pedido."""
+        if not self._closed:
+            LOGGER.warning("%s: %s", message, error)
+
     def _send_frame_without_select(self, frame: memoryview) -> bool:
         """Compatibilidad para dobles de socket sin descriptor seleccionable.
 
@@ -240,7 +245,7 @@ class ConnectionServer:
         try:
             self._conn.sendall(bytes(frame))
         except (ConnectionError, OSError) as error:
-            LOGGER.warning("Error de socket al enviar: %s", error)
+            self._log_send_error("Error de socket al enviar", error)
             self.close()
             return False
         return True

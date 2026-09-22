@@ -8,6 +8,9 @@ Todas las fechas en formato YYYY-MM-DD.
 - **Smoke Qt multicliente**: CI conecta tres ventanas reales al servidor,
   comprueba el lobby y verifica una reconexión autenticada conservando la
   identidad; la simulación TCP sigue cubriendo la partida completa.
+- **Aislamiento de clientes lentos**: CI inunda una conexión TCP que no lee,
+  verifica que se cierre al alcanzar su cola acotada y confirma que otra
+  conexión saludable continúa recibiendo mensajes.
 - **Contexto de países**: el mapa muestra nombre, continente, unidades y
   superposiciones en el tooltip y la barra de estado al pasar el cursor, sin
   llenar el tablero con etiquetas permanentes.
