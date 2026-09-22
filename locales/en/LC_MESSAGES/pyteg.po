@@ -200,6 +200,15 @@ msgstr "Place all units before ending the turn"
 msgid "La acción no está disponible ahora"
 msgstr "This action is not available now"
 
+msgid "Administrador"
+msgstr "Administrator"
+
+msgid "Desconectado"
+msgstr "Disconnected"
+
+msgid "Eliminado"
+msgstr "Eliminated"
+
 msgid "Selección: Ninguna"
 msgstr "Selection: None"
 

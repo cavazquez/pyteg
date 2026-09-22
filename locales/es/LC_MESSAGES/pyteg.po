@@ -145,6 +145,15 @@ msgstr "Colocá todas las unidades antes de finalizar el turno"
 msgid "La acción no está disponible ahora"
 msgstr "La acción no está disponible ahora"
 
+msgid "Administrador"
+msgstr "Administrador"
+
+msgid "Desconectado"
+msgstr "Desconectado"
+
+msgid "Eliminado"
+msgstr "Eliminado"
+
 msgid "[No conectado]"
 msgstr "[No conectado]"
 
