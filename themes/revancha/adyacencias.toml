@@ -1,0 +1,129 @@
+# Grafo conservador de #225: 134 aristas del consenso auxiliar.
+# Las discrepancias GranBretana-Francia e Irak-Ucrania quedan fuera.
+
+[Adyacencias]
+California = ['Florida', 'LasVegas', 'Mexico', 'Tonga']
+NuevaYork = ['Chicago', 'Groenlandia']
+LasVegas = ['California', 'Chicago', 'Florida', 'Oregon']
+Florida = ['California', 'Chicago', 'Cuba', 'LasVegas']
+Chicago = ['Florida', 'LasVegas', 'NuevaYork', 'Oregon', 'Terranova']
+Terranova = ['Canada', 'Chicago', 'Labrador', 'Oregon']
+Labrador = ['Groenlandia', 'Terranova']
+Canada = ['Alaska', 'IslaVictoria', 'Oregon', 'Terranova']
+Oregon = ['Canada', 'Chicago', 'LasVegas', 'Terranova']
+IslaVictoria = ['Canada', 'Groenlandia']
+Alaska = ['Canada', 'Chukchi', 'Kamchatka']
+Groenlandia = ['IslaVictoria', 'Islandia', 'Labrador', 'NuevaYork']
+Mexico = ['California', 'Cuba', 'Honduras']
+Honduras = ['Cuba', 'ElSalvador', 'Mexico']
+ElSalvador = ['Honduras', 'Nicaragua']
+Nicaragua = ['Colombia', 'ElSalvador', 'Jamaica']
+Cuba = ['Florida', 'Honduras', 'Jamaica', 'Mexico']
+Jamaica = ['Cuba', 'Nicaragua']
+Brasil = ['Argentina', 'Bolivia', 'Chile', 'Colombia', 'Paraguay', 'Sahara', 'Uruguay', 'Venezuela']
+Argentina = ['Bolivia', 'Brasil', 'Chile', 'Paraguay', 'Uruguay']
+Uruguay = ['Argentina', 'Brasil', 'Nigeria']
+Chile = ['Argentina', 'Australia', 'Bolivia', 'Brasil', 'Colombia']
+Colombia = ['Brasil', 'Chile', 'Nicaragua', 'Venezuela']
+Bolivia = ['Argentina', 'Brasil', 'Chile', 'Paraguay']
+Paraguay = ['Argentina', 'Bolivia', 'Brasil']
+Venezuela = ['Brasil', 'Colombia']
+Islandia = ['Groenlandia', 'Irlanda', 'Noruega']
+Irlanda = ['GranBretana', 'Islandia']
+GranBretana = ['Alemania', 'Irlanda', 'Portugal']
+Noruega = ['Finlandia', 'Islandia']
+Finlandia = ['Bielorrusia', 'Noruega']
+Bielorrusia = ['Finlandia', 'Polonia', 'Ucrania']
+Portugal = ['Espana', 'GranBretana']
+Espana = ['Francia', 'Portugal', 'Sahara']
+Francia = ['Alemania', 'Espana', 'Italia']
+Alemania = ['Croacia', 'Francia', 'GranBretana', 'Italia', 'Polonia', 'Serbia']
+Italia = ['Alemania', 'Croacia', 'Francia']
+Croacia = ['Alemania', 'Italia', 'Polonia', 'Serbia']
+Serbia = ['Alemania', 'Croacia', 'Polonia']
+Polonia = ['Albania', 'Alemania', 'Bielorrusia', 'Croacia', 'Egipto', 'Serbia', 'Ucrania']
+Albania = ['Irak', 'Iran', 'Polonia', 'Ucrania']
+Ucrania = ['Albania', 'Bielorrusia', 'Iran', 'Polonia', 'Rusia']
+Sahara = ['Brasil', 'Egipto', 'Espana', 'Etiopia', 'Nigeria']
+Egipto = ['Etiopia', 'Irak', 'Israel', 'Madagascar', 'Polonia', 'Sahara']
+Etiopia = ['Angola', 'Egipto', 'Nigeria', 'Sahara']
+Nigeria = ['Angola', 'Etiopia', 'Mauritania', 'Sahara', 'Sudafrica', 'Uruguay']
+Angola = ['Etiopia', 'Mauritania', 'Nigeria']
+Mauritania = ['Angola', 'Madagascar', 'Nigeria', 'Sudafrica']
+Madagascar = ['Egipto', 'Mauritania', 'Sudafrica']
+Sudafrica = ['Madagascar', 'Mauritania', 'Nigeria']
+Rusia = ['Chechenia', 'China', 'Iran', 'Siberia', 'Turquia', 'Ucrania']
+Siberia = ['Chechenia', 'China', 'Rusia']
+Chechenia = ['China', 'Rusia', 'Siberia']
+Chukchi = ['Alaska', 'China', 'Kamchatka']
+Kamchatka = ['Alaska', 'China', 'Chukchi', 'Corea', 'Japon']
+Iran = ['Albania', 'Irak', 'Rusia', 'Turquia', 'Ucrania']
+Irak = ['Albania', 'Egipto', 'Iran', 'Israel', 'Turquia']
+China = ['Chechenia', 'Chukchi', 'Corea', 'India', 'Kamchatka', 'Malasia', 'Rusia', 'Siberia', 'Turquia']
+Corea = ['China', 'Japon', 'Kamchatka', 'Malasia', 'Vietnam']
+Japon = ['Corea', 'Kamchatka']
+Malasia = ['China', 'Corea', 'India', 'Vietnam']
+Turquia = ['China', 'India', 'Irak', 'Iran', 'Israel', 'Rusia']
+Israel = ['Arabia', 'Egipto', 'Irak', 'Turquia']
+Arabia = ['Israel']
+India = ['China', 'Malasia', 'Sumatra', 'Turquia', 'Vietnam']
+Vietnam = ['Corea', 'Filipinas', 'India', 'Malasia']
+Sumatra = ['Australia', 'India']
+Filipinas = ['Australia', 'Tonga', 'Vietnam']
+Tonga = ['Australia', 'California', 'Filipinas']
+Australia = ['Chile', 'Filipinas', 'Sumatra', 'Tasmania', 'Tonga']
+Tasmania = ['Australia', 'NuevaZelandia']
+NuevaZelandia = ['Tasmania']
+
+# Rutas visuales: únicamente aristas existentes en Adyacencias.
+
+[[ConexionesVisuales]]
+origen = "Alaska"
+destino = "Chukchi"
+puntos = [[600.0, -20.0], [1180.0, -20.0]]
+
+[[ConexionesVisuales]]
+origen = "Alaska"
+destino = "Kamchatka"
+puntos = [[600.0, -40.0]]
+
+[[ConexionesVisuales]]
+origen = "Groenlandia"
+destino = "Islandia"
+
+[[ConexionesVisuales]]
+origen = "California"
+destino = "Tonga"
+puntos = [[61.0, 540.0], [1045.0, 540.0]]
+
+[[ConexionesVisuales]]
+origen = "Brasil"
+destino = "Sahara"
+puntos = [[245.0, 480.0], [420.0, 480.0]]
+
+[[ConexionesVisuales]]
+origen = "Uruguay"
+destino = "Nigeria"
+puntos = [[245.0, 500.0], [737.0, 500.0]]
+
+[[ConexionesVisuales]]
+origen = "Espana"
+destino = "Sahara"
+puntos = [[820.0, 210.0], [800.0, 280.0]]
+
+[[ConexionesVisuales]]
+origen = "Polonia"
+destino = "Egipto"
+
+[[ConexionesVisuales]]
+origen = "Chile"
+destino = "Australia"
+puntos = [[337.0, 540.0], [861.0, 540.0]]
+
+[[ConexionesVisuales]]
+origen = "India"
+destino = "Sumatra"
+
+[[ConexionesVisuales]]
+origen = "Filipinas"
+destino = "Australia"

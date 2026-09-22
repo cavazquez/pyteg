@@ -26,7 +26,14 @@ from pyteg.i18n import translate as _
 from pyteg.sound_manager import SoundManager
 
 if TYPE_CHECKING:
-    from PySide6.QtWidgets import QHBoxLayout, QLabel, QStatusBar
+    from PySide6.QtGui import QResizeEvent
+    from PySide6.QtWidgets import (
+        QHBoxLayout,
+        QLabel,
+        QScrollArea,
+        QSplitter,
+        QStatusBar,
+    )
 
     from pyteg.client.app import Client
     from pyteg.client.conexion.connection import ConnectionClient
@@ -55,10 +62,14 @@ class Gui(QMainWindow, MainWindowDelegatesMixin):
     mi_color_indicator: QLabel
     mi_username_label: QLabel
     estado_label: QLabel
+    contexto_partida_label: QLabel
     seleccion_label: QLabel
     language_selector: LanguageSelector
     sound_control: SoundControlWidget
     timer_label: QLabel
+    right_column_scroll: QScrollArea
+    vertical_splitter: QSplitter
+    horizontal_splitter: QSplitter
 
     layout_manager: LayoutManager
     theme_manager: ThemeManager
@@ -107,6 +118,7 @@ class Gui(QMainWindow, MainWindowDelegatesMixin):
         self.tarjetas_jugador: list[TarjetaItem] = []
         self.misiles_habilitados: bool = False
         self.partida_finalizada: bool = False
+        self.estado_actual: str = "Desconectado"
         self.fase_actual: str | None = None
         self.unidades_pendientes_servidor: int = 0
         self.client_public_revision: int = -1
@@ -132,8 +144,15 @@ class Gui(QMainWindow, MainWindowDelegatesMixin):
         self.window_manager = WindowManager(mw)
         self.language_manager = LanguageManager(mw)
         self.sound_manager = SoundManager()
-        self.setMinimumSize(QSize(800, 600))
+        self.setMinimumSize(QSize(720, 480))
         self.setMouseTracking(True)
+
+    def resizeEvent(self, event: QResizeEvent) -> None:  # noqa: N802
+        """Ajusta la toolbar al ancho disponible sin alterar el mapa."""
+        super().resizeEvent(event)
+        self.layout_manager.update_responsive_layout(self.width(), self.height())
+        if self.toolbar is not None:
+            self.toolbar.update_responsive_layout(self.width())
 
     def _gui_init_turn_tracking(self) -> None:
         self.turno_actual: int = 0

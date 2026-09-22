@@ -167,6 +167,60 @@ msgstr "[Error]"
 msgid "Estado: Desconectado"
 msgstr "Status: Disconnected"
 
+msgid "Fase: {} · Activo: {} · Refuerzos: {}"
+msgstr "Phase: {} · Active: {} · Reinforcements: {}"
+
+msgid "Colocación"
+msgstr "Placement"
+
+msgid "Acciones"
+msgstr "Actions"
+
+msgid "Jugador {}"
+msgstr "Player {}"
+
+msgid "Sin turno"
+msgstr "No active turn"
+
+msgid "Conectate al servidor"
+msgstr "Connect to the server"
+
+msgid "La partida terminó"
+msgstr "The game has ended"
+
+msgid "Esperá tu turno"
+msgstr "Wait for your turn"
+
+msgid "Seleccioná origen y destino"
+msgstr "Select an origin and a destination"
+
+msgid "Colocá todas las unidades antes de finalizar el turno"
+msgstr "Place all units before ending the turn"
+
+msgid "La acción no está disponible ahora"
+msgstr "This action is not available now"
+
+msgid "Administrador"
+msgstr "Administrator"
+
+msgid "Desconectado"
+msgstr "Disconnected"
+
+msgid "Eliminado"
+msgstr "Eliminated"
+
+msgid "Chat"
+msgstr "Chat"
+
+msgid "Panel lateral"
+msgstr "Side panel"
+
+msgid "Mostrar u ocultar el chat"
+msgstr "Show or hide chat"
+
+msgid "Mostrar u ocultar jugadores y unidades"
+msgstr "Show or hide players and units"
+
 msgid "Selección: Ninguna"
 msgstr "Selection: None"
 

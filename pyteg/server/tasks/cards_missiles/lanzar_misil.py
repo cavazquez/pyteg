@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from pyteg.config import MIN_UNITS_TO_LEAVE, MISSILE_MAX_DISTANCE
 from pyteg.exceptions import (
     InsufficientUnitsError,
     InvalidActionError,
@@ -132,9 +131,19 @@ class ServerTaskLanzarMisil(IServerTask[LanzarMisilTaskData]):
         if context.mapa.cantidad_misiles(self._pais_origen) == 0:
             raise NoMissilesAvailableError(self._pais_origen)
 
-        if context.mapa.ocupado_por(self._pais_destino) == client.userid():
+        posee_destino = getattr(context.mapa, "jugador_posee_pais", None)
+        destino_propio = (
+            bool(posee_destino(int(client.userid()), self._pais_destino))
+            if callable(posee_destino)
+            else context.mapa.ocupado_por(self._pais_destino) == client.userid()
+        )
+        if destino_propio:
             msg = "No puedes lanzar misiles a tus propios países"
             raise InvalidActionError(msg)
+
+        validar_pacto = getattr(context.game, "validar_pacto_ataque", None)
+        if callable(validar_pacto):
+            validar_pacto(client, self._pais_origen, self._pais_destino)
 
     def _validar_distancia_dano(
         self,
@@ -158,6 +167,15 @@ class ServerTaskLanzarMisil(IServerTask[LanzarMisilTaskData]):
             msg = "País de origen o destino"
             raise MissingFieldError(msg)
 
+        misiles_origen = context.mapa.cantidad_misiles(self._pais_origen)
+        misiles_defensivos = context.mapa.cantidad_misiles(self._pais_destino)
+        if misiles_defensivos >= misiles_origen:
+            msg = (
+                f"{self._pais_destino} está protegido por {misiles_defensivos} "
+                f"misil(es) defensivo(s)"
+            )
+            raise InvalidActionError(msg)
+
         distancia = context.mapa.calcular_distancia(
             self._pais_origen, self._pais_destino
         )
@@ -166,15 +184,19 @@ class ServerTaskLanzarMisil(IServerTask[LanzarMisilTaskData]):
             msg = f"No hay camino entre {self._pais_origen} y {self._pais_destino}"
             raise InvalidActionError(msg)
 
-        if distancia > MISSILE_MAX_DISTANCE:
-            raise MissileOutOfRangeError(distancia, MISSILE_MAX_DISTANCE)
+        rules = context.reglas()
+        max_distance = rules.missile_max_distance
+        if distancia > max_distance:
+            raise MissileOutOfRangeError(distancia, max_distance)
 
         dano = context.mapa.calcular_dano_misil(distancia)
         unidades_destino = context.mapa.cantidad_unidades(self._pais_destino)
-        if unidades_destino <= dano:
+        min_units_to_leave = rules.missile_min_units_to_leave
+        unidades_requeridas = dano + min_units_to_leave
+        if unidades_destino < unidades_requeridas:
             raise InsufficientUnitsError(
                 self._pais_destino,
-                MIN_UNITS_TO_LEAVE + 1,
+                unidades_requeridas,
                 unidades_destino,
             )
 

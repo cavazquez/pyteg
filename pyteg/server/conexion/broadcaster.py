@@ -224,7 +224,7 @@ class ServerMessageBroadcaster:
         )
 
     def enviar_tarjetas_jugador(
-        self, client: Client, tarjetas_data: list[dict[str, str]]
+        self, client: Client, tarjetas_data: list[dict[str, Any]]
     ) -> None:
         """Envía las tarjetas del jugador específico al cliente.
 

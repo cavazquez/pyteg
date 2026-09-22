@@ -91,6 +91,10 @@ class ServerTaskAgregarUnidad(IServerTask[AgregarUnidadTaskData]):
 
         CountryOwnershipValidator.validate_ownership(client, context.mapa, self._pais)
 
+        validar_refuerzo = getattr(context.game, "validar_refuerzo", None)
+        if callable(validar_refuerzo):
+            validar_refuerzo(client, self._pais)
+
         UnitTypeValidator.validate_unit_type(self._tipo_unidad, VALID_UNIT_TYPES)
 
         if context.game is None:
@@ -100,7 +104,11 @@ class ServerTaskAgregarUnidad(IServerTask[AgregarUnidadTaskData]):
         self._validate_units_available(turno_actual, continente_pais, self._cantidad)
 
         for _ in range(self._cantidad):
-            context.mapa.agregar_una_unidad(self._pais)
+            agregar_por_jugador = getattr(context.mapa, "agregar_unidad_jugador", None)
+            if callable(agregar_por_jugador):
+                agregar_por_jugador(self._pais, int(client.userid()))
+            else:
+                context.mapa.agregar_una_unidad(self._pais)
             consumir_unidad_reparto(turno_actual, continente_pais)
 
         actualizar_fase = getattr(context.game, "_actualizar_fase", None)

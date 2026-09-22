@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, cast
 
-from pyteg.gui.connection_utils import cliente_esta_conectado
+from pyteg.client.conexion.transmisor import ClientNullTransmisor
 from pyteg.logger import get_logger
 
 if TYPE_CHECKING:
+    from pyteg.client.conexion.transmisor.protocol import IClientTransmisor
     from pyteg.gui.managers.protocols import MainWindowProtocol
 
     from .protocols import TarjetasExchangeHost
@@ -31,10 +32,6 @@ class TarjetasExchangeMixin:
         ]
 
         transmisor = self._get_transmisor()
-        if transmisor is None:
-            _LOG.warning("No se puede acceder al transmisor (canje)")
-            return
-
         try:
             if cantidad_seleccionadas == 1:
                 tarjeta = self.tarjetas_seleccionadas[0]
@@ -49,26 +46,23 @@ class TarjetasExchangeMixin:
     def reclamar_tarjeta(self: TarjetasExchangeHost) -> None:
         """Reclama una tarjeta del servidor."""
         transmisor = self._get_transmisor()
-        if transmisor is None:
-            _LOG.warning("No se puede acceder al transmisor (canje)")
-            return
-
         try:
             transmisor.reclamar_tarjeta()
             transmisor.solicitar_tarjetas()
         except (AttributeError, RuntimeError) as e:
             _LOG.warning("Error al reclamar tarjeta: %s", e)
 
-    def _get_transmisor(self: TarjetasExchangeHost) -> Any | None:
-        """Obtiene el transmisor desde la ventana padre si existe.
+    def _get_transmisor(self: TarjetasExchangeHost) -> IClientTransmisor:
+        """Obtiene el transmisor desde la ventana padre o el objeto nulo.
 
         Returns:
-            El objeto transmisor o ``None`` si no hay padre o no expone ``transmisor``.
+            Un transmisor real o el Null Object si el diálogo no tiene host.
 
         """
         parent = self.parent()
-        if parent is None or not cliente_esta_conectado(
-            cast("MainWindowProtocol", parent)
-        ):
-            return None
-        return getattr(parent, "transmisor", None)
+        if parent is None:
+            return ClientNullTransmisor()
+        try:
+            return cast("MainWindowProtocol", parent).transmisor
+        except AttributeError:
+            return ClientNullTransmisor()
