@@ -11,6 +11,10 @@ from pyteg.config import DEFAULT_MAP_THEME
 from pyteg.core.cartas.mazo import Mazo
 from pyteg.core.mapa.build_mapa import build_mapa_from_reader
 from pyteg.core.partida.objetivos_secretos import ObjetivosSecretos
+from pyteg.core.partida.reglas import ThemeRules, load_theme_rules
+from pyteg.core.situaciones.catalog import (
+    available_situation_rulesets,
+)
 from pyteg.log_cli import add_log_arguments
 from pyteg.logger import get_logger
 from pyteg.protocol import PROTOCOL_VERSION, SNAPSHOT_VERSION, map_hash_for_theme
@@ -52,15 +56,29 @@ class Server:
         theme: str = DEFAULT_MAP_THEME,
         *,
         objective_rng: Random | None = None,
+        situation_ruleset: str | None = None,
+        situation_rng: Random | None = None,
     ) -> None:
         """Inicializa el servidor con mapa, mazo y configuración inicial.
 
         ``objective_rng`` permite inyectar una secuencia reproducible en
         simulaciones y pruebas. El servidor real lo omite y usa entropía del
         sistema.
+
+        Raises:
+            ValueError: Si el ruleset de situaciones no está registrado.
+
         """
         self.protocol_version = PROTOCOL_VERSION
         self.theme = theme
+        self._reglas = load_theme_rules(theme)
+        normalized_situation_ruleset = (
+            (situation_ruleset or self._reglas.situation_ruleset).strip().lower()
+        )
+        if normalized_situation_ruleset not in available_situation_rulesets():
+            msg = f"Ruleset de situaciones desconocido: {situation_ruleset}"
+            raise ValueError(msg)
+        self.situation_ruleset = normalized_situation_ruleset
         self._state_revision = 0
         self._client_registry = ServerClientRegistry()
         # La autoridad de sala se mantiene separada del orden del registro.
@@ -74,8 +92,27 @@ class Server:
         self._broadcaster = ServerMessageBroadcaster(self.dame_clientes)
 
         toml_reader = TomlReader.from_theme(theme, strict=True)
-        self.mapa = Mapa(lambda: build_mapa_from_reader(toml_reader))
-        self.mazo = Mazo(self.mapa.paises(), toml_reader.get_simbolos())
+        self.mapa = Mapa(
+            lambda: build_mapa_from_reader(toml_reader),
+            self._reglas,
+            islas=toml_reader.get_objetivos_metadata().get("islas", []),
+        )
+        self.mapa.configurar_reglas(self._reglas)
+        card_distribution = toml_reader.get_cartas_distribucion()
+        extra_cards: list[tuple[str, str, str, str | None]] = [
+            (f"__continente__:{continent}", symbol, "continente", continent)
+            for continent, symbol in card_distribution["continentes"].items()
+        ]
+        extra_cards.extend(
+            (f"__especial__:{card_id}", symbol, "especial", None)
+            for card_id, symbol in card_distribution["especiales"].items()
+        )
+        self.mazo = Mazo(
+            self.mapa.paises(),
+            toml_reader.get_simbolos(),
+            simbolos_por_pais=card_distribution["paises"] or None,
+            cartas_extra=extra_cards,
+        )
         self.objetivos_secretos = ObjetivosSecretos(
             toml_reader,
             rng=objective_rng,
@@ -90,6 +127,9 @@ class Server:
             self.dame_clientes,
             self._broadcaster,
             self.color,
+            self.situation_ruleset,
+            situation_rng,
+            rules=self._reglas,
         )
         self._command_executor = GameCommandExecutor(self)
         self._command_executor.start()
@@ -102,6 +142,15 @@ class Server:
 
         """
         return map_hash_for_theme(self.theme)
+
+    def reglas(self) -> ThemeRules:
+        """Devuelve el perfil inmutable de reglas del tema activo.
+
+        Returns:
+            Perfil validado cargado desde el tema.
+
+        """
+        return self._reglas
 
     def state_revision(self) -> int:
         """Revisión pública actual del estado del juego.
@@ -122,7 +171,7 @@ class Server:
         self._state_revision += 1
         return self._state_revision
 
-    def public_snapshot(self) -> dict[str, Any]:
+    def public_snapshot(self) -> dict[str, Any]:  # noqa: PLR0914
         """Construye un snapshot público completo y autocontenido.
 
         El snapshot se construye mientras el ejecutor de comandos posee la
@@ -134,14 +183,22 @@ class Server:
 
         """
         game = self.game
-        countries = {
-            pais: {
+        countries: dict[str, dict[str, Any]] = {}
+        for pais in self.mapa.paises():
+            country: dict[str, Any] = {
                 "userid": self.mapa.ocupado_por(pais),
                 "unidades": self.mapa.cantidad_unidades(pais),
                 "misiles": self.mapa.cantidad_misiles(pais),
             }
-            for pais in self.mapa.paises()
-        }
+            es_condominio = getattr(self.mapa, "es_condominio", None)
+            ocupantes = getattr(self.mapa, "ocupantes", None)
+            if callable(es_condominio) and es_condominio(pais) and callable(ocupantes):
+                country["compartido"] = True
+                country["ocupantes"] = [
+                    {"userid": int(jugador), "unidades": int(unidades)}
+                    for jugador, unidades in ocupantes(pais).items()
+                ]
+            countries[pais] = country
         historicos = game.jugadores() if game is not None else self.dame_clientes()
         conectados = {int(client.userid()) for client in self.dame_clientes()}
         players: list[dict[str, Any]] = []
@@ -161,6 +218,13 @@ class Server:
         fase: str | None = None
         turno_data: dict[str, int | None] | None = None
         refuerzos_pendientes = 0
+        situacion: dict[str, str | int | None] = {
+            "id": "none",
+            "nombre": "Sin situación",
+            "efecto": "none",
+            "parametro": None,
+            "ronda": 1,
+        }
         if game is not None and game.empezo():
             turno = game.turno_actual()
             fase = game.fase_actual()
@@ -170,19 +234,30 @@ class Server:
                 "jugador_id": int(turno.jugador_actual()),
             }
             refuerzos_pendientes = game.refuerzos_pendientes()
+            situacion_getter = getattr(game, "situacion_actual", None)
+            if callable(situacion_getter):
+                situacion_data = situacion_getter()
+                if isinstance(situacion_data, dict):
+                    situacion = situacion_data
         snapshot: dict[str, Any] = {
             "snapshot_version": SNAPSHOT_VERSION,
             "revision": self.state_revision(),
             "estado": self.estado.estado_actual(),
             "theme": self.theme,
             "map_hash": self.map_hash(),
+            "reglas": self._reglas.to_public_dict(),
             "configuracion": self._game_coordinator.configuracion_partida(),
             "players": players,
             "countries": countries,
             "fase": fase,
             "turno": turno_data,
             "refuerzos_pendientes": refuerzos_pendientes,
+            "situacion": situacion,
         }
+        if game is not None:
+            pactos = getattr(game, "pactos_publicos", None)
+            if callable(pactos):
+                snapshot.update(pactos())
         return snapshot
 
     def enviar_snapshot(self) -> None:
@@ -221,6 +296,10 @@ class Server:
                 client.transmisor.enviar_hello_ack(accepted=False)
                 return False
         client.marcar_handshake(True)  # noqa: FBT003
+        capabilities = data.get("capabilities", [])
+        client.configurar_heartbeat(
+            enabled=isinstance(capabilities, list) and "heartbeat" in capabilities
+        )
         client.transmisor.enviar_hello_ack()
         return True
 
@@ -295,6 +374,11 @@ class Server:
 
         """
         self._game_coordinator.set_misiles_habilitados(activados=activados)
+
+    def set_situation_ruleset(self, ruleset: str) -> None:
+        """Configura el ruleset de situaciones para la próxima partida."""
+        self._game_coordinator.set_situation_ruleset(ruleset)
+        self.situation_ruleset = self._game_coordinator.situation_ruleset()
 
     def misiles_habilitados(self) -> bool:
         """Retorna si los misiles están habilitados en esta partida.
@@ -634,6 +718,9 @@ class Server:
         self.enviar_configuracion_partida()
         self.enviar_turno_actual(incluir_mapa=False)
         client.transmisor.enviar_mapa(self.mapa, game)
+        # La carta de situación es estado público versionado; una reconexión
+        # recibe la situación vigente sin tener que reproducir rondas previas.
+        client.transmisor.enviar_snapshot(self.public_snapshot())
         for pais in self.mapa.paises():
             cantidad_misiles = self.mapa.cantidad_misiles(pais)
             if cantidad_misiles > 0:
@@ -753,7 +840,10 @@ class Server:
             ``True`` si se cambió desde el estado finalizado.
 
         """
-        return self._game_coordinator.volver_al_lobby(self)
+        changed = self._game_coordinator.volver_al_lobby(self)
+        if changed:
+            self.situation_ruleset = self._game_coordinator.situation_ruleset()
+        return changed
 
     def enviar_unidades_disponibles(self) -> None:
         """Envía las unidades disponibles al jugador del turno actual."""
@@ -812,10 +902,17 @@ class Server:
     def enviar_tarjetas_jugador(self, client: Client) -> None:
         """Envía las tarjetas del jugador específico al cliente."""
         tarjetas_jugador = self.mazo.tarjetas_asignadas(client)
-        tarjetas_data = [
-            {"pais": tarjeta.pais, "simbolo": tarjeta.simbolo}
-            for tarjeta in tarjetas_jugador
-        ]
+        tarjetas_data: list[dict[str, Any]] = []
+        for tarjeta in tarjetas_jugador:
+            card_data: dict[str, Any] = {
+                "pais": tarjeta.pais,
+                "simbolo": tarjeta.simbolo,
+            }
+            if tarjeta.tipo != "pais":
+                card_data["tipo"] = tarjeta.tipo
+                if tarjeta.continente is not None:
+                    card_data["continente"] = tarjeta.continente
+            tarjetas_data.append(card_data)
         LOGGER.debug(
             "Enviando %s tarjetas a %s: %s",
             len(tarjetas_data),
@@ -869,6 +966,12 @@ def parse_arguments() -> argparse.Namespace:
         default=DEFAULT_MAP_THEME,
         help=(f"Tema de mapa en themes/ (predeterminado: {DEFAULT_MAP_THEME})"),
     )
+    parser.add_argument(
+        "--situation-ruleset",
+        choices=available_situation_rulesets(),
+        default=None,
+        help="Ruleset de cartas de situación (predeterminado: el del tema)",
+    )
 
     add_log_arguments(
         parser,
@@ -898,7 +1001,10 @@ def main(server_factory: Callable[..., Server] | None = None) -> None:
     server: Server | None = None
     try:
         factory = server_factory or Server
-        server = factory(theme=args.theme)
+        server = factory(
+            theme=args.theme,
+            situation_ruleset=args.situation_ruleset,
+        )
         registrar_jugadores(server, host=args.host, port=args.port)
     except KeyboardInterrupt:
         logger.info("Servidor detenido por el usuario")

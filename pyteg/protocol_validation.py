@@ -117,7 +117,31 @@ def _is_card_list(value: object) -> bool:
 
 
 def _is_card_collection(value: object) -> bool:
-    return isinstance(value, list) and all(_is_card(card) for card in value)
+    return isinstance(value, list) and all(_is_private_card(card) for card in value)
+
+
+def _is_private_card(value: object) -> bool:
+    """Valida tarjetas entregadas al propietario, incluyendo metadata visible.
+
+    Returns:
+        ``True`` si la tarjeta conserva los campos mínimos y metadata válida.
+
+    """
+    if not _is_card(value):
+        if not isinstance(value, dict):
+            return False
+        allowed = {"pais", "simbolo", "tipo", "continente"}
+        if not {"pais", "simbolo"}.issubset(value) or not set(value).issubset(allowed):
+            return False
+        if not _is_nonempty_string(value["pais"]) or not _is_nonempty_string(
+            value["simbolo"]
+        ):
+            return False
+        for key in ("tipo", "continente"):
+            if key in value and not _is_nonempty_string(value[key]):
+                return False
+        return True
+    return True
 
 
 def _is_player_list(value: object) -> bool:
@@ -249,6 +273,7 @@ _SERVER_COMMAND_SCHEMAS: dict[str, _MessageSchema] = {
         },
         {"capabilities": _is_string_list, "rules": _is_string_list},
     ),
+    "pong": _MessageSchema({"heartbeat_id": _is_nonempty_string}, {}),
     "chat": _MessageSchema({"msg": _is_string}, {}),
     "empezar": _MessageSchema(
         {},
@@ -287,7 +312,30 @@ _SERVER_COMMAND_SCHEMAS: dict[str, _MessageSchema] = {
             "origen": _is_nonempty_string,
             "destino": _is_nonempty_string,
         },
-        {"cantidad_unidades": _DICE_COUNT},
+        {
+            "cantidad_unidades": _DICE_COUNT,
+            "objetivo_jugador": _POSITIVE_INTEGER,
+        },
+    ),
+    "proponer_pacto": _MessageSchema(
+        {
+            "tipo": _is_nonempty_string,
+            "jugador_objetivo": _POSITIVE_INTEGER,
+        },
+        {
+            "paises": _is_string_list,
+            "continentes": _is_string_list,
+            "pais_objetivo": _is_nonempty_string,
+            "duracion": _nullable(_POSITIVE_INTEGER),
+        },
+    ),
+    "aceptar_pacto": _MessageSchema(
+        {"pacto_id": _is_nonempty_string},
+        {},
+    ),
+    "romper_pacto": _MessageSchema(
+        {"pacto_id": _is_nonempty_string},
+        {},
     ),
     "finalizar_turno": _MessageSchema({}, {}),
     "solicitar_tarjetas": _MessageSchema({}, {}),
@@ -336,6 +384,7 @@ _CLIENT_EVENT_SCHEMAS: dict[str, _MessageSchema] = {
         {"capabilities": _is_string_list, "rules": _is_string_list},
     ),
     "hello_ack": _MessageSchema({"accepted": _is_boolean}, {}),
+    "ping": _MessageSchema({"heartbeat_id": _is_nonempty_string}, {}),
     "chat": _MessageSchema({"msg": _is_string}, {"msg_type": _is_string}),
     "sosadmin": _MessageSchema({}, {}),
     "estado": _MessageSchema({"estado": _is_nonempty_string}, {}),

@@ -30,9 +30,11 @@ from pyteg.client.msg.lobby import (
     MsgVolverLobby,
 )
 from pyteg.client.msg.missiles import MsgCanjearMisil, MsgLanzarMisil
+from pyteg.client.msg.pactos import MsgAceptarPacto, MsgProponerPacto, MsgRomperPacto
 
 __all__ = [
     "IMsg",
+    "MsgAceptarPacto",
     "MsgAgregarUnidad",
     "MsgAtacar",
     "MsgCanjeEspecial",
@@ -45,8 +47,10 @@ __all__ = [
     "MsgHello",
     "MsgLanzarMisil",
     "MsgMoverUnidad",
+    "MsgProponerPacto",
     "MsgReclamarTarjeta",
     "MsgReconectar",
+    "MsgRomperPacto",
     "MsgSeleccionarColor",
     "MsgSetUsername",
     "MsgSolicitarTarjetas",

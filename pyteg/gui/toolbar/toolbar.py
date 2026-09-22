@@ -22,6 +22,8 @@ from pyteg.gui.toolbar.size import (
 from pyteg.gui.toolbar.window_mixin import ToolBarWindowMixin
 from pyteg.i18n import translate as _
 
+_RESPONSIVE_TOOLBAR_WIDTH = 1200
+
 
 class ToolBar(ToolBarActionsMixin, ToolBarWindowMixin, QToolBar):
     """Barra de herramientas principal de la aplicación."""
@@ -54,6 +56,8 @@ class ToolBar(ToolBarActionsMixin, ToolBarWindowMixin, QToolBar):
         self.button_admin: QAction | None = None
         self.button_reset_zoom: QAction | None = None
         self.button_configuracion: QAction | None = None
+        self.button_toggle_chat: QAction | None = None
+        self.button_toggle_sidebar: QAction | None = None
         self.size_menu = create_size_menu(self)
 
         # Configurar la barra de herramientas
@@ -115,7 +119,34 @@ class ToolBar(ToolBarActionsMixin, ToolBarWindowMixin, QToolBar):
                 _("Resetear zoom y ajustar mapa al tamaño de la ventana")
             )
 
+        self._update_panel_language()
+
         self._update_size_menu()
+
+    def update_responsive_layout(self, width: int) -> None:
+        """Reduce la toolbar a íconos cuando la ventana no tiene ancho suficiente."""
+        style = (
+            Qt.ToolButtonStyle.ToolButtonTextBesideIcon
+            if width >= _RESPONSIVE_TOOLBAR_WIDTH
+            else Qt.ToolButtonStyle.ToolButtonIconOnly
+        )
+        self.setToolButtonStyle(style)
+
+    def _update_panel_language(self) -> None:
+        """Actualiza textos de los toggles de paneles."""
+        if self.button_toggle_chat:
+            self.button_toggle_chat.setText(_("Chat"))
+            self.button_toggle_chat.setToolTip(_("Mostrar u ocultar el chat"))
+            self.button_toggle_chat.setStatusTip(_("Mostrar u ocultar el chat"))
+
+        if self.button_toggle_sidebar:
+            self.button_toggle_sidebar.setText(_("Panel lateral"))
+            self.button_toggle_sidebar.setToolTip(
+                _("Mostrar u ocultar jugadores y unidades")
+            )
+            self.button_toggle_sidebar.setStatusTip(
+                _("Mostrar u ocultar jugadores y unidades")
+            )
 
     def _update_size_menu(self) -> None:
         """Actualiza el menú de tamaños con las traducciones actuales."""
@@ -207,6 +238,27 @@ class ToolBar(ToolBarActionsMixin, ToolBarWindowMixin, QToolBar):
             _("Resetear zoom y ajustar mapa al tamaño de la ventana")
         )
         self.addAction(self.button_reset_zoom)
+
+        icono_panel = cargar_icono_toolbar("icons/resize.png", "paneles")
+        self.button_toggle_chat = QAction(icono_panel, _("Chat"), self)
+        self.button_toggle_chat.setCheckable(True)
+        self.button_toggle_chat.setChecked(True)
+        self.button_toggle_chat.triggered.connect(self.toggle_chat)
+        self.button_toggle_chat.setToolTip(_("Mostrar u ocultar el chat"))
+        self.button_toggle_chat.setStatusTip(_("Mostrar u ocultar el chat"))
+        self.addAction(self.button_toggle_chat)
+
+        self.button_toggle_sidebar = QAction(icono_panel, _("Panel lateral"), self)
+        self.button_toggle_sidebar.setCheckable(True)
+        self.button_toggle_sidebar.setChecked(True)
+        self.button_toggle_sidebar.triggered.connect(self.toggle_sidebar)
+        self.button_toggle_sidebar.setToolTip(
+            _("Mostrar u ocultar jugadores y unidades")
+        )
+        self.button_toggle_sidebar.setStatusTip(
+            _("Mostrar u ocultar jugadores y unidades")
+        )
+        self.addAction(self.button_toggle_sidebar)
 
     def _setup_size_menu(self) -> None:
         """Configura el menú de tamaño y su botón."""

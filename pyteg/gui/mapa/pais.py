@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import pathlib
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
-from PySide6.QtGui import QColor, QPixmap
+from PySide6.QtCore import QRectF, QSize, Qt
+from PySide6.QtGui import QColor, QImage, QPainter, QPixmap
+from PySide6.QtSvg import QSvgRenderer
 from PySide6.QtWidgets import (
     QGraphicsColorizeEffect,
     QGraphicsPixmapItem,
@@ -20,6 +22,7 @@ from pyteg.gui.widgets.circulo import Circulo
 
 if TYPE_CHECKING:
     from PySide6.QtCore import QPropertyAnimation, QTimer
+    from PySide6.QtWidgets import QStyleOptionGraphicsItem, QWidget
 
 
 class Pais(PaisBattleFxMixin, PaisSelectionMixin, QGraphicsPixmapItem):
@@ -35,25 +38,12 @@ class Pais(PaisBattleFxMixin, PaisSelectionMixin, QGraphicsPixmapItem):
             pais: Tupla con (nombre del país, continente).
             pos: Tupla con (x, y, army_x, army_y) para posicionamiento.
 
-        Raises:
-            ImagenNoEncontradaError: Si la imagen no existe o no se puede cargar.
-
         """
-        # Validar que el archivo de imagen existe
-        if not pathlib.Path(path).exists():
-            raise ImagenNoEncontradaError(
-                path, f"imagen del país {pais[0]} en continente {pais[1]}"
-            )
-
-        # Intentar cargar la imagen
-        pixmap = QPixmap(path)
-        if pixmap.isNull():
-            raise ImagenNoEncontradaError(
-                path,
-                f"la imagen del país {pais[0]} no se pudo cargar (formato inválido)",
-            )
+        pixmap, svg_renderer, asset_path = self._load_asset(path, pais)
 
         super().__init__(pixmap)
+        self._svg_renderer = svg_renderer
+        self._asset_path = asset_path
         self._nombre, self._continente = pais
         self._x, self._y, self._army_x, self._army_y = pos
         self.setPos(self._x, self._y)
@@ -75,6 +65,98 @@ class Pais(PaisBattleFxMixin, PaisSelectionMixin, QGraphicsPixmapItem):
         self._movimiento_timer: QTimer | None = None
 
         self.cargar_circulo()
+        self._actualizar_tooltip()
+
+    @staticmethod
+    def _load_asset(
+        path: str, pais: tuple[str, str]
+    ) -> tuple[QPixmap, QSvgRenderer | None, str]:
+        """Carga un asset raster o vectorial manteniendo una imagen base.
+
+        ``QGraphicsPixmapItem`` sigue siendo la superficie de interacción y
+        conserva sus bounds, efectos y z-order. Para SVG se crea además una
+        imagen transparente del tamaño del ``viewBox``; el método ``paint``
+        vuelve a dibujar el renderer vectorial en cada escala, de modo que el
+        asset no se pixela al hacer zoom. Si un SVG todavía no puede abrirse,
+        se intenta el PNG con el mismo nombre como fallback de distribución.
+
+        Returns:
+            Pixmap base, renderer SVG opcional y ruta efectiva.
+
+        Raises:
+            ImagenNoEncontradaError: Si no existe un asset cargable.
+
+        """
+        requested = pathlib.Path(path)
+        candidates = [requested]
+        if requested.suffix.lower() == ".svg":
+            candidates.append(requested.with_suffix(".png"))
+
+        for candidate in candidates:
+            if not candidate.exists():
+                continue
+
+            if candidate.suffix.lower() == ".svg":
+                renderer = QSvgRenderer(str(candidate))
+                if not renderer.isValid():
+                    continue
+                size = renderer.defaultSize()
+                if not size.isValid() or size.width() <= 0 or size.height() <= 0:
+                    view_box = renderer.viewBoxF()
+                    size = QSize(round(view_box.width()), round(view_box.height()))
+                if size.width() <= 0 or size.height() <= 0:
+                    continue
+
+                image = QImage(size, QImage.Format.Format_ARGB32_Premultiplied)
+                image.fill(Qt.GlobalColor.transparent)
+                painter = QPainter(image)
+                try:
+                    renderer.render(painter)
+                finally:
+                    painter.end()
+                pixmap = QPixmap.fromImage(image)
+                if not pixmap.isNull():
+                    return pixmap, renderer, str(candidate)
+                continue
+
+            pixmap = QPixmap(str(candidate))
+            if not pixmap.isNull():
+                return pixmap, None, str(candidate)
+
+        raise ImagenNoEncontradaError(
+            path,
+            f"la imagen del país {pais[0]} no se pudo cargar (formato inválido)",
+        )
+
+    def paint(
+        self,
+        painter: QPainter,
+        option: QStyleOptionGraphicsItem,
+        widget: QWidget | None = None,
+    ) -> None:
+        """Dibuja SVG a resolución vectorial y conserva el camino raster."""
+        if self._svg_renderer is None:
+            super().paint(painter, option, cast("QWidget", widget))
+            return
+        self._svg_renderer.render(painter, QRectF(self.boundingRect()))
+
+    @property
+    def es_vectorial(self) -> bool:
+        """Indica si el país se está dibujando desde un SVG válido."""
+        return self._svg_renderer is not None
+
+    @property
+    def ruta_asset(self) -> str:
+        """Ruta efectiva del asset, útil para diagnóstico y smoke tests."""
+        return self._asset_path
+
+    def _actualizar_tooltip(self) -> None:
+        """Mantiene el nombre, continente y unidades accesibles al pasar el cursor."""
+        self.setToolTip(
+            f"País: {self._nombre}\n"
+            f"Continente: {self._continente}\n"
+            f"Unidades: {self.get_unidades()}"
+        )
 
     def cargar_circulo(self) -> None:
         """Carga y posiciona el círculo que muestra las unidades."""
@@ -125,6 +207,7 @@ class Pais(PaisBattleFxMixin, PaisSelectionMixin, QGraphicsPixmapItem):
         """
         if self._circle:
             self._circle.set_unidades(cant)
+            self._actualizar_tooltip()
 
     def get_unidades(self) -> int:
         """Retorna la cantidad de unidades como entero.

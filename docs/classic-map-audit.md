@@ -39,9 +39,13 @@ leen en los contornos de los países y siguen estando respaldadas por
 `Adyacencias`.
 
 Los puntos intermedios se guardan sólo cuando una ruta necesita apartarse de
-otro sprite o de sus fichas. El renderer las coloca detrás de los países, con
-trazo discontinuo oscuro, extremos redondeados y ancho cosmético para que
-mantengan contraste al cambiar el zoom.
+otro sprite o de sus fichas. Alaska–Kamchatka y Chile–Australia envuelven el
+mapa: la ruta termina en el borde izquierdo y reaparece desde el derecho, con
+ambos extremos calibrados contra las flechas del `board.png` clásico. El
+renderer crea dos subtramos independientes para que no haya una línea continua
+cruzando el tablero. Las conexiones se colocan detrás de los países, con trazo
+discontinuo oscuro, extremos redondeados y ancho cosmético para que mantengan
+contraste al cambiar el zoom.
 
 La captura de regresión generada con Qt offscreen queda en
 [`docs/screenshots/classic-map-bridges.png`](screenshots/classic-map-bridges.png).
@@ -51,3 +55,31 @@ La captura de regresión generada con Qt offscreen queda en
 La sección `Adyacencias` es la fuente de verdad para servidor, cliente y simulador. Las líneas dibujadas por Qt son una capa separada y se validan contra esa sección para impedir que una decoración sugiera un ataque inválido.
 
 Las regresiones de `tests/test_classic_map_audit.py` cubren países, continentes, aristas, simetría y puentes intercontinentales. Si se elimina un país, se cambia de continente o se sustituye una frontera, el test falla antes de que el cambio llegue al servidor.
+
+## Diagnóstico geométrico estricto
+
+La auditoría separa el relleno del trazo SVG: un trazo de frontera compartido
+no se considera territorio superpuesto. Las siluetas visibles de las fronteras
+terrestres deben tocarse dentro de un píxel; las rutas incluidas en
+`ConexionesVisuales` se excluyen porque cruzan agua o el salto del mapa.
+
+El diagnóstico se ejecuta con:
+
+```bash
+QT_QPA_PLATFORM=offscreen uv run python scripts/check_map_overlaps.py \
+  --theme classic --strict-boundaries --max-contact-gap 1
+```
+
+Las siete separaciones detectadas se cerraron en el vector de los países. Cada
+extensión de 3 px termina en el contorno del vecino, y se actualizaron los PNG
+de respaldo. Los pares son `Canada–NuevaYork`, `Aral–Mongolia`, `China–Iran`,
+`China–Mongolia`, `China–Siberia`, `India–Iran` e `Iran–Mongolia`. El grafo de
+adyacencias permanece igual.
+
+La auditoría estricta ahora confirma cero solapamientos de relleno y cero
+fronteras terrestres separadas. El gate adicional de bounding boxes permite
+`Groenlandia–Islandia`, `Aral–Rusia`, `California–Colombia` y
+`México–Colombia`: sus rectángulos se cruzan, pero el análisis de píxeles no
+encuentra rellenos superpuestos en esos pares. Una regresión en
+`tests/test_classic_map_audit.py` impide volver a introducir solapamientos de
+relleno o huecos de frontera.

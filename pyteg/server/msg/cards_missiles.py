@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 class MsgTarjetasJugador(IMsg):
     """Mensaje para enviar las tarjetas de un jugador."""
 
-    def __init__(self, tarjetas: list[dict[str, str]]) -> None:
+    def __init__(self, tarjetas: list[dict[str, Any]]) -> None:
         """Inicializa un mensaje con las tarjetas del jugador.
 
         Args:

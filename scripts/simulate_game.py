@@ -4,6 +4,7 @@ Run from the repository root::
 
     uv run python -m scripts.simulate_game --clients 3 --victory 30 --seed 7
     uv run python -m scripts.simulate_game --theme test --clients 2 --victory 2
+    uv run python -m scripts.simulate_game --situation-ruleset revancha --seed 17
 
 The server runs in a separate process. Bots only use public JSON/NUL messages;
 no game state is read or changed in-process. An explicit seed and the default
@@ -46,15 +47,8 @@ from unittest.mock import patch
 from pyteg.client.event_processor import ClientEventProcessor
 from pyteg.client.state_model import ClientStateModel
 from pyteg.codecs_utils import NulDelimitedUtf8Codec
-from pyteg.config import (
-    CARDS_FOR_EXCHANGE,
-    MAX_CARDS_BEFORE_FORCE_EXCHANGE,
-    MIN_UNITS_FOR_MISSILE_EXCHANGE,
-    MISSILE_DAMAGE_DISTANCE_1,
-    MISSILE_DAMAGE_DISTANCE_2,
-    MISSILE_DAMAGE_DISTANCE_3,
-    MISSILE_MAX_DISTANCE,
-)
+from pyteg.core.partida.reglas import load_theme_rules
+from pyteg.core.situaciones.catalog import available_situation_rulesets
 from pyteg.protocol import PROTOCOL_VERSION, map_hash_for_theme
 from pyteg.protocol_validation import MessageValidationError, validate_client_event
 
@@ -83,6 +77,9 @@ class Bot:
     event_processor: ClientEventProcessor = field(init=False)
     special_exchanges: list[dict[str, Any]] = field(default_factory=list)
     missile_results: list[dict[str, Any]] = field(default_factory=list)
+    battle_results: list[dict[str, Any]] = field(default_factory=list)
+    # A reconnecting peer receives current state, not historical event frames.
+    missile_results_consensus_offset: int = 0
     barrier: str = ""
     errors: list[dict[str, Any]] = field(default_factory=list)
     counts: Counter[str] = field(default_factory=Counter)
@@ -90,6 +87,10 @@ class Bot:
     disconnect_turn: int | None = None
     reconnected: bool = False
     resync_requested: bool = False
+    received_wire_bytes: int = 0
+    received_wire_frames: int = 0
+    sent_wire_bytes: int = 0
+    sent_wire_frames: int = 0
 
     def __post_init__(self) -> None:
         """Inicializa el procesador común de eventos del cliente."""
@@ -188,6 +189,26 @@ class Bot:
         """Indica si el modelo recibió una lista pública de jugadores."""
         return bool(self.player_ids)
 
+    def player_is_disconnected(self, user_id: int) -> bool:
+        """Indica si el snapshot publicó desconectada una identidad.
+
+        La partida conserva al jugador desconectado para permitir reconexión,
+        por lo que su identidad puede seguir presente en la lista pública.
+        Si el servidor lo retiró por completo, también se considera listo.
+
+        Returns:
+            ``True`` cuando la identidad ya está desconectada o fue retirada.
+
+        """
+        players = self.state_model.snapshot.get("players", [])
+        if not isinstance(players, list):
+            return False
+        for player in players:
+            if not isinstance(player, dict) or player.get("userid") != user_id:
+                continue
+            return player.get("connected") is False
+        return True
+
     @property
     def session_token(self) -> str | None:
         """Devuelve el token privado de sesión del bot."""
@@ -218,8 +239,11 @@ class Bot:
         if not data:
             msg = f"Client {self.userid}: unexpected server EOF"
             raise RuntimeError(msg)
+        self.received_wire_bytes += len(data)
+        frames = self.codec.feed(data)
+        self.received_wire_frames += len(frames)
         result: list[dict[str, Any]] = []
-        for raw in self.codec.feed(data):
+        for raw in frames:
             if not raw:
                 continue
             payload = json.loads(raw)
@@ -231,6 +255,18 @@ class Bot:
             except MessageValidationError as error:
                 msg = f"Invalid server event: {error}"
                 raise RuntimeError(msg) from error
+            if payload.get("mensaje") == "ping":
+                frame = (
+                    json.dumps({
+                        "mensaje": "pong",
+                        "heartbeat_id": payload["heartbeat_id"],
+                    }).encode("utf-8")
+                    + b"\0"
+                )
+                self.connection.sendall(frame)
+                self.sent_wire_bytes += len(frame)
+                self.sent_wire_frames += 1
+                continue
             result.append(payload)
             self._apply(payload)
         return result
@@ -249,6 +285,7 @@ class Bot:
             "misil_agregado": self._apply_missile,
             "canje_especial": self._apply_special_exchange,
             "resultado_misil": self._apply_missile_result,
+            "resultado_batalla": self._apply_battle_result,
             "turno": self._apply_turn,
             "victoria": self._apply_victory,
             "estado": self._apply_state,
@@ -287,6 +324,9 @@ class Bot:
 
     def _apply_missile_result(self, data: dict[str, Any]) -> None:
         self.missile_results.append(data)
+
+    def _apply_battle_result(self, data: dict[str, Any]) -> None:
+        self.battle_results.append(data)
 
     def _apply_turn(self, data: dict[str, Any]) -> None:
         _ = data
@@ -335,9 +375,17 @@ class Simulation:
         self.special_exchanges = 0
         self.missile_exchanges = 0
         self.missile_launches = 0
+        self.missile_distances: Counter[str] = Counter()
+        self.attack_dice_counts: Counter[str] = Counter()
         self.reconnections = 0
+        self.situations_seen: list[str] = []
         self.exercise_cards = bool(args.exercise_cards or args.exercise_exchanges)
-        self.exercise_missiles = bool(args.exercise_missiles or args.exercise_exchanges)
+        self.rules = load_theme_rules(args.theme)
+        self.exercise_missiles = bool(
+            args.exercise_missiles
+            or args.exercise_exchanges
+            or self.rules.missiles_enabled
+        )
         self._disconnect_done = False
         self.port = 0
         theme_dir = ROOT / "themes" / args.theme
@@ -352,7 +400,10 @@ class Simulation:
             if isinstance(info, dict) and "continente" in info
         }
         self.total_countries = len(self.continents)
-        self.target = args.victory or self.total_countries
+        configured_target = (
+            self.rules.victory_countries if args.victory is None else args.victory
+        )
+        self.target = configured_target or self.total_countries
         if args.clients > self.total_countries:
             msg = f"{args.theme} has only {self.total_countries} countries"
             raise ValueError(msg)
@@ -361,6 +412,12 @@ class Simulation:
             raise ValueError(msg)
 
     def _record(self, direction: str, bot: Bot, payload: dict[str, Any]) -> None:
+        if direction == "receive" and payload.get("mensaje") == "snapshot":
+            situation = payload.get("situacion")
+            if isinstance(situation, dict):
+                card_id = situation.get("id")
+                if isinstance(card_id, str) and card_id not in self.situations_seen:
+                    self.situations_seen.append(card_id)
         data = {
             "elapsed": round(time.monotonic() - self.started, 6),
             "direction": direction,
@@ -403,8 +460,22 @@ class Simulation:
         """
         return any(peer.userid == user_id for peer in self.connected_bots())
 
-    def _wait(self, condition: Callable[[], bool], description: str) -> None:
-        deadline = min(self.deadline, time.monotonic() + self.args.command_timeout)
+    def _wait(
+        self,
+        condition: Callable[[], bool],
+        description: str,
+        *,
+        timeout: float | None = None,
+    ) -> None:
+        """Wait for a wire condition with a bounded command or custom timeout.
+
+        Raises:
+            RuntimeError: If no connected bot remains or a frame is invalid.
+            TimeoutError: If the condition does not arrive before the deadline.
+
+        """
+        wait_seconds = self.args.command_timeout if timeout is None else timeout
+        deadline = min(self.deadline, time.monotonic() + wait_seconds)
         while not condition():
             remaining = deadline - time.monotonic()
             if remaining <= 0:
@@ -440,6 +511,8 @@ class Simulation:
         self._record("send", bot, payload)
         frame = json.dumps(payload).encode("utf-8") + b"\0"
         bot.connection.sendall(frame)
+        bot.sent_wire_bytes += len(frame)
+        bot.sent_wire_frames += 1
 
     def command(self, bot: Bot, kind: str, **fields: Any) -> None:
         """Send one action and wait until all peers observe its chat barrier.
@@ -492,8 +565,14 @@ class Simulation:
         if any(bot.missiles != missiles for bot in peers):
             msg = "Clients disagree on public missile inventory"
             raise RuntimeError(msg)
-        missile_results = peers[0].missile_results
-        if any(bot.missile_results != missile_results for bot in peers):
+        missile_results = peers[0].missile_results[
+            peers[0].missile_results_consensus_offset :
+        ]
+        if any(
+            bot.missile_results[bot.missile_results_consensus_offset :]
+            != missile_results
+            for bot in peers
+        ):
             msg = "Clients disagree on missile result events"
             raise RuntimeError(msg)
         if board:
@@ -540,7 +619,12 @@ class Simulation:
                 protocol_version=PROTOCOL_VERSION,
                 theme=self.args.theme,
                 map_hash=map_hash_for_theme(self.args.theme),
-                capabilities=["snapshots", "command_results", "reconnect"],
+                capabilities=[
+                    "snapshots",
+                    "command_results",
+                    "reconnect",
+                    "heartbeat",
+                ],
                 rules=["validated_phases", "one_card_per_turn"],
             )
             self.command(bot, "set_username", username=f"Bot_{bot.userid}")
@@ -593,9 +677,10 @@ class Simulation:
         self._wait(
             lambda: (
                 self.reference_bot().players_initialized
-                and old_userid not in self.reference_bot().player_ids
+                and self.reference_bot().player_is_disconnected(old_userid)
             ),
-            "server to remove the disconnected player",
+            "server to mark the player disconnected",
+            timeout=max(30.0, self.args.command_timeout * 3),
         )
 
         while True:
@@ -609,6 +694,11 @@ class Simulation:
                 time.sleep(0.05)
         connection.settimeout(self.args.command_timeout)
         connection.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+        active_peers = self.connected_bots()
+        # Start a new event-consensus epoch: the replacement does not replay
+        # historical missile results, while active peers already have them.
+        for peer in active_peers:
+            peer.missile_results_consensus_offset = len(peer.missile_results)
         replacement = Bot(connection, userid=old_userid)
         self.bots.append(replacement)
         self._wait(
@@ -623,7 +713,12 @@ class Simulation:
                 "protocol_version": PROTOCOL_VERSION,
                 "theme": self.args.theme,
                 "map_hash": map_hash_for_theme(self.args.theme),
-                "capabilities": ["snapshots", "command_results", "reconnect"],
+                "capabilities": [
+                    "snapshots",
+                    "command_results",
+                    "reconnect",
+                    "heartbeat",
+                ],
                 "rules": ["validated_phases", "one_card_per_turn"],
             },
         )
@@ -651,6 +746,40 @@ class Simulation:
             for neighbor in self.adjacency[country]
         )
 
+    @staticmethod
+    def _bot_color_key(bot: Bot) -> str | None:
+        """Return the RGB hex color advertised for a bot.
+
+        Returns:
+            Color hexadecimal normalizado o ``None`` si no está publicado.
+
+        """
+        players = bot.state_model.snapshot.get("players", [])
+        if not isinstance(players, list):
+            return None
+        for player in players:
+            if not isinstance(player, dict) or player.get("userid") != bot.userid:
+                continue
+            color = player.get("color")
+            if not isinstance(color, dict):
+                return None
+            components = (color.get("r"), color.get("g"), color.get("b"))
+            if all(isinstance(component, int) for component in components):
+                red, green, blue = components
+                return f"#{red:02x}{green:02x}{blue:02x}"
+        return None
+
+    @staticmethod
+    def _active_situation(bot: Bot) -> dict[str, Any]:
+        """Return the public situation card from the bot snapshot.
+
+        Returns:
+            Diccionario público de situación o un diccionario vacío.
+
+        """
+        situation = bot.state_model.snapshot.get("situacion", {})
+        return situation if isinstance(situation, dict) else {}
+
     def sync_cards(self, bot: Bot) -> None:
         """Refresh the active player's private card hand from the server."""
         if self.exercise_cards:
@@ -665,6 +794,11 @@ class Simulation:
         """
         if not self.exercise_cards or bot.victory:
             return
+        # Crisis may reject the claim for any player tied at the lowest roll;
+        # the roll is private, so the headless client conservatively skips the
+        # command while that public situation is active.
+        if self._active_situation(bot).get("efecto") == "crisis":
+            return
         cards_before = len(bot.cards)
         self.command(bot, "reclamar_tarjeta")
         self.card_claims += 1
@@ -672,13 +806,12 @@ class Simulation:
             msg = "Card claim did not update the requesting client's hand"
             raise RuntimeError(msg)
         if (
-            cards_before >= MAX_CARDS_BEFORE_FORCE_EXCHANGE
+            cards_before >= self.rules.max_cards_before_force_exchange
             and len(bot.cards) < cards_before
         ):
             self.forced_card_exchanges += 1
 
-    @staticmethod
-    def _card_selection(bot: Bot) -> list[dict[str, str]]:
+    def _card_selection(self, bot: Bot) -> list[dict[str, str]]:
         """Select a valid three-card exchange from a public card snapshot.
 
         Returns:
@@ -689,8 +822,8 @@ class Simulation:
         for card in bot.cards:
             cards_by_symbol.setdefault(card["simbolo"], []).append(card)
         for cards in cards_by_symbol.values():
-            if len(cards) >= CARDS_FOR_EXCHANGE:
-                return cards[:CARDS_FOR_EXCHANGE]
+            if len(cards) >= self.rules.cards_for_exchange:
+                return cards[: self.rules.cards_for_exchange]
         distinct: list[dict[str, str]] = []
         seen_symbols: set[str] = set()
         for card in bot.cards:
@@ -698,7 +831,9 @@ class Simulation:
                 distinct.append(card)
                 seen_symbols.add(card["simbolo"])
         return (
-            distinct[:CARDS_FOR_EXCHANGE] if len(distinct) == CARDS_FOR_EXCHANGE else []
+            distinct[: self.rules.cards_for_exchange]
+            if len(distinct) == self.rules.cards_for_exchange
+            else []
         )
 
     def exchange_cards(self, bot: Bot) -> None:
@@ -711,11 +846,11 @@ class Simulation:
         if not self.exercise_cards:
             return
         selection = self._card_selection(bot)
-        if len(selection) != CARDS_FOR_EXCHANGE:
+        if len(selection) != self.rules.cards_for_exchange:
             return
         cards_before = len(bot.cards)
         self.command(bot, "canjear_tarjetas", tarjetas=selection)
-        if len(bot.cards) != cards_before - CARDS_FOR_EXCHANGE:
+        if len(bot.cards) != cards_before - self.rules.cards_for_exchange:
             msg = "Card exchange did not consume the selected cards"
             raise RuntimeError(msg)
         self.card_exchanges += 1
@@ -764,19 +899,16 @@ class Simulation:
                     queue.append((neighbor, distance + 1))
         return -1
 
-    @staticmethod
-    def _missile_damage(distance: int) -> int:
+    def _missile_damage(self, distance: int) -> int:
         """Return the configured damage for a missile distance.
 
         Returns:
             Configured damage, or zero for a distance outside missile range.
 
         """
-        return {
-            1: MISSILE_DAMAGE_DISTANCE_1,
-            2: MISSILE_DAMAGE_DISTANCE_2,
-            3: MISSILE_DAMAGE_DISTANCE_3,
-        }.get(distance, 0)
+        if distance < 1 or distance > len(self.rules.missile_damage_by_distance):
+            return 0
+        return self.rules.missile_damage_by_distance[distance - 1]
 
     def exchange_missile(self, bot: Bot) -> None:
         """Convert six units in one owned country into a missile.
@@ -790,7 +922,9 @@ class Simulation:
         options = [
             (country, units)
             for country, (owner, units) in bot.countries.items()
-            if owner == bot.userid and units >= MIN_UNITS_FOR_MISSILE_EXCHANGE
+            if owner == bot.userid
+            and units
+            >= self.rules.missile_unit_cost + self.rules.missile_min_units_to_leave
         ]
         if not options:
             return
@@ -802,7 +936,7 @@ class Simulation:
             raise RuntimeError(msg)
         self.missile_exchanges += 1
 
-    def launch_missile(self, bot: Bot) -> None:
+    def launch_missile(self, bot: Bot) -> None:  # noqa: C901, PLR0914
         """Launch one available missile at a reachable enemy country.
 
         Raises:
@@ -820,11 +954,31 @@ class Simulation:
                     continue
                 distance = self._distance(origin, target)
                 damage = self._missile_damage(distance)
-                if 1 <= distance <= MISSILE_MAX_DISTANCE and target_units > damage:
+                source_missiles = bot.missiles.get(origin, 0)
+                target_missiles = bot.missiles.get(target, 0)
+                if (
+                    1 <= distance <= self.rules.missile_max_distance
+                    and target_units > damage
+                    and target_missiles < source_missiles
+                ):
                     options.append((target_units, -distance, origin, target))
         if not options:
             return
-        _, _, origin, target = max(options)
+        supported_distances = range(
+            1,
+            min(
+                self.rules.missile_max_distance,
+                len(self.rules.missile_damage_by_distance),
+            )
+            + 1,
+        )
+        uncovered = {
+            distance
+            for distance in supported_distances
+            if not self.missile_distances.get(str(distance))
+        }
+        preferred = [option for option in options if -option[1] in uncovered]
+        _, _negative_distance, origin, target = max(preferred or options)
         missiles_before = bot.missiles.get(origin, 0)
         results_before = len(bot.missile_results)
         self.command(
@@ -839,6 +993,9 @@ class Simulation:
         if len(bot.missile_results) != results_before + 1:
             msg = "Missile launch did not publish a result event"
             raise RuntimeError(msg)
+        result_distance = bot.missile_results[-1].get("distancia")
+        if isinstance(result_distance, int):
+            self.missile_distances[str(result_distance)] += 1
         self.missile_launches += 1
 
     def reinforce(self, bot: Bot) -> None:
@@ -874,6 +1031,10 @@ class Simulation:
 
     def attack(self, bot: Bot) -> None:
         """Attack favorable adjacent targets and transfer after each conquest."""
+        situation = self._active_situation(bot)
+        effect = situation.get("efecto")
+        if effect == "rest" and self._bot_color_key(bot) == situation.get("parametro"):
+            return
         claimed_this_turn = False
         while True:
             options = [
@@ -882,6 +1043,17 @@ class Simulation:
                 if owner == bot.userid and units > 1
                 for neighbor in self.adjacency[country]
                 if bot.countries[neighbor][0] != bot.userid
+                and (
+                    effect not in {"open_borders", "closed_borders"}
+                    or (
+                        effect == "open_borders"
+                        and self.continents[country] != self.continents[neighbor]
+                    )
+                    or (
+                        effect == "closed_borders"
+                        and self.continents[country] == self.continents[neighbor]
+                    )
+                )
                 and units > bot.countries[neighbor][1]
             ]
             if not options:
@@ -893,6 +1065,7 @@ class Simulation:
                     -bot.countries[pair[1]][1],
                 ),
             )
+            battle_results_before = len(bot.battle_results)
             self.command(
                 bot,
                 "atacar",
@@ -900,6 +1073,11 @@ class Simulation:
                 destino=target,
                 cantidad_unidades=min(3, bot.countries[origin][1] - 1),
             )
+            if len(bot.battle_results) > battle_results_before:
+                result = bot.battle_results[-1]
+                attacker_dice = result.get("dados_atacante")
+                if isinstance(attacker_dice, list):
+                    self.attack_dice_counts[str(len(attacker_dice))] += 1
             if bot.countries[target][0] == bot.userid:
                 self.conquests += 1
                 remaining = bot.countries[origin][1] - 1
@@ -1071,6 +1249,9 @@ class Simulation:
         reference = peers[0] if peers else (self.bots[0] if self.bots else None)
         board = reference.countries if reference is not None else {}
         board_json = json.dumps(board, sort_keys=True).encode("utf-8")
+        received_message_totals: Counter[str] = Counter()
+        for bot in self.bots:
+            received_message_totals.update(bot.counts)
         latest_by_id = {bot.userid: bot for bot in self.bots}
         identity_bots = list(latest_by_id.values())
         country_counts = Counter({str(bot.userid): 0 for bot in self.bots})
@@ -1084,6 +1265,9 @@ class Simulation:
         )
         return {
             "theme": self.args.theme,
+            "situation_ruleset": self.args.situation_ruleset,
+            "rules": self.rules.to_public_dict(),
+            "situations_seen": list(self.situations_seen),
             "seed": self.args.seed,
             "seed_source": self.args.seed_source,
             "deterministic_dice": self.args.deterministic_dice,
@@ -1117,6 +1301,8 @@ class Simulation:
             "special_exchanges": self.special_exchanges,
             "missile_exchanges": self.missile_exchanges,
             "missile_launches": self.missile_launches,
+            "missile_distances": dict(self.missile_distances),
+            "attack_dice_counts": dict(self.attack_dice_counts),
             "victories": [bot.victory for bot in self.bots],
             "server_states": [bot.state for bot in self.bots],
             "all_clients_finalized": bool(self.bots)
@@ -1132,6 +1318,12 @@ class Simulation:
             },
             "final_board": board,
             "received_messages": [dict(bot.counts) for bot in self.bots],
+            "received_message_totals": dict(received_message_totals),
+            "country_update_messages": received_message_totals.get("pais", 0),
+            "received_wire_bytes": sum(bot.received_wire_bytes for bot in self.bots),
+            "received_wire_frames": sum(bot.received_wire_frames for bot in self.bots),
+            "sent_wire_bytes": sum(bot.sent_wire_bytes for bot in self.bots),
+            "sent_wire_frames": sum(bot.sent_wire_frames for bot in self.bots),
             "errors": [error for bot in self.bots for error in bot.errors],
             "scope": [
                 "Production server in a subprocess; actual loopback TCP sockets",
@@ -1154,7 +1346,15 @@ class Simulation:
 
 def _arguments() -> argparse.Namespace:  # noqa: C901
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--theme", choices=("classic", "test"), default="classic")
+    parser.add_argument(
+        "--theme", choices=("classic", "revancha", "test"), default="classic"
+    )
+    parser.add_argument(
+        "--situation-ruleset",
+        choices=available_situation_rulesets(),
+        default=None,
+        help="Ruleset opcional de cartas de situaciones.",
+    )
     parser.add_argument("--clients", type=int, default=3)
     parser.add_argument(
         "--seed",
@@ -1162,7 +1362,15 @@ def _arguments() -> argparse.Namespace:  # noqa: C901
         default=None,
         help="Seed explícita; si se omite se genera con secrets.",
     )
-    parser.add_argument("--victory", type=int, default=0, help="0 means all countries")
+    parser.add_argument(
+        "--victory",
+        type=int,
+        default=None,
+        help=(
+            "Target country count; omitted uses the theme profile, "
+            "0 means all countries"
+        ),
+    )
     parser.add_argument("--timeout", type=float, default=300)
     parser.add_argument("--command-timeout", type=float, default=10)
     parser.add_argument("--max-rounds", type=int, default=200)
@@ -1222,16 +1430,17 @@ def _arguments() -> argparse.Namespace:  # noqa: C901
     args = parser.parse_args()
     if not MIN_CLIENTS <= args.clients <= MAX_CLIENTS:
         parser.error("--clients must be between 2 and 6")
-    if (
-        args.victory < 0
-        or min(args.timeout, args.command_timeout, args.max_rounds) <= 0
-    ):
+    if (args.victory is not None and args.victory < 0) or min(
+        args.timeout, args.command_timeout, args.max_rounds
+    ) <= 0:
         parser.error("Timeouts/rounds must be positive and victory must be nonnegative")
     if args.seed is None:
         args.seed = secrets.randbits(64)
         args.seed_source = "generated_by_secrets"
     else:
         args.seed_source = "explicit"
+    if args.situation_ruleset is None:
+        args.situation_ruleset = load_theme_rules(args.theme).situation_ruleset
     if args.disconnect_client is None and args.disconnect_after_turn:
         parser.error("--disconnect-after-turn requires --disconnect-client")
     if args.reconnect_client is not None and args.disconnect_client is None:
@@ -1258,7 +1467,14 @@ def _server_child(args: argparse.Namespace) -> None:
     random.seed(args.seed)
     dice_rng = random.Random(args.seed)  # noqa: S311 -- deterministic simulation only
     objective_rng = random.Random(args.seed)  # noqa: S311 -- deterministic simulation only
-    server_factory = partial(Server, objective_rng=objective_rng)
+    situation_rng = random.Random(args.seed)  # noqa: S311 -- deterministic simulation only
+    color_rng = random.Random(args.seed)  # noqa: S311 -- deterministic simulation only
+    server_factory = partial(
+        Server,
+        objective_rng=objective_rng,
+        situation_rng=situation_rng,
+        situation_ruleset=args.situation_ruleset,
+    )
     sys.argv = [
         "pyteg-server",
         "--host",
@@ -1267,10 +1483,15 @@ def _server_child(args: argparse.Namespace) -> None:
         str(args.server_child),
         "--theme",
         args.theme,
+        "--situation-ruleset",
+        args.situation_ruleset,
         "--quiet",
     ]
     if args.deterministic_dice:
-        with patch("secrets.randbelow", dice_rng.randrange):
+        with (
+            patch("secrets.randbelow", dice_rng.randrange),
+            patch("secrets.choice", color_rng.choice),
+        ):
             server_main(server_factory=server_factory)
     else:
         server_main(server_factory=server_factory)
@@ -1309,6 +1530,8 @@ def main() -> int:
                 str(port),
                 "--theme",
                 args.theme,
+                "--situation-ruleset",
+                args.situation_ruleset,
                 "--seed",
                 str(args.seed),
             ]
@@ -1360,6 +1583,8 @@ def main() -> int:
                     "seed",
                     "seed_source",
                     "deterministic_dice",
+                    "situation_ruleset",
+                    "situations_seen",
                     "secret_objectives",
                     "victory_observed",
                     "failure",
@@ -1371,6 +1596,8 @@ def main() -> int:
                     "special_exchanges",
                     "missile_exchanges",
                     "missile_launches",
+                    "missile_distances",
+                    "attack_dice_counts",
                     "country_counts",
                     "connected_clients",
                     "disconnected_clients",

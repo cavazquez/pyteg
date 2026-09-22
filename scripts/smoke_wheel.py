@@ -46,7 +46,11 @@ def _environment(root: Path) -> dict[str, str]:
 def _process_output(process: subprocess.Popen[str]) -> str:
     if process.stdout is None:
         return ""
-    return process.stdout.read()
+    output = process.stdout.read()
+    if not isinstance(output, str):
+        msg = "Expected text output from the subprocess"
+        raise TypeError(msg)
+    return output
 
 
 def _stop(process: subprocess.Popen[str]) -> None:
@@ -76,7 +80,7 @@ def _wait_for_server(process: subprocess.Popen[str], port: int) -> None:
     raise RuntimeError(message)
 
 
-def _run_server(root: Path, cwd: Path) -> None:
+def _run_server(root: Path, cwd: Path, theme: str) -> None:
     port = _free_port()
     process = subprocess.Popen(  # noqa: S603
         [
@@ -88,7 +92,7 @@ def _run_server(root: Path, cwd: Path) -> None:
             "--port",
             str(port),
             "--theme",
-            "test",
+            theme,
             "--quiet",
         ],
         cwd=cwd,
@@ -99,7 +103,7 @@ def _run_server(root: Path, cwd: Path) -> None:
     )
     try:
         _wait_for_server(process, port)
-        print("Servidor del wheel inició correctamente")
+        print(f"Servidor del wheel inició correctamente con tema {theme}")
     finally:
         _stop(process)
 
@@ -143,7 +147,8 @@ def main() -> int:
         cwd.mkdir()
         with ZipFile(wheel) as archive:
             archive.extractall(root)
-        _run_server(root, cwd)
+        for theme in ("classic", "revancha"):
+            _run_server(root, cwd, theme)
         _run_client(root, cwd)
     return 0
 

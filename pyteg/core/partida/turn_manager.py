@@ -8,11 +8,16 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from pyteg.core.partida.reinforcement_policy import (
+    NO_EXTRA_REINFORCEMENTS,
+    ReinforcementPolicy,
+)
 from pyteg.core.turnos.turnos import PrimerTurno, SegundoTurno, SiguientesTurnos
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
+    from pyteg.core.partida.reglas import ThemeRules
     from pyteg.protocols import IClientProtocol
     from pyteg.server.juego.mapa import Mapa
 
@@ -30,15 +35,28 @@ class TurnManager:
     y el orden de los jugadores.
     """
 
-    def __init__(self, mapa: Mapa) -> None:
+    def __init__(
+        self,
+        mapa: Mapa,
+        reinforcement_policy: ReinforcementPolicy = NO_EXTRA_REINFORCEMENTS,
+        rules: ThemeRules | None = None,
+    ) -> None:
         """Inicializa el gestor de turnos.
 
         Args:
             mapa: Instancia del mapa del juego.
+            reinforcement_policy: Política de refuerzos adicionales.
+            rules: Perfil de reglas opcional del tema.
 
         """
         self._mapa = mapa
-        self._turnos: list[TurnoType] = [PrimerTurno(_USERID_PLACEHOLDER)]
+        self._reinforcement_policy = reinforcement_policy
+        self._first_turn_units = rules.first_turn_units if rules is not None else 6
+        self._second_turn_units = rules.second_turn_units if rules is not None else 3
+        self._rules = rules
+        self._turnos: list[TurnoType] = [
+            PrimerTurno(_USERID_PLACEHOLDER, self._first_turn_units)
+        ]
         self._num_turno = 0
         self._num_ronda = 1
         # Identidad lógica del turno actual. No depende de la posición en
@@ -52,7 +70,9 @@ class TurnManager:
             jugadores_userids: Lista de userids (int) de jugadores en orden.
 
         """
-        self._turnos = [PrimerTurno(j) for j in jugadores_userids]
+        self._turnos = [
+            PrimerTurno(j, self._first_turn_units) for j in jugadores_userids
+        ]
         self._num_turno = 0
         self._turno_logico = 0
 
@@ -181,9 +201,24 @@ class TurnManager:
 
         """
         if es_segundo_turno:
-            self._turnos = [SegundoTurno(j) for j in jugadores_userids]
+            self._turnos = [
+                SegundoTurno(
+                    j,
+                    self._reinforcement_policy,
+                    self._second_turn_units,
+                )
+                for j in jugadores_userids
+            ]
         else:
-            self._turnos = [SiguientesTurnos(j, self._mapa) for j in jugadores_userids]
+            self._turnos = [
+                SiguientesTurnos(
+                    j,
+                    self._mapa,
+                    self._reinforcement_policy,
+                    self._rules,
+                )
+                for j in jugadores_userids
+            ]
         self._num_turno = 0
         self._num_ronda += 1
 
@@ -263,10 +298,19 @@ class TurnManager:
 
         turno_actual = self._turnos[0]
         if isinstance(turno_actual, PrimerTurno):
-            turno: TurnoType = PrimerTurno(jugador_id)
+            turno: TurnoType = PrimerTurno(jugador_id, self._first_turn_units)
         elif isinstance(turno_actual, SegundoTurno):
-            turno = SegundoTurno(jugador_id)
+            turno = SegundoTurno(
+                jugador_id,
+                self._reinforcement_policy,
+                self._second_turn_units,
+            )
         else:
-            turno = SiguientesTurnos(jugador_id, self._mapa)
+            turno = SiguientesTurnos(
+                jugador_id,
+                self._mapa,
+                self._reinforcement_policy,
+                self._rules,
+            )
         self._turnos.append(turno)
         return True
