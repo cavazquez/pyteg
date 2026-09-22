@@ -5,6 +5,7 @@ from __future__ import annotations
 import unittest
 
 from pyteg.core.cartas.mazo import Mazo
+from pyteg.gui.mapa.overlap_check import find_pixel_overlaps, load_pais_bounds
 from pyteg.protocol import map_hash_for_theme
 from pyteg.toml_reader import TomlReader
 from pyteg.utils import get_resource_path
@@ -54,6 +55,10 @@ class RevanchaThemeTests(unittest.TestCase):
                 connection.destino,
                 self.reader.obtener_paises_adyacentes(connection.origen),
             )
+
+    def test_country_assets_do_not_overlap(self) -> None:
+        """La grilla estructural no solapa países opacos entre sí."""
+        self.assertEqual(find_pixel_overlaps(load_pais_bounds("revancha")), [])
 
     def test_map_hash_is_different_from_classic(self) -> None:
         """El handshake distingue los dos mapas aunque compartan el protocolo."""

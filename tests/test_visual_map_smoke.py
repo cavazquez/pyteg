@@ -31,6 +31,15 @@ class VisualMapSmokeTests(unittest.TestCase):
             self.assertGreater(record.visual_connections, 0)
             self.assertTrue(Path(record.output).is_file())
 
+    def test_captura_revancha_pequena(self) -> None:
+        """El tema Revancha renderiza sus 72 países con rutas propias."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_dir = Path(temp_dir)
+            record = render_capture(self.app, "revancha", (1024, 600), output_dir)
+            self.assertEqual(record.countries, 72)
+            self.assertGreater(record.visual_connections, 0)
+            self.assertTrue(Path(record.output).is_file())
+
 
 if __name__ == "__main__":
     unittest.main()

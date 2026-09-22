@@ -80,10 +80,12 @@ NuevaZelandia = ['Tasmania']
 [[ConexionesVisuales]]
 origen = "Alaska"
 destino = "Chukchi"
+puntos = [[600.0, -20.0], [1180.0, -20.0]]
 
 [[ConexionesVisuales]]
 origen = "Alaska"
 destino = "Kamchatka"
+puntos = [[600.0, -40.0]]
 
 [[ConexionesVisuales]]
 origen = "Groenlandia"
@@ -92,18 +94,22 @@ destino = "Islandia"
 [[ConexionesVisuales]]
 origen = "California"
 destino = "Tonga"
+puntos = [[61.0, 540.0], [1045.0, 540.0]]
 
 [[ConexionesVisuales]]
 origen = "Brasil"
 destino = "Sahara"
+puntos = [[245.0, 480.0], [420.0, 480.0]]
 
 [[ConexionesVisuales]]
 origen = "Uruguay"
 destino = "Nigeria"
+puntos = [[245.0, 500.0], [737.0, 500.0]]
 
 [[ConexionesVisuales]]
 origen = "Espana"
 destino = "Sahara"
+puntos = [[820.0, 210.0], [800.0, 280.0]]
 
 [[ConexionesVisuales]]
 origen = "Polonia"
@@ -112,6 +118,7 @@ destino = "Egipto"
 [[ConexionesVisuales]]
 origen = "Chile"
 destino = "Australia"
+puntos = [[337.0, 540.0], [861.0, 540.0]]
 
 [[ConexionesVisuales]]
 origen = "India"
