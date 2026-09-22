@@ -33,6 +33,8 @@ EXPECTED_CLASSIC_VISUAL_CONNECTIONS = {
     ("Japon", "Kamchatka"),
     ("Labrador", "Groenlandia"),
     ("Malasia", "Borneo"),
+    ("Madagascar", "Egipto"),
+    ("Madagascar", "Zaire"),
     ("NuevaYork", "Groenlandia"),
     ("Polonia", "Turquia"),
     ("Rusia", "Aral"),

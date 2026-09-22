@@ -90,7 +90,7 @@ destino = "Mexico"
 [[ConexionesVisuales]]
 origen = "Egipto"
 destino = "Israel"
-puntos = [[470.0, 210.0]]
+puntos = [[440.0, 220.0], [470.0, 200.0]]
 
 [[ConexionesVisuales]]
 origen = "Egipto"
@@ -99,11 +99,21 @@ destino = "Polonia"
 [[ConexionesVisuales]]
 origen = "Egipto"
 destino = "Turquia"
-puntos = [[460.0, 190.0]]
+puntos = [[525.0, 220.0], [530.0, 185.0]]
 
 [[ConexionesVisuales]]
 origen = "Espana"
 destino = "Sahara"
+
+[[ConexionesVisuales]]
+origen = "Madagascar"
+destino = "Egipto"
+puntos = [[535.0, 270.0]]
+
+[[ConexionesVisuales]]
+origen = "Madagascar"
+destino = "Zaire"
+puntos = [[530.0, 365.0], [400.0, 365.0]]
 
 [[ConexionesVisuales]]
 origen = "GranBretana"
