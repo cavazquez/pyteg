@@ -1,3 +1,5 @@
+# ruff: noqa: PLR0913
+
 """Transmisor nulo (no-op) para cuando no hay conexión activa."""
 
 from __future__ import annotations
@@ -111,15 +113,23 @@ class ClientNullTransmisor(IClientTransmisor):
         """
         _LOG.debug("No puedes mover unidades. No estas conectado.")
 
-    def atacar(self, _: str, __: str, cantidad_unidades: int | None = None) -> None:  # noqa: ARG002
+    def atacar(
+        self,
+        _: str,
+        __: str,
+        cantidad_unidades: int | None = None,
+        objetivo_jugador: int | None = None,
+    ) -> None:
         """Ataca (no-op cuando no hay conexión).
 
         Args:
             _: País de origen (ignorado).
             __: País de destino (ignorado).
             cantidad_unidades: Cantidad de unidades (ignorado).
+            objetivo_jugador: Ocupante objetivo (ignorado).
 
         """
+        del cantidad_unidades, objetivo_jugador
         _LOG.debug("No puedes atacar. No estas conectado.")
 
     def actualizar_lista_jugadores(self, _: list[dict[str, Any]]) -> None:
@@ -161,3 +171,28 @@ class ClientNullTransmisor(IClientTransmisor):
         """Lanza un misil cuando no está conectado."""
         _, _ = pais_origen, pais_destino
         _LOG.debug("No puedes lanzar misiles. No estás conectado.")
+
+    def proponer_pacto(
+        self,
+        tipo: str,
+        jugador_objetivo: int,
+        *,
+        paises: list[str] | None = None,
+        continentes: list[str] | None = None,
+        pais_objetivo: str | None = None,
+        duracion: int | None = 1,
+    ) -> None:
+        """Propone un pacto sin conexión."""
+        _, _, _, _, _ = tipo, jugador_objetivo, paises, continentes, pais_objetivo
+        _ = duracion
+        _LOG.debug("No puedes proponer pactos. No estás conectado.")
+
+    def aceptar_pacto(self, pacto_id: str) -> None:
+        """Acepta un pacto sin conexión."""
+        _ = pacto_id
+        _LOG.debug("No puedes aceptar pactos. No estás conectado.")
+
+    def romper_pacto(self, pacto_id: str) -> None:
+        """Rompe un pacto sin conexión."""
+        _ = pacto_id
+        _LOG.debug("No puedes romper pactos. No estás conectado.")

@@ -77,7 +77,11 @@ class MsgAtacar(IMsg):
     """Mensaje para atacar un país desde otro."""
 
     def __init__(
-        self, origen: str, destino: str, cantidad_unidades: int | None = None
+        self,
+        origen: str,
+        destino: str,
+        cantidad_unidades: int | None = None,
+        objetivo_jugador: int | None = None,
     ) -> None:
         """Crea un mensaje para atacar de un país a otro.
 
@@ -86,12 +90,14 @@ class MsgAtacar(IMsg):
             destino: Nombre del país defensor.
             cantidad_unidades: Cantidad de unidades con las que atacar (1-3).
                 Si es None, se usa el máximo posible.
+            objetivo_jugador: Ocupante objetivo cuando el destino es compartido.
 
         """
         self._tipo = "atacar"
         self._origen = origen
         self._destino = destino
         self._cantidad_unidades = cantidad_unidades
+        self._objetivo_jugador = objetivo_jugador
 
     def to_json(self) -> str:
         """Convierte el mensaje a formato JSON.
@@ -107,6 +113,8 @@ class MsgAtacar(IMsg):
         }
         if self._cantidad_unidades is not None:
             data["cantidad_unidades"] = self._cantidad_unidades
+        if self._objetivo_jugador is not None:
+            data["objetivo_jugador"] = self._objetivo_jugador
         return json.dumps(data)
 
 

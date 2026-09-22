@@ -1,3 +1,5 @@
+# ruff: noqa: DOC201, DOC501, D417, TRY003, EM101, EM102, PLR2004
+
 """Módulo para manejar el mapa del juego en el servidor."""
 
 from __future__ import annotations
@@ -11,27 +13,43 @@ from pyteg.core.mapa.country_data import CountryData
 from pyteg.exceptions import CountryNotFoundError
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable, Iterable
+
+    from pyteg.core.partida.reglas import ThemeRules
 
 
 class Mapa:
     """Representa el mapa del juego con países, continentes y jugadores."""
 
-    def __init__(self, build_mapa: Callable[[], dict[str, list[Any]]]) -> None:
+    def __init__(
+        self,
+        build_mapa: Callable[[], dict[str, list[Any]]],
+        rules: ThemeRules | None = None,
+        *,
+        islas: Iterable[str] | None = None,
+    ) -> None:
         """Inicializa el mapa del juego.
 
         Args:
             build_mapa: Función que construye y retorna el diccionario del mapa.
+            rules: Perfil de reglas opcional del tema.
 
         """
         mapa_raw = build_mapa()
         self._build_mapa = build_mapa
+        self._rules = rules
+        self._islas = {str(pais) for pais in (islas or ())}
         # Convertir listas a CountryData para mejor type safety
         self._mapa: dict[str, CountryData] = {}
         for pais, data in mapa_raw.items():
             self._mapa[pais] = CountryData.from_list(data)
+        # Un condominio conserva una única cantidad total de unidades en
+        # ``CountryData`` y distribuye esas unidades por jugador aquí.  Así se
+        # mantiene compatible el formato histórico del mapa y el snapshot
+        # puede publicar ambos colores sin perder información.
+        self._condominios: dict[str, dict[int, int]] = {}
         # Inicializar sistema de misiles
-        self._missile_system = MissileSystem(self)
+        self._missile_system = MissileSystem(self, rules)
 
     def reiniciar(self) -> None:
         """Restaura países, unidades y misiles al mapa original del tema."""
@@ -39,7 +57,13 @@ class Mapa:
         self._mapa = {
             pais: CountryData.from_list(data) for pais, data in mapa_raw.items()
         }
-        self._missile_system = MissileSystem(self)
+        self._condominios = {}
+        self._missile_system = MissileSystem(self, self._rules)
+
+    def configurar_reglas(self, rules: ThemeRules) -> None:
+        """Asocia el perfil público a los cálculos dependientes del tema."""
+        self._rules = rules
+        self._missile_system = MissileSystem(self, rules)
 
     def pais_existe(self, pais: str) -> bool:
         """Indica si un país está definido en el mapa.
@@ -73,6 +97,20 @@ class Mapa:
         """
         self._require_pais(pais).unidades += 1
 
+    def agregar_unidad_jugador(self, pais: str, jugador: int) -> None:
+        """Agrega una unidad al aporte de un jugador en un condominio."""
+        data = self._require_pais(pais)
+        jugador = int(jugador)
+        if pais not in self._condominios:
+            if data.jugador != jugador:
+                raise ValueError(f"El jugador {jugador} no ocupa {pais}")
+            data.unidades += 1
+            return
+        if jugador not in self._condominios[pais]:
+            raise ValueError(f"El jugador {jugador} no ocupa {pais}")
+        self._condominios[pais][jugador] += 1
+        data.unidades += 1
+
     def restar_una_unidad(self, pais: str) -> None:
         """Resta una unidad del país especificado.
 
@@ -81,6 +119,25 @@ class Mapa:
 
         """
         self._require_pais(pais).unidades -= 1
+
+    def restar_unidad_jugador(
+        self, pais: str, jugador: int, *, normalizar: bool = True
+    ) -> None:
+        """Resta una unidad del aporte de un jugador."""
+        data = self._require_pais(pais)
+        jugador = int(jugador)
+        if pais not in self._condominios:
+            if data.jugador != jugador:
+                raise ValueError(f"El jugador {jugador} no ocupa {pais}")
+            data.unidades -= 1
+            return
+        cantidad = self._condominios[pais].get(jugador, 0)
+        if cantidad <= 0:
+            raise ValueError(f"El jugador {jugador} no tiene unidades en {pais}")
+        self._condominios[pais][jugador] = cantidad - 1
+        data.unidades -= 1
+        if normalizar:
+            self._normalizar_condominio(pais)
 
     def cantidad_unidades(self, pais: str) -> int:
         """Obtiene la cantidad de unidades en un país.
@@ -118,6 +175,31 @@ class Mapa:
         origen_data.unidades -= cantidad
         destino_data.unidades += cantidad
 
+    def mover_jugador(
+        self, desde: str, hacia: str, jugador: int, cantidad: int
+    ) -> None:
+        """Mueve unidades de un jugador entre países que ocupa."""
+        jugador = int(jugador)
+        if not self.jugador_posee_pais(jugador, desde):
+            raise ValueError(f"El jugador {jugador} no ocupa {desde}")
+        if not self.jugador_posee_pais(jugador, hacia):
+            raise ValueError(f"El jugador {jugador} no ocupa {hacia}")
+        disponibles = self.cantidad_unidades_jugador(desde, jugador)
+        if cantidad <= 0 or disponibles <= cantidad:
+            raise ValueError("El movimiento debe dejar una unidad en el origen")
+        self.restar_unidad_jugador_n(pais=desde, jugador=jugador, cantidad=cantidad)
+        self.agregar_unidad_jugador_n(pais=hacia, jugador=jugador, cantidad=cantidad)
+
+    def restar_unidad_jugador_n(self, pais: str, jugador: int, cantidad: int) -> None:
+        """Resta varias unidades conservando la validación por jugador."""
+        for _ in range(int(cantidad)):
+            self.restar_unidad_jugador(pais, jugador)
+
+    def agregar_unidad_jugador_n(self, pais: str, jugador: int, cantidad: int) -> None:
+        """Agrega varias unidades conservando la validación por jugador."""
+        for _ in range(int(cantidad)):
+            self.agregar_unidad_jugador(pais, jugador)
+
     def continente(self, pais: str) -> str:
         """Obtiene el continente al que pertenece un país.
 
@@ -141,6 +223,87 @@ class Mapa:
 
         """
         return self._require_pais(pais).jugador
+
+    def es_condominio(self, pais: str) -> bool:
+        """Indica si el país tiene dos o más ocupantes."""
+        return pais in self._condominios
+
+    def ocupantes(self, pais: str) -> dict[int, int]:
+        """Devuelve las unidades de cada ocupante, sin exponer referencias."""
+        data = self._require_pais(pais)
+        if pais in self._condominios:
+            return dict(self._condominios[pais])
+        return {data.jugador: data.unidades} if data.jugador is not None else {}
+
+    def unidades_jugador(self, pais: str, jugador: int) -> int:
+        """Obtiene sólo las unidades del jugador en un país."""
+        jugador = int(jugador)
+        if pais in self._condominios:
+            return self._condominios[pais].get(jugador, 0)
+        data = self._require_pais(pais)
+        return data.unidades if data.jugador == jugador else 0
+
+    def cantidad_unidades_jugador(self, pais: str, jugador: int) -> int:
+        """Alias explícito usado por validadores y tareas."""
+        return self.unidades_jugador(pais, jugador)
+
+    def crear_condominio(self, pais: str, unidades_por_jugador: dict[int, int]) -> None:
+        """Convierte un país en condominio con aportes positivos."""
+        data = self._require_pais(pais)
+        holdings = {
+            int(jugador): int(unidades)
+            for jugador, unidades in unidades_por_jugador.items()
+            if int(unidades) > 0
+        }
+        if len(holdings) < 2:
+            raise ValueError("Un condominio necesita al menos dos ocupantes")
+        if sum(holdings.values()) != data.unidades:
+            raise ValueError("Los aportes del condominio no coinciden con sus unidades")
+        self._condominios[pais] = holdings
+        data.jugador = None
+
+    def conquistar_condominio(
+        self, pais: str, atacante: int, defensor: int | None, unidades: int = 1
+    ) -> None:
+        """Expulsa a un defensor y agrega al atacante al país conquistado."""
+        atacante = int(atacante)
+        if pais not in self._condominios:
+            self.asignar_pais(atacante, pais)
+            return
+        holdings = self._condominios[pais]
+        if defensor is not None:
+            holdings.pop(int(defensor), None)
+        holdings[atacante] = holdings.get(atacante, 0) + int(unidades)
+        data = self._require_pais(pais)
+        data.unidades = sum(holdings.values())
+        self._normalizar_condominio(pais)
+
+    def expulsar_ocupante(self, pais: str, jugador: int) -> None:
+        """Elimina a un ocupante derrotado y normaliza el país."""
+        if pais not in self._condominios:
+            return
+        self._condominios[pais].pop(int(jugador), None)
+        self._normalizar_condominio(pais)
+
+    def _normalizar_condominio(self, pais: str) -> None:
+        holdings = self._condominios.get(pais)
+        if holdings is None:
+            return
+        holdings = {
+            jugador: unidades for jugador, unidades in holdings.items() if unidades > 0
+        }
+        data = self._require_pais(pais)
+        if not holdings:
+            data.jugador = None
+            data.unidades = 0
+            self._condominios.pop(pais, None)
+        elif len(holdings) == 1:
+            data.jugador, data.unidades = next(iter(holdings.items()))
+            self._condominios.pop(pais, None)
+        else:
+            data.jugador = None
+            data.unidades = sum(holdings.values())
+            self._condominios[pais] = holdings
 
     def paises(self) -> list[str]:
         """Obtiene la lista de todos los países del mapa.
@@ -229,9 +392,13 @@ class Mapa:
             pais: Nombre del país.
 
         """
-        self._require_pais(pais).jugador = jugador
+        data = self._require_pais(pais)
+        self._condominios.pop(pais, None)
+        data.jugador = jugador
 
-    def cantidad_de_paises_del_jugador(self, jugador: int) -> int:
+    def cantidad_de_paises_del_jugador(
+        self, jugador: int, *, incluir_condominios: bool = False
+    ) -> int:
         """Obtiene la cantidad de países que posee un jugador.
 
         Args:
@@ -241,8 +408,20 @@ class Mapa:
             Cantidad de países del jugador.
 
         """
-        return len(
+        exclusivos = len(
             [pais for pais in self.paises() if self.ocupado_por(pais) == jugador],
+        )
+        if not incluir_condominios:
+            return exclusivos
+        compartidos = sum(
+            1 for pais in self._condominios if int(jugador) in self._condominios[pais]
+        )
+        return exclusivos + compartidos
+
+    def tiene_paises(self, jugador: int) -> bool:
+        """Indica si el jugador conserva al menos un país, incluso compartido."""
+        return (
+            self.cantidad_de_paises_del_jugador(jugador, incluir_condominios=True) > 0
         )
 
     def jugador_posee_pais(self, jugador: int, pais: str) -> bool:
@@ -256,6 +435,9 @@ class Mapa:
             True si el jugador posee el país, False en caso contrario.
 
         """
+        jugador = int(jugador)
+        if pais in self._condominios:
+            return jugador in self._condominios[pais]
         return self.ocupado_por(pais) == jugador
 
     def cantidad_de_paises_del_jugador_por_continente(
@@ -327,6 +509,18 @@ class Mapa:
             return []
         adyacentes = self._mapa[pais].adyacentes
         return [str(p) for p in adyacentes]
+
+    def es_isla(self, pais: str) -> bool:
+        """Indica si un país está marcado como isla por el tema.
+
+        Los mapas pueden declarar islas explícitamente porque una conexión
+        marítima válida hace imposible inferirlas sólo desde el grafo.
+        Como fallback para mapas antiguos, un territorio aislado sin aristas
+        también se considera isla.
+        """
+        if self._islas:
+            return pais in self._islas
+        return not self.obtener_paises_adyacentes(pais)
 
     def _tiene_pais(self, pais: str) -> bool:
         """Verifica si un país existe en el mapa.

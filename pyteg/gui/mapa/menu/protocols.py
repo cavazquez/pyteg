@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
-from typing import Any, Protocol
+from typing import TYPE_CHECKING, Any, Protocol
+
+if TYPE_CHECKING:
+    from pyteg.client.conexion.transmisor.protocol import IClientTransmisor
 
 
 class MenuHost(Protocol):
@@ -11,4 +14,4 @@ class MenuHost(Protocol):
     pais: str
     continente_mapa: str
     main_window: Any
-    transmisor: Any | None
+    transmisor: IClientTransmisor

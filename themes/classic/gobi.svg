@@ -1,0 +1,13 @@
+<svg version="1.0" xmlns="http://www.w3.org/2000/svg"
+ width="55" height="55" viewBox="0 0 55.000000 55.000000"
+ preserveAspectRatio="xMidYMid meet">
+<g transform="translate(0.000000,55.000000) scale(0.100000,-0.100000)"
+fill="#e0dcc0" stroke="#b2a121" stroke-width="1.00" stroke-linejoin="round" vector-effect="non-scaling-stroke">
+<path d="M6 541 c-4 -5 -3 -11 2 -13 20 -8 54 -98 68 -177 12 -70 19 -89 39
+-104 14 -11 25 -29 25 -42 0 -19 10 -29 43 -43 23 -11 71 -49 107 -86 59 -61
+68 -66 106 -66 40 0 43 2 49 32 8 35 41 78 60 78 7 0 20 9 30 20 16 18 17 25
+6 68 -7 26 -16 76 -20 112 -9 76 -24 110 -50 110 -10 0 -44 25 -76 55 -48 46
+-62 55 -93 55 -22 0 -54 -10 -77 -25 -57 -35 -106 -33 -136 5 -24 30 -71 41
+-83 21z"/>
+</g>
+</svg>

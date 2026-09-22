@@ -90,6 +90,10 @@ class GameWindowProtocol(Protocol):
         """Actualiza el estado del juego en la barra de estado."""
         ...
 
+    def refresh_gameplay_actions(self) -> None:
+        """Refresca contexto y acciones cuando cambia la fase del turno."""
+        ...
+
     def update_status_bar(self, text: str, color: str | None = None) -> None:
         """Actualiza la barra de estado con un mensaje (y color opcional)."""
         ...

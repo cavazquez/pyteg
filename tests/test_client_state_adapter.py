@@ -25,6 +25,7 @@ class _WindowDouble:
         self.client_public_revision = -1
         self.game_states: list[str] = []
         self.players: list[tuple[str, QColor]] = []
+        self.player_statuses: list[Any] = []
         self.turns: list[tuple[int, int, int | None]] = []
 
     def update_game_state(self, state: str) -> None:
@@ -45,6 +46,10 @@ class _WindowDouble:
     def update_player_list(self, players: list[tuple[str, QColor]]) -> None:
         """Registra la lista pública proyectada."""
         self.players = players
+
+    def update_player_statuses(self, statuses: list[Any]) -> None:
+        """Registra estados públicos de los jugadores."""
+        self.player_statuses = statuses
 
     def update_turno(
         self,
@@ -135,3 +140,4 @@ class TestClientStateAdapter(unittest.TestCase):
         self.assertEqual(window.fase_actual, "acciones")
         self.assertEqual(window.turns[-1], (4, 2, 1))
         self.assertEqual(window.players[0][0], "Bot 1")
+        self.assertTrue(window.player_statuses[0].admin)

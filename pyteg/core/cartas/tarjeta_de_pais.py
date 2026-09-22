@@ -26,16 +26,27 @@ def _to_userid(jugador: IJugador | int) -> int:
 class TarjetaDePais:
     """Representa una tarjeta de país con su símbolo y estado de asignación."""
 
-    def __init__(self, pais: str, simbolo: str) -> None:
+    def __init__(
+        self,
+        pais: str,
+        simbolo: str,
+        *,
+        tipo: str = "pais",
+        continente: str | None = None,
+    ) -> None:
         """Inicializa una tarjeta de país.
 
         Args:
             pais: Nombre del país.
             simbolo: Símbolo de la tarjeta (ej: "Galeon", "Globo", "Canon", "Comodin").
+            tipo: Clase pública de carta (``pais``, ``continente`` o ``especial``).
+            continente: Continente asociado a una carta de continente.
 
         """
         self._pais = pais
         self._simbolo = simbolo
+        self._tipo = tipo
+        self._continente = continente
         self._usado = False
         self._jugador: int | None = None
 
@@ -58,6 +69,16 @@ class TarjetaDePais:
 
         """
         return self._simbolo
+
+    @property
+    def tipo(self) -> str:
+        """Obtiene la clase de carta."""
+        return self._tipo
+
+    @property
+    def continente(self) -> str | None:
+        """Obtiene el continente asociado, si es una carta continental."""
+        return self._continente
 
     def fue_usada(self) -> bool:
         """Verifica si la tarjeta fue usada.

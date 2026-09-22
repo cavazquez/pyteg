@@ -23,7 +23,7 @@ class MenuActionsMixin:
             self.main_window.colocar_unidad_en_pais(
                 self.pais, self.continente_mapa, cantidad
             )
-        elif cliente_esta_conectado(self.main_window) and self.transmisor is not None:
+        elif cliente_esta_conectado(self.main_window):
             self.transmisor.agregar_unidad(
                 pais=self.pais, tipo_unidad="infanteria", cantidad=cantidad
             )

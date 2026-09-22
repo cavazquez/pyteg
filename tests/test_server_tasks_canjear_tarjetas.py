@@ -155,6 +155,27 @@ class TestServerTaskCanjearTarjetas(unittest.TestCase):
             self.mazo.cant_tarjetas_asignadas(self.jugador), tarjetas_antes
         )
 
+    def test_canje_rechazado_dos_veces_en_la_misma_vuelta(self) -> None:
+        """El servidor acepta un único canje aunque haya cartas disponibles."""
+        payload: CanjearTarjetasTaskData = {
+            "mensaje": "canjear_tarjetas",
+            "tarjetas": [{"pais": t.pais, "simbolo": t.simbolo} for t in self.tarjetas],
+        }
+        self._run_canjear(payload)
+        nuevas_tarjetas = _tres_tarjetas(self.mazo, self.jugador)
+        payload = {
+            "mensaje": "canjear_tarjetas",
+            "tarjetas": [
+                {"pais": t.pais, "simbolo": t.simbolo} for t in nuevas_tarjetas
+            ],
+        }
+
+        self._run_canjear(payload)
+
+        cast("MagicMock", self.client.transmisor).enviar_error_chat.assert_called_once()
+        self.assertEqual(self.game.cant_canjes(self.jugador), 1)
+        self.assertEqual(self.mazo.cant_tarjetas_asignadas(self.jugador), 3)
+
 
 if __name__ == "__main__":
     unittest.main()

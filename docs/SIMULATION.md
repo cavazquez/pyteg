@@ -20,6 +20,12 @@ uv run python -m scripts.simulate_game \
 uv run python -m scripts.simulate_game \
   --theme test --clients 2 --victory 2 --seed 7 \
   --output-dir logs/simulations/test-production-7
+
+# Revancha: reglas propias, objetivos secretos, canjes, misiles y reconexión.
+uv run python -m scripts.simulate_game \
+  --theme revancha --clients 5 --victory 30 --seed 234 \
+  --secret-objectives --disconnect-client 2 --disconnect-after-turn 5 \
+  --reconnect-client 2 --exercise-exchanges --require-finalized
 ```
 
 Si ya existe el entorno virtual, se puede reemplazar `uv run python` por
@@ -58,16 +64,75 @@ y verifica además que cada cliente conserve su objetivo privado.
 Cada ejecución guarda:
 
 - `result.json`: ganador observado por cliente, estado de sala, cantidad de
-  turnos/acciones, tablero final, hash del tablero, errores y alcance de la prueba.
+  turnos/acciones, tablero final, hash del tablero, errores y alcance de la
+  prueba. También incluye `received_message_totals`,
+  `country_update_messages` y bytes/tramas TCP para comparar el costo de una
+  corrida antes y después de un cambio de transporte.
 - `wire.jsonl`: todos los mensajes enviados y recibidos, con cliente y tiempo.
 - `server.log`: salida del proceso servidor.
 
-El workflow de CI ejecuta el mismo flujo con tres clientes, objetivos secretos,
-canjes, misiles y una desconexión/reconexión autenticada antes de exigir
-`--require-finalized`. Conserva `logs/simulations/classic-197` como artefacto
-cuando termina, también si la corrida falla.
+El workflow de CI ejecuta el flujo clásico y una partida de Revancha con cinco
+clientes, objetivos secretos, canjes, misiles y una desconexión/reconexión
+autenticada antes de exigir `--require-finalized`. Conserva
+`logs/simulations/classic-197` y `logs/simulations/revancha-234` como artefactos,
+también si alguna corrida falla.
 
 Los registros están bajo `logs/`, que el repositorio ignora en Git.
+
+Las actualizaciones del mapa son incrementales: la primera entrega a una
+conexión contiene todos los países y las siguientes sólo los que cambiaron.
+Un snapshot completo sigue siendo la vía de resincronización y actualiza el
+caché incremental, por lo que no se pierde ningún estado ante una reconexión.
+
+El smoke complementario de Qt conecta ventanas reales al mismo servidor y
+comprueba lobby, desconexión y reconexión autenticada:
+
+```bash
+QT_QPA_PLATFORM=offscreen uv run python scripts/smoke_qt_multiclient.py \
+  --clients 3
+```
+
+Este smoke cubre la capa Qt y su transporte; la partida completa continúa
+siendo responsabilidad de `simulate_game`, que usa clientes headless para
+ejercitar colocación, combate, conquistas, canjes y misiles. También hay un
+recorrido Qt de partida completa, con tres ventanas reales, reconexión durante
+la partida, una conquista y victoria:
+
+```bash
+QT_QPA_PLATFORM=offscreen uv run python scripts/smoke_qt_game.py --timeout 60
+```
+
+Ese smoke conserva el modelo de estado, el protocolo TCP, los comandos y los
+eventos de batalla reales. En modo `offscreen` desacopla la actualización de
+las 50 imágenes del tablero para que la prueba no dependa del backend gráfico;
+`smoke_qt_multiclient` sigue cubriendo la construcción y conexión visual del
+mapa.
+
+Durante una reconexión Qt se espera primero el snapshot que marca la baja en el
+servidor. El cliente recuperado envía `reconectar` antes de cualquier comando
+de lobby; así no se rechaza un `set_username` mientras la sesión todavía está
+pendiente de autenticación.
+
+Los clientes que anuncian la capacidad `heartbeat` reciben un `ping` cuando su
+socket queda inactivo y deben contestar `pong` con el mismo identificador. Si
+no hay respuesta dentro del límite, el servidor cierra y limpia la conexión.
+Los clientes antiguos que no anuncian esa capacidad conservan el modo de
+recepción bloqueante.
+
+Para comprobar el aislamiento de clientes lentos y la saturación de la cola de
+salida, ejecutá el smoke de transporte:
+
+```bash
+uv run python scripts/stress_slow_clients.py
+```
+
+El smoke abre dos conexiones TCP reales. Una deja de leer y recibe tramas de
+32 KiB hasta llenar la cola acotada; el servidor debe cerrarla sin bloquear al
+productor. La otra drena en paralelo y debe recibir marcadores durante y
+después de la saturación. El comando imprime evidencia JSON y devuelve un
+código distinto de cero si el cliente saludable también se desconecta o si el
+lento no recibe EOF. Se puede ajustar la presión con `--frames`,
+`--payload-bytes` y `--timeout`.
 
 ## Victoria observada y cierre de partida
 
@@ -138,6 +203,9 @@ El reemplazo recibe un ID temporal durante el handshake y sólo recupera el
 ID original, color, países, nombre, tarjetas y turno después de presentar el
 token privado de sesión. `reconnections` cuenta las recuperaciones observadas;
 el reporte mantiene una sola identidad por jugador en `country_counts`.
+La sesión recuperada sincroniza el estado actual y los eventos posteriores; no
+se espera que reciba nuevamente eventos históricos de misiles o canjes que
+ocurrieron antes de la reconexión.
 
 ## Canjes y misiles
 
@@ -206,6 +274,11 @@ Con el código revisado y sin sustituir los dados productivos:
   semilla 123:** el cliente 1 se desconectó después del turno 2, recuperó su
   identidad y continuó la partida; hubo una reconexión, 67 conquistas y los
   tres clientes observaron `Finalizado`.
+- **Revancha estricta — cinco clientes, objetivo 30, semilla 234:** se
+  observaron objetivos privados sin filtrarlos al snapshot, 36 reclamos, 5
+  canjes normales, 8 especiales, 55 canjes de misil y 10 lanzamientos. El
+  cliente 2 se desconectó después del turno 5, recuperó su sesión y los cinco
+  clientes terminaron sincronizados en `Finalizado`.
 
 Los números son evidencia de esas corridas; no son una predicción para futuras
 corridas con dados productivos.
@@ -219,10 +292,11 @@ que un usuario pueda jugar la misma partida sin problemas de interfaz o red.
 
 Las acciones se envían secuencialmente en conexiones locales. La fragmentación
 del framing, los frames coalescidos, JSON inválido y las colas acotadas se
-prueban en la suite TCP; este harness no simula clientes lentos, comandos
-simultáneos, latencia WAN ni vencimiento del timer. Las opciones de desconexión y reconexión ejercitan el
+prueban en la suite TCP; `stress_slow_clients.py` agrega una prueba con un
+cliente que deja de leer. Estos harnesses no simulan comandos simultáneos,
+latencia WAN ni vencimiento del timer. Las opciones de desconexión y reconexión ejercitan el
 cierre real de un socket, la continuidad de los clientes restantes y el
-handshake autenticado de recuperación. Los objetivos secretos siguen fuera de
-alcance. La estrategia utiliza colocación,
+handshake autenticado de recuperación. Los objetivos secretos se verifican
+cuando se solicita `--secret-objectives`. La estrategia utiliza colocación,
 ataque, transferencia, tarjetas/canjes y misiles según el modo elegido; no
 valida que esas reglas reproduzcan todo el reglamento del TEG clásico.

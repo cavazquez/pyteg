@@ -13,11 +13,13 @@ from typing import TYPE_CHECKING, Any, Protocol
 from pyteg.client.tasks.protocols import GameWindowProtocol
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable, Sequence
 
     from PySide6.QtWidgets import (
         QFrame,
         QLabel,
+        QScrollArea,
+        QSplitter,
         QToolBar,
         QVBoxLayout,
         QWidget,
@@ -29,7 +31,7 @@ if TYPE_CHECKING:
     from pyteg.gui.managers.game_actions import GameActionsManager
     from pyteg.gui.managers.language import LanguageManager
     from pyteg.gui.managers.layout import LayoutManager
-    from pyteg.gui.managers.players import PlayersManager
+    from pyteg.gui.managers.players import PlayersManager, PlayerStatus
     from pyteg.gui.managers.status import StatusManager
     from pyteg.gui.managers.theme import ThemeManager
     from pyteg.gui.managers.units import UnitsManager
@@ -50,6 +52,9 @@ class MainWindowProtocol(GameWindowProtocol, Protocol):
     jugador_actual_id: int | None
     jugador_actual_nombre: str | None
     jugador_actual_color: str | None
+    estado_actual: str
+    fase_actual: str | None
+    unidades_pendientes_servidor: int
     last_units: dict[str, int]
     ultimo_pais_colocado: str | None
     ultimo_continente_colocado: str | None
@@ -67,12 +72,16 @@ class MainWindowProtocol(GameWindowProtocol, Protocol):
     turno_label: QLabel
     timer_label: QLabel
     estado_label: QLabel
+    contexto_partida_label: QLabel
     mi_username_label: QLabel
     mi_color_indicator: QLabel
     mi_jugador_text: QLabel
     player_labels: list[tuple[QLabel, QLabel, QFrame]]
     players_layout: QVBoxLayout
     right_column_widget: QWidget
+    right_column_scroll: QScrollArea
+    vertical_splitter: QSplitter
+    horizontal_splitter: QSplitter
     main_widget: QWidget
 
     theme_manager: ThemeManager
@@ -88,6 +97,10 @@ class MainWindowProtocol(GameWindowProtocol, Protocol):
     game_actions_manager: GameActionsManager
     units_manager: UnitsManager
     status_manager: StatusManager
+
+    def update_player_statuses(self, statuses: Sequence[PlayerStatus]) -> None:
+        """Actualiza conexión, administración y eliminación de jugadores."""
+        ...
 
     def setWindowTitle(self, title: str) -> None:  # noqa: N802
         """Establece el título de la ventana (heredado de QWidget)."""
