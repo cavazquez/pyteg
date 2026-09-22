@@ -112,7 +112,12 @@ class Game:
             mapa,
             paises_para_victoria,
             secret_objectives=secret_objectives,
-            color_manager=getattr(server, "color", None),
+            # El servidor expone tanto los clientes históricos como su color;
+            # pasar ese contexto permite resolver objetivos de destrucción y
+            # relativos incluso cuando el administrador de colores sólo
+            # conoce los colores disponibles.
+            color_manager=server,
+            player_order=self.lista_jugadores_orden_turno,
         )
 
     def empezar(self) -> None:
