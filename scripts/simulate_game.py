@@ -77,6 +77,7 @@ class Bot:
     event_processor: ClientEventProcessor = field(init=False)
     special_exchanges: list[dict[str, Any]] = field(default_factory=list)
     missile_results: list[dict[str, Any]] = field(default_factory=list)
+    battle_results: list[dict[str, Any]] = field(default_factory=list)
     # A reconnecting peer receives current state, not historical event frames.
     missile_results_consensus_offset: int = 0
     barrier: str = ""
@@ -264,6 +265,7 @@ class Bot:
             "misil_agregado": self._apply_missile,
             "canje_especial": self._apply_special_exchange,
             "resultado_misil": self._apply_missile_result,
+            "resultado_batalla": self._apply_battle_result,
             "turno": self._apply_turn,
             "victoria": self._apply_victory,
             "estado": self._apply_state,
@@ -302,6 +304,9 @@ class Bot:
 
     def _apply_missile_result(self, data: dict[str, Any]) -> None:
         self.missile_results.append(data)
+
+    def _apply_battle_result(self, data: dict[str, Any]) -> None:
+        self.battle_results.append(data)
 
     def _apply_turn(self, data: dict[str, Any]) -> None:
         _ = data
@@ -350,6 +355,8 @@ class Simulation:
         self.special_exchanges = 0
         self.missile_exchanges = 0
         self.missile_launches = 0
+        self.missile_distances: Counter[str] = Counter()
+        self.attack_dice_counts: Counter[str] = Counter()
         self.reconnections = 0
         self.situations_seen: list[str] = []
         self.exercise_cards = bool(args.exercise_cards or args.exercise_exchanges)
@@ -752,6 +759,11 @@ class Simulation:
         """
         if not self.exercise_cards or bot.victory:
             return
+        # Crisis may reject the claim for any player tied at the lowest roll;
+        # the roll is private, so the headless client conservatively skips the
+        # command while that public situation is active.
+        if self._active_situation(bot).get("efecto") == "crisis":
+            return
         cards_before = len(bot.cards)
         self.command(bot, "reclamar_tarjeta")
         self.card_claims += 1
@@ -889,7 +901,7 @@ class Simulation:
             raise RuntimeError(msg)
         self.missile_exchanges += 1
 
-    def launch_missile(self, bot: Bot) -> None:
+    def launch_missile(self, bot: Bot) -> None:  # noqa: C901, PLR0914
         """Launch one available missile at a reachable enemy country.
 
         Raises:
@@ -907,14 +919,31 @@ class Simulation:
                     continue
                 distance = self._distance(origin, target)
                 damage = self._missile_damage(distance)
+                source_missiles = bot.missiles.get(origin, 0)
+                target_missiles = bot.missiles.get(target, 0)
                 if (
                     1 <= distance <= self.rules.missile_max_distance
                     and target_units > damage
+                    and target_missiles < source_missiles
                 ):
                     options.append((target_units, -distance, origin, target))
         if not options:
             return
-        _, _, origin, target = max(options)
+        supported_distances = range(
+            1,
+            min(
+                self.rules.missile_max_distance,
+                len(self.rules.missile_damage_by_distance),
+            )
+            + 1,
+        )
+        uncovered = {
+            distance
+            for distance in supported_distances
+            if not self.missile_distances.get(str(distance))
+        }
+        preferred = [option for option in options if -option[1] in uncovered]
+        _, _negative_distance, origin, target = max(preferred or options)
         missiles_before = bot.missiles.get(origin, 0)
         results_before = len(bot.missile_results)
         self.command(
@@ -929,6 +958,9 @@ class Simulation:
         if len(bot.missile_results) != results_before + 1:
             msg = "Missile launch did not publish a result event"
             raise RuntimeError(msg)
+        result_distance = bot.missile_results[-1].get("distancia")
+        if isinstance(result_distance, int):
+            self.missile_distances[str(result_distance)] += 1
         self.missile_launches += 1
 
     def reinforce(self, bot: Bot) -> None:
@@ -998,6 +1030,7 @@ class Simulation:
                     -bot.countries[pair[1]][1],
                 ),
             )
+            battle_results_before = len(bot.battle_results)
             self.command(
                 bot,
                 "atacar",
@@ -1005,6 +1038,11 @@ class Simulation:
                 destino=target,
                 cantidad_unidades=min(3, bot.countries[origin][1] - 1),
             )
+            if len(bot.battle_results) > battle_results_before:
+                result = bot.battle_results[-1]
+                attacker_dice = result.get("dados_atacante")
+                if isinstance(attacker_dice, list):
+                    self.attack_dice_counts[str(len(attacker_dice))] += 1
             if bot.countries[target][0] == bot.userid:
                 self.conquests += 1
                 remaining = bot.countries[origin][1] - 1
@@ -1228,6 +1266,8 @@ class Simulation:
             "special_exchanges": self.special_exchanges,
             "missile_exchanges": self.missile_exchanges,
             "missile_launches": self.missile_launches,
+            "missile_distances": dict(self.missile_distances),
+            "attack_dice_counts": dict(self.attack_dice_counts),
             "victories": [bot.victory for bot in self.bots],
             "server_states": [bot.state for bot in self.bots],
             "all_clients_finalized": bool(self.bots)
@@ -1521,6 +1561,8 @@ def main() -> int:
                     "special_exchanges",
                     "missile_exchanges",
                     "missile_launches",
+                    "missile_distances",
+                    "attack_dice_counts",
                     "country_counts",
                     "connected_clients",
                     "disconnected_clients",

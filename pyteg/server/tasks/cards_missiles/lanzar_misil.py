@@ -157,6 +157,15 @@ class ServerTaskLanzarMisil(IServerTask[LanzarMisilTaskData]):
             msg = "País de origen o destino"
             raise MissingFieldError(msg)
 
+        misiles_origen = context.mapa.cantidad_misiles(self._pais_origen)
+        misiles_defensivos = context.mapa.cantidad_misiles(self._pais_destino)
+        if misiles_defensivos >= misiles_origen:
+            msg = (
+                f"{self._pais_destino} está protegido por {misiles_defensivos} "
+                f"misil(es) defensivo(s)"
+            )
+            raise InvalidActionError(msg)
+
         distancia = context.mapa.calcular_distancia(
             self._pais_origen, self._pais_destino
         )
@@ -173,10 +182,11 @@ class ServerTaskLanzarMisil(IServerTask[LanzarMisilTaskData]):
         dano = context.mapa.calcular_dano_misil(distancia)
         unidades_destino = context.mapa.cantidad_unidades(self._pais_destino)
         min_units_to_leave = rules.missile_min_units_to_leave
-        if unidades_destino <= dano:
+        unidades_requeridas = dano + min_units_to_leave
+        if unidades_destino < unidades_requeridas:
             raise InsufficientUnitsError(
                 self._pais_destino,
-                min_units_to_leave + 1,
+                unidades_requeridas,
                 unidades_destino,
             )
 
