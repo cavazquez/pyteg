@@ -101,12 +101,18 @@ class ConnectionClient(QWidget):
             PROTOCOL_VERSION,
             theme,
             map_hash,
-            capabilities=["snapshots", "command_results", "reconnect"],
+            capabilities=[
+                "snapshots",
+                "command_results",
+                "reconnect",
+                "heartbeat",
+            ],
             rules=["validated_phases", "one_card_per_turn"],
         )
         if user_id is not None and token:
             self._main_window.transmisor.reconectar(user_id, token)
-        self._main_window.transmisor.set_username(self._username)
+        else:
+            self._main_window.transmisor.set_username(self._username)
 
     def esta_conectado(self) -> bool:
         """Verifica si el cliente está conectado al servidor.
@@ -159,7 +165,7 @@ class ConnectionClient(QWidget):
         encode_data = NulDelimitedUtf8Codec.encode_frame(data)
         self._socket.write(encode_data)
 
-    def read_data(self) -> None:
+    def read_data(self) -> None:  # noqa: C901
         """Lee datos recibidos del servidor."""
         while self._socket.bytesAvailable():
             encode_datas = self._socket.readAll()
@@ -193,6 +199,8 @@ class ConnectionClient(QWidget):
                     continue
 
                 _LOG.debug("JSON recibido: %s", validated_data["mensaje"])
+                if self._respond_to_ping(validated_data):
+                    continue
                 applied = self.event_processor.process(validated_data)
                 if applied.gap:
                     self.send_data(
@@ -209,6 +217,23 @@ class ConnectionClient(QWidget):
                     task.run(self._main_window)
                 except Exception:  # noqa: BLE001 - el slot Qt no debe caer por un peer.
                     _LOG.exception("Error al procesar evento del servidor")
+
+    def _respond_to_ping(self, event: dict[str, Any]) -> bool:
+        """Responde un heartbeat sin proyectarlo como evento de juego.
+
+        Returns:
+            ``True`` si el evento era un ping y se respondió.
+
+        """
+        if event.get("mensaje") != "ping":
+            return False
+        self.send_data(
+            json.dumps({
+                "mensaje": "pong",
+                "heartbeat_id": event["heartbeat_id"],
+            })
+        )
+        return True
 
     def on_state_changed(self, state: QAbstractSocket.SocketState) -> None:
         """Maneja los cambios de estado de la conexión.

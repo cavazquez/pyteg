@@ -60,6 +60,12 @@ class TestServerCommandValidation(unittest.TestCase):
 
         self.assertEqual(validate_server_command(payload), payload)
 
+    def test_accepts_heartbeat_pong(self) -> None:
+        """El servidor acepta la respuesta opaca de un cliente vivo."""
+        payload = {"mensaje": "pong", "heartbeat_id": "probe-1"}
+
+        self.assertEqual(validate_server_command(payload), payload)
+
     def test_rejects_every_invalid_move_amount(self) -> None:
         """El contrato TCP exige un entero positivo y no acepta bool como int."""
         invalid_amounts: tuple[object, ...] = (0, -1, True, 1.5, "1", None)
@@ -143,6 +149,12 @@ class TestClientEventValidation(unittest.TestCase):
             "error_type": "game_in_progress",
             "message": "El juego ya está en progreso.",
         }
+
+        self.assertEqual(validate_client_event(payload), payload)
+
+    def test_accepts_heartbeat_ping(self) -> None:
+        """El cliente acepta un ping sin proyectarlo como estado de partida."""
+        payload = {"mensaje": "ping", "heartbeat_id": "probe-1"}
 
         self.assertEqual(validate_client_event(payload), payload)
 

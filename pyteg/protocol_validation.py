@@ -249,6 +249,7 @@ _SERVER_COMMAND_SCHEMAS: dict[str, _MessageSchema] = {
         },
         {"capabilities": _is_string_list, "rules": _is_string_list},
     ),
+    "pong": _MessageSchema({"heartbeat_id": _is_nonempty_string}, {}),
     "chat": _MessageSchema({"msg": _is_string}, {}),
     "empezar": _MessageSchema(
         {},
@@ -336,6 +337,7 @@ _CLIENT_EVENT_SCHEMAS: dict[str, _MessageSchema] = {
         {"capabilities": _is_string_list, "rules": _is_string_list},
     ),
     "hello_ack": _MessageSchema({"accepted": _is_boolean}, {}),
+    "ping": _MessageSchema({"heartbeat_id": _is_nonempty_string}, {}),
     "chat": _MessageSchema({"msg": _is_string}, {"msg_type": _is_string}),
     "sosadmin": _MessageSchema({}, {}),
     "estado": _MessageSchema({"estado": _is_nonempty_string}, {}),

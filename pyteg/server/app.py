@@ -221,6 +221,10 @@ class Server:
                 client.transmisor.enviar_hello_ack(accepted=False)
                 return False
         client.marcar_handshake(True)  # noqa: FBT003
+        capabilities = data.get("capabilities", [])
+        client.configurar_heartbeat(
+            enabled=isinstance(capabilities, list) and "heartbeat" in capabilities
+        )
         client.transmisor.enviar_hello_ack()
         return True
 
