@@ -77,5 +77,9 @@ de respaldo. Los pares son `Canada–NuevaYork`, `Aral–Mongolia`, `China–Ira
 adyacencias permanece igual.
 
 La auditoría estricta ahora confirma cero solapamientos de relleno y cero
-fronteras terrestres separadas. Una regresión en `tests/test_classic_map_audit.py`
-impide volver a introducir cualquiera de esos dos problemas.
+fronteras terrestres separadas. El gate adicional de bounding boxes permite
+`Groenlandia–Islandia`, `Aral–Rusia`, `California–Colombia` y
+`México–Colombia`: sus rectángulos se cruzan, pero el análisis de píxeles no
+encuentra rellenos superpuestos en esos pares. Una regresión en
+`tests/test_classic_map_audit.py` impide volver a introducir solapamientos de
+relleno o huecos de frontera.
