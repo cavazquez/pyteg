@@ -179,6 +179,25 @@ class GuiLayoutTests(unittest.TestCase):
                 self.assertGreater(view.height(), 0)
                 self.assertGreater(window.right_column_scroll.height(), 0)
                 self.assertLessEqual(chat.height(), 160)
+                self.assertGreaterEqual(chat.height(), 72)
+                self.assertGreaterEqual(window.right_column_scroll.width(), 220)
+                self.assertGreater(view.width(), window.right_column_scroll.width())
+        finally:
+            window.close()
+
+    def test_estado_global_y_contexto_de_turno_se_muestran_por_separado(self) -> None:
+        window = Gui(Client())
+        try:
+            window.status_manager.update_game_state("JUGANDO")
+            window.fase_actual = "colocacion"
+            window.jugador_actual_nombre = "Ana"
+            window.unidades_pendientes_servidor = 4
+            window.status_manager.update_gameplay_context()
+
+            self.assertIn("En Juego", window.estado_label.text())
+            self.assertIn("Ana", window.contexto_partida_label.text())
+            self.assertIn("4", window.contexto_partida_label.text())
+            self.assertTrue(window.contexto_partida_label.isVisible())
         finally:
             window.close()
 

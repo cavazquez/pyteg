@@ -101,6 +101,15 @@ jobs:
               --max-bbox-pairs 75 \
               --fail-on-cross-continent \
               --allow-cross Groenlandia:Islandia
+        - name: Visual map regression smoke
+          run: uv run python scripts/smoke_visual_map.py --output-dir artifacts/map-visual
+        - name: Upload visual map evidence
+          if: always()
+          uses: actions/upload-artifact@v4
+          with:
+            name: pyteg-map-visual
+            path: artifacts/map-visual
+            if-no-files-found: error
         - name: Real multiclient TCP simulation
           run: |
             uv run python -m scripts.simulate_game \

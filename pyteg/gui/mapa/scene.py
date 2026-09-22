@@ -241,6 +241,14 @@ class QCustomGraphicsScene(QGraphicsScene):
             circle.setAcceptedMouseButtons(Qt.MouseButton.NoButton)
             z_marker += 1
 
+    def update_label_visibility(self, scale: float) -> None:
+        """Propaga la escala de la vista a las etiquetas de países."""
+        for pais in self.paises.values():
+            label = getattr(pais, "_country_label", None)
+            if label is not None:
+                label.set_zoom_scale(scale)
+                pais._position_country_label()  # noqa: SLF001
+
     def obtener_pais(self, nombre_pais: str) -> Pais | None:
         """Retorna el widget del país especificado.
 

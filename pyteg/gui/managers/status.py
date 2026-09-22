@@ -111,14 +111,17 @@ class StatusManager:
         """Muestra fase, jugador activo y refuerzos durante una partida."""
         from pyteg.gui.gameplay_state import contexto_partida  # noqa: PLC0415
 
-        label = getattr(self.main_window, "estado_label", None)
+        label = getattr(self.main_window, "contexto_partida_label", None)
         if label is None:
             return
         contexto = contexto_partida(self.main_window)
         if contexto is not None:
+            label.setVisible(True)
             label.setText(contexto)
             label.setToolTip(contexto)
         else:
+            label.clear()
+            label.setVisible(False)
             label.setToolTip("")
 
     def update_mi_jugador_info(self) -> None:

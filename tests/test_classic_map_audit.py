@@ -226,12 +226,18 @@ class ClassicMapAuditTests(unittest.TestCase):
                 for y in range(image.height())
                 for x in range(image.width())
             }
-            self.assertEqual(
-                alpha_values - {0, 255},
-                set(),
-                f"{country} tiene alpha intermedio: {sorted(alpha_values)}",
-            )
-            self.assertEqual(image.pixelColor(0, 0).alpha(), 0, country)
+            if image_path.suffix.lower() == ".png":
+                self.assertEqual(
+                    alpha_values - {0, 255},
+                    set(),
+                    f"{country} tiene alpha intermedio: {sorted(alpha_values)}",
+                )
+                self.assertEqual(image.pixelColor(0, 0).alpha(), 0, country)
+            else:
+                # Los SVG se rasterizan con antialiasing y por eso pueden
+                # contener alpha intermedio en el borde, pero nunca un fondo
+                # opaco que convierta el sprite en un rectángulo.
+                self.assertLess(image.pixelColor(0, 0).alpha(), 255, country)
 
 
 if __name__ == "__main__":

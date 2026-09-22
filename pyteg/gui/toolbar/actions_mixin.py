@@ -106,6 +106,12 @@ class ToolBarActionsMixin:
             return _("Conectate al servidor")
         if partida_finalizada:
             return _("La partida terminó")
+        if getattr(self.main_window, "estado_actual", "JUGANDO") in {
+            "INICIAL",
+            "EsperarJugadores",
+            "Conectado",
+        }:
+            return _("Esperá a que comience la partida")
         if not es_mi_turno:
             return _("Esperá tu turno")
         return ""
@@ -158,6 +164,7 @@ class ToolBarActionsMixin:
             return
         action.setToolTip(texto)
         action.setStatusTip(texto)
+        action.setWhatsThis(texto)
 
     def deshabilitar_acciones_juego(self) -> None:
         """Deshabilita las acciones que modifican la partida."""
@@ -168,6 +175,7 @@ class ToolBarActionsMixin:
         ):
             if button:
                 button.setEnabled(False)
+                self._actualizar_ayuda_accion(button, _("La partida terminó"))
 
     def actualizar_estado_conexion(self, *, conectado: bool) -> None:
         """Actualiza el estado de los botones según el estado de conexión."""
@@ -191,8 +199,17 @@ class ToolBarActionsMixin:
             self.button_conectar.setEnabled(True)
         if self.button_atacar:
             self.button_atacar.setEnabled(False)
+            self._actualizar_ayuda_accion(
+                self.button_atacar, _("Conectate al servidor")
+            )
         if self.button_mover:
             self.button_mover.setEnabled(False)
+            self._actualizar_ayuda_accion(self.button_mover, _("Conectate al servidor"))
+        if self.button_finalizar_turno:
+            self.button_finalizar_turno.setEnabled(False)
+            self._actualizar_ayuda_accion(
+                self.button_finalizar_turno, _("Conectate al servidor")
+            )
 
     def _habilitar_botones_conectado(self) -> None:
         """Habilita los botones apropiados cuando está conectado."""
@@ -204,6 +221,11 @@ class ToolBarActionsMixin:
             self.button_mover.setEnabled(False)
         if self.button_finalizar_turno:
             self.button_finalizar_turno.setEnabled(es_mi_turno(self.main_window))
+        self.actualizar_motivos_acciones(
+            hay_dos_paises_seleccionados=False,
+            puede_actuar=False,
+            es_mi_turno=es_mi_turno(self.main_window),
+        )
 
     def _mover_paises_seleccionados(self) -> None:
         """Ejecuta movimiento entre los países seleccionados."""

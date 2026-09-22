@@ -32,6 +32,7 @@ if TYPE_CHECKING:
 
 _INITIAL_VIEW_SIZE = 1000
 _INITIAL_CHAT_SIZE = 120
+_SPLITTER_PARTS = 2
 
 
 class LayoutManager:
@@ -71,6 +72,7 @@ class LayoutManager:
             QSizePolicy.Policy.Preferred,
             QSizePolicy.Policy.Ignored,
         )
+        self.main_window.chat.setMinimumHeight(0)
         self.main_window.chat.show()
 
         # Agrego la barra de herramientas
@@ -107,6 +109,7 @@ class LayoutManager:
         vertical_splitter.setStretchFactor(0, 1)
         vertical_splitter.setStretchFactor(1, 0)
         vertical_splitter.setSizes([_INITIAL_VIEW_SIZE, _INITIAL_CHAT_SIZE])
+        vertical_splitter.setHandleWidth(6)
         self.main_window.vertical_splitter = vertical_splitter
         return vertical_splitter
 
@@ -121,6 +124,7 @@ class LayoutManager:
         horizontal_splitter = QSplitter()
         horizontal_splitter.setOrientation(Qt.Orientation.Horizontal)
         horizontal_splitter.setChildrenCollapsible(True)
+        horizontal_splitter.setHandleWidth(6)
         horizontal_splitter.addWidget(vertical_splitter)
         self.main_window.horizontal_splitter = horizontal_splitter
         return horizontal_splitter
@@ -153,6 +157,10 @@ class LayoutManager:
             Qt.ScrollBarPolicy.ScrollBarAlwaysOff
         )
         right_column_scroll.setMinimumWidth(220)
+        right_column_scroll.setSizePolicy(
+            QSizePolicy.Policy.Preferred,
+            QSizePolicy.Policy.Expanding,
+        )
         right_column_scroll.setWidget(self.main_window.right_column_widget)
         self.main_window.right_column_scroll = right_column_scroll
 
@@ -217,3 +225,32 @@ class LayoutManager:
         main_layout.addWidget(horizontal_splitter, 0, 0)
         self.main_window.main_widget.setLayout(main_layout)
         self.main_window.setCentralWidget(self.main_window.main_widget)
+
+    def update_responsive_layout(self, width: int, height: int) -> None:
+        """Reserva espacio útil al mapa en resoluciones pequeñas.
+
+        El usuario conserva control de los dos paneles mediante la toolbar;
+        este ajuste solo evita que el chat o el panel lateral ocupen una
+        proporción desmedida durante un cambio de resolución.
+        """
+        vertical = getattr(self.main_window, "vertical_splitter", None)
+        if vertical is not None and vertical.isVisible() and height > 0:
+            sizes = vertical.sizes()
+            if len(sizes) == _SPLITTER_PARTS and vertical.widget(1).isVisible():
+                chat_size = min(160, max(72, round(height * 0.18)))
+                vertical.setSizes([max(1, height - chat_size), chat_size])
+
+        horizontal = getattr(self.main_window, "horizontal_splitter", None)
+        sidebar = getattr(self.main_window, "right_column_scroll", None)
+        if (
+            horizontal is None
+            or sidebar is None
+            or not sidebar.isVisible()
+            or width <= 0
+        ):
+            return
+        sizes = horizontal.sizes()
+        if len(sizes) != _SPLITTER_PARTS:
+            return
+        sidebar_size = min(300, max(220, round(width * 0.22)))
+        horizontal.setSizes([max(1, width - sidebar_size), sidebar_size])

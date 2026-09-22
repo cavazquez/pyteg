@@ -72,6 +72,7 @@ class MainWindowProtocol(GameWindowProtocol, Protocol):
     turno_label: QLabel
     timer_label: QLabel
     estado_label: QLabel
+    contexto_partida_label: QLabel
     mi_username_label: QLabel
     mi_color_indicator: QLabel
     mi_jugador_text: QLabel
