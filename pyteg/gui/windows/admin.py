@@ -173,14 +173,12 @@ class VentanaAdmin(QWidget):
         # Leer configuración de misiles
         misiles_habilitados = self.misiles_checkbox.isChecked()
 
-        transmisor = getattr(self.main_window, "transmisor", None)
-        if transmisor is not None:
-            transmisor.empezar(
-                segundos,
-                paises_para_victoria,
-                objetivos_secretos=objetivos_secretos,
-                misiles_habilitados=misiles_habilitados,
-            )
+        self.main_window.transmisor.empezar(
+            segundos,
+            paises_para_victoria,
+            objetivos_secretos=objetivos_secretos,
+            misiles_habilitados=misiles_habilitados,
+        )
         self.close()
 
     def cargar_colores_asignados(self) -> None:

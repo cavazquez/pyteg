@@ -4,6 +4,7 @@ Run from the repository root::
 
     uv run python -m scripts.simulate_game --clients 3 --victory 30 --seed 7
     uv run python -m scripts.simulate_game --theme test --clients 2 --victory 2
+    uv run python -m scripts.simulate_game --situation-ruleset revancha --seed 17
 
 The server runs in a separate process. Bots only use public JSON/NUL messages;
 no game state is read or changed in-process. An explicit seed and the default
@@ -55,6 +56,7 @@ from pyteg.config import (
     MISSILE_DAMAGE_DISTANCE_3,
     MISSILE_MAX_DISTANCE,
 )
+from pyteg.core.situaciones.catalog import available_situation_rulesets
 from pyteg.protocol import PROTOCOL_VERSION, map_hash_for_theme
 from pyteg.protocol_validation import MessageValidationError, validate_client_event
 
@@ -357,6 +359,7 @@ class Simulation:
         self.missile_exchanges = 0
         self.missile_launches = 0
         self.reconnections = 0
+        self.situations_seen: list[str] = []
         self.exercise_cards = bool(args.exercise_cards or args.exercise_exchanges)
         self.exercise_missiles = bool(args.exercise_missiles or args.exercise_exchanges)
         self._disconnect_done = False
@@ -382,6 +385,12 @@ class Simulation:
             raise ValueError(msg)
 
     def _record(self, direction: str, bot: Bot, payload: dict[str, Any]) -> None:
+        if direction == "receive" and payload.get("mensaje") == "snapshot":
+            situation = payload.get("situacion")
+            if isinstance(situation, dict):
+                card_id = situation.get("id")
+                if isinstance(card_id, str) and card_id not in self.situations_seen:
+                    self.situations_seen.append(card_id)
         data = {
             "elapsed": round(time.monotonic() - self.started, 6),
             "direction": direction,
@@ -695,6 +704,40 @@ class Simulation:
             for neighbor in self.adjacency[country]
         )
 
+    @staticmethod
+    def _bot_color_key(bot: Bot) -> str | None:
+        """Return the RGB hex color advertised for a bot.
+
+        Returns:
+            Color hexadecimal normalizado o ``None`` si no está publicado.
+
+        """
+        players = bot.state_model.snapshot.get("players", [])
+        if not isinstance(players, list):
+            return None
+        for player in players:
+            if not isinstance(player, dict) or player.get("userid") != bot.userid:
+                continue
+            color = player.get("color")
+            if not isinstance(color, dict):
+                return None
+            components = (color.get("r"), color.get("g"), color.get("b"))
+            if all(isinstance(component, int) for component in components):
+                red, green, blue = components
+                return f"#{red:02x}{green:02x}{blue:02x}"
+        return None
+
+    @staticmethod
+    def _active_situation(bot: Bot) -> dict[str, Any]:
+        """Return the public situation card from the bot snapshot.
+
+        Returns:
+            Diccionario público de situación o un diccionario vacío.
+
+        """
+        situation = bot.state_model.snapshot.get("situacion", {})
+        return situation if isinstance(situation, dict) else {}
+
     def sync_cards(self, bot: Bot) -> None:
         """Refresh the active player's private card hand from the server."""
         if self.exercise_cards:
@@ -918,6 +961,10 @@ class Simulation:
 
     def attack(self, bot: Bot) -> None:
         """Attack favorable adjacent targets and transfer after each conquest."""
+        situation = self._active_situation(bot)
+        effect = situation.get("efecto")
+        if effect == "rest" and self._bot_color_key(bot) == situation.get("parametro"):
+            return
         claimed_this_turn = False
         while True:
             options = [
@@ -926,6 +973,17 @@ class Simulation:
                 if owner == bot.userid and units > 1
                 for neighbor in self.adjacency[country]
                 if bot.countries[neighbor][0] != bot.userid
+                and (
+                    effect not in {"open_borders", "closed_borders"}
+                    or (
+                        effect == "open_borders"
+                        and self.continents[country] != self.continents[neighbor]
+                    )
+                    or (
+                        effect == "closed_borders"
+                        and self.continents[country] == self.continents[neighbor]
+                    )
+                )
                 and units > bot.countries[neighbor][1]
             ]
             if not options:
@@ -1131,6 +1189,8 @@ class Simulation:
         )
         return {
             "theme": self.args.theme,
+            "situation_ruleset": self.args.situation_ruleset,
+            "situations_seen": list(self.situations_seen),
             "seed": self.args.seed,
             "seed_source": self.args.seed_source,
             "deterministic_dice": self.args.deterministic_dice,
@@ -1208,6 +1268,12 @@ class Simulation:
 def _arguments() -> argparse.Namespace:  # noqa: C901
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--theme", choices=("classic", "test"), default="classic")
+    parser.add_argument(
+        "--situation-ruleset",
+        choices=available_situation_rulesets(),
+        default="none",
+        help="Ruleset opcional de cartas de situaciones.",
+    )
     parser.add_argument("--clients", type=int, default=3)
     parser.add_argument(
         "--seed",
@@ -1311,7 +1377,14 @@ def _server_child(args: argparse.Namespace) -> None:
     random.seed(args.seed)
     dice_rng = random.Random(args.seed)  # noqa: S311 -- deterministic simulation only
     objective_rng = random.Random(args.seed)  # noqa: S311 -- deterministic simulation only
-    server_factory = partial(Server, objective_rng=objective_rng)
+    situation_rng = random.Random(args.seed)  # noqa: S311 -- deterministic simulation only
+    color_rng = random.Random(args.seed)  # noqa: S311 -- deterministic simulation only
+    server_factory = partial(
+        Server,
+        objective_rng=objective_rng,
+        situation_rng=situation_rng,
+        situation_ruleset=args.situation_ruleset,
+    )
     sys.argv = [
         "pyteg-server",
         "--host",
@@ -1320,10 +1393,15 @@ def _server_child(args: argparse.Namespace) -> None:
         str(args.server_child),
         "--theme",
         args.theme,
+        "--situation-ruleset",
+        args.situation_ruleset,
         "--quiet",
     ]
     if args.deterministic_dice:
-        with patch("secrets.randbelow", dice_rng.randrange):
+        with (
+            patch("secrets.randbelow", dice_rng.randrange),
+            patch("secrets.choice", color_rng.choice),
+        ):
             server_main(server_factory=server_factory)
     else:
         server_main(server_factory=server_factory)
@@ -1362,6 +1440,8 @@ def main() -> int:
                 str(port),
                 "--theme",
                 args.theme,
+                "--situation-ruleset",
+                args.situation_ruleset,
                 "--seed",
                 str(args.seed),
             ]
@@ -1413,6 +1493,8 @@ def main() -> int:
                     "seed",
                     "seed_source",
                     "deterministic_dice",
+                    "situation_ruleset",
+                    "situations_seen",
                     "secret_objectives",
                     "victory_observed",
                     "failure",

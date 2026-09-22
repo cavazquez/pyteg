@@ -9,15 +9,21 @@ from types import SimpleNamespace
 from typing import Any, cast
 from unittest.mock import MagicMock
 
+from pyteg.client.conexion.transmisor import ClientNullTransmisor
 from pyteg.gui.toolbar.actions_mixin import ToolBarActionsMixin
 
 
-class ClientNullTransmisor:
-    """Analogía del transmisor nulo del cliente (`ClientNullTransmisor`)."""
-
-
 class _FakeConnectedTransmisor:
-    """Transmisor con sesión activa (nombre distinto de *NullTransmisor)."""
+    """Transmisor mínimo con sesión activa."""
+
+    def esta_conectado(self) -> bool:
+        """Indica que la sesión está activa.
+
+        Returns:
+            Siempre ``True``.
+
+        """
+        return True
 
 
 class _DummyToolbar(ToolBarActionsMixin):
@@ -48,18 +54,7 @@ def _btns(tb: _DummyToolbar) -> tuple[MagicMock, MagicMock, MagicMock]:
 class TestToolbarActionsMixin(unittest.TestCase):
     """Estado de conexión y habilitación de botones."""
 
-    def test_esta_conectado_sin_atributo_transmisor(self) -> None:
-        mw = SimpleNamespace(scene=MagicMock())
-        tb = _DummyToolbar(mw)
-        self.assertFalse(tb._esta_conectado())
-
-    def test_esta_conectado_transmisor_none(self) -> None:
-        mw = MagicMock()
-        mw.transmisor = None
-        tb = _DummyToolbar(mw)
-        self.assertFalse(tb._esta_conectado())
-
-    def test_esta_conectado_null_transmisor_por_nombre_clase(self) -> None:
+    def test_esta_conectado_null_transmisor(self) -> None:
         mw = MagicMock()
         mw.transmisor = ClientNullTransmisor()
         tb = _DummyToolbar(mw)
@@ -69,12 +64,6 @@ class TestToolbarActionsMixin(unittest.TestCase):
         mw = MagicMock()
         mw.transmisor = MagicMock()
         mw.transmisor.esta_conectado = MagicMock(return_value=True)
-        tb = _DummyToolbar(mw)
-        self.assertTrue(tb._esta_conectado())
-
-    def test_esta_conectado_sin_metodo_usa_nombre_clase(self) -> None:
-        mw = MagicMock()
-        mw.transmisor = _FakeConnectedTransmisor()
         tb = _DummyToolbar(mw)
         self.assertTrue(tb._esta_conectado())
 
@@ -103,7 +92,7 @@ class TestToolbarActionsMixin(unittest.TestCase):
 
     def test_actualizar_botones_desconectado_no_toca_atacar_mover(self) -> None:
         mw = MagicMock()
-        mw.transmisor = None
+        mw.transmisor = ClientNullTransmisor()
         tb = _DummyToolbar(mw)
         tb.actualizar_botones_seleccion(hay_dos_paises_seleccionados=True)
         _, a, m = _btns(tb)

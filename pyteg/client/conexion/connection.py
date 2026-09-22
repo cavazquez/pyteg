@@ -10,7 +10,7 @@ from typing import Any
 from PySide6.QtNetwork import QAbstractSocket, QTcpSocket
 from PySide6.QtWidgets import QMessageBox, QWidget
 
-from pyteg.client.conexion.transmisor import ClientTransmisor
+from pyteg.client.conexion.transmisor import ClientNullTransmisor, ClientTransmisor
 from pyteg.client.event_processor import ClientEventProcessor
 from pyteg.client.state_adapter import QtClientStateAdapter
 from pyteg.client.state_model import ClientStateModel
@@ -257,6 +257,7 @@ class ConnectionClient(QWidget):
         elif state == QAbstractSocket.SocketState.UnconnectedState:
             _LOG.info("Socket desconectado")
             self._main_window.conexion = None
+            self._main_window.transmisor = ClientNullTransmisor()
             # Reproducir sonido de desconexión
             if hasattr(self._main_window, "sound_manager"):
                 self._main_window.sound_manager.play_disconnect()

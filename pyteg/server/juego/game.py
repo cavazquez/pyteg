@@ -10,8 +10,10 @@ from pyteg.config import (
 )
 from pyteg.core.combate.batalla import Batalla
 from pyteg.core.partida.card_manager import CardManager
+from pyteg.core.partida.objetivos_secretos import NO_SECRET_OBJECTIVES
 from pyteg.core.partida.turn_manager import TurnManager
 from pyteg.core.partida.victory_checker import VictoryChecker
+from pyteg.core.situaciones.runtime import SituationRuntime
 from pyteg.core.turnos.turnos import PrimerTurno, SegundoTurno, SiguientesTurnos
 from pyteg.exceptions import PlayerEliminatedError
 from pyteg.logger import get_logger
@@ -43,6 +45,7 @@ class Game:
         paises_para_victoria: int | None = None,
         *,
         objetivos_secretos_activados: bool = False,
+        situation_runtime: SituationRuntime | None = None,
     ) -> None:
         """Inicializa el juego.
 
@@ -53,6 +56,7 @@ class Game:
             server: Referencia al servidor.
             paises_para_victoria: Cantidad de países necesarios para ganar.
             objetivos_secretos_activados: Si la victoria por objetivos está activa.
+            situation_runtime: Runtime opcional de cartas de situación.
 
         """
         if paises_para_victoria is None:
@@ -67,24 +71,40 @@ class Game:
         self._server = server  # Referencia al servidor para notificar cambios
         self._paises_para_victoria = paises_para_victoria
         self._fase = FASE_COLOCACION
+        self._situation_runtime = (
+            situation_runtime
+            if situation_runtime is not None
+            else SituationRuntime.none(mapa)
+        )
 
         # Inicializar gestor de turnos
-        self._turn_manager = TurnManager(mapa)
+        self._turn_manager = TurnManager(
+            mapa,
+            reinforcement_policy=self._situation_runtime,
+        )
 
         # Inicializar gestor de tarjetas
         self._card_manager = CardManager(mazo, self._turn_manager)
 
         # Inicializar verificador de victoria
+        secret_objectives = NO_SECRET_OBJECTIVES
+        if objetivos_secretos_activados:
+            configured_objectives = getattr(
+                server, "objetivos_secretos", NO_SECRET_OBJECTIVES
+            )
+            if configured_objectives is not None:
+                secret_objectives = configured_objectives
+
         self._victory_checker = VictoryChecker(
             mapa,
             paises_para_victoria,
-            getattr(server, "objetivos_secretos", None),
-            objetivos_secretos_activados=objetivos_secretos_activados,
+            secret_objectives=secret_objectives,
             color_manager=getattr(server, "color", None),
         )
 
     def empezar(self) -> None:
         """Inicia el juego asignando países y creando los primeros turnos."""
+        self._situation_runtime.reset()
         jugadores = self.lista_jugadores()
         jugadores_userids = [int(j.userid()) for j in jugadores]
         self._mapa.asignar_paises(jugadores_userids)
@@ -179,6 +199,31 @@ class Game:
 
         """
         return self._fase
+
+    def situacion_actual(self) -> dict[str, str | int | None]:
+        """Devuelve la carta de situación activa para snapshots públicos.
+
+        Returns:
+            Payload serializable de la carta activa.
+
+        """
+        return self._situation_runtime.public_snapshot()
+
+    def validar_accion_situacion(
+        self,
+        jugador: IClientProtocol,
+        accion: str,
+    ) -> None:
+        """Valida una acción contra la carta activa."""
+        color = jugador.color_actual()
+        color_key = color.to_hex().lower() if color is not None else None
+        self._situation_runtime.validate_action(
+            int(jugador.userid()), accion, color_key
+        )
+
+    def validar_ataque_situacion(self, origen: str, destino: str) -> None:
+        """Valida fronteras abiertas/cerradas de la carta activa."""
+        self._situation_runtime.validate_attack(origen, destino)
 
     def refuerzos_pendientes(self) -> int:
         """Cantidad de refuerzos que el jugador actual aún puede colocar.
@@ -275,6 +320,14 @@ class Game:
         es_segundo_turno = isinstance(self._turn_manager.turno_actual(), PrimerTurno)
         self._turn_manager.iniciar_nueva_ronda(
             jugadores_userids, es_segundo_turno=es_segundo_turno
+        )
+        self._situation_runtime.begin_round(
+            self.num_ronda(),
+            jugadores_userids,
+            {
+                int(jugador.userid()): self._color_key(jugador)
+                for jugador in jugadores_rotados
+            },
         )
         self._actualizar_fase()
 
@@ -494,7 +547,20 @@ class Game:
                 unidades_atacante
             )
 
-        dados_defensor_count = Batalla.calcular_cant_dados_defensor(unidades_defensor)
+        dados_atacante_count = self._situation_runtime.attack_dice(dados_atacante_count)
+        # Una carta puede añadir dados, pero nunca puede permitir usar más
+        # unidades de las que el país tiene disponibles para el combate.
+        dados_atacante_count = min(
+            dados_atacante_count,
+            max(unidades_atacante - 1, 0),
+        )
+        dados_defensor_count = self._situation_runtime.defense_dice(
+            Batalla.calcular_cant_dados_defensor(unidades_defensor)
+        )
+        dados_defensor_count = min(
+            dados_defensor_count,
+            max(unidades_defensor, 0),
+        )
 
         # Generar dados aleatorios
         dados_atacante = sorted(
@@ -661,6 +727,22 @@ class Game:
                 return j.username() if hasattr(j, "username") else str(j)
         return ""
 
+    @staticmethod
+    def _color_key(jugador: IClientProtocol) -> str | None:
+        """Normaliza el color de un jugador para las reglas de situación.
+
+        Returns:
+            Color hexadecimal normalizado o ``None``.
+
+        """
+        color = jugador.color_actual()
+        if color is None:
+            return None
+        to_hex = getattr(color, "to_hex", None)
+        if not callable(to_hex):
+            return None
+        return str(to_hex()).lower()
+
     def marcar_jugador_puede_reclamar(self, jugador: IClientProtocol) -> None:
         """Marca a un jugador como elegible para reclamar tarjeta.
 
@@ -681,9 +763,11 @@ class Game:
             True si el jugador puede reclamar tarjeta, False en caso contrario.
 
         """
-        return not self.jugador_esta_eliminado(
-            jugador
-        ) and self._card_manager.puede_reclamar_tarjeta(jugador)
+        return (
+            not self.jugador_esta_eliminado(jugador)
+            and self._situation_runtime.can_claim_country_card(int(jugador.userid()))
+            and self._card_manager.puede_reclamar_tarjeta(jugador)
+        )
 
     def reclamar_tarjeta_jugador(self, jugador: IClientProtocol) -> None:
         """Remueve al jugador de la lista de elegibles tras reclamar.

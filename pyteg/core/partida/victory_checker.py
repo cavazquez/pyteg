@@ -8,12 +8,15 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from pyteg.core.partida.objetivos_secretos import (
+    NO_SECRET_OBJECTIVES,
+    SecretObjectiveEvaluator,
+)
 from pyteg.logger import get_logger
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
-    from pyteg.core.partida.objetivos_secretos import ObjetivosSecretos
     from pyteg.protocols import IClientProtocol
     from pyteg.server.juego.color import ServerColor
     from pyteg.server.juego.mapa import Mapa
@@ -30,29 +33,37 @@ class VictoryChecker:
     o por objetivos secretos.
     """
 
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         mapa: Mapa,
         paises_para_victoria: int,
-        objetivos_secretos: ObjetivosSecretos | None = None,
+        secret_objectives: SecretObjectiveEvaluator = NO_SECRET_OBJECTIVES,
         *,
-        objetivos_secretos_activados: bool = False,
         color_manager: ServerColor | None = None,
+        objetivos_secretos: SecretObjectiveEvaluator | None = None,
+        objetivos_secretos_activados: bool | None = None,
     ) -> None:
         """Inicializa el verificador de victoria.
 
         Args:
             mapa: Instancia del mapa del juego.
             paises_para_victoria: Cantidad de países necesarios para ganar.
-            objetivos_secretos: Instancia del gestor de objetivos secretos.
-            objetivos_secretos_activados: Si los objetivos secretos están activados.
+            secret_objectives: Evaluador de objetivos secretos. Usar
+                ``NO_SECRET_OBJECTIVES`` cuando la regla está desactivada.
             color_manager: Instancia del gestor de colores.
+            objetivos_secretos: Nombre anterior de ``secret_objectives``,
+                conservado para compatibilidad con integraciones existentes.
+            objetivos_secretos_activados: Compatibilidad con la configuración
+                anterior. Cuando es ``False`` se selecciona el objeto nulo.
 
         """
         self._mapa = mapa
         self._paises_para_victoria = paises_para_victoria
-        self._objetivos_secretos = objetivos_secretos
-        self._objetivos_secretos_activados = objetivos_secretos_activados
+        if objetivos_secretos is not None:
+            secret_objectives = objetivos_secretos
+        if objetivos_secretos_activados is False:
+            secret_objectives = NO_SECRET_OBJECTIVES
+        self._secret_objectives = secret_objectives
         self._color_manager = color_manager
 
     def verificar_condicion_victoria(
@@ -76,11 +87,9 @@ class VictoryChecker:
         if total_paises == 0:
             return None
 
-        # Verificar objetivos secretos si están activados
-        if self._objetivos_secretos_activados and self._objetivos_secretos:
-            ganador = self._verificar_objetivos_secretos(jugadores)
-            if ganador:
-                return ganador
+        ganador = self._verificar_objetivos_secretos(jugadores)
+        if ganador:
+            return ganador
 
         # Verificar condición de victoria tradicional (por países)
         return self._verificar_victoria_por_paises(jugadores, total_paises)
@@ -97,12 +106,12 @@ class VictoryChecker:
             El jugador ganador si existe, None en caso contrario.
 
         """
-        if not self._objetivos_secretos or not self._color_manager:
+        if not self._color_manager:
             return None
 
         for jugador in jugadores:
             jugador_id = int(jugador.userid())
-            if self._objetivos_secretos.verificar_condicion_victoria(
+            if self._secret_objectives.verificar_condicion_victoria(
                 jugador_id,
                 self._mapa,
                 self._color_manager,
@@ -110,7 +119,7 @@ class VictoryChecker:
                 jugador_nombre = (
                     jugador.username() if hasattr(jugador, "username") else str(jugador)
                 )
-                objetivo = self._objetivos_secretos.get_objetivo_jugador(jugador_id)
+                objetivo = self._secret_objectives.get_objetivo_jugador(jugador_id)
                 LOGGER.info(
                     "%s ha ganado cumpliendo su objetivo secreto",
                     jugador_nombre,

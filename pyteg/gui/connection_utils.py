@@ -15,9 +15,4 @@ def cliente_esta_conectado(main_window: MainWindowProtocol) -> bool:
         True si el transmisor reporta conexión activa.
 
     """
-    transmisor = main_window.transmisor
-    if transmisor is None:
-        return False
-    if hasattr(transmisor, "esta_conectado"):
-        return bool(transmisor.esta_conectado())
-    return type(transmisor).__name__ != "ClientNullTransmisor"
+    return bool(main_window.transmisor.esta_conectado())

@@ -11,6 +11,10 @@ from pyteg.config import DEFAULT_MAP_THEME
 from pyteg.core.cartas.mazo import Mazo
 from pyteg.core.mapa.build_mapa import build_mapa_from_reader
 from pyteg.core.partida.objetivos_secretos import ObjetivosSecretos
+from pyteg.core.situaciones.catalog import (
+    DEFAULT_SITUATION_RULESET,
+    available_situation_rulesets,
+)
 from pyteg.log_cli import add_log_arguments
 from pyteg.logger import get_logger
 from pyteg.protocol import PROTOCOL_VERSION, SNAPSHOT_VERSION, map_hash_for_theme
@@ -52,15 +56,26 @@ class Server:
         theme: str = DEFAULT_MAP_THEME,
         *,
         objective_rng: Random | None = None,
+        situation_ruleset: str = DEFAULT_SITUATION_RULESET,
+        situation_rng: Random | None = None,
     ) -> None:
         """Inicializa el servidor con mapa, mazo y configuración inicial.
 
         ``objective_rng`` permite inyectar una secuencia reproducible en
         simulaciones y pruebas. El servidor real lo omite y usa entropía del
         sistema.
+
+        Raises:
+            ValueError: Si el ruleset de situaciones no está registrado.
+
         """
         self.protocol_version = PROTOCOL_VERSION
         self.theme = theme
+        normalized_situation_ruleset = situation_ruleset.strip().lower()
+        if normalized_situation_ruleset not in available_situation_rulesets():
+            msg = f"Ruleset de situaciones desconocido: {situation_ruleset}"
+            raise ValueError(msg)
+        self.situation_ruleset = normalized_situation_ruleset
         self._state_revision = 0
         self._client_registry = ServerClientRegistry()
         # La autoridad de sala se mantiene separada del orden del registro.
@@ -90,6 +105,8 @@ class Server:
             self.dame_clientes,
             self._broadcaster,
             self.color,
+            self.situation_ruleset,
+            situation_rng,
         )
         self._command_executor = GameCommandExecutor(self)
         self._command_executor.start()
@@ -122,7 +139,7 @@ class Server:
         self._state_revision += 1
         return self._state_revision
 
-    def public_snapshot(self) -> dict[str, Any]:
+    def public_snapshot(self) -> dict[str, Any]:  # noqa: PLR0914
         """Construye un snapshot público completo y autocontenido.
 
         El snapshot se construye mientras el ejecutor de comandos posee la
@@ -161,6 +178,13 @@ class Server:
         fase: str | None = None
         turno_data: dict[str, int | None] | None = None
         refuerzos_pendientes = 0
+        situacion: dict[str, str | int | None] = {
+            "id": "none",
+            "nombre": "Sin situación",
+            "efecto": "none",
+            "parametro": None,
+            "ronda": 1,
+        }
         if game is not None and game.empezo():
             turno = game.turno_actual()
             fase = game.fase_actual()
@@ -170,6 +194,11 @@ class Server:
                 "jugador_id": int(turno.jugador_actual()),
             }
             refuerzos_pendientes = game.refuerzos_pendientes()
+            situacion_getter = getattr(game, "situacion_actual", None)
+            if callable(situacion_getter):
+                situacion_data = situacion_getter()
+                if isinstance(situacion_data, dict):
+                    situacion = situacion_data
         snapshot: dict[str, Any] = {
             "snapshot_version": SNAPSHOT_VERSION,
             "revision": self.state_revision(),
@@ -182,6 +211,7 @@ class Server:
             "fase": fase,
             "turno": turno_data,
             "refuerzos_pendientes": refuerzos_pendientes,
+            "situacion": situacion,
         }
         return snapshot
 
@@ -299,6 +329,11 @@ class Server:
 
         """
         self._game_coordinator.set_misiles_habilitados(activados=activados)
+
+    def set_situation_ruleset(self, ruleset: str) -> None:
+        """Configura el ruleset de situaciones para la próxima partida."""
+        self._game_coordinator.set_situation_ruleset(ruleset)
+        self.situation_ruleset = self._game_coordinator.situation_ruleset()
 
     def misiles_habilitados(self) -> bool:
         """Retorna si los misiles están habilitados en esta partida.
@@ -638,6 +673,9 @@ class Server:
         self.enviar_configuracion_partida()
         self.enviar_turno_actual(incluir_mapa=False)
         client.transmisor.enviar_mapa(self.mapa, game)
+        # La carta de situación es estado público versionado; una reconexión
+        # recibe la situación vigente sin tener que reproducir rondas previas.
+        client.transmisor.enviar_snapshot(self.public_snapshot())
         for pais in self.mapa.paises():
             cantidad_misiles = self.mapa.cantidad_misiles(pais)
             if cantidad_misiles > 0:
@@ -757,7 +795,10 @@ class Server:
             ``True`` si se cambió desde el estado finalizado.
 
         """
-        return self._game_coordinator.volver_al_lobby(self)
+        changed = self._game_coordinator.volver_al_lobby(self)
+        if changed:
+            self.situation_ruleset = self._game_coordinator.situation_ruleset()
+        return changed
 
     def enviar_unidades_disponibles(self) -> None:
         """Envía las unidades disponibles al jugador del turno actual."""
@@ -873,6 +914,12 @@ def parse_arguments() -> argparse.Namespace:
         default=DEFAULT_MAP_THEME,
         help=(f"Tema de mapa en themes/ (predeterminado: {DEFAULT_MAP_THEME})"),
     )
+    parser.add_argument(
+        "--situation-ruleset",
+        choices=available_situation_rulesets(),
+        default=DEFAULT_SITUATION_RULESET,
+        help="Ruleset de cartas de situación (predeterminado: none)",
+    )
 
     add_log_arguments(
         parser,
@@ -902,7 +949,10 @@ def main(server_factory: Callable[..., Server] | None = None) -> None:
     server: Server | None = None
     try:
         factory = server_factory or Server
-        server = factory(theme=args.theme)
+        server = factory(
+            theme=args.theme,
+            situation_ruleset=args.situation_ruleset,
+        )
         registrar_jugadores(server, host=args.host, port=args.port)
     except KeyboardInterrupt:
         logger.info("Servidor detenido por el usuario")
