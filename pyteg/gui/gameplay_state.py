@@ -60,11 +60,36 @@ def contexto_partida(main_window: MainWindowProtocol | Any) -> str | None:
     except TypeError, ValueError:
         pendientes = 0
 
-    return _("Fase: {} · Activo: {} · Refuerzos: {}").format(
+    contexto = _("Fase: {} · Activo: {} · Refuerzos: {}").format(
         texto_fase(fase),
         jugador,
         pendientes,
     )
+    situacion = _situacion_activa(main_window)
+    if situacion is not None:
+        contexto += _(" · Situación: {}").format(situacion)
+    return contexto
+
+
+def _situacion_activa(main_window: MainWindowProtocol | Any) -> str | None:
+    """Obtiene el nombre público de la situación desde el snapshot.
+
+    Returns:
+        Nombre visible o ``None`` cuando no hay situación activa.
+
+    """
+    model = getattr(main_window, "client_state_model", None)
+    snapshot = getattr(model, "snapshot", None)
+    if not isinstance(snapshot, dict):
+        return None
+    situacion = snapshot.get("situacion")
+    if not isinstance(situacion, dict):
+        return None
+    identifier = situacion.get("id")
+    name = situacion.get("nombre")
+    if identifier in {None, "", "none"} or not isinstance(name, str):
+        return None
+    return name
 
 
 def es_mi_turno(main_window: MainWindowProtocol | Any) -> bool:

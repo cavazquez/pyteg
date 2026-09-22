@@ -53,6 +53,25 @@ class GameplayStateTests(unittest.TestCase):
         self.assertIn("Ana", contexto_texto)
         self.assertIn("4", contexto_texto)
 
+    def test_contexto_muestra_situacion_publica(self) -> None:
+        """La situación activa se muestra desde el snapshot autoritativo."""
+        main_window = MagicMock()
+        main_window.partida_finalizada = False
+        main_window.estado_actual = "JUGANDO"
+        main_window.fase_actual = "acciones"
+        main_window.jugador_actual_nombre = "Ana"
+        main_window.unidades_pendientes_servidor = 0
+        main_window.client_state_model.snapshot = {
+            "situacion": {
+                "id": "snow_1",
+                "nombre": "Nieve",
+            }
+        }
+
+        contexto = contexto_partida(main_window)
+
+        self.assertIn("Nieve", cast("str", contexto))
+
     def test_contexto_no_arrastra_fase_despues_de_desconectar(self) -> None:
         main_window = MagicMock()
         main_window.partida_finalizada = False
