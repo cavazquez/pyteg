@@ -2,11 +2,15 @@
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
+from functools import lru_cache
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from PySide6.QtGui import QImage
+from PySide6.QtCore import QByteArray, Qt
+from PySide6.QtGui import QImage, QPainter
+from PySide6.QtSvg import QSvgRenderer
 
 from pyteg.toml_reader import TomlReader
 from pyteg.utils import get_resource_path
@@ -155,13 +159,49 @@ def _mask_at(
 
 
 def _masks(
-    bounds: list[PaisBounds], *, alpha_threshold: int
+    bounds: list[PaisBounds], *, alpha_threshold: int, ignore_strokes: bool = False
 ) -> dict[str, set[tuple[int, int]]]:
-    images = {item.name: QImage(str(item.image_path)) for item in bounds}
+    images = {
+        item.name: _load_image(item.image_path, ignore_strokes=ignore_strokes)
+        for item in bounds
+    }
     return {
         item.name: _mask_at(item, images[item.name], alpha_threshold=alpha_threshold)
         for item in bounds
     }
+
+
+@lru_cache(maxsize=128)
+def _load_image(path: Path, *, ignore_strokes: bool = False) -> QImage:
+    """Carga un sprite y, para SVG, puede separar el relleno del contorno.
+
+    El contorno es una línea de dibujo compartida y no representa territorio.
+    Por eso el análisis estricto mide los rellenos sin contar como solapamiento
+    que los trazos de dos países vecinos coincidan sobre su frontera.
+
+    Returns:
+        Imagen rasterizada del sprite, opcionalmente sin los trazos del SVG.
+
+    """
+    if not ignore_strokes or path.suffix.lower() != ".svg":
+        return QImage(str(path))
+
+    source = path.read_text(encoding="utf-8")
+    fill_only = re.sub(r"\bstroke\s*=\s*['\"][^'\"]*['\"]", 'stroke="none"', source)
+    renderer = QSvgRenderer(QByteArray(fill_only.encode("utf-8")))
+    if not renderer.isValid():
+        return QImage(str(path))
+
+    size = renderer.defaultSize()
+    if not size.isValid() or size.width() <= 0 or size.height() <= 0:
+        return QImage(str(path))
+
+    image = QImage(size, QImage.Format.Format_ARGB32_Premultiplied)
+    image.fill(Qt.GlobalColor.transparent)
+    painter = QPainter(image)
+    renderer.render(painter)
+    painter.end()
+    return image
 
 
 def _masks_touch(
@@ -225,6 +265,7 @@ def find_pixel_overlaps(
     *,
     min_pixels: int = 1,
     alpha_threshold: int = _ALPHA_THRESHOLD,
+    ignore_strokes: bool = False,
 ) -> list[PixelOverlap]:
     """Pares con píxeles opacos superpuestos (más preciso que solo bbox).
 
@@ -233,7 +274,10 @@ def find_pixel_overlaps(
 
     """
     overlaps: list[PixelOverlap] = []
-    images = {item.name: QImage(str(item.image_path)) for item in bounds}
+    images = {
+        item.name: _load_image(item.image_path, ignore_strokes=ignore_strokes)
+        for item in bounds
+    }
 
     for i, a in enumerate(bounds):
         for b in bounds[i + 1 :]:
@@ -258,9 +302,8 @@ def find_solid_overlaps(
 ) -> list[PixelOverlap]:
     """Encuentra solapamientos entre los interiores sólidos de los sprites.
 
-    La máscara sólida descarta el borde antialiasado y sirve para decidir si un
-    país tapa a otro. Un mapa correcto no debería tener ningún resultado,
-    incluso cuando los países sean adyacentes.
+    Para SVG se omite el trazo de frontera: dos países pueden dibujar el mismo
+    límite compartido sin que ninguno tape el relleno del otro.
 
     Returns:
         Solapamientos ordenados por cantidad de píxeles sólidos compartidos.
@@ -270,6 +313,7 @@ def find_solid_overlaps(
         bounds,
         min_pixels=min_pixels,
         alpha_threshold=_SOLID_ALPHA_THRESHOLD,
+        ignore_strokes=True,
     )
 
 
@@ -280,7 +324,7 @@ def find_unconnected_boundaries(
     *,
     max_gap: int = 1,
 ) -> list[BoundaryGap]:
-    """Encuentra fronteras terrestres declaradas que no llegan a tocarse.
+    """Encuentra fronteras terrestres declaradas cuyas siluetas no se tocan.
 
     Las aristas representadas por ``visual_connections`` se excluyen porque
     atraviesan agua o el salto de los extremos del mapa y deben unirse con una
@@ -320,16 +364,24 @@ def find_unconnected_boundaries(
 
 
 def paises_en_punto(bounds: list[PaisBounds], x: float, y: float) -> list[str]:
-    """Países cuyo bbox contiene el punto, del más arriba al más abajo.
+    """Países con píxeles visibles bajo el punto, del más arriba al más abajo.
 
     Returns:
         Nombres de países en orden de z_index descendente.
 
     """
-    hits = [
-        item
-        for item in bounds
-        if item.left <= x < item.right and item.top <= y < item.bottom
-    ]
+    hits: list[PaisBounds] = []
+    for item in bounds:
+        if not (item.left <= x < item.right and item.top <= y < item.bottom):
+            continue
+        image = _load_image(item.image_path)
+        local_x = int(x - item.left)
+        local_y = int(y - item.top)
+        if (
+            0 <= local_x < image.width()
+            and 0 <= local_y < image.height()
+            and image.pixelColor(local_x, local_y).alpha() >= _ALPHA_THRESHOLD
+        ):
+            hits.append(item)
     hits.sort(key=lambda item: item.z_index, reverse=True)
     return [item.name for item in hits]

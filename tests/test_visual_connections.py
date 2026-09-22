@@ -117,6 +117,54 @@ class VisualConnectionReaderTests(unittest.TestCase):
                 ),
             )
 
+    def test_carga_conexion_que_envuelve_el_mapa(self) -> None:
+        reader = TomlReader(
+            self._paises(),
+            adyacencias_toml_string=self._adyacencias(
+                """
+                [[ConexionesVisuales]]
+                origen = "A"
+                destino = "B"
+                envolver = "horizontal"
+                puntos = [[0, 20], [640, 30]]
+                """
+            ),
+        )
+
+        connection = reader.get_conexiones_visuales()[0]
+        self.assertEqual(connection.envolver, "horizontal")
+        self.assertEqual(connection.puntos, ((0.0, 20.0), (640.0, 30.0)))
+
+    def test_rechaza_envolver_horizontal_sin_dos_puntos(self) -> None:
+        with self.assertRaisesRegex(TomlReaderError, "dos puntos"):
+            TomlReader(
+                self._paises(),
+                adyacencias_toml_string=self._adyacencias(
+                    """
+                    [[ConexionesVisuales]]
+                    origen = "A"
+                    destino = "B"
+                    envolver = "horizontal"
+                    puntos = [[0, 20]]
+                    """
+                ),
+            )
+
+    def test_rechaza_bordes_de_wrap_fuera_de_orden(self) -> None:
+        with self.assertRaisesRegex(TomlReaderError, "borde izquierdo"):
+            TomlReader(
+                self._paises(),
+                adyacencias_toml_string=self._adyacencias(
+                    """
+                    [[ConexionesVisuales]]
+                    origen = "A"
+                    destino = "B"
+                    envolver = "horizontal"
+                    puntos = [[640, 20], [0, 30]]
+                    """
+                ),
+            )
+
     def test_rechaza_conexion_visual_que_no_es_adyacencia(self) -> None:
         with self.assertRaisesRegex(TomlReaderError, "no corresponde a una adyacencia"):
             TomlReader(
@@ -170,6 +218,39 @@ class VisualConnectionSceneTests(unittest.TestCase):
             bool(connection.flags() & connection.GraphicsItemFlag.ItemIsSelectable)
         )
         self.assertEqual(connection.path().elementCount(), 3)
+
+    def test_conexiones_que_envuelven_no_cruzan_el_mapa(self) -> None:
+        reader = TomlReader.from_theme("classic", strict=True)
+        scene = QCustomGraphicsScene(SimpleNamespace(), theme="classic")
+        routes = dict(
+            zip(reader.get_conexiones_visuales(), scene.visual_connections, strict=True)
+        )
+        wrapped = {
+            (connection.origen, connection.destino): item.path()
+            for connection, item in routes.items()
+            if connection.envolver == "horizontal"
+        }
+
+        self.assertEqual(
+            set(wrapped),
+            {("Alaska", "Kamchatka"), ("Chile", "Australia")},
+        )
+        for connection, item in routes.items():
+            if connection.envolver != "horizontal":
+                continue
+            path = item.path()
+            self.assertEqual(path.elementCount(), 4)
+            self.assertEqual(
+                path.elementAt(2).type,
+                path.ElementType.MoveToElement,
+            )
+            self.assertEqual(path.elementAt(1).x, 0.0)
+            self.assertEqual(path.elementAt(2).x, 640.0)
+            arrows = [child.path() for child in item.childItems()]
+            self.assertEqual(
+                {(arrow.elementAt(0).x, arrow.elementAt(1).x) for arrow in arrows},
+                {(0.0, 6.0), (634.0, 640.0)},
+            )
 
 
 if __name__ == "__main__":

@@ -17,6 +17,7 @@ from pyteg.utils import get_resource_path
 _ASSET_EXTENSIONS = {".png", ".svg", ".jpg", ".jpeg"}
 _COUNTRY_REQUIRED_FIELDS = ("file", "pos_x", "pos_y", "army_x", "army_y")
 _VISUAL_POINT_COORDINATES = 2
+_VISUAL_WRAP_POINT_COUNT = 2
 
 
 class TomlReaderError(Exception):
@@ -707,11 +708,39 @@ class TomlReader:
             raise TomlReaderError(msg)
         seen.add(pair)
 
-        return ThemeVisualConnection(
-            origen,
-            destino,
-            self._validar_puntos_visuales(raw.get("puntos", []), index),
+        points = self._validar_puntos_visuales(raw.get("puntos", []), index)
+        wrap_mode = self._validar_envolvimiento_visual(
+            raw.get("envolver"), points, index
         )
+        return ThemeVisualConnection(origen, destino, points, wrap_mode)
+
+    @staticmethod
+    def _validar_envolvimiento_visual(
+        raw_mode: object,
+        points: tuple[tuple[float, float], ...],
+        connection_index: int,
+    ) -> str | None:
+        if raw_mode is None:
+            return None
+        if not isinstance(raw_mode, str) or raw_mode != "horizontal":
+            msg = (
+                f"'envolver' en conexión visual #{connection_index} debe ser "
+                "'horizontal'"
+            )
+            raise TomlReaderError(msg)
+        if len(points) != _VISUAL_WRAP_POINT_COUNT:
+            msg = (
+                f"Conexión visual #{connection_index} con envolver horizontal "
+                "debe tener dos puntos: salida y reentrada"
+            )
+            raise TomlReaderError(msg)
+        if points[0][0] >= points[1][0]:
+            msg = (
+                f"Conexión visual #{connection_index} debe declarar primero "
+                "el borde izquierdo y luego el derecho"
+            )
+            raise TomlReaderError(msg)
+        return raw_mode
 
     def _validar_puntos_visuales(
         self, raw_points: object, connection_index: int
