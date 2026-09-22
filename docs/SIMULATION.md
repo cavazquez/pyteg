@@ -69,6 +69,18 @@ cuando termina, también si la corrida falla.
 
 Los registros están bajo `logs/`, que el repositorio ignora en Git.
 
+El smoke complementario de Qt conecta ventanas reales al mismo servidor y
+comprueba lobby, desconexión y reconexión autenticada:
+
+```bash
+QT_QPA_PLATFORM=offscreen uv run python scripts/smoke_qt_multiclient.py \
+  --clients 3
+```
+
+Este smoke cubre la capa Qt y su transporte; la partida completa continúa
+siendo responsabilidad de `simulate_game`, que usa clientes headless para
+ejercitar colocación, combate, conquistas, canjes y misiles.
+
 ## Victoria observada y cierre de partida
 
 El reporte distingue `victory_observed` de `all_clients_finalized`. Una victoria
