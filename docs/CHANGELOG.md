@@ -8,6 +8,10 @@ Todas las fechas en formato YYYY-MM-DD.
 - **Heartbeat TCP negociado**: los clientes que anuncian `heartbeat` responden
   `ping`/`pong`; el servidor cierra peers silenciosos después de un límite y
   conserva compatibilidad con clientes que no anuncian la capacidad.
+- **Actualizaciones incrementales del mapa**: cada conexión recibe todos los
+  países sólo al sincronizarse por primera vez; las acciones posteriores
+  difunden únicamente los países cuyo propietario o cantidad de unidades
+  cambió. Los snapshots completos mantienen la resincronización.
 - **Smoke Qt de partida completa**: CI inicia tres ventanas reales, juega una
   partida clásica con una conquista, reconecta un cliente durante la partida y
   verifica `Finalizado` en todos los clientes.

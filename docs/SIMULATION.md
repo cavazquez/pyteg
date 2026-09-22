@@ -58,7 +58,10 @@ y verifica además que cada cliente conserve su objetivo privado.
 Cada ejecución guarda:
 
 - `result.json`: ganador observado por cliente, estado de sala, cantidad de
-  turnos/acciones, tablero final, hash del tablero, errores y alcance de la prueba.
+  turnos/acciones, tablero final, hash del tablero, errores y alcance de la
+  prueba. También incluye `received_message_totals`,
+  `country_update_messages` y bytes/tramas TCP para comparar el costo de una
+  corrida antes y después de un cambio de transporte.
 - `wire.jsonl`: todos los mensajes enviados y recibidos, con cliente y tiempo.
 - `server.log`: salida del proceso servidor.
 
@@ -68,6 +71,11 @@ canjes, misiles y una desconexión/reconexión autenticada antes de exigir
 cuando termina, también si la corrida falla.
 
 Los registros están bajo `logs/`, que el repositorio ignora en Git.
+
+Las actualizaciones del mapa son incrementales: la primera entrega a una
+conexión contiene todos los países y las siguientes sólo los que cambiaron.
+Un snapshot completo sigue siendo la vía de resincronización y actualiza el
+caché incremental, por lo que no se pierde ningún estado ante una reconexión.
 
 El smoke complementario de Qt conecta ventanas reales al mismo servidor y
 comprueba lobby, desconexión y reconexión autenticada:
