@@ -41,17 +41,6 @@ class QCustomGraphicsView(QGraphicsView):
             scene.sceneRect(),
             Qt.AspectRatioMode.KeepAspectRatio,
         )
-        self._notify_label_scale()
-
-    def _notify_label_scale(self) -> None:
-        """Informa a la escena la escala visible para adaptar etiquetas."""
-        scene = self.scene()
-        update = getattr(scene, "update_label_visibility", None)
-        if not callable(update):
-            return
-        transform = self.transform()
-        scale = (abs(transform.m11()) + abs(transform.m22())) / 2
-        update(scale)
 
     def mouseMoveEvent(self, event: QMouseEvent) -> None:  # noqa: N802
         """Maneja el movimiento del mouse en la vista.
@@ -101,7 +90,6 @@ class QCustomGraphicsView(QGraphicsView):
                 self.scene().sceneRect(),
                 Qt.AspectRatioMode.KeepAspectRatio,
             )
-            self._notify_label_scale()
 
     def resizeEvent(self, event: QResizeEvent) -> None:  # noqa: N802
         """Manejar el redimensionamiento de la vista para escalar el mapa."""
@@ -112,7 +100,6 @@ class QCustomGraphicsView(QGraphicsView):
                 self.scene().sceneRect(),
                 Qt.AspectRatioMode.KeepAspectRatio,
             )
-            self._notify_label_scale()
 
     def wheelEvent(self, event: QWheelEvent) -> None:  # noqa: N802
         """Permitir zoom con la rueda del mouse."""
@@ -126,7 +113,6 @@ class QCustomGraphicsView(QGraphicsView):
         else:
             # Zoom out
             self.scale(1 / zoom_factor, 1 / zoom_factor)
-        self._notify_label_scale()
 
     def leaveEvent(self, event: QMouseEvent | QEvent) -> None:  # noqa: N802
         """Maneja el evento cuando el mouse sale de la vista.

@@ -16,7 +16,6 @@ from PySide6.QtWidgets import (
 
 from pyteg.exceptions import ImagenNoEncontradaError
 from pyteg.gui.mapa.army_position import resolve_army_position
-from pyteg.gui.mapa.country_label import CountryLabel
 from pyteg.gui.mapa.pais_battle_fx_mixin import PaisBattleFxMixin
 from pyteg.gui.mapa.pais_selection_mixin import PaisSelectionMixin
 from pyteg.gui.widgets.circulo import Circulo
@@ -49,7 +48,6 @@ class Pais(PaisBattleFxMixin, PaisSelectionMixin, QGraphicsPixmapItem):
         self._x, self._y, self._army_x, self._army_y = pos
         self.setPos(self._x, self._y)
         self._circle: Circulo | None = None
-        self._country_label = CountryLabel(self._nombre, self)
         self._center_text: QGraphicsTextItem | None = None
         self._main_window: Any = None
 
@@ -66,33 +64,8 @@ class Pais(PaisBattleFxMixin, PaisSelectionMixin, QGraphicsPixmapItem):
         self._opacity_animation: QPropertyAnimation | None = None
         self._movimiento_timer: QTimer | None = None
 
-        self.setAcceptHoverEvents(True)
-        self._position_country_label()
         self.cargar_circulo()
         self._actualizar_tooltip()
-
-    def _position_country_label(self) -> None:
-        """Centra el nombre dentro del asset sin mover su posición lógica."""
-        bounds = self._country_label.boundingRect()
-        pixmap = self.pixmap()
-        self._country_label.setPos(
-            (pixmap.width() - bounds.width()) / 2,
-            (
-                max(0.0, pixmap.height() - bounds.height() - 2)
-                if self._army_y < pixmap.height() / 2
-                else 2.0
-            ),
-        )
-
-    def hoverEnterEvent(self, event: Any) -> None:  # noqa: N802
-        """Muestra el nombre completo al entrar con el cursor."""
-        self._country_label.set_hovered(True)
-        super().hoverEnterEvent(event)
-
-    def hoverLeaveEvent(self, event: Any) -> None:  # noqa: N802
-        """Vuelve a la política de zoom al salir con el cursor."""
-        self._country_label.set_hovered(False)
-        super().hoverLeaveEvent(event)
 
     @staticmethod
     def _load_asset(
