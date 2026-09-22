@@ -67,6 +67,7 @@ class TomlReader:
         self.conexiones_visuales: list[ThemeVisualConnection] = []
         self._init_merge_adyacencias(adyacencias_toml_string)
         self.objetivos_secretos: dict[str, dict[str, Any]] = {}
+        self.objetivos_metadata: dict[str, Any] = {}
         self._init_merge_objetivos_secretos(objetivos_secretos_toml_string)
         self._init_validate_and_build()
 
@@ -167,6 +168,11 @@ class TomlReader:
                 msg = "Archivo de objetivos secretos debe contener sección 'Objetivos'"
                 raise TomlReaderError(msg)
             self.objetivos_secretos = objetivos_parsed["Objetivos"]
+            metadata = objetivos_parsed.get("Meta", {})
+            if not isinstance(metadata, dict):
+                msg = "La sección 'Meta' de objetivos debe ser un diccionario"
+                raise TomlReaderError(msg)
+            self.objetivos_metadata = metadata
             self._validar_objetivos_secretos()
         except tomllib.TOMLDecodeError as e:
             msg = f"Error al parsear TOML de objetivos secretos: {e}"
@@ -178,6 +184,7 @@ class TomlReader:
         self._pais_a_continente: dict[str, str] = {}
         self._validar_cartas()
         self._procesar_continentes_y_paises()
+        self._validar_objetivos_metadata_paises()
         self._validar_distribucion_cartas()
         self._validar_nombres_unicos()
         self._validar_consistencia_datos()
@@ -319,7 +326,9 @@ class TomlReader:
                     msg = f"País adyacente debe ser string: {adyacente}"
                     raise TomlReaderError(msg)
 
-    def _validar_objetivos_secretos(self) -> None:
+    def _validar_objetivos_secretos(  # noqa: C901, PLR0912, PLR0915
+        self,
+    ) -> None:
         """Valida la estructura de objetivos secretos si existe.
 
         Raises:
@@ -363,6 +372,124 @@ class TomlReader:
                     f"Tipos válidos: {tipos_validos}"
                 )
                 raise TomlReaderError(msg)
+
+            if objetivo_data.get("id") != objetivo_id:
+                msg = (
+                    f"El campo 'id' del objetivo '{objetivo_id}' no coincide "
+                    "con su clave"
+                )
+                raise TomlReaderError(msg)
+
+            descripcion = objetivo_data["descripcion"]
+            if not isinstance(descripcion, str) or not descripcion.strip():
+                msg = f"La descripción del objetivo '{objetivo_id}' debe ser texto"
+                raise TomlReaderError(msg)
+
+            tipo = objetivo_data["tipo"]
+            listas = ("continentes",)
+            for campo in listas:
+                if campo in objetivo_data and not isinstance(
+                    objetivo_data[campo], list
+                ):
+                    msg = (
+                        f"El campo '{campo}' del objetivo '{objetivo_id}' debe ser "
+                        "una lista"
+                    )
+                    raise TomlReaderError(msg)
+                if campo in objetivo_data and not all(
+                    isinstance(valor, str) for valor in objetivo_data[campo]
+                ):
+                    msg = (
+                        f"Los valores de '{campo}' del objetivo '{objetivo_id}' "
+                        "deben ser texto"
+                    )
+                    raise TomlReaderError(msg)
+
+            cuotas = objetivo_data.get("cuotas_continentes")
+            if cuotas is not None and (
+                not isinstance(cuotas, dict)
+                or any(
+                    not isinstance(continente, str)
+                    or not isinstance(cuota, int)
+                    or cuota <= 0
+                    for continente, cuota in cuotas.items()
+                )
+            ):
+                msg = (
+                    f"'cuotas_continentes' del objetivo '{objetivo_id}' debe "
+                    "mapear continentes a enteros positivos"
+                )
+                raise TomlReaderError(msg)
+
+            for campo in (
+                "cantidad_paises",
+                "paises_alternativos",
+                "tropas_minimas",
+                "islas",
+                "continentes_minimos_islas",
+            ):
+                if campo in objetivo_data and (
+                    not isinstance(objetivo_data[campo], int)
+                    or objetivo_data[campo] <= 0
+                ):
+                    msg = (
+                        f"El campo '{campo}' del objetivo '{objetivo_id}' debe "
+                        "ser un entero positivo"
+                    )
+                    raise TomlReaderError(msg)
+
+            if tipo == "destruir_jugador":
+                for campo in ("jugador_alternativo", "objetivo_relativo"):
+                    if campo in objetivo_data and objetivo_data[campo] not in {
+                        "derecha",
+                        "izquierda",
+                    }:
+                        msg = (
+                            f"'{campo}' del objetivo '{objetivo_id}' debe ser "
+                            "'derecha' o 'izquierda'"
+                        )
+                        raise TomlReaderError(msg)
+
+            if "objetivo_comun" in objetivo_data and not isinstance(
+                objetivo_data["objetivo_comun"], bool
+            ):
+                msg = (
+                    f"'objetivo_comun' del objetivo '{objetivo_id}' debe ser "
+                    "booleano"
+                )
+                raise TomlReaderError(msg)
+            if "publico" in objetivo_data and not isinstance(
+                objetivo_data["publico"], bool
+            ):
+                msg = f"'publico' del objetivo '{objetivo_id}' debe ser booleano"
+                raise TomlReaderError(msg)
+
+            if objetivo_data.get("objetivo_comun", False):
+                if not objetivo_data.get("publico", False):
+                    msg = f"El objetivo común '{objetivo_id}' debe ser público"
+                    raise TomlReaderError(msg)
+                if tipo != "conquistar_paises":
+                    msg = f"El objetivo común '{objetivo_id}' debe conquistar países"
+                    raise TomlReaderError(msg)
+
+        objetivos_comunes = [
+            objetivo
+            for objetivo in self.objetivos_secretos.values()
+            if objetivo.get("objetivo_comun", False)
+        ]
+        if len(objetivos_comunes) > 1:
+            msg = "Sólo puede existir un objetivo común por tema"
+            raise TomlReaderError(msg)
+
+        if not isinstance(self.objetivos_metadata, dict):
+            msg = "La metadata de objetivos debe ser un diccionario"
+            raise TomlReaderError(msg)
+        islas = self.objetivos_metadata.get("islas", [])
+        if not isinstance(islas, list) or not all(
+            isinstance(pais, str) for pais in islas
+        ):
+            msg = "La metadata 'islas' debe ser una lista de nombres de países"
+            raise TomlReaderError(msg)
 
     def _procesar_continentes_y_paises(self) -> None:
         """Procesa continentes y países con validación.
@@ -419,6 +546,21 @@ class TomlReader:
                 pos_y=pos_y,
                 paises=paises_continente,
             )
+
+    def _validar_objetivos_metadata_paises(self) -> None:
+        """Comprueba que la metadata insular sólo mencione países del mapa.
+
+        Raises:
+            TomlReaderError: Si una isla no existe en el mapa.
+
+        """
+        islas = self.objetivos_metadata.get("islas", [])
+        desconocidas = sorted(set(islas) - set(self._pais_a_continente))
+        if desconocidas:
+            msg = "Países insulares desconocidos en metadata: " + ", ".join(
+                desconocidas
+            )
+            raise TomlReaderError(msg)
 
     def _build_country_layout(
         self, continente: str, pais: str, datos: dict[str, Any]
@@ -911,6 +1053,15 @@ class TomlReader:
 
         """
         return list(self.objetivos_secretos.keys())
+
+    def get_objetivos_metadata(self) -> dict[str, Any]:
+        """Obtiene metadata pública auxiliar de los objetivos del tema.
+
+        Returns:
+            Copia de la metadata declarada en el archivo de objetivos.
+
+        """
+        return dict(self.objetivos_metadata)
 
 
 def _read_optional_toml(path: Path) -> str | None:

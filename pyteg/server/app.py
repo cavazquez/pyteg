@@ -92,7 +92,11 @@ class Server:
         self._broadcaster = ServerMessageBroadcaster(self.dame_clientes)
 
         toml_reader = TomlReader.from_theme(theme, strict=True)
-        self.mapa = Mapa(lambda: build_mapa_from_reader(toml_reader))
+        self.mapa = Mapa(
+            lambda: build_mapa_from_reader(toml_reader),
+            self._reglas,
+            islas=toml_reader.get_objetivos_metadata().get("islas", []),
+        )
         self.mapa.configurar_reglas(self._reglas)
         card_distribution = toml_reader.get_cartas_distribucion()
         extra_cards: list[tuple[str, str, str, str | None]] = [

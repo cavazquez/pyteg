@@ -13,7 +13,7 @@ from pyteg.core.mapa.country_data import CountryData
 from pyteg.exceptions import CountryNotFoundError
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable, Iterable
 
     from pyteg.core.partida.reglas import ThemeRules
 
@@ -25,6 +25,8 @@ class Mapa:
         self,
         build_mapa: Callable[[], dict[str, list[Any]]],
         rules: ThemeRules | None = None,
+        *,
+        islas: Iterable[str] | None = None,
     ) -> None:
         """Inicializa el mapa del juego.
 
@@ -36,6 +38,7 @@ class Mapa:
         mapa_raw = build_mapa()
         self._build_mapa = build_mapa
         self._rules = rules
+        self._islas = {str(pais) for pais in (islas or ())}
         # Convertir listas a CountryData para mejor type safety
         self._mapa: dict[str, CountryData] = {}
         for pais, data in mapa_raw.items():
@@ -506,6 +509,18 @@ class Mapa:
             return []
         adyacentes = self._mapa[pais].adyacentes
         return [str(p) for p in adyacentes]
+
+    def es_isla(self, pais: str) -> bool:
+        """Indica si un país está marcado como isla por el tema.
+
+        Los mapas pueden declarar islas explícitamente porque una conexión
+        marítima válida hace imposible inferirlas sólo desde el grafo.
+        Como fallback para mapas antiguos, un territorio aislado sin aristas
+        también se considera isla.
+        """
+        if self._islas:
+            return pais in self._islas
+        return not self.obtener_paises_adyacentes(pais)
 
     def _tiene_pais(self, pais: str) -> bool:
         """Verifica si un país existe en el mapa.

@@ -6,7 +6,7 @@ separando esta responsabilidad del Game principal.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from pyteg.core.partida.objetivos_secretos import (
     NO_SECRET_OBJECTIVES,
@@ -15,10 +15,9 @@ from pyteg.core.partida.objetivos_secretos import (
 from pyteg.logger import get_logger
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Callable, Sequence
 
     from pyteg.protocols import IClientProtocol
-    from pyteg.server.juego.color import ServerColor
     from pyteg.server.juego.mapa import Mapa
 
 
@@ -39,9 +38,10 @@ class VictoryChecker:
         paises_para_victoria: int,
         secret_objectives: SecretObjectiveEvaluator = NO_SECRET_OBJECTIVES,
         *,
-        color_manager: ServerColor | None = None,
+        color_manager: Any | None = None,
         objetivos_secretos: SecretObjectiveEvaluator | None = None,
         objetivos_secretos_activados: bool | None = None,
+        player_order: Callable[[], list[int]] | None = None,
     ) -> None:
         """Inicializa el verificador de victoria.
 
@@ -55,6 +55,7 @@ class VictoryChecker:
                 conservado para compatibilidad con integraciones existentes.
             objetivos_secretos_activados: Compatibilidad con la configuración
                 anterior. Cuando es ``False`` se selecciona el objeto nulo.
+            player_order: Callback que devuelve el orden actual de turnos.
 
         """
         self._mapa = mapa
@@ -65,6 +66,10 @@ class VictoryChecker:
             secret_objectives = NO_SECRET_OBJECTIVES
         self._secret_objectives = secret_objectives
         self._color_manager = color_manager
+        if player_order is not None:
+            configurar_orden = getattr(secret_objectives, "set_player_order", None)
+            if callable(configurar_orden):
+                configurar_orden(player_order)
 
     def verificar_condicion_victoria(
         self, jugadores: Sequence[IClientProtocol]
