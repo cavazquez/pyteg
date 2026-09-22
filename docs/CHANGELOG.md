@@ -11,6 +11,8 @@ Todas las fechas en formato YYYY-MM-DD.
 - **Contexto de turno**: la barra de estado muestra fase, jugador activo y
   refuerzos pendientes; las acciones deshabilitadas explican el motivo en su
   tooltip y finalizar turno queda bloqueado durante la colocación.
+- **Estado de jugadores**: el panel lateral conserva y muestra si cada jugador
+  está conectado, es administrador o fue eliminado según el snapshot público.
 
 ## [0.1.0] - 2026-09-21
 

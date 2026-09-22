@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING, Any, Protocol
 from pyteg.client.tasks.protocols import GameWindowProtocol
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable, Sequence
 
     from PySide6.QtWidgets import (
         QFrame,
@@ -29,7 +29,7 @@ if TYPE_CHECKING:
     from pyteg.gui.managers.game_actions import GameActionsManager
     from pyteg.gui.managers.language import LanguageManager
     from pyteg.gui.managers.layout import LayoutManager
-    from pyteg.gui.managers.players import PlayersManager
+    from pyteg.gui.managers.players import PlayersManager, PlayerStatus
     from pyteg.gui.managers.status import StatusManager
     from pyteg.gui.managers.theme import ThemeManager
     from pyteg.gui.managers.units import UnitsManager
@@ -91,6 +91,10 @@ class MainWindowProtocol(GameWindowProtocol, Protocol):
     game_actions_manager: GameActionsManager
     units_manager: UnitsManager
     status_manager: StatusManager
+
+    def update_player_statuses(self, statuses: Sequence[PlayerStatus]) -> None:
+        """Actualiza conexión, administración y eliminación de jugadores."""
+        ...
 
     def setWindowTitle(self, title: str) -> None:  # noqa: N802
         """Establece el título de la ventana (heredado de QWidget)."""
