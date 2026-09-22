@@ -1,3 +1,5 @@
+# ruff: noqa: PLR0913
+
 """Interfaz abstracta del transmisor cliente -> servidor."""
 
 from __future__ import annotations
@@ -107,7 +109,11 @@ class IClientTransmisor(ABC):
 
     @abstractmethod
     def atacar(
-        self, origen: str, destino: str, cantidad_unidades: int | None = None
+        self,
+        origen: str,
+        destino: str,
+        cantidad_unidades: int | None = None,
+        objetivo_jugador: int | None = None,
     ) -> None:
         """Envía un mensaje al servidor para atacar de un país a otro.
 
@@ -116,7 +122,8 @@ class IClientTransmisor(ABC):
             destino (str): Nombre del país defensor
             cantidad_unidades (int, optional): Cantidad de unidades con las que
                                               atacar (1-3). Si es None, se usa el
-                                              máximo posible.
+            máximo posible.
+            objetivo_jugador: Ocupante objetivo dentro de un condominio.
 
         """
 
@@ -188,3 +195,24 @@ class IClientTransmisor(ABC):
             pais_destino (str): País objetivo del misil
 
         """
+
+    @abstractmethod
+    def proponer_pacto(
+        self,
+        tipo: str,
+        jugador_objetivo: int,
+        *,
+        paises: list[str] | None = None,
+        continentes: list[str] | None = None,
+        pais_objetivo: str | None = None,
+        duracion: int | None = 1,
+    ) -> None:
+        """Propone un pacto público."""
+
+    @abstractmethod
+    def aceptar_pacto(self, pacto_id: str) -> None:
+        """Acepta un pacto pendiente."""
+
+    @abstractmethod
+    def romper_pacto(self, pacto_id: str) -> None:
+        """Anuncia la ruptura de un pacto."""

@@ -93,7 +93,9 @@ secretos. No existe una definición de cuándo se roba una carta de situación,
 si es pública o privada, su efecto, una respuesta posible o su interacción con
 snapshot, reconexión y revancha. Implementarla ahora duplicaría mecánicas sin
 una variante escrita. Sólo debe abrirse una implementación cuando exista una
-especificación cerrada y tests de privacidad/protocolo.
+especificación cerrada y tests de privacidad/protocolo. El contrato previo y la
+descomposición atómica están documentados en
+[`SITUATION_CARDS.md`](SITUATION_CARDS.md).
 
 ## #207 — `Client_Receptor`
 

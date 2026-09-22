@@ -4,12 +4,13 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Protocol
+from typing import TYPE_CHECKING, Protocol
 
 if TYPE_CHECKING:
     from PySide6.QtCore import QObject
     from PySide6.QtWidgets import QLabel, QPushButton
 
+    from pyteg.client.conexion.transmisor.protocol import IClientTransmisor
     from pyteg.client.tasks.types import TarjetaItem
     from pyteg.gui.widgets.tarjeta import TarjetaWidget
 
@@ -49,4 +50,4 @@ class TarjetasExchangeHost(Protocol):
 
     def parent(self) -> QObject | None: ...
 
-    def _get_transmisor(self) -> Any | None: ...
+    def _get_transmisor(self) -> IClientTransmisor: ...

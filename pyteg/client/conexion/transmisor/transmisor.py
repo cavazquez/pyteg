@@ -1,3 +1,5 @@
+# ruff: noqa: PLR0913
+
 """Transmisor real: serializa Msg* y los envía por la conexión."""
 
 from __future__ import annotations
@@ -6,6 +8,7 @@ from typing import Any
 
 from pyteg.client.conexion.transmisor.protocol import IClientTransmisor
 from pyteg.client.msg import (
+    MsgAceptarPacto,
     MsgAgregarUnidad,
     MsgAtacar,
     MsgCanjearMisil,
@@ -18,8 +21,10 @@ from pyteg.client.msg import (
     MsgHello,
     MsgLanzarMisil,
     MsgMoverUnidad,
+    MsgProponerPacto,
     MsgReclamarTarjeta,
     MsgReconectar,
+    MsgRomperPacto,
     MsgSeleccionarColor,
     MsgSetUsername,
     MsgSolicitarTarjetas,
@@ -178,7 +183,11 @@ class ClientTransmisor(IClientTransmisor):
         self._conn.send_data(msg.to_json())
 
     def atacar(
-        self, origen: str, destino: str, cantidad_unidades: int | None = None
+        self,
+        origen: str,
+        destino: str,
+        cantidad_unidades: int | None = None,
+        objetivo_jugador: int | None = None,
     ) -> None:
         """Envía un mensaje de ataque al servidor.
 
@@ -188,9 +197,10 @@ class ClientTransmisor(IClientTransmisor):
             cantidad_unidades (int, optional): Cantidad de unidades con las que
                                               atacar (1-3). Si es None, se usa el
                                               máximo posible.
+            objetivo_jugador: Ocupante objetivo dentro de un condominio.
 
         """
-        msg = MsgAtacar(origen, destino, cantidad_unidades)
+        msg = MsgAtacar(origen, destino, cantidad_unidades, objetivo_jugador)
         self._conn.send_data(msg.to_json())
 
     def actualizar_lista_jugadores(self, jugadores: list[dict[str, Any]]) -> None:
@@ -260,3 +270,32 @@ class ClientTransmisor(IClientTransmisor):
         _LOG.debug("Lanzando misil desde %s hacia %s", pais_origen, pais_destino)
         msg = MsgLanzarMisil(pais_origen, pais_destino)
         self._conn.send_data(msg.to_json())
+
+    def proponer_pacto(
+        self,
+        tipo: str,
+        jugador_objetivo: int,
+        *,
+        paises: list[str] | None = None,
+        continentes: list[str] | None = None,
+        pais_objetivo: str | None = None,
+        duracion: int | None = 1,
+    ) -> None:
+        """Propone un pacto público."""
+        msg = MsgProponerPacto(
+            tipo,
+            jugador_objetivo,
+            paises=paises,
+            continentes=continentes,
+            pais_objetivo=pais_objetivo,
+            duracion=duracion,
+        )
+        self._conn.send_data(msg.to_json())
+
+    def aceptar_pacto(self, pacto_id: str) -> None:
+        """Acepta un pacto pendiente."""
+        self._conn.send_data(MsgAceptarPacto(pacto_id).to_json())
+
+    def romper_pacto(self, pacto_id: str) -> None:
+        """Anuncia la ruptura de un pacto."""
+        self._conn.send_data(MsgRomperPacto(pacto_id).to_json())

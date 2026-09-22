@@ -72,7 +72,8 @@ Sumatra = ["Australia", "India"]
 [[ConexionesVisuales]]
 origen = "Alaska"
 destino = "Kamchatka"
-puntos = [[120.0, 0.0], [450.0, -15.0]]
+envolver = "horizontal"
+puntos = [[0.0, 104.0], [640.0, 22.0]]
 
 [[ConexionesVisuales]]
 origen = "Brasil"
@@ -81,7 +82,8 @@ destino = "Sahara"
 [[ConexionesVisuales]]
 origen = "Chile"
 destino = "Australia"
-puntos = [[205.0, 385.0], [540.0, 385.0]]
+envolver = "horizontal"
+puntos = [[0.0, 318.0], [640.0, 328.0]]
 
 [[ConexionesVisuales]]
 origen = "Colombia"
@@ -90,7 +92,7 @@ destino = "Mexico"
 [[ConexionesVisuales]]
 origen = "Egipto"
 destino = "Israel"
-puntos = [[470.0, 210.0]]
+puntos = [[440.0, 220.0], [470.0, 200.0]]
 
 [[ConexionesVisuales]]
 origen = "Egipto"
@@ -99,11 +101,21 @@ destino = "Polonia"
 [[ConexionesVisuales]]
 origen = "Egipto"
 destino = "Turquia"
-puntos = [[460.0, 190.0]]
+puntos = [[525.0, 220.0], [530.0, 185.0]]
 
 [[ConexionesVisuales]]
 origen = "Espana"
 destino = "Sahara"
+
+[[ConexionesVisuales]]
+origen = "Madagascar"
+destino = "Egipto"
+puntos = [[535.0, 270.0]]
+
+[[ConexionesVisuales]]
+origen = "Madagascar"
+destino = "Zaire"
+puntos = [[530.0, 365.0], [400.0, 365.0]]
 
 [[ConexionesVisuales]]
 origen = "GranBretana"
@@ -150,7 +162,6 @@ destino = "Borneo"
 [[ConexionesVisuales]]
 origen = "Australia"
 destino = "Java"
-puntos = [[650.0, 300.0]]
 
 [[ConexionesVisuales]]
 origen = "Polonia"

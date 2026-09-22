@@ -112,6 +112,60 @@ msgstr "Esperando jugadores"
 msgid "Estado: {}"
 msgstr "Estado: {}"
 
+msgid "Fase: {} · Activo: {} · Refuerzos: {}"
+msgstr "Fase: {} · Activo: {} · Refuerzos: {}"
+
+msgid "Colocación"
+msgstr "Colocación"
+
+msgid "Acciones"
+msgstr "Acciones"
+
+msgid "Jugador {}"
+msgstr "Jugador {}"
+
+msgid "Sin turno"
+msgstr "Sin turno"
+
+msgid "Conectate al servidor"
+msgstr "Conectate al servidor"
+
+msgid "La partida terminó"
+msgstr "La partida terminó"
+
+msgid "Esperá tu turno"
+msgstr "Esperá tu turno"
+
+msgid "Seleccioná origen y destino"
+msgstr "Seleccioná origen y destino"
+
+msgid "Colocá todas las unidades antes de finalizar el turno"
+msgstr "Colocá todas las unidades antes de finalizar el turno"
+
+msgid "La acción no está disponible ahora"
+msgstr "La acción no está disponible ahora"
+
+msgid "Administrador"
+msgstr "Administrador"
+
+msgid "Desconectado"
+msgstr "Desconectado"
+
+msgid "Eliminado"
+msgstr "Eliminado"
+
+msgid "Chat"
+msgstr "Chat"
+
+msgid "Panel lateral"
+msgstr "Panel lateral"
+
+msgid "Mostrar u ocultar el chat"
+msgstr "Mostrar u ocultar el chat"
+
+msgid "Mostrar u ocultar jugadores y unidades"
+msgstr "Mostrar u ocultar jugadores y unidades"
+
 msgid "[No conectado]"
 msgstr "[No conectado]"
 

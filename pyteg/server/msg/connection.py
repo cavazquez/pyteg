@@ -282,3 +282,23 @@ class MsgHelloAck(IMsg):
 
         """
         return json.dumps({"mensaje": "hello_ack", "accepted": self._accepted})
+
+
+class MsgPing(IMsg):
+    """Solicita una respuesta inmediata para supervisar la conexión."""
+
+    def __init__(self, heartbeat_id: str) -> None:
+        """Inicializa el identificador opaco del heartbeat."""
+        self._heartbeat_id = heartbeat_id
+
+    def to_json(self) -> str:
+        """Serializa el ping.
+
+        Returns:
+            JSON con el identificador que el cliente debe devolver.
+
+        """
+        return json.dumps({
+            "mensaje": "ping",
+            "heartbeat_id": self._heartbeat_id,
+        })

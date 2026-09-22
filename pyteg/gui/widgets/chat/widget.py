@@ -41,7 +41,9 @@ class Chat(QWidget):
 
         self.text_field = QTextEdit()
         self.text_field.setReadOnly(True)
-        self.text_field.setMinimumHeight(150)
+        # El splitter puede reservar poco espacio al chat cuando la ventana
+        # es baja; el scroll interno mantiene los mensajes accesibles.
+        self.text_field.setMinimumHeight(70)
         self.text_field.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
         self.text_field.setHorizontalScrollBarPolicy(
             Qt.ScrollBarPolicy.ScrollBarAlwaysOff

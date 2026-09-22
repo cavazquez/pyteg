@@ -4,7 +4,15 @@ from __future__ import annotations
 
 import unittest
 
+from PySide6.QtGui import QImage
+
+from pyteg.gui.mapa.overlap_check import (
+    find_solid_overlaps,
+    find_unconnected_boundaries,
+    load_pais_bounds,
+)
 from pyteg.toml_reader import TomlReader
+from pyteg.utils import get_resource_path
 
 EXPECTED_CONTINENTS: dict[str, set[str]] = {
     "Sudamerica": {"Argentina", "Brasil", "Chile", "Colombia", "Peru", "Uruguay"},
@@ -208,6 +216,64 @@ class ClassicMapAuditTests(unittest.TestCase):
                 connection.destino,
                 reader.obtener_paises_adyacentes(connection.origen),
             )
+
+    def test_no_hay_solapamiento_solido_entre_paises(self) -> None:
+        """Ningún país debe tapar píxeles sólidos de otro, sea vecino o no."""
+        overlaps = find_solid_overlaps(load_pais_bounds("classic"), min_pixels=1)
+
+        self.assertEqual(
+            [
+                f"{overlap.top.name}/{overlap.bottom.name}: {overlap.opaque_pixels} px"
+                for overlap in overlaps
+            ],
+            [],
+        )
+
+    def test_land_borders_touch_without_covering_neighboring_fills(self) -> None:
+        """Cada frontera terrestre queda conectada y los rellenos no se pisan."""
+        reader = TomlReader.from_theme("classic", strict=True)
+        bounds = load_pais_bounds("classic")
+        visual_connections = [
+            (connection.origen, connection.destino)
+            for connection in reader.get_conexiones_visuales()
+        ]
+
+        gaps = find_unconnected_boundaries(
+            bounds, reader.adyacencias, visual_connections, max_gap=1
+        )
+
+        self.assertEqual(
+            [(gap.first.name, gap.second.name) for gap in gaps],
+            [],
+        )
+        self.assertEqual(find_solid_overlaps(bounds, min_pixels=1), [])
+
+    def test_country_sprites_have_transparent_background(self) -> None:
+        """Evita rectángulos semitransparentes alrededor de los países."""
+        reader = TomlReader.from_theme("classic", strict=True)
+
+        for country in reader.todos_los_paises():
+            image_path = get_resource_path("themes/" + reader.img_path(country))
+            image = QImage(str(image_path))
+            self.assertFalse(image.isNull(), country)
+
+            alpha_values = {
+                image.pixelColor(x, y).alpha()
+                for y in range(image.height())
+                for x in range(image.width())
+            }
+            if image_path.suffix.lower() == ".png":
+                self.assertEqual(
+                    alpha_values - {0, 255},
+                    set(),
+                    f"{country} tiene alpha intermedio: {sorted(alpha_values)}",
+                )
+                self.assertEqual(image.pixelColor(0, 0).alpha(), 0, country)
+            else:
+                # Los SVG se rasterizan con antialiasing y por eso pueden
+                # contener alpha intermedio en el borde, pero nunca un fondo
+                # opaco que convierta el sprite en un rectángulo.
+                self.assertLess(image.pixelColor(0, 0).alpha(), 255, country)
 
 
 if __name__ == "__main__":

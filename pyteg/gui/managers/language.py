@@ -73,6 +73,7 @@ class LanguageManager:
         # Actualizar la toolbar
         if self.main_window.toolbar is not None:
             self.main_window.toolbar.update_language(lang_code)
+        self._refresh_gameplay_actions()
 
         players_title = getattr(self.main_window, "players_title_label", None)
         if players_title is not None:
@@ -103,3 +104,9 @@ class LanguageManager:
         # su propio estado
 
         _LOG.debug("GUI actualizada al idioma: %s", lang_code)
+
+    def _refresh_gameplay_actions(self) -> None:
+        """Reaplica textos dinámicos de la fase después de cambiar idioma."""
+        refresh_actions = getattr(self.main_window, "refresh_gameplay_actions", None)
+        if callable(refresh_actions):
+            refresh_actions()
