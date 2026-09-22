@@ -4,7 +4,10 @@ from __future__ import annotations
 
 import unittest
 
+from PySide6.QtGui import QImage
+
 from pyteg.toml_reader import TomlReader
+from pyteg.utils import get_resource_path
 
 EXPECTED_CONTINENTS: dict[str, set[str]] = {
     "Sudamerica": {"Argentina", "Brasil", "Chile", "Colombia", "Peru", "Uruguay"},
@@ -208,6 +211,27 @@ class ClassicMapAuditTests(unittest.TestCase):
                 connection.destino,
                 reader.obtener_paises_adyacentes(connection.origen),
             )
+
+    def test_country_sprites_have_transparent_background(self) -> None:
+        """Evita rectángulos semitransparentes alrededor de los países."""
+        reader = TomlReader.from_theme("classic", strict=True)
+
+        for country in reader.todos_los_paises():
+            image_path = get_resource_path("themes/" + reader.img_path(country))
+            image = QImage(str(image_path))
+            self.assertFalse(image.isNull(), country)
+
+            alpha_values = {
+                image.pixelColor(x, y).alpha()
+                for y in range(image.height())
+                for x in range(image.width())
+            }
+            self.assertEqual(
+                alpha_values - {0, 255},
+                set(),
+                f"{country} tiene alpha intermedio: {sorted(alpha_values)}",
+            )
+            self.assertEqual(image.pixelColor(0, 0).alpha(), 0, country)
 
 
 if __name__ == "__main__":
