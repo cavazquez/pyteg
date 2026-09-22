@@ -13,6 +13,10 @@ Todas las fechas en formato YYYY-MM-DD.
   tooltip y finalizar turno queda bloqueado durante la colocación.
 - **Estado de jugadores**: el panel lateral conserva y muestra si cada jugador
   está conectado, es administrador o fue eliminado según el snapshot público.
+- **Layout adaptable (#217)**: el mapa conserva el espacio principal en
+  1024×600, 1280×800 y 1920×1080; el chat y el panel lateral se pueden ocultar,
+  el panel lateral tiene scroll y el mapa mantiene el zoom o permite
+  desplazarse con el botón central.
 
 ## [0.1.0] - 2026-09-21
 

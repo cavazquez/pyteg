@@ -18,6 +18,8 @@ if TYPE_CHECKING:
     from PySide6.QtWidgets import (
         QFrame,
         QLabel,
+        QScrollArea,
+        QSplitter,
         QToolBar,
         QVBoxLayout,
         QWidget,
@@ -76,6 +78,9 @@ class MainWindowProtocol(GameWindowProtocol, Protocol):
     player_labels: list[tuple[QLabel, QLabel, QFrame]]
     players_layout: QVBoxLayout
     right_column_widget: QWidget
+    right_column_scroll: QScrollArea
+    vertical_splitter: QSplitter
+    horizontal_splitter: QSplitter
     main_widget: QWidget
 
     theme_manager: ThemeManager

@@ -154,6 +154,18 @@ msgstr "Desconectado"
 msgid "Eliminado"
 msgstr "Eliminado"
 
+msgid "Chat"
+msgstr "Chat"
+
+msgid "Panel lateral"
+msgstr "Panel lateral"
+
+msgid "Mostrar u ocultar el chat"
+msgstr "Mostrar u ocultar el chat"
+
+msgid "Mostrar u ocultar jugadores y unidades"
+msgstr "Mostrar u ocultar jugadores y unidades"
+
 msgid "[No conectado]"
 msgstr "[No conectado]"
 
