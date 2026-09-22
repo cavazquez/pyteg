@@ -7,12 +7,13 @@ from __future__ import annotations
 import json
 import unittest
 from typing import TYPE_CHECKING, cast
-from unittest.mock import MagicMock, call, patch
+from unittest.mock import ANY, MagicMock, call, patch
 
 from PySide6.QtNetwork import QAbstractSocket
 from PySide6.QtWidgets import QApplication
 
 from pyteg.client.conexion.connection import ConnectionClient
+from pyteg.client.conexion.transmisor import ClientNullTransmisor
 from pyteg.codecs_utils import (
     FrameTooLargeError,
     IncompleteFrameError,
@@ -238,6 +239,21 @@ class TestTcpConnectionFraming(unittest.TestCase):
         self.assertFalse(connection.esta_ocupada())
 
     @patch("pyteg.client.conexion.connection.QTcpSocket")
+    def test_qt_state_disconnect_installs_null_transmitter(
+        self,
+        qtcp_socket: MagicMock,
+    ) -> None:
+        """Una desconexión devuelve la GUI al transmisor nulo."""
+        qtcp_socket.return_value = _FakeQtSocket([])
+        main_window = MagicMock()
+        main_window.transmisor = MagicMock()
+
+        connection = ConnectionClient(main_window)
+        connection.on_state_changed(QAbstractSocket.SocketState.UnconnectedState)
+
+        self.assertIsInstance(main_window.transmisor, ClientNullTransmisor)
+
+    @patch("pyteg.client.conexion.connection.QTcpSocket")
     @patch("pyteg.client.conexion.connection.ClientTaskManager.msg_to_task")
     def test_qtcp_adapter_ignores_invalid_messages_and_keeps_reading(
         self,
@@ -309,4 +325,27 @@ class TestTcpConnectionFraming(unittest.TestCase):
         self.assertEqual(connection.state_model.revision, 0)
         self.assertEqual(
             connection.state_model.command_results["cmd-1"]["accepted"], True
+        )
+
+    @patch("pyteg.client.conexion.connection.QTcpSocket")
+    def test_qt_adapter_answers_heartbeat_ping(self, qtcp_socket: MagicMock) -> None:
+        """El cliente responde al ping sin enviarlo a las tareas de juego."""
+        ping = {"mensaje": "ping", "heartbeat_id": "probe-1"}
+        fake_socket = _FakeQtSocket([
+            NulDelimitedUtf8Codec.encode_frame(json.dumps(ping))
+        ])
+        qtcp_socket.return_value = fake_socket
+
+        connection = ConnectionClient(MagicMock())
+        connection.read_data()
+
+        decoded = NulDelimitedUtf8Codec()
+        messages = decoded.feed(fake_socket.sent[0])
+        self.assertEqual(
+            json.loads(messages[0]),
+            {
+                "mensaje": "pong",
+                "heartbeat_id": "probe-1",
+                "command_id": ANY,
+            },
         )

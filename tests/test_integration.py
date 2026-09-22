@@ -15,6 +15,7 @@ import time
 import unittest
 import uuid
 from typing import Any
+from unittest.mock import patch
 
 from pyteg.codecs_utils import FrameCodecError, NulDelimitedUtf8Codec
 from pyteg.config import MIN_UNITS_FOR_ATTACK
@@ -37,6 +38,7 @@ _NON_MUTATING_COMMANDS = {
     "hello",
     "solicitar_snapshot",
     "solicitar_tarjetas",
+    "pong",
 }
 
 
@@ -198,6 +200,12 @@ class _TestClient:
                         continue
                     try:
                         msg = json.loads(msg_str)
+                        if msg.get("mensaje") == "ping":
+                            self.send({
+                                "mensaje": "pong",
+                                "heartbeat_id": msg["heartbeat_id"],
+                            })
+                            continue
                         with self._lock:
                             self.received.append(msg)
                     except json.JSONDecodeError:
@@ -329,7 +337,12 @@ class TestIntegration(unittest.TestCase):
                 "protocol_version": PROTOCOL_VERSION,
                 "theme": "classic",
                 "map_hash": map_hash_for_theme("classic"),
-                "capabilities": ["snapshots", "command_results", "reconnect"],
+                "capabilities": [
+                    "snapshots",
+                    "command_results",
+                    "reconnect",
+                    "heartbeat",
+                ],
                 "rules": ["validated_phases", "one_card_per_turn"],
             })
         return c
@@ -565,6 +578,36 @@ class TestIntegration(unittest.TestCase):
             ),
             "No se informó el rechazo del handshake",
         )
+
+    @patch("pyteg.server.conexion.cliente._HEARTBEAT_POLL_SECONDS", 0.05)
+    @patch("pyteg.server.conexion.cliente._HEARTBEAT_RESPONSE_TIMEOUT_SECONDS", 0.15)
+    def test_silent_heartbeat_peer_is_removed(self) -> None:
+        """Un peer que deja de responder al ping no queda registrado."""
+        raw = socket.create_connection(("127.0.0.1", self._port), timeout=1.0)
+        try:
+            raw.sendall(
+                (
+                    json.dumps({
+                        "mensaje": "hello",
+                        "protocol_version": PROTOCOL_VERSION,
+                        "theme": "classic",
+                        "map_hash": map_hash_for_theme("classic"),
+                        "capabilities": ["heartbeat"],
+                    })
+                    + "\0"
+                ).encode("utf-8")
+            )
+            self._wait_for_client_count(1)
+            deadline = time.monotonic() + 2.0
+            while time.monotonic() < deadline:
+                if self._server.cant_clients() == 0:
+                    return
+                time.sleep(0.02)
+            self.fail("El servidor retuvo un peer que no respondió al heartbeat")
+        finally:
+            with contextlib.suppress(OSError):
+                raw.shutdown(socket.SHUT_RDWR)
+            raw.close()
 
     def test_start_rejects_registered_client_without_handshake(self) -> None:
         """La ausencia de hello de un jugador impide iniciar la partida."""

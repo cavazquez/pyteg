@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, cast
 
-from pyteg.config import CARDS_FOR_EXCHANGE
+from pyteg.core.cartas.canje import seleccion_valida
 from pyteg.exceptions import InvalidActionError, MissingFieldError
 from pyteg.server.juego.validators import (
     GameStateValidator,
@@ -21,13 +21,20 @@ if TYPE_CHECKING:
     from pyteg.server.juego.game import Game
 
 
-def _validar_seleccion_canje(simbolos: list[str]) -> None:
-    if len(simbolos) != CARDS_FOR_EXCHANGE:
-        msg = f"Debes seleccionar exactamente {CARDS_FOR_EXCHANGE} tarjetas"
-        raise InvalidActionError(msg)
-    unicos = len(set(simbolos))
-    if unicos not in {1, CARDS_FOR_EXCHANGE}:
-        msg = "Canje inválido: selecciona 3 del mismo símbolo o 3 símbolos distintos"
+def _validar_seleccion_canje(
+    tarjetas: list[TarjetaDePais],
+    cantidad: int,
+    equivalencias: dict[str, tuple[str, ...]],
+) -> None:
+    if not seleccion_valida(
+        tarjetas,
+        equivalencias=equivalencias,
+        cantidad_variables=cantidad,
+    ):
+        msg = (
+            "Canje inválido: usa tres símbolos iguales o distintos, una "
+            "tarjeta de continente válida o una supertarjeta"
+        )
         raise InvalidActionError(msg)
 
 
@@ -79,6 +86,11 @@ class ServerTaskCanjearTarjetas(IServerTask[CanjearTarjetasTaskData]):
         TurnValidator.validate_turn(client, context.game)
         PhaseValidator.validate_command(context.game, "canjear_tarjetas")
 
+        puede_canjear = getattr(context.game, "puede_canjear_tarjetas", None)
+        if callable(puede_canjear) and not puede_canjear(client):
+            msg = "Sólo puedes realizar un canje por vuelta"
+            raise InvalidActionError(msg)
+
         if self._tarjetas_payload is None:
             msg = "tarjetas"
             raise MissingFieldError(msg)
@@ -91,8 +103,12 @@ class ServerTaskCanjearTarjetas(IServerTask[CanjearTarjetasTaskData]):
         game = cast("Game", context.game)
         tarjetas_asignadas = game.mazo().tarjetas_asignadas(client)
         tarjetas = _resolver_tarjetas_jugador(tarjetas_payload, tarjetas_asignadas)
-        simbolos = [t.simbolo for t in tarjetas]
-        _validar_seleccion_canje(simbolos)
+        rules = context.reglas()
+        _validar_seleccion_canje(
+            tarjetas,
+            rules.cards_for_exchange,
+            rules.continent_card_exchange_map,
+        )
 
         game.canjear(client, tarjetas)
 

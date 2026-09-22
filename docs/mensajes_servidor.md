@@ -9,6 +9,9 @@ Todos los mensajes siguen un formato JSON con un campo `mensaje` que identifica 
 ## Índice de Mensajes
 
 1. [Autenticación y Conexión](#autenticación-y-conexión)
+   - [hello](#hello)
+   - [hello_ack](#hello_ack)
+   - [ping](#ping)
    - [sosadmin](#sosadmin)
    - [color_asignado](#color_asignado)
    - [user_id](#user_id)
@@ -38,6 +41,27 @@ Todos los mensajes siguen un formato JSON con un campo `mensaje` que identifica 
 ---
 
 ## Autenticación y Conexión
+
+### hello
+Negocia versión de protocolo, tema, hash del mapa y capacidades opcionales.
+La capacidad `heartbeat` habilita el control de peers silenciosos.
+
+### hello_ack
+Confirma si el servidor acepta la negociación. `accepted` es booleano.
+
+### ping
+Comprueba que el cliente siga vivo después de un período sin tráfico.
+
+**Formato JSON:**
+```json
+{
+  "mensaje": "ping",
+  "heartbeat_id": "token-opaco"
+}
+```
+
+El cliente responde con `pong` y el mismo `heartbeat_id`. El ping no es un
+evento de juego y no debe aparecer en la historia pública.
 
 ### sosadmin
 Informa al cliente que tiene privilegios de administrador.

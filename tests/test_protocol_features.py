@@ -121,6 +121,9 @@ class TestProtocolFeatures(unittest.TestCase):
                 "canje_especial",
                 "canjear_misil",
                 "lanzar_misil",
+                "proponer_pacto",
+                "aceptar_pacto",
+                "romper_pacto",
             },
         )
         self.assertEqual(FASE_POR_COMANDO["canjear_tarjetas"], FASE_COLOCACION)

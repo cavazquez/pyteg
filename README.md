@@ -118,6 +118,11 @@ uv run python scripts/verify_sdist.py dist/pyteg-*.tar.gz
 uv run python scripts/smoke_wheel.py dist/pyteg-*.whl
 ```
 
+Los verificadores exigen recursos de `classic`, `test` y `revancha`. El smoke
+arranca el servidor extraído con ambos temas, por lo que no depende del
+checkout. El workflow de release también ejecuta `scripts/smoke_binaries.py`
+sobre los ejecutables Nuitka antes de archivarlos.
+
 ## Estructura del proyecto
 - `pyteg/`: Código fuente principal
 - `tests/`: Tests unitarios
@@ -127,6 +132,7 @@ uv run python scripts/smoke_wheel.py dist/pyteg-*.whl
     - `cartas.toml`: Configuración de cartas del juego
     - `*.png`: Archivos de imagen de países y cartas
   - `test/`: Tema de prueba con mapa reducido (6 países)
+  - `revancha/`: Tema Revancha con mapa de 72 países, cartas y reglas propias
 - `locales/`: Archivos de traducción (español/inglés)
 - `docs/`: Documentación técnica
 - `ejecutar_docker.sh`: entorno en Docker (opcional)

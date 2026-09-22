@@ -39,6 +39,7 @@ class StatusBarHost(Protocol):
     mi_color_indicator: QLabel
     mi_username_label: QLabel
     estado_label: QLabel
+    contexto_partida_label: QLabel
     seleccion_label: QLabel
     language_selector: LanguageSelector
     sound_control: SoundControlWidget

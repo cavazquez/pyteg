@@ -6,6 +6,8 @@ from typing import TYPE_CHECKING, Any
 
 from PySide6.QtGui import QColor
 
+from pyteg.gui.managers.players import PlayerStatus
+
 if TYPE_CHECKING:
     from pyteg.client.state_model import ApplyEventResult, ClientStateModel
     from pyteg.gui.managers.protocols import MainWindowProtocol
@@ -137,6 +139,7 @@ class QtClientStateAdapter:
         if not isinstance(players, list):
             return
         visible: list[tuple[str, QColor]] = []
+        statuses: list[PlayerStatus] = []
         for player in players:
             if not isinstance(player, dict):
                 continue
@@ -145,10 +148,22 @@ class QtClientStateAdapter:
                 continue
             username = player.get("username") or f"Jugador {userid}"
             color = self._qcolor(player.get("color"))
-            visible.append((str(username), color))
+            username_text = str(username)
+            visible.append((username_text, color))
+            statuses.append(
+                PlayerStatus(
+                    username=username_text,
+                    connected=bool(player.get("connected", True)),
+                    admin=bool(player.get("admin", False)),
+                    eliminated=bool(player.get("eliminated", False)),
+                )
+            )
         update = getattr(self._main_window, "update_player_list", None)
         if callable(update):
             update(visible)
+        update_statuses = getattr(self._main_window, "update_player_statuses", None)
+        if callable(update_statuses):
+            update_statuses(statuses)
 
     def _sync_countries(
         self, state: dict[str, Any], names: set[str] | None = None

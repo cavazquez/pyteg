@@ -7,16 +7,29 @@ en la interfaz gráfica principal.
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor, QFont, QPainter, QPixmap
 from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel
 
+from pyteg.i18n import translate as _
+
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
     from pyteg.gui.managers.protocols import MainWindowProtocol
+
+
+@dataclass(frozen=True)
+class PlayerStatus:
+    """Estado público que acompaña a un jugador en la lista lateral."""
+
+    username: str
+    connected: bool = True
+    admin: bool = False
+    eliminated: bool = False
 
 
 class PlayersManager:
@@ -35,6 +48,7 @@ class PlayersManager:
         """
         self.main_window = main_window
         self.player_labels: list[tuple[QLabel, QLabel, QFrame]] = []
+        self.status_labels: dict[str, QLabel] = {}
         self.current_player_name: str | None = None
 
     def update_player_list(self, players: Sequence[tuple[str, QColor]]) -> None:
@@ -63,6 +77,7 @@ class PlayersManager:
                 player_widget.setParent(None)
                 player_widget.deleteLater()
         self.player_labels = []
+        self.status_labels = {}
 
     def _create_single_player_widget(self, name: str, color: QColor) -> None:
         """Crea un widget individual para un jugador."""
@@ -82,6 +97,15 @@ class PlayersManager:
         label = QLabel(name)
         player_layout.addWidget(label)
 
+        # Estado público del jugador (administrador, conexión y eliminación)
+        status_label = QLabel()
+        status_label.setAlignment(
+            Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
+        )
+        status_label.setStyleSheet("color: #666; font-size: 11px;")
+        player_layout.addWidget(status_label)
+        self.status_labels[name] = status_label
+
         # Estilos unificados con sección UNIDADES
         label.setStyleSheet("color: #333; font-weight: 600; font-size: 13px;")
 
@@ -97,6 +121,28 @@ class PlayersManager:
         theme_manager = getattr(self.main_window, "theme_manager", None)
         if theme_manager is not None and hasattr(theme_manager, "_apply_players_theme"):
             theme_manager._apply_players_theme(player_widget)  # noqa: SLF001
+
+    def update_player_statuses(self, statuses: Sequence[PlayerStatus]) -> None:
+        """Actualiza las insignias de estado sin reconstruir la lista."""
+        for status in statuses:
+            label = self.status_labels.get(status.username)
+            if label is None:
+                continue
+            parts: list[str] = []
+            if status.admin:
+                parts.append(_("Administrador"))
+            if not status.connected:
+                parts.append(_("Desconectado"))
+            if status.eliminated:
+                parts.append(_("Eliminado"))
+            text = " · ".join(parts)
+            label.setText(text)
+            label.setToolTip(text)
+            label.setStyleSheet(
+                "color: #a33; font-size: 11px;"
+                if text
+                else "color: #666; font-size: 11px;"
+            )
 
     def _make_circle_icon(self, color_hex: str, glyph: str | None) -> QLabel:
         """Crea un QLabel con un QPixmap de círculo y opcional glifo.

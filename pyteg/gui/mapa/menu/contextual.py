@@ -43,7 +43,7 @@ class Menu(MenuActionsMixin, QMenu):
         self.pais = pais
         self.continente_mapa = continente_mapa
         self.main_window = main_window
-        self.transmisor = getattr(main_window, "transmisor", None)
+        self.transmisor = main_window.transmisor
 
         # i18n: este menú es efímero. `QCustomGraphicsScene.contextMenuEvent` lo
         # reconstruye en cada clic derecho, por lo que las etiquetas siempre se

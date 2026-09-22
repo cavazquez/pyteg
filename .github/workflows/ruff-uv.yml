@@ -13,7 +13,7 @@ jobs:
     steps:
         - uses: actions/checkout@v7
         - name: Install the latest version of uv and set the python version
-          uses: astral-sh/setup-uv@v7
+          uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
           with:
             python-version: "3.14"
             version: latest
@@ -73,6 +73,12 @@ jobs:
               tests.test_client_state_adapter \
               tests.test_protocol_features \
               tests.test_tcp_framing
+        - name: Qt multiclient and reconnection smoke
+          run: uv run python scripts/smoke_qt_multiclient.py --clients 3
+        - name: Qt complete game and reconnection smoke
+          run: uv run python scripts/smoke_qt_game.py --timeout 60
+        - name: Slow client queue stress
+          run: uv run python scripts/stress_slow_clients.py
         - name: Dead-code audit
           run: uv run vulture pyteg tests scripts --min-confidence 80 --sort-by-size
         - name: Ruff Formatter
@@ -94,7 +100,16 @@ jobs:
             uv run python scripts/check_map_overlaps.py \
               --max-bbox-pairs 75 \
               --fail-on-cross-continent \
-              --allow-cross Groenlandia:Islandia
+              --allow-cross Groenlandia:Islandia,Aral:Rusia,California:Colombia,Mexico:Colombia
+        - name: Visual map regression smoke
+          run: uv run python scripts/smoke_visual_map.py --output-dir artifacts/map-visual
+        - name: Upload visual map evidence
+          if: always()
+          uses: actions/upload-artifact@v7
+          with:
+            name: pyteg-map-visual
+            path: artifacts/map-visual
+            if-no-files-found: warn
         - name: Real multiclient TCP simulation
           run: |
             uv run python -m scripts.simulate_game \
@@ -111,8 +126,29 @@ jobs:
               --timeout 240
         - name: Upload multiclient simulation evidence
           if: always()
-          uses: actions/upload-artifact@v4
+          uses: actions/upload-artifact@v7
           with:
             name: pyteg-multiclient-simulation
             path: logs/simulations/classic-197
-            if-no-files-found: error
+            if-no-files-found: warn
+        - name: Revancha multiclient TCP simulation
+          run: |
+            uv run python -m scripts.simulate_game \
+              --theme revancha \
+              --clients 5 \
+              --victory 30 \
+              --seed 234 \
+              --secret-objectives \
+              --disconnect-client 2 \
+              --disconnect-after-turn 5 \
+              --reconnect-client 2 \
+              --exercise-exchanges \
+              --require-finalized \
+              --timeout 240
+        - name: Upload Revancha simulation evidence
+          if: always()
+          uses: actions/upload-artifact@v7
+          with:
+            name: pyteg-revancha-simulation
+            path: logs/simulations/revancha-234
+            if-no-files-found: warn

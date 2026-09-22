@@ -17,6 +17,7 @@ from pyteg.utils import get_resource_path
 _ASSET_EXTENSIONS = {".png", ".svg", ".jpg", ".jpeg"}
 _COUNTRY_REQUIRED_FIELDS = ("file", "pos_x", "pos_y", "army_x", "army_y")
 _VISUAL_POINT_COORDINATES = 2
+_VISUAL_WRAP_POINT_COUNT = 2
 
 
 class TomlReaderError(Exception):
@@ -55,6 +56,11 @@ class TomlReader:
         """
         self.strict = strict
         self.theme = theme
+        self.cartas_distribucion: dict[str, dict[str, str]] = {
+            "paises": {},
+            "continentes": {},
+            "especiales": {},
+        }
         self._init_load_paises(paises_toml_string)
         self._init_merge_cartas(cartas_toml_string)
         self.adyacencias: dict[str, list[str]] = {}
@@ -62,6 +68,7 @@ class TomlReader:
         self.conexiones_visuales: list[ThemeVisualConnection] = []
         self._init_merge_adyacencias(adyacencias_toml_string)
         self.objetivos_secretos: dict[str, dict[str, Any]] = {}
+        self.objetivos_metadata: dict[str, Any] = {}
         self._init_merge_objetivos_secretos(objetivos_secretos_toml_string)
         self._init_validate_and_build()
 
@@ -116,11 +123,13 @@ class TomlReader:
                     msg = "Archivo de cartas debe contener sección 'Cartas'"
                     raise TomlReaderError(msg)
                 self.cartas = cartas_parsed["Cartas"]
+                self._cargar_distribucion_cartas(cartas_parsed.get("Distribucion"))
             except tomllib.TOMLDecodeError as e:
                 msg = f"Error al parsear TOML de cartas: {e}"
                 raise TomlReaderError(msg) from e
         elif "Cartas" in self.parsed_toml:
             self.cartas = self.parsed_toml["Cartas"]
+            self._cargar_distribucion_cartas(self.parsed_toml.get("Distribucion"))
         else:
             msg = "No se encontró sección 'Cartas' en ningún archivo"
             raise TomlReaderError(msg)
@@ -160,6 +169,11 @@ class TomlReader:
                 msg = "Archivo de objetivos secretos debe contener sección 'Objetivos'"
                 raise TomlReaderError(msg)
             self.objetivos_secretos = objetivos_parsed["Objetivos"]
+            metadata = objetivos_parsed.get("Meta", {})
+            if not isinstance(metadata, dict):
+                msg = "La sección 'Meta' de objetivos debe ser un diccionario"
+                raise TomlReaderError(msg)
+            self.objetivos_metadata = metadata
             self._validar_objetivos_secretos()
         except tomllib.TOMLDecodeError as e:
             msg = f"Error al parsear TOML de objetivos secretos: {e}"
@@ -171,6 +185,8 @@ class TomlReader:
         self._pais_a_continente: dict[str, str] = {}
         self._validar_cartas()
         self._procesar_continentes_y_paises()
+        self._validar_objetivos_metadata_paises()
+        self._validar_distribucion_cartas()
         self._validar_nombres_unicos()
         self._validar_consistencia_datos()
         self._validar_conexiones_visuales()
@@ -194,7 +210,8 @@ class TomlReader:
         continentes_encontrados = [
             key
             for key in self.parsed_toml
-            if key not in {"Cartas", "Adyacencias", "ConexionesVisuales"}
+            if key
+            not in {"Cartas", "Adyacencias", "ConexionesVisuales", "Distribucion"}
             and isinstance(self.parsed_toml[key], dict)
         ]
 
@@ -216,6 +233,75 @@ class TomlReader:
         for carta, valor in self.cartas.items():
             if not isinstance(valor, str):
                 msg = f"La carta '{carta}' debe ser una cadena"
+                raise TomlReaderError(msg)
+
+    def _cargar_distribucion_cartas(self, raw: object) -> None:
+        """Carga la distribución explícita opcional de cartas del tema.
+
+        Raises:
+            TomlReaderError: Si la tabla no tiene la estructura esperada.
+
+        """
+        if raw is None:
+            return
+        if not isinstance(raw, dict):
+            msg = "La sección 'Distribucion' debe ser una tabla"
+            raise TomlReaderError(msg)
+        for categoria in self.cartas_distribucion:
+            value = raw.get(categoria, {})
+            if not isinstance(value, dict):
+                msg = f"Distribucion.{categoria} debe ser una tabla"
+                raise TomlReaderError(msg)
+            self.cartas_distribucion[categoria] = {
+                str(key): str(symbol) for key, symbol in value.items()
+            }
+
+    def _validar_distribucion_cartas(self) -> None:  # noqa: C901
+        """Valida países, continentes y símbolos de la distribución.
+
+        Raises:
+            TomlReaderError: Si falta una carta o se usa un símbolo desconocido.
+
+        """
+        distribution = self.cartas_distribucion
+        symbols = set(self.cartas)
+        for category, entries in distribution.items():
+            for card_id, symbol in entries.items():
+                if symbol not in symbols:
+                    msg = (
+                        f"Distribucion.{category}.{card_id} usa símbolo desconocido "
+                        f"'{symbol}'"
+                    )
+                    raise TomlReaderError(msg)
+        country_entries = distribution["paises"]
+        if country_entries:
+            countries = set(self.todos_los_paises())
+            missing = countries - set(country_entries)
+            unknown = set(country_entries) - countries
+            if missing or unknown:
+                details = []
+                if missing:
+                    details.append(f"faltan: {', '.join(sorted(missing))}")
+                if unknown:
+                    details.append(f"sobran: {', '.join(sorted(unknown))}")
+                msg = "Distribución de países incompleta (" + "; ".join(details) + ")"
+                raise TomlReaderError(msg)
+        continent_entries = distribution["continentes"]
+        if continent_entries:
+            continents = set(self.get_continentes())
+            missing = continents - set(continent_entries)
+            unknown = set(continent_entries) - continents
+            if missing or unknown:
+                details = []
+                if missing:
+                    details.append(f"faltan: {', '.join(sorted(missing))}")
+                if unknown:
+                    details.append(f"sobran: {', '.join(sorted(unknown))}")
+                msg = (
+                    "Distribución de continentes incompleta ("
+                    + "; ".join(details)
+                    + ")"
+                )
                 raise TomlReaderError(msg)
 
     def _validar_adyacencias(self) -> None:
@@ -241,7 +327,9 @@ class TomlReader:
                     msg = f"País adyacente debe ser string: {adyacente}"
                     raise TomlReaderError(msg)
 
-    def _validar_objetivos_secretos(self) -> None:
+    def _validar_objetivos_secretos(  # noqa: C901, PLR0912, PLR0915
+        self,
+    ) -> None:
         """Valida la estructura de objetivos secretos si existe.
 
         Raises:
@@ -286,6 +374,121 @@ class TomlReader:
                 )
                 raise TomlReaderError(msg)
 
+            if objetivo_data.get("id") != objetivo_id:
+                msg = (
+                    f"El campo 'id' del objetivo '{objetivo_id}' no coincide "
+                    "con su clave"
+                )
+                raise TomlReaderError(msg)
+
+            descripcion = objetivo_data["descripcion"]
+            if not isinstance(descripcion, str) or not descripcion.strip():
+                msg = f"La descripción del objetivo '{objetivo_id}' debe ser texto"
+                raise TomlReaderError(msg)
+
+            tipo = objetivo_data["tipo"]
+            listas = ("continentes",)
+            for campo in listas:
+                if campo in objetivo_data and not isinstance(
+                    objetivo_data[campo], list
+                ):
+                    msg = (
+                        f"El campo '{campo}' del objetivo '{objetivo_id}' debe ser "
+                        "una lista"
+                    )
+                    raise TomlReaderError(msg)
+                if campo in objetivo_data and not all(
+                    isinstance(valor, str) for valor in objetivo_data[campo]
+                ):
+                    msg = (
+                        f"Los valores de '{campo}' del objetivo '{objetivo_id}' "
+                        "deben ser texto"
+                    )
+                    raise TomlReaderError(msg)
+
+            cuotas = objetivo_data.get("cuotas_continentes")
+            if cuotas is not None and (
+                not isinstance(cuotas, dict)
+                or any(
+                    not isinstance(continente, str)
+                    or not isinstance(cuota, int)
+                    or cuota <= 0
+                    for continente, cuota in cuotas.items()
+                )
+            ):
+                msg = (
+                    f"'cuotas_continentes' del objetivo '{objetivo_id}' debe "
+                    "mapear continentes a enteros positivos"
+                )
+                raise TomlReaderError(msg)
+
+            for campo in (
+                "cantidad_paises",
+                "paises_alternativos",
+                "tropas_minimas",
+                "islas",
+                "continentes_minimos_islas",
+            ):
+                if campo in objetivo_data and (
+                    not isinstance(objetivo_data[campo], int)
+                    or objetivo_data[campo] <= 0
+                ):
+                    msg = (
+                        f"El campo '{campo}' del objetivo '{objetivo_id}' debe "
+                        "ser un entero positivo"
+                    )
+                    raise TomlReaderError(msg)
+
+            if tipo == "destruir_jugador":
+                for campo in ("jugador_alternativo", "objetivo_relativo"):
+                    if campo in objetivo_data and objetivo_data[campo] not in {
+                        "derecha",
+                        "izquierda",
+                    }:
+                        msg = (
+                            f"'{campo}' del objetivo '{objetivo_id}' debe ser "
+                            "'derecha' o 'izquierda'"
+                        )
+                        raise TomlReaderError(msg)
+
+            if "objetivo_comun" in objetivo_data and not isinstance(
+                objetivo_data["objetivo_comun"], bool
+            ):
+                msg = f"'objetivo_comun' del objetivo '{objetivo_id}' debe ser booleano"
+                raise TomlReaderError(msg)
+            if "publico" in objetivo_data and not isinstance(
+                objetivo_data["publico"], bool
+            ):
+                msg = f"'publico' del objetivo '{objetivo_id}' debe ser booleano"
+                raise TomlReaderError(msg)
+
+            if objetivo_data.get("objetivo_comun", False):
+                if not objetivo_data.get("publico", False):
+                    msg = f"El objetivo común '{objetivo_id}' debe ser público"
+                    raise TomlReaderError(msg)
+                if tipo != "conquistar_paises":
+                    msg = f"El objetivo común '{objetivo_id}' debe conquistar países"
+                    raise TomlReaderError(msg)
+
+        objetivos_comunes = [
+            objetivo
+            for objetivo in self.objetivos_secretos.values()
+            if objetivo.get("objetivo_comun", False)
+        ]
+        if len(objetivos_comunes) > 1:
+            msg = "Sólo puede existir un objetivo común por tema"
+            raise TomlReaderError(msg)
+
+        if not isinstance(self.objetivos_metadata, dict):
+            msg = "La metadata de objetivos debe ser un diccionario"
+            raise TomlReaderError(msg)
+        islas = self.objetivos_metadata.get("islas", [])
+        if not isinstance(islas, list) or not all(
+            isinstance(pais, str) for pais in islas
+        ):
+            msg = "La metadata 'islas' debe ser una lista de nombres de países"
+            raise TomlReaderError(msg)
+
     def _procesar_continentes_y_paises(self) -> None:
         """Procesa continentes y países con validación.
 
@@ -294,7 +497,12 @@ class TomlReader:
 
         """
         for continente in self.parsed_toml:
-            if continente in {"Cartas", "Adyacencias", "ConexionesVisuales"}:
+            if continente in {
+                "Cartas",
+                "Adyacencias",
+                "ConexionesVisuales",
+                "Distribucion",
+            }:
                 continue
 
             if not isinstance(self.parsed_toml[continente], dict):
@@ -336,6 +544,21 @@ class TomlReader:
                 pos_y=pos_y,
                 paises=paises_continente,
             )
+
+    def _validar_objetivos_metadata_paises(self) -> None:
+        """Comprueba que la metadata insular sólo mencione países del mapa.
+
+        Raises:
+            TomlReaderError: Si una isla no existe en el mapa.
+
+        """
+        islas = self.objetivos_metadata.get("islas", [])
+        desconocidas = sorted(set(islas) - set(self._pais_a_continente))
+        if desconocidas:
+            msg = "Países insulares desconocidos en metadata: " + ", ".join(
+                desconocidas
+            )
+            raise TomlReaderError(msg)
 
     def _build_country_layout(
         self, continente: str, pais: str, datos: dict[str, Any]
@@ -485,11 +708,39 @@ class TomlReader:
             raise TomlReaderError(msg)
         seen.add(pair)
 
-        return ThemeVisualConnection(
-            origen,
-            destino,
-            self._validar_puntos_visuales(raw.get("puntos", []), index),
+        points = self._validar_puntos_visuales(raw.get("puntos", []), index)
+        wrap_mode = self._validar_envolvimiento_visual(
+            raw.get("envolver"), points, index
         )
+        return ThemeVisualConnection(origen, destino, points, wrap_mode)
+
+    @staticmethod
+    def _validar_envolvimiento_visual(
+        raw_mode: object,
+        points: tuple[tuple[float, float], ...],
+        connection_index: int,
+    ) -> str | None:
+        if raw_mode is None:
+            return None
+        if not isinstance(raw_mode, str) or raw_mode != "horizontal":
+            msg = (
+                f"'envolver' en conexión visual #{connection_index} debe ser "
+                "'horizontal'"
+            )
+            raise TomlReaderError(msg)
+        if len(points) != _VISUAL_WRAP_POINT_COUNT:
+            msg = (
+                f"Conexión visual #{connection_index} con envolver horizontal "
+                "debe tener dos puntos: salida y reentrada"
+            )
+            raise TomlReaderError(msg)
+        if points[0][0] >= points[1][0]:
+            msg = (
+                f"Conexión visual #{connection_index} debe declarar primero "
+                "el borde izquierdo y luego el derecho"
+            )
+            raise TomlReaderError(msg)
+        return raw_mode
 
     def _validar_puntos_visuales(
         self, raw_points: object, connection_index: int
@@ -726,6 +977,18 @@ class TomlReader:
         """
         return list(self.cartas.keys())
 
+    def get_cartas_distribucion(self) -> dict[str, dict[str, str]]:
+        """Obtiene la distribución explícita de cartas del tema.
+
+        Returns:
+            Copia de la distribución por categoría.
+
+        """
+        return {
+            categoria: dict(entries)
+            for categoria, entries in self.cartas_distribucion.items()
+        }
+
     def img_path(self, pais: str) -> str:
         """Obtiene ruta del archivo de imagen de un país.
 
@@ -816,6 +1079,15 @@ class TomlReader:
 
         """
         return list(self.objetivos_secretos.keys())
+
+    def get_objetivos_metadata(self) -> dict[str, Any]:
+        """Obtiene metadata pública auxiliar de los objetivos del tema.
+
+        Returns:
+            Copia de la metadata declarada en el archivo de objetivos.
+
+        """
+        return dict(self.objetivos_metadata)
 
 
 def _read_optional_toml(path: Path) -> str | None:
