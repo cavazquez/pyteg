@@ -6,7 +6,7 @@ separando esta responsabilidad del Server principal.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 from pyteg.config import DEFAULT_TURN_SECONDS, VICTORY_ALL_COUNTRIES
 from pyteg.core.situaciones.catalog import (
@@ -15,7 +15,7 @@ from pyteg.core.situaciones.catalog import (
     build_situation_deck,
 )
 from pyteg.core.situaciones.runtime import SituationRuntime
-from pyteg.core.turnos.timer import TurnoTimer
+from pyteg.core.turnos.timer import NullTurnTimer, TurnoTimer, TurnTimerProtocol
 from pyteg.logger import get_logger
 from pyteg.server.juego.game import Game
 
@@ -88,7 +88,7 @@ class ServerGameCoordinator:
 
         # Referencia al juego (se crea al iniciar la partida)
         self._game: Game | None = None
-        self._turno_timer: TurnoTimer | None = None
+        self._turno_timer: TurnTimerProtocol = NullTurnTimer()
 
     def set_segundos_por_turno(self, segundos: int) -> None:
         """Configura la cantidad de segundos por turno.
@@ -282,8 +282,7 @@ class ServerGameCoordinator:
         if not self._estado.finalizar_partida():
             return False
 
-        if self._turno_timer is not None:
-            self._turno_timer.detener()
+        self._turno_timer.detener()
 
         self._broadcaster.enviar_estado(self._estado.estado_actual())
         LOGGER.info("Partida finalizada")
@@ -312,7 +311,7 @@ class ServerGameCoordinator:
         if callable(reiniciar_objetivos):
             reiniciar_objetivos()
         self._game = None
-        self._turno_timer = None
+        self._turno_timer = NullTurnTimer()
         self._segundos_por_turno = DEFAULT_TURN_SECONDS
         self._paises_para_victoria = VICTORY_ALL_COUNTRIES
         self._objetivos_secretos_activados = False
@@ -342,12 +341,15 @@ class ServerGameCoordinator:
             Instancia del temporizador o None si no está iniciado.
 
         """
-        return self._turno_timer
+        # Se conserva ``None`` en la API pública antes de comenzar la partida
+        # para no romper consumidores existentes; internamente el coordinador
+        # siempre opera contra el objeto nulo o el timer real.
+        if isinstance(self._turno_timer, NullTurnTimer):
+            return None
+        return cast("TurnoTimer", self._turno_timer)
 
     def detener(self) -> None:
-        """Detiene y espera el temporizador activo, si existe."""
-        if self._turno_timer is None:
-            return
+        """Detiene y espera el temporizador activo de forma idempotente."""
         self._turno_timer.detener()
         if self._turno_timer.is_alive():
             self._turno_timer.join(timeout=2.0)
