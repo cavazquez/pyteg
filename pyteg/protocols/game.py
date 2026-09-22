@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any, Protocol
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
+    from pyteg.core.partida.pactos import PactManager
     from pyteg.core.turnos.protocol import ITurno
     from pyteg.protocols.client import IClientProtocol
     from pyteg.protocols.mapa import IMapProtocol
@@ -86,6 +87,8 @@ class IGameProtocol(Protocol):
         pais_atacante: str,
         pais_defensor: str,
         cantidad_unidades: int | None = None,
+        jugador_atacante: int | None = None,
+        jugador_defensor: int | None = None,
     ) -> dict[str, Any]:
         """Realiza un ataque entre dos países.
 
@@ -93,11 +96,31 @@ class IGameProtocol(Protocol):
             pais_atacante: País que ataca.
             pais_defensor: País que defiende.
             cantidad_unidades: Cantidad de unidades que atacan (None = máximo).
+            jugador_atacante: userid que aporta unidades desde un condominio.
+            jugador_defensor: userid objetivo dentro de un condominio.
 
         Returns:
             Diccionario con el resultado del ataque.
 
         """
+        ...
+
+    def pactos(self) -> PactManager:
+        """Gestor público de pactos y bloqueos."""
+        ...
+
+    def validar_pacto_ataque(
+        self,
+        jugador: IClientProtocol | int,
+        origen: str,
+        destino: str,
+        defensor: int | None = None,
+    ) -> None:
+        """Valida la prohibición de hostilidades por pactos."""
+        ...
+
+    def validar_refuerzo(self, jugador: IClientProtocol | int, pais: str) -> None:
+        """Valida si un país puede recibir refuerzos."""
         ...
 
     def marcar_jugador_puede_reclamar(

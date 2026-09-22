@@ -1,3 +1,5 @@
+# ruff: noqa: DOC201, DOC501, TRY003, EM101, EM102
+
 """Módulo para manejar la lógica del juego en el servidor."""
 
 from __future__ import annotations
@@ -11,12 +13,13 @@ from pyteg.config import (
 from pyteg.core.combate.batalla import Batalla
 from pyteg.core.partida.card_manager import CardManager
 from pyteg.core.partida.objetivos_secretos import NO_SECRET_OBJECTIVES
+from pyteg.core.partida.pactos import PactManager
 from pyteg.core.partida.reglas import ThemeRules
 from pyteg.core.partida.turn_manager import TurnManager
 from pyteg.core.partida.victory_checker import VictoryChecker
 from pyteg.core.situaciones.runtime import SituationRuntime
 from pyteg.core.turnos.turnos import PrimerTurno, SegundoTurno, SiguientesTurnos
-from pyteg.exceptions import PlayerEliminatedError
+from pyteg.exceptions import InvalidActionError, PlayerEliminatedError
 from pyteg.logger import get_logger
 from pyteg.server.juego.fase import FASE_ACCIONES, FASE_COLOCACION
 
@@ -78,6 +81,7 @@ class Game:
         self._paises_para_victoria = paises_para_victoria
         self._rules = rules
         self._dice_rng = dice_rng
+        self._pact_manager = PactManager(mapa)
         self._fase = FASE_COLOCACION
         self._situation_runtime = (
             situation_runtime
@@ -114,6 +118,7 @@ class Game:
     def empezar(self) -> None:
         """Inicia el juego asignando países y creando los primeros turnos."""
         self._situation_runtime.reset()
+        self._pact_manager.reiniciar()
         jugadores = self.lista_jugadores()
         jugadores_userids = [int(j.userid()) for j in jugadores]
         self._mapa.asignar_paises(jugadores_userids)
@@ -121,7 +126,7 @@ class Game:
         self._eliminados = {
             jugador_id
             for jugador_id in jugadores_userids
-            if self._mapa.cantidad_de_paises_del_jugador(jugador_id) == 0
+            if not self._mapa.tiene_paises(jugador_id)
         }
         self._reconnect_tokens = {}
         for jugador in jugadores:
@@ -314,6 +319,38 @@ class Game:
         """
         return self._mapa
 
+    def pactos(self) -> PactManager:
+        """Devuelve el gestor autoritativo de pactos de la partida."""
+        return self._pact_manager
+
+    def pactos_publicos(self) -> dict[str, object]:
+        """Devuelve pactos y bloqueos visibles para todos los clientes."""
+        return self._pact_manager.public_snapshot()
+
+    def validar_pacto_ataque(
+        self,
+        jugador: IClientProtocol | int,
+        origen: str,
+        destino: str,
+        defensor: int | None = None,
+    ) -> None:
+        """Rechaza ataques o misiles prohibidos por pactos vigentes."""
+        jugador_id = int(jugador if isinstance(jugador, int) else jugador.userid())
+        if defensor is None:
+            defensor = self._mapa.ocupado_por(destino)
+        if not self._pact_manager.puede_atacar(
+            jugador_id, defensor, origen, destino, self.num_ronda()
+        ):
+            raise InvalidActionError("Un pacto público impide atacar ese objetivo")
+
+    def validar_refuerzo(self, jugador: IClientProtocol | int, pais: str) -> None:
+        """Aplica la excepción oficial del único país frente a un bloqueo."""
+        jugador_id = int(jugador if isinstance(jugador, int) else jugador.userid())
+        if self._pact_manager.esta_bloqueado(pais, jugador_id):
+            raise InvalidActionError(
+                f"{pais} está bloqueado y no puede recibir refuerzos esta vuelta"
+            )
+
     def finalizar_turno(self) -> None:
         """Finaliza el turno actual y avanza al siguiente."""
         if self._finalizada:
@@ -348,6 +385,7 @@ class Game:
         self._turn_manager.iniciar_nueva_ronda(
             jugadores_userids, es_segundo_turno=es_segundo_turno
         )
+        self._pact_manager.expirar(self.num_ronda())
         self._situation_runtime.begin_round(
             self.num_ronda(),
             jugadores_userids,
@@ -538,11 +576,13 @@ class Game:
         """
         return self._turn_manager.lista_jugadores_orden_turno(self.jugadores_activos())
 
-    def atacar(  # noqa: PLR0914
+    def atacar(  # noqa: PLR0912, PLR0914, PLR0915, D417
         self,
         pais_atacante: str,
         pais_defensor: str,
         cantidad_unidades: int | None = None,
+        jugador_atacante: int | None = None,
+        jugador_defensor: int | None = None,
     ) -> dict[str, Any]:
         """Realiza un ataque entre dos países.
 
@@ -557,9 +597,23 @@ class Game:
             Diccionario con el resultado del ataque.
 
         """
-        # Obtener las unidades de cada país
-        unidades_atacante = self.mapa().cantidad_unidades(pais_atacante)
-        unidades_defensor = self.mapa().cantidad_unidades(pais_defensor)
+        mapa = self.mapa()
+        # Un ataque desde/hacia un condominio debe indicar qué color aporta
+        # las unidades. El camino histórico sigue usando el dueño exclusivo.
+        atacante_id = jugador_atacante or mapa.ocupado_por(pais_atacante)
+        defensor_id = jugador_defensor or mapa.ocupado_por(pais_defensor)
+        if atacante_id is None or defensor_id is None:
+            raise InvalidActionError("El ataque necesita atacante y defensor válidos")
+        unidades_atacante = (
+            mapa.cantidad_unidades_jugador(pais_atacante, atacante_id)
+            if mapa.es_condominio(pais_atacante)
+            else mapa.cantidad_unidades(pais_atacante)
+        )
+        unidades_defensor = (
+            mapa.cantidad_unidades_jugador(pais_defensor, defensor_id)
+            if mapa.es_condominio(pais_defensor)
+            else mapa.cantidad_unidades(pais_defensor)
+        )
 
         # Calcular cuántos dados usar
         if cantidad_unidades is not None:
@@ -602,9 +656,6 @@ class Game:
             reverse=True,
         )
 
-        # Obtener userids de los jugadores que ocupan cada país (canónico, int|None)
-        atacante_id = self.mapa().ocupado_por(pais_atacante)
-        defensor_id = self.mapa().ocupado_por(pais_defensor)
         # Resolver nombres solo para presentación (chat / log)
         atacante_nombre = self._username_de(atacante_id)
         defensor_nombre = self._username_de(defensor_id)
@@ -626,31 +677,89 @@ class Game:
                 LOGGER.debug(
                     "Restando 1 unidad a %s en %s", atacante_nombre, pais_atacante
                 )
-                self.mapa().restar_una_unidad(pais_atacante)
+                mapa.restar_unidad_jugador(pais_atacante, int(atacante_id))
             else:
                 LOGGER.debug(
                     "Restando 1 unidad a %s en %s", defensor_nombre, pais_defensor
                 )
-                self.mapa().restar_una_unidad(pais_defensor)
+                mapa.restar_unidad_jugador(
+                    pais_defensor,
+                    int(defensor_id),
+                    normalizar=not mapa.es_condominio(pais_defensor),
+                )
 
         conquistado = False
-        unidades_defensor_post_batalla = self.mapa().cantidad_unidades(pais_defensor)
+        unidades_defensor_post_batalla = (
+            mapa.cantidad_unidades_jugador(pais_defensor, int(defensor_id))
+            if mapa.es_condominio(pais_defensor)
+            else mapa.cantidad_unidades(pais_defensor)
+        )
         LOGGER.debug(
             "Unidades en %s después de batalla: %s",
             pais_defensor,
             unidades_defensor_post_batalla,
         )
 
-        if unidades_defensor_post_batalla == 0 and atacante_id is not None:
+        if unidades_defensor_post_batalla == 0:
+            pacto_agresion = self._pact_manager.aggression_for_conquest(
+                int(atacante_id), int(defensor_id), pais_defensor, self.num_ronda()
+            )
             LOGGER.info("Asignando %s a %s", pais_defensor, atacante_nombre)
-            self.mapa().asignar_pais(atacante_id, pais_defensor)
             LOGGER.debug("Moviendo 1 unidad de %s a %s", pais_atacante, pais_defensor)
-            self.mapa().restar_una_unidad(pais_atacante)
-            self.mapa().agregar_una_unidad(pais_defensor)
+            mapa.restar_unidad_jugador(pais_atacante, int(atacante_id))
+            if mapa.es_condominio(pais_defensor):
+                mapa.conquistar_condominio(
+                    pais_defensor,
+                    int(atacante_id),
+                    int(defensor_id),
+                    unidades=1,
+                )
+            else:
+                mapa.asignar_pais(int(atacante_id), pais_defensor)
+                mapa.agregar_una_unidad(pais_defensor)
             conquistado = True
 
+            if pacto_agresion is not None and not mapa.es_condominio(pais_defensor):
+                # El país recién conquistado conserva la contribución de ambos
+                # aliados. Se toma una unidad del primer país limítrofe del
+                # aliado que todavía puede dejar una guarnición.
+                aliado = next(
+                    jugador
+                    for jugador in pacto_agresion.jugadores
+                    if jugador != int(atacante_id)
+                )
+                origen_aliado = next(
+                    (
+                        pais
+                        for pais in mapa.paises()
+                        if mapa.jugador_posee_pais(aliado, pais)
+                        and pais_defensor in mapa.obtener_paises_adyacentes(pais)
+                        and mapa.cantidad_unidades_jugador(pais, aliado) > 1
+                    ),
+                    None,
+                )
+                if origen_aliado is not None:
+                    mapa.restar_unidad_jugador(origen_aliado, aliado)
+                    mapa.agregar_una_unidad(pais_defensor)
+                    self._pact_manager.invalidar_por_conquista(pais_defensor)
+                    # La ficha del atacante ya quedó en el país; la segunda
+                    # ficha proviene del aliado recién trasladado.
+                    mapa.crear_condominio(
+                        pais_defensor,
+                        {int(atacante_id): 1, aliado: 1},
+                    )
+                    self._pact_manager.registrar_condominio(
+                        pais_defensor,
+                        (int(atacante_id), aliado),
+                        self.num_ronda(),
+                    )
+                else:
+                    self._pact_manager.invalidar_por_conquista(pais_defensor)
+            else:
+                self._pact_manager.invalidar_por_conquista(pais_defensor)
+
             self._card_manager.devolver_continentes_perdidos(self._mapa)
-            if defensor_id is not None:
+            if defensor_id is not None and not mapa.tiene_paises(defensor_id):
                 self._eliminar_jugador(defensor_id, atacante_id)
 
             LOGGER.info("%s ha conquistado %s", atacante_nombre, pais_defensor)
@@ -709,10 +818,7 @@ class Game:
             ``True`` si se registró una eliminación nueva.
 
         """
-        if (
-            eliminado_id in self._eliminados
-            or self._mapa.cantidad_de_paises_del_jugador(eliminado_id) > 0
-        ):
+        if eliminado_id in self._eliminados or self._mapa.tiene_paises(eliminado_id):
             return False
 
         self._eliminados.add(eliminado_id)
