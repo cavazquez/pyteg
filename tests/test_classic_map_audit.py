@@ -6,6 +6,7 @@ import unittest
 
 from PySide6.QtGui import QImage
 
+from pyteg.gui.mapa.overlap_check import find_pixel_overlaps, load_pais_bounds
 from pyteg.toml_reader import TomlReader
 from pyteg.utils import get_resource_path
 
@@ -211,6 +212,21 @@ class ClassicMapAuditTests(unittest.TestCase):
                 connection.destino,
                 reader.obtener_paises_adyacentes(connection.origen),
             )
+
+    def test_no_hay_solapamiento_opaco_entre_paises_no_adyacentes(self) -> None:
+        """Los solapamientos visibles sólo ocurren en fronteras declaradas."""
+        reader = TomlReader.from_theme("classic", strict=True)
+        adyacencias = reader.adyacencias
+        overlaps = find_pixel_overlaps(load_pais_bounds("classic"), min_pixels=1)
+
+        invalid = [
+            f"{overlap.top.name}/{overlap.bottom.name}"
+            for overlap in overlaps
+            if overlap.bottom.name not in adyacencias.get(overlap.top.name, [])
+            and overlap.top.name not in adyacencias.get(overlap.bottom.name, [])
+        ]
+
+        self.assertEqual(invalid, [])
 
     def test_country_sprites_have_transparent_background(self) -> None:
         """Evita rectángulos semitransparentes alrededor de los países."""

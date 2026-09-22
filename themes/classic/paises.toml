@@ -274,7 +274,7 @@ army_y = 15
 continente = "Norteamerica"
 file = "classic/mexico.svg"
 pos_x = 118
-pos_y = 158
+pos_y = 166
 army_x = 30
 army_y = 20
 
@@ -382,7 +382,7 @@ army_y = 12
 continente = "Asia"
 file = "classic/siberia.svg"
 pos_x = 148
-pos_y = -10
+pos_y = -12
 army_x = 27
 army_y = 5
 
