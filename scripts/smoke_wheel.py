@@ -10,7 +10,6 @@ import sys
 import tempfile
 import time
 from pathlib import Path
-from typing import cast
 from zipfile import ZipFile
 
 _STARTUP_TIMEOUT = 8.0
@@ -47,7 +46,11 @@ def _environment(root: Path) -> dict[str, str]:
 def _process_output(process: subprocess.Popen[str]) -> str:
     if process.stdout is None:
         return ""
-    return cast("str", process.stdout.read())
+    output = process.stdout.read()
+    if not isinstance(output, str):
+        msg = "Expected text output from the subprocess"
+        raise TypeError(msg)
+    return output
 
 
 def _stop(process: subprocess.Popen[str]) -> None:

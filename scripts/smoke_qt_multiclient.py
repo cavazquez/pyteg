@@ -18,7 +18,7 @@ import subprocess  # noqa: S404 -- sólo inicia el servidor local del smoke
 import sys
 import time
 from pathlib import Path
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING
 
 from PySide6.QtWidgets import QApplication
 
@@ -123,7 +123,11 @@ def _start_server(
 def _server_output(server: subprocess.Popen[str]) -> str:
     if server.stdout is None:
         return ""
-    return cast("str", server.stdout.read())
+    output = server.stdout.read()
+    if not isinstance(output, str):
+        msg = "Expected text output from the subprocess"
+        raise TypeError(msg)
+    return output
 
 
 def _stop_process(process: subprocess.Popen[str]) -> None:
