@@ -22,6 +22,7 @@ from pyteg.server.msg import (
     MsgMisilAgregado,
     MsgObjetivoSecreto,
     MsgPais,
+    MsgPing,
     MsgReconexion,
     MsgResultadoBatalla,
     MsgResultadoMisil,
@@ -185,6 +186,10 @@ class ServerTransmisor:
     def enviar_hello_ack(self, accepted: bool = True) -> None:  # noqa: FBT001, FBT002
         """Confirma el resultado de la negociación."""
         self._send_message(MsgHelloAck(accepted))
+
+    def enviar_ping(self, heartbeat_id: str) -> None:
+        """Solicita que el cliente confirme que todavía está conectado."""
+        self._send_message(MsgPing(heartbeat_id))
 
     def enviar_fase(self, fase: str, jugador_id: int, unidades_pendientes: int) -> None:
         """Envía la fase validada por el servidor."""

@@ -75,6 +75,8 @@ jobs:
               tests.test_tcp_framing
         - name: Qt multiclient and reconnection smoke
           run: uv run python scripts/smoke_qt_multiclient.py --clients 3
+        - name: Qt complete game and reconnection smoke
+          run: uv run python scripts/smoke_qt_game.py --timeout 60
         - name: Slow client queue stress
           run: uv run python scripts/stress_slow_clients.py
         - name: Dead-code audit

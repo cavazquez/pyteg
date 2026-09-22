@@ -5,6 +5,15 @@ Todas las fechas en formato YYYY-MM-DD.
 ## [Unreleased]
 
 ### Changed
+- **Heartbeat TCP negociado**: los clientes que anuncian `heartbeat` responden
+  `ping`/`pong`; el servidor cierra peers silenciosos después de un límite y
+  conserva compatibilidad con clientes que no anuncian la capacidad.
+- **Smoke Qt de partida completa**: CI inicia tres ventanas reales, juega una
+  partida clásica con una conquista, reconecta un cliente durante la partida y
+  verifica `Finalizado` en todos los clientes.
+- **Reconexión Qt**: una sesión recuperada autentica el token antes de enviar
+  comandos de lobby, evitando rechazos `reconnect_required` por una carrera de
+  `set_username`.
 - **Smoke Qt multicliente**: CI conecta tres ventanas reales al servidor,
   comprueba el lobby y verifica una reconexión autenticada conservando la
   identidad; la simulación TCP sigue cubriendo la partida completa.

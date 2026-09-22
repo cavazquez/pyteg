@@ -79,7 +79,30 @@ QT_QPA_PLATFORM=offscreen uv run python scripts/smoke_qt_multiclient.py \
 
 Este smoke cubre la capa Qt y su transporte; la partida completa continúa
 siendo responsabilidad de `simulate_game`, que usa clientes headless para
-ejercitar colocación, combate, conquistas, canjes y misiles.
+ejercitar colocación, combate, conquistas, canjes y misiles. También hay un
+recorrido Qt de partida completa, con tres ventanas reales, reconexión durante
+la partida, una conquista y victoria:
+
+```bash
+QT_QPA_PLATFORM=offscreen uv run python scripts/smoke_qt_game.py --timeout 60
+```
+
+Ese smoke conserva el modelo de estado, el protocolo TCP, los comandos y los
+eventos de batalla reales. En modo `offscreen` desacopla la actualización de
+las 50 imágenes del tablero para que la prueba no dependa del backend gráfico;
+`smoke_qt_multiclient` sigue cubriendo la construcción y conexión visual del
+mapa.
+
+Durante una reconexión Qt se espera primero el snapshot que marca la baja en el
+servidor. El cliente recuperado envía `reconectar` antes de cualquier comando
+de lobby; así no se rechaza un `set_username` mientras la sesión todavía está
+pendiente de autenticación.
+
+Los clientes que anuncian la capacidad `heartbeat` reciben un `ping` cuando su
+socket queda inactivo y deben contestar `pong` con el mismo identificador. Si
+no hay respuesta dentro del límite, el servidor cierra y limpia la conexión.
+Los clientes antiguos que no anuncian esa capacidad conservan el modo de
+recepción bloqueante.
 
 Para comprobar el aislamiento de clientes lentos y la saturación de la cola de
 salida, ejecutá el smoke de transporte:

@@ -32,6 +32,9 @@ class ConnectionServer:
         self._addr = addr
         self._codec = NulDelimitedUtf8Codec()
         self._close_lock = threading.RLock()
+        self._receive_state_lock = threading.Lock()
+        self._receive_timed_out = False
+        self._receive_activity = False
         self._closed = False
         self._outgoing: queue.Queue[object] = queue.Queue(_MAX_PENDING_FRAMES)
         self._pending_lock = threading.Lock()
@@ -42,7 +45,50 @@ class ConnectionServer:
         self._writer_stopped = threading.Event()
         self._writer_thread: threading.Thread | None = None
 
-    def receiver(self) -> list[str] | None:
+    def set_receive_timeout(self, timeout: float | None) -> None:
+        """Configura el límite de espera del próximo ``recv``.
+
+        ``None`` restaura el modo bloqueante. La negociación de heartbeat lo
+        activa sólo después de que el cliente anuncia esa capacidad, así los
+        clientes antiguos conservan el comportamiento anterior.
+
+        Args:
+            timeout: Segundos de espera o ``None`` para bloquear.
+
+        """
+        setter = getattr(self._conn, "settimeout", None)
+        if not callable(setter):
+            return
+        try:
+            setter(timeout)
+        except (OSError, ValueError) as error:
+            LOGGER.warning("No se pudo configurar timeout de recepción: %s", error)
+
+    def consume_receive_timeout(self) -> bool:
+        """Consume la señal de que una lectura venció sin datos.
+
+        Returns:
+            ``True`` exactamente una vez por timeout observado.
+
+        """
+        with self._receive_state_lock:
+            timed_out = self._receive_timed_out
+            self._receive_timed_out = False
+        return timed_out
+
+    def consume_receive_activity(self) -> bool:
+        """Consume la señal de que llegaron bytes, aunque fueran parciales.
+
+        Returns:
+            ``True`` si la última lectura recibió al menos un byte.
+
+        """
+        with self._receive_state_lock:
+            active = self._receive_activity
+            self._receive_activity = False
+        return active
+
+    def receiver(self) -> list[str] | None:  # noqa: PLR0911
         r"""Recibe datos del cliente.
 
         Returns:
@@ -58,6 +104,13 @@ class ConnectionServer:
                 except FrameCodecError as error:
                     LOGGER.warning("EOF con trama TCP incompleta: %s", error)
                 return None
+            with self._receive_state_lock:
+                self._receive_activity = True
+                self._receive_timed_out = False
+        except TimeoutError:
+            with self._receive_state_lock:
+                self._receive_timed_out = True
+            return []
         except ConnectionResetError:
             return None
         except BrokenPipeError as ex:

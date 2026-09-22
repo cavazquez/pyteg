@@ -233,6 +233,15 @@ class Bot:
             except MessageValidationError as error:
                 msg = f"Invalid server event: {error}"
                 raise RuntimeError(msg) from error
+            if payload.get("mensaje") == "ping":
+                self.connection.sendall(
+                    json.dumps({
+                        "mensaje": "pong",
+                        "heartbeat_id": payload["heartbeat_id"],
+                    }).encode("utf-8")
+                    + b"\0"
+                )
+                continue
             result.append(payload)
             self._apply(payload)
         return result
@@ -548,7 +557,12 @@ class Simulation:
                 protocol_version=PROTOCOL_VERSION,
                 theme=self.args.theme,
                 map_hash=map_hash_for_theme(self.args.theme),
-                capabilities=["snapshots", "command_results", "reconnect"],
+                capabilities=[
+                    "snapshots",
+                    "command_results",
+                    "reconnect",
+                    "heartbeat",
+                ],
                 rules=["validated_phases", "one_card_per_turn"],
             )
             self.command(bot, "set_username", username=f"Bot_{bot.userid}")
@@ -636,7 +650,12 @@ class Simulation:
                 "protocol_version": PROTOCOL_VERSION,
                 "theme": self.args.theme,
                 "map_hash": map_hash_for_theme(self.args.theme),
-                "capabilities": ["snapshots", "command_results", "reconnect"],
+                "capabilities": [
+                    "snapshots",
+                    "command_results",
+                    "reconnect",
+                    "heartbeat",
+                ],
                 "rules": ["validated_phases", "one_card_per_turn"],
             },
         )
