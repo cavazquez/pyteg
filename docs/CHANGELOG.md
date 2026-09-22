@@ -4,7 +4,10 @@ Todas las fechas en formato YYYY-MM-DD.
 
 ## [Unreleased]
 
-Sin cambios publicados todavía.
+### Changed
+- **Contexto de países**: el mapa muestra nombre, continente, unidades y
+  superposiciones en el tooltip y la barra de estado al pasar el cursor, sin
+  llenar el tablero con etiquetas permanentes.
 
 ## [0.1.0] - 2026-09-21
 

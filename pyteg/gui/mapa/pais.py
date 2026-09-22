@@ -75,6 +75,15 @@ class Pais(PaisBattleFxMixin, PaisSelectionMixin, QGraphicsPixmapItem):
         self._movimiento_timer: QTimer | None = None
 
         self.cargar_circulo()
+        self._actualizar_tooltip()
+
+    def _actualizar_tooltip(self) -> None:
+        """Mantiene el nombre, continente y unidades accesibles al pasar el cursor."""
+        self.setToolTip(
+            f"País: {self._nombre}\n"
+            f"Continente: {self._continente}\n"
+            f"Unidades: {self.get_unidades()}"
+        )
 
     def cargar_circulo(self) -> None:
         """Carga y posiciona el círculo que muestra las unidades."""
@@ -125,6 +134,7 @@ class Pais(PaisBattleFxMixin, PaisSelectionMixin, QGraphicsPixmapItem):
         """
         if self._circle:
             self._circle.set_unidades(cant)
+            self._actualizar_tooltip()
 
     def get_unidades(self) -> int:
         """Retorna la cantidad de unidades como entero.
