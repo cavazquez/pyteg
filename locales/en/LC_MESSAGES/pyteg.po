@@ -209,6 +209,18 @@ msgstr "Disconnected"
 msgid "Eliminado"
 msgstr "Eliminated"
 
+msgid "Chat"
+msgstr "Chat"
+
+msgid "Panel lateral"
+msgstr "Side panel"
+
+msgid "Mostrar u ocultar el chat"
+msgstr "Show or hide chat"
+
+msgid "Mostrar u ocultar jugadores y unidades"
+msgstr "Show or hide players and units"
+
 msgid "Selección: Ninguna"
 msgstr "Selection: None"
 

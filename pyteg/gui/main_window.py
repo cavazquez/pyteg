@@ -26,7 +26,14 @@ from pyteg.i18n import translate as _
 from pyteg.sound_manager import SoundManager
 
 if TYPE_CHECKING:
-    from PySide6.QtWidgets import QHBoxLayout, QLabel, QStatusBar
+    from PySide6.QtGui import QResizeEvent
+    from PySide6.QtWidgets import (
+        QHBoxLayout,
+        QLabel,
+        QScrollArea,
+        QSplitter,
+        QStatusBar,
+    )
 
     from pyteg.client.app import Client
     from pyteg.client.conexion.connection import ConnectionClient
@@ -59,6 +66,9 @@ class Gui(QMainWindow, MainWindowDelegatesMixin):
     language_selector: LanguageSelector
     sound_control: SoundControlWidget
     timer_label: QLabel
+    right_column_scroll: QScrollArea
+    vertical_splitter: QSplitter
+    horizontal_splitter: QSplitter
 
     layout_manager: LayoutManager
     theme_manager: ThemeManager
@@ -133,8 +143,14 @@ class Gui(QMainWindow, MainWindowDelegatesMixin):
         self.window_manager = WindowManager(mw)
         self.language_manager = LanguageManager(mw)
         self.sound_manager = SoundManager()
-        self.setMinimumSize(QSize(800, 600))
+        self.setMinimumSize(QSize(720, 480))
         self.setMouseTracking(True)
+
+    def resizeEvent(self, event: QResizeEvent) -> None:  # noqa: N802
+        """Ajusta la toolbar al ancho disponible sin alterar el mapa."""
+        super().resizeEvent(event)
+        if self.toolbar is not None:
+            self.toolbar.update_responsive_layout(self.width())
 
     def _gui_init_turn_tracking(self) -> None:
         self.turno_actual: int = 0
