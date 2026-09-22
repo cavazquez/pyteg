@@ -9,7 +9,7 @@ from types import SimpleNamespace
 from typing import cast
 
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QApplication
+from PySide6.QtWidgets import QApplication, QGraphicsPathItem
 
 from pyteg.gui.mapa.scene import QCustomGraphicsScene
 from pyteg.toml_reader import TomlReader, TomlReaderError
@@ -246,7 +246,11 @@ class VisualConnectionSceneTests(unittest.TestCase):
             )
             self.assertEqual(path.elementAt(1).x, 0.0)
             self.assertEqual(path.elementAt(2).x, 640.0)
-            arrows = [child.path() for child in item.childItems()]
+            arrows = [
+                child.path()
+                for child in item.childItems()
+                if isinstance(child, QGraphicsPathItem)
+            ]
             self.assertEqual(
                 {(arrow.elementAt(0).x, arrow.elementAt(1).x) for arrow in arrows},
                 {(0.0, 6.0), (634.0, 640.0)},

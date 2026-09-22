@@ -10,6 +10,7 @@ import sys
 import tempfile
 import time
 from pathlib import Path
+from typing import cast
 from zipfile import ZipFile
 
 _STARTUP_TIMEOUT = 8.0
@@ -46,7 +47,7 @@ def _environment(root: Path) -> dict[str, str]:
 def _process_output(process: subprocess.Popen[str]) -> str:
     if process.stdout is None:
         return ""
-    return process.stdout.read()
+    return cast("str", process.stdout.read())
 
 
 def _stop(process: subprocess.Popen[str]) -> None:

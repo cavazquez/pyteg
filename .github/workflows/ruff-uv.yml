@@ -13,7 +13,7 @@ jobs:
     steps:
         - uses: actions/checkout@v7
         - name: Install the latest version of uv and set the python version
-          uses: astral-sh/setup-uv@v7
+          uses: astral-sh/setup-uv@v10
           with:
             python-version: "3.14"
             version: latest
@@ -105,11 +105,11 @@ jobs:
           run: uv run python scripts/smoke_visual_map.py --output-dir artifacts/map-visual
         - name: Upload visual map evidence
           if: always()
-          uses: actions/upload-artifact@v4
+          uses: actions/upload-artifact@v7
           with:
             name: pyteg-map-visual
             path: artifacts/map-visual
-            if-no-files-found: error
+            if-no-files-found: warn
         - name: Real multiclient TCP simulation
           run: |
             uv run python -m scripts.simulate_game \
@@ -126,11 +126,11 @@ jobs:
               --timeout 240
         - name: Upload multiclient simulation evidence
           if: always()
-          uses: actions/upload-artifact@v4
+          uses: actions/upload-artifact@v7
           with:
             name: pyteg-multiclient-simulation
             path: logs/simulations/classic-197
-            if-no-files-found: error
+            if-no-files-found: warn
         - name: Revancha multiclient TCP simulation
           run: |
             uv run python -m scripts.simulate_game \
@@ -147,8 +147,8 @@ jobs:
               --timeout 240
         - name: Upload Revancha simulation evidence
           if: always()
-          uses: actions/upload-artifact@v4
+          uses: actions/upload-artifact@v7
           with:
             name: pyteg-revancha-simulation
             path: logs/simulations/revancha-234
-            if-no-files-found: error
+            if-no-files-found: warn

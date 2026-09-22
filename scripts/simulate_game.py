@@ -189,6 +189,26 @@ class Bot:
         """Indica si el modelo recibió una lista pública de jugadores."""
         return bool(self.player_ids)
 
+    def player_is_disconnected(self, user_id: int) -> bool:
+        """Indica si el snapshot publicó desconectada una identidad.
+
+        La partida conserva al jugador desconectado para permitir reconexión,
+        por lo que su identidad puede seguir presente en la lista pública.
+        Si el servidor lo retiró por completo, también se considera listo.
+
+        Returns:
+            ``True`` cuando la identidad ya está desconectada o fue retirada.
+
+        """
+        players = self.state_model.snapshot.get("players", [])
+        if not isinstance(players, list):
+            return False
+        for player in players:
+            if not isinstance(player, dict) or player.get("userid") != user_id:
+                continue
+            return player.get("connected") is False
+        return True
+
     @property
     def session_token(self) -> str | None:
         """Devuelve el token privado de sesión del bot."""
@@ -657,9 +677,9 @@ class Simulation:
         self._wait(
             lambda: (
                 self.reference_bot().players_initialized
-                and old_userid not in self.reference_bot().player_ids
+                and self.reference_bot().player_is_disconnected(old_userid)
             ),
-            "server to remove the disconnected player",
+            "server to mark the player disconnected",
             timeout=max(30.0, self.args.command_timeout * 3),
         )
 
