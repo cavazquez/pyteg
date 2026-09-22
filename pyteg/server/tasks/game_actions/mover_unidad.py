@@ -1,3 +1,5 @@
+# ruff: noqa: TRY003, EM102
+
 """Tarea: mover unidades entre países propios adyacentes."""
 
 from __future__ import annotations
@@ -75,7 +77,23 @@ class ServerTaskMoverUnidad(IServerTask[MoverUnidadTaskData]):
             context.mapa, self._origen, self._cantidad
         )
 
-        context.mapa.mover(self._origen, self._destino, self._cantidad)
+        cantidad_jugador = getattr(context.mapa, "cantidad_unidades_jugador", None)
+        mover_por_jugador = getattr(context.mapa, "mover_jugador", None)
+        if callable(cantidad_jugador) and callable(mover_por_jugador):
+            disponibles = cantidad_jugador(self._origen, int(client.userid()))
+            if disponibles <= self._cantidad:
+                raise ValidationError(
+                    f"No hay suficientes unidades propias en {self._origen} "
+                    "para dejar una guarnición"
+                )
+            mover_por_jugador(
+                self._origen,
+                self._destino,
+                int(client.userid()),
+                self._cantidad,
+            )
+        else:
+            context.mapa.mover(self._origen, self._destino, self._cantidad)
         LOGGER.info(
             "Se movieron %s unidades de %s a %s",
             self._cantidad,

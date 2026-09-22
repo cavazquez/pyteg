@@ -131,9 +131,19 @@ class ServerTaskLanzarMisil(IServerTask[LanzarMisilTaskData]):
         if context.mapa.cantidad_misiles(self._pais_origen) == 0:
             raise NoMissilesAvailableError(self._pais_origen)
 
-        if context.mapa.ocupado_por(self._pais_destino) == client.userid():
+        posee_destino = getattr(context.mapa, "jugador_posee_pais", None)
+        destino_propio = (
+            bool(posee_destino(int(client.userid()), self._pais_destino))
+            if callable(posee_destino)
+            else context.mapa.ocupado_por(self._pais_destino) == client.userid()
+        )
+        if destino_propio:
             msg = "No puedes lanzar misiles a tus propios países"
             raise InvalidActionError(msg)
+
+        validar_pacto = getattr(context.game, "validar_pacto_ataque", None)
+        if callable(validar_pacto):
+            validar_pacto(client, self._pais_origen, self._pais_destino)
 
     def _validar_distancia_dano(
         self,

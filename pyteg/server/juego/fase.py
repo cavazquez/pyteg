@@ -32,6 +32,9 @@ COMANDOS_POR_FASE: dict[str, frozenset[str]] = {
         "reclamar_tarjeta",
         "canjear_misil",
         "lanzar_misil",
+        "proponer_pacto",
+        "aceptar_pacto",
+        "romper_pacto",
         "finalizar_turno",
     }),
 }

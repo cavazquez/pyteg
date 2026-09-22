@@ -110,6 +110,12 @@ class GameContext:
         """Envía el mapa actualizado a todos los clientes."""
         self._server.enviar_mapa()
 
+    def enviar_snapshot(self) -> None:
+        """Difunde el snapshot público cuando cambia metadata de la partida."""
+        enviar = getattr(self._server, "enviar_snapshot", None)
+        if callable(enviar):
+            enviar()
+
     def enviar_unidades_disponibles(self) -> None:
         """Envía las unidades disponibles al jugador actual."""
         self._server.enviar_unidades_disponibles()

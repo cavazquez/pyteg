@@ -179,14 +179,22 @@ class Server:
 
         """
         game = self.game
-        countries = {
-            pais: {
+        countries: dict[str, dict[str, Any]] = {}
+        for pais in self.mapa.paises():
+            country: dict[str, Any] = {
                 "userid": self.mapa.ocupado_por(pais),
                 "unidades": self.mapa.cantidad_unidades(pais),
                 "misiles": self.mapa.cantidad_misiles(pais),
             }
-            for pais in self.mapa.paises()
-        }
+            es_condominio = getattr(self.mapa, "es_condominio", None)
+            ocupantes = getattr(self.mapa, "ocupantes", None)
+            if callable(es_condominio) and es_condominio(pais) and callable(ocupantes):
+                country["compartido"] = True
+                country["ocupantes"] = [
+                    {"userid": int(jugador), "unidades": int(unidades)}
+                    for jugador, unidades in ocupantes(pais).items()
+                ]
+            countries[pais] = country
         historicos = game.jugadores() if game is not None else self.dame_clientes()
         conectados = {int(client.userid()) for client in self.dame_clientes()}
         players: list[dict[str, Any]] = []
@@ -242,6 +250,10 @@ class Server:
             "refuerzos_pendientes": refuerzos_pendientes,
             "situacion": situacion,
         }
+        if game is not None:
+            pactos = getattr(game, "pactos_publicos", None)
+            if callable(pactos):
+                snapshot.update(pactos())
         return snapshot
 
     def enviar_snapshot(self) -> None:

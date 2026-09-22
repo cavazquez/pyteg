@@ -288,7 +288,30 @@ _SERVER_COMMAND_SCHEMAS: dict[str, _MessageSchema] = {
             "origen": _is_nonempty_string,
             "destino": _is_nonempty_string,
         },
-        {"cantidad_unidades": _DICE_COUNT},
+        {
+            "cantidad_unidades": _DICE_COUNT,
+            "objetivo_jugador": _POSITIVE_INTEGER,
+        },
+    ),
+    "proponer_pacto": _MessageSchema(
+        {
+            "tipo": _is_nonempty_string,
+            "jugador_objetivo": _POSITIVE_INTEGER,
+        },
+        {
+            "paises": _is_string_list,
+            "continentes": _is_string_list,
+            "pais_objetivo": _is_nonempty_string,
+            "duracion": _nullable(_POSITIVE_INTEGER),
+        },
+    ),
+    "aceptar_pacto": _MessageSchema(
+        {"pacto_id": _is_nonempty_string},
+        {},
+    ),
+    "romper_pacto": _MessageSchema(
+        {"pacto_id": _is_nonempty_string},
+        {},
     ),
     "finalizar_turno": _MessageSchema({}, {}),
     "solicitar_tarjetas": _MessageSchema({}, {}),
