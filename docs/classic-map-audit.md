@@ -39,9 +39,13 @@ leen en los contornos de los países y siguen estando respaldadas por
 `Adyacencias`.
 
 Los puntos intermedios se guardan sólo cuando una ruta necesita apartarse de
-otro sprite o de sus fichas. El renderer las coloca detrás de los países, con
-trazo discontinuo oscuro, extremos redondeados y ancho cosmético para que
-mantengan contraste al cambiar el zoom.
+otro sprite o de sus fichas. Alaska–Kamchatka y Chile–Australia envuelven el
+mapa: la ruta termina en el borde izquierdo y reaparece desde el derecho, con
+ambos extremos calibrados contra las flechas del `board.png` clásico. El
+renderer crea dos subtramos independientes para que no haya una línea continua
+cruzando el tablero. Las conexiones se colocan detrás de los países, con trazo
+discontinuo oscuro, extremos redondeados y ancho cosmético para que mantengan
+contraste al cambiar el zoom.
 
 La captura de regresión generada con Qt offscreen queda en
 [`docs/screenshots/classic-map-bridges.png`](screenshots/classic-map-bridges.png).
@@ -54,11 +58,10 @@ Las regresiones de `tests/test_classic_map_audit.py` cubren países, continentes
 
 ## Diagnóstico geométrico estricto
 
-La regla visual es que dos interiores sólidos nunca se cubren, aunque los
-países sean adyacentes. Las fronteras terrestres también deben tocarse dentro
-de un píxel; las rutas incluidas en `ConexionesVisuales` quedan fuera de esa
-exigencia porque se representan con una línea sobre el agua o el salto del
-mapa.
+La auditoría separa el relleno del trazo SVG: un trazo de frontera compartido
+no se considera territorio superpuesto. Las siluetas visibles de las fronteras
+terrestres deben tocarse dentro de un píxel; las rutas incluidas en
+`ConexionesVisuales` se excluyen porque cruzan agua o el salto del mapa.
 
 El diagnóstico se ejecuta con:
 
@@ -67,7 +70,12 @@ QT_QPA_PLATFORM=offscreen uv run python scripts/check_map_overlaps.py \
   --theme classic --strict-boundaries --max-contact-gap 1
 ```
 
-`--strict-boundaries` usa el interior sólido (`alpha >= 128`) para no confundir
-antialiasing con cobertura. Mientras se corrige el layout heredado, el comando
-funciona como informe explícito: la CI de layout conserva por ahora el umbral
-histórico de bounding boxes y no oculta estos resultados.
+Las siete separaciones detectadas se cerraron en el vector de los países. Cada
+extensión de 3 px termina en el contorno del vecino, y se actualizaron los PNG
+de respaldo. Los pares son `Canada–NuevaYork`, `Aral–Mongolia`, `China–Iran`,
+`China–Mongolia`, `China–Siberia`, `India–Iran` e `Iran–Mongolia`. El grafo de
+adyacencias permanece igual.
+
+La auditoría estricta ahora confirma cero solapamientos de relleno y cero
+fronteras terrestres separadas. Una regresión en `tests/test_classic_map_audit.py`
+impide volver a introducir cualquiera de esos dos problemas.
