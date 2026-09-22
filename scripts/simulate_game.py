@@ -83,6 +83,8 @@ class Bot:
     event_processor: ClientEventProcessor = field(init=False)
     special_exchanges: list[dict[str, Any]] = field(default_factory=list)
     missile_results: list[dict[str, Any]] = field(default_factory=list)
+    # A reconnecting peer receives current state, not historical event frames.
+    missile_results_consensus_offset: int = 0
     barrier: str = ""
     errors: list[dict[str, Any]] = field(default_factory=list)
     counts: Counter[str] = field(default_factory=Counter)
@@ -492,8 +494,14 @@ class Simulation:
         if any(bot.missiles != missiles for bot in peers):
             msg = "Clients disagree on public missile inventory"
             raise RuntimeError(msg)
-        missile_results = peers[0].missile_results
-        if any(bot.missile_results != missile_results for bot in peers):
+        missile_results = peers[0].missile_results[
+            peers[0].missile_results_consensus_offset :
+        ]
+        if any(
+            bot.missile_results[bot.missile_results_consensus_offset :]
+            != missile_results
+            for bot in peers
+        ):
             msg = "Clients disagree on missile result events"
             raise RuntimeError(msg)
         if board:
@@ -609,6 +617,11 @@ class Simulation:
                 time.sleep(0.05)
         connection.settimeout(self.args.command_timeout)
         connection.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+        active_peers = self.connected_bots()
+        # Start a new event-consensus epoch: the replacement does not replay
+        # historical missile results, while active peers already have them.
+        for peer in active_peers:
+            peer.missile_results_consensus_offset = len(peer.missile_results)
         replacement = Bot(connection, userid=old_userid)
         self.bots.append(replacement)
         self._wait(

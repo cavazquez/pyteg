@@ -138,6 +138,9 @@ El reemplazo recibe un ID temporal durante el handshake y sólo recupera el
 ID original, color, países, nombre, tarjetas y turno después de presentar el
 token privado de sesión. `reconnections` cuenta las recuperaciones observadas;
 el reporte mantiene una sola identidad por jugador en `country_counts`.
+La sesión recuperada sincroniza el estado actual y los eventos posteriores; no
+se espera que reciba nuevamente eventos históricos de misiles o canjes que
+ocurrieron antes de la reconexión.
 
 ## Canjes y misiles
 

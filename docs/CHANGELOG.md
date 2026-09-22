@@ -18,6 +18,11 @@ Todas las fechas en formato YYYY-MM-DD.
   el panel lateral tiene scroll y el mapa mantiene el zoom o permite
   desplazarse con el botón central.
 
+### Fixed
+- **Simulación tras reconexión**: un cliente recuperado recibe el snapshot
+  vigente y los eventos futuros; ya no se marca como divergente por no repetir
+  eventos históricos de misiles que ocurrieron antes de su nueva conexión.
+
 ## [0.1.0] - 2026-09-21
 
 ### Changed
