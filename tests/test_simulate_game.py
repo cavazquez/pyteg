@@ -13,6 +13,24 @@ from scripts.simulate_game import Bot, Simulation
 class SimulationConsensusTests(TestCase):
     """La resincronización no exige repetir eventos históricos."""
 
+    def test_desconexion_no_exige_eliminar_la_identidad_del_snapshot(self) -> None:
+        bot = Bot(MagicMock(), userid=2)
+        bot.state_model.snapshot = {
+            "players": [{"userid": 2, "connected": False}],
+        }
+
+        self.assertTrue(bot.players_initialized)
+        self.assertIn(2, bot.player_ids)
+        self.assertTrue(bot.player_is_disconnected(2))
+
+    def test_no_considera_desconectado_a_un_jugador_aun_conectado(self) -> None:
+        bot = Bot(MagicMock(), userid=2)
+        bot.state_model.snapshot = {
+            "players": [{"userid": 2, "connected": True}],
+        }
+
+        self.assertFalse(bot.player_is_disconnected(2))
+
     def test_reconexion_compara_resultados_de_misil_desde_la_nueva_epoca(self) -> None:
         event = {
             "mensaje": "resultado_misil",
