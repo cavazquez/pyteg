@@ -440,8 +440,22 @@ class Simulation:
         """
         return any(peer.userid == user_id for peer in self.connected_bots())
 
-    def _wait(self, condition: Callable[[], bool], description: str) -> None:
-        deadline = min(self.deadline, time.monotonic() + self.args.command_timeout)
+    def _wait(
+        self,
+        condition: Callable[[], bool],
+        description: str,
+        *,
+        timeout: float | None = None,
+    ) -> None:
+        """Wait for a wire condition with a bounded command or custom timeout.
+
+        Raises:
+            RuntimeError: If no connected bot remains or a frame is invalid.
+            TimeoutError: If the condition does not arrive before the deadline.
+
+        """
+        wait_seconds = self.args.command_timeout if timeout is None else timeout
+        deadline = min(self.deadline, time.monotonic() + wait_seconds)
         while not condition():
             remaining = deadline - time.monotonic()
             if remaining <= 0:
@@ -646,6 +660,7 @@ class Simulation:
                 and old_userid not in self.reference_bot().player_ids
             ),
             "server to remove the disconnected player",
+            timeout=max(30.0, self.args.command_timeout * 3),
         )
 
         while True:

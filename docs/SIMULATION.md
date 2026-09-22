@@ -20,6 +20,12 @@ uv run python -m scripts.simulate_game \
 uv run python -m scripts.simulate_game \
   --theme test --clients 2 --victory 2 --seed 7 \
   --output-dir logs/simulations/test-production-7
+
+# Revancha: reglas propias, objetivos secretos, canjes, misiles y reconexión.
+uv run python -m scripts.simulate_game \
+  --theme revancha --clients 5 --victory 30 --seed 234 \
+  --secret-objectives --disconnect-client 2 --disconnect-after-turn 5 \
+  --reconnect-client 2 --exercise-exchanges --require-finalized
 ```
 
 Si ya existe el entorno virtual, se puede reemplazar `uv run python` por
@@ -65,10 +71,11 @@ Cada ejecución guarda:
 - `wire.jsonl`: todos los mensajes enviados y recibidos, con cliente y tiempo.
 - `server.log`: salida del proceso servidor.
 
-El workflow de CI ejecuta el mismo flujo con tres clientes, objetivos secretos,
-canjes, misiles y una desconexión/reconexión autenticada antes de exigir
-`--require-finalized`. Conserva `logs/simulations/classic-197` como artefacto
-cuando termina, también si la corrida falla.
+El workflow de CI ejecuta el flujo clásico y una partida de Revancha con cinco
+clientes, objetivos secretos, canjes, misiles y una desconexión/reconexión
+autenticada antes de exigir `--require-finalized`. Conserva
+`logs/simulations/classic-197` y `logs/simulations/revancha-234` como artefactos,
+también si alguna corrida falla.
 
 Los registros están bajo `logs/`, que el repositorio ignora en Git.
 
@@ -267,6 +274,11 @@ Con el código revisado y sin sustituir los dados productivos:
   semilla 123:** el cliente 1 se desconectó después del turno 2, recuperó su
   identidad y continuó la partida; hubo una reconexión, 67 conquistas y los
   tres clientes observaron `Finalizado`.
+- **Revancha estricta — cinco clientes, objetivo 30, semilla 234:** se
+  observaron objetivos privados sin filtrarlos al snapshot, 36 reclamos, 5
+  canjes normales, 8 especiales, 55 canjes de misil y 10 lanzamientos. El
+  cliente 2 se desconectó después del turno 5, recuperó su sesión y los cinco
+  clientes terminaron sincronizados en `Finalizado`.
 
 Los números son evidencia de esas corridas; no son una predicción para futuras
 corridas con dados productivos.
@@ -284,7 +296,7 @@ prueban en la suite TCP; `stress_slow_clients.py` agrega una prueba con un
 cliente que deja de leer. Estos harnesses no simulan comandos simultáneos,
 latencia WAN ni vencimiento del timer. Las opciones de desconexión y reconexión ejercitan el
 cierre real de un socket, la continuidad de los clientes restantes y el
-handshake autenticado de recuperación. Los objetivos secretos siguen fuera de
-alcance. La estrategia utiliza colocación,
+handshake autenticado de recuperación. Los objetivos secretos se verifican
+cuando se solicita `--secret-objectives`. La estrategia utiliza colocación,
 ataque, transferencia, tarjetas/canjes y misiles según el modo elegido; no
 valida que esas reglas reproduzcan todo el reglamento del TEG clásico.

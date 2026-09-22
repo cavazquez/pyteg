@@ -117,7 +117,31 @@ def _is_card_list(value: object) -> bool:
 
 
 def _is_card_collection(value: object) -> bool:
-    return isinstance(value, list) and all(_is_card(card) for card in value)
+    return isinstance(value, list) and all(_is_private_card(card) for card in value)
+
+
+def _is_private_card(value: object) -> bool:
+    """Valida tarjetas entregadas al propietario, incluyendo metadata visible.
+
+    Returns:
+        ``True`` si la tarjeta conserva los campos mínimos y metadata válida.
+
+    """
+    if not _is_card(value):
+        if not isinstance(value, dict):
+            return False
+        allowed = {"pais", "simbolo", "tipo", "continente"}
+        if not {"pais", "simbolo"}.issubset(value) or not set(value).issubset(allowed):
+            return False
+        if not _is_nonempty_string(value["pais"]) or not _is_nonempty_string(
+            value["simbolo"]
+        ):
+            return False
+        for key in ("tipo", "continente"):
+            if key in value and not _is_nonempty_string(value[key]):
+                return False
+        return True
+    return True
 
 
 def _is_player_list(value: object) -> bool:

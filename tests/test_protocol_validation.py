@@ -158,6 +158,22 @@ class TestClientEventValidation(unittest.TestCase):
 
         self.assertEqual(validate_client_event(payload), payload)
 
+    def test_accepts_private_special_card_metadata(self) -> None:
+        """Las cartas privadas pueden incluir tipo y continente del tema."""
+        payload = {
+            "mensaje": "tarjetas_jugador",
+            "tarjetas": [
+                {
+                    "pais": "Argentina",
+                    "simbolo": "Avion",
+                    "tipo": "continente",
+                    "continente": "AmericaDelSur",
+                }
+            ],
+        }
+
+        self.assertEqual(validate_client_event(payload), payload)
+
     def test_accepts_battle_result_with_public_participants(self) -> None:
         """El resultado real incluye países además de la lista de pérdidas."""
         payload = {
