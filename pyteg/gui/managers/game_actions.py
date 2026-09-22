@@ -167,11 +167,6 @@ class GameActionsManager:
         selection_manager: CountrySelectionManager,
     ) -> None:
         transmisor = self.main_window.transmisor
-        if not hasattr(transmisor, "atacar"):
-            self.main_window.update_status_bar(
-                _("Error: No hay conexión disponible"), "red"
-            )
-            return
 
         max_unidades = self.get_max_attack_units(origen)
         if max_unidades < 1:

@@ -81,6 +81,17 @@ class StatusManager:
             estado (str): The current game state
 
         """
+        self.main_window.estado_actual = estado
+        if estado == "JUGANDO":
+            self.main_window.partida_finalizada = False
+        elif estado in {"FINALIZADO", "Finalizado"}:
+            self.main_window.partida_finalizada = True
+        if estado in {"Desconectado", "INICIAL", "EsperarJugadores"}:
+            # No arrastrar la fase de una partida anterior a la sala o a la
+            # pantalla de conexión.
+            self.main_window.fase_actual = None
+            self.main_window.unidades_pendientes_servidor = 0
+
         # Traducir estados técnicos a nombres más amigables
         estados_amigables = {
             "INICIAL": _("Inicial"),
@@ -94,6 +105,24 @@ class StatusManager:
 
         estado_mostrar = estados_amigables.get(estado, estado)
         self.main_window.estado_label.setText(_("Estado: {}").format(estado_mostrar))
+        self.update_gameplay_context()
+
+    def update_gameplay_context(self) -> None:
+        """Muestra fase, jugador activo y refuerzos durante una partida."""
+        from pyteg.gui.gameplay_state import contexto_partida  # noqa: PLC0415
+
+        label = getattr(self.main_window, "contexto_partida_label", None)
+        if label is None:
+            return
+        contexto = contexto_partida(self.main_window)
+        if contexto is not None:
+            label.setVisible(True)
+            label.setText(contexto)
+            label.setToolTip(contexto)
+        else:
+            label.clear()
+            label.setVisible(False)
+            label.setToolTip("")
 
     def update_mi_jugador_info(self) -> None:
         """Actualiza la información del usuario actual (mi jugador).

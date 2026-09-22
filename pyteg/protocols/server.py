@@ -8,6 +8,7 @@ from pyteg.server.juego.state_validator import HasEstado
 
 if TYPE_CHECKING:
     from pyteg.colores import IColor
+    from pyteg.core.partida.reglas import ThemeRules
     from pyteg.protocols.client import IClientProtocol
     from pyteg.protocols.game import IGameProtocol
     from pyteg.protocols.mapa import IMapProtocol
@@ -30,6 +31,10 @@ class ServerLikeProtocol(HasEstado, Protocol):
     @property
     def game(self) -> IGameProtocol | None:
         """Juego actual (puede ser None si no ha comenzado)."""
+        ...
+
+    def reglas(self) -> ThemeRules:
+        """Perfil de reglas activo para validar comandos."""
         ...
 
     def enviar_mapa(self) -> None:

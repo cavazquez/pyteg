@@ -5,7 +5,10 @@ import unittest
 from typing import cast
 from unittest.mock import Mock
 
-from pyteg.core.partida.objetivos_secretos import ObjetivosSecretos
+from pyteg.core.partida.objetivos_secretos import (
+    NO_SECRET_OBJECTIVES,
+    ObjetivosSecretos,
+)
 
 
 class TestObjetivosSecretos(unittest.TestCase):
@@ -178,6 +181,22 @@ class TestObjetivosSecretos(unittest.TestCase):
             jugador_id, Mock(), Mock()
         )
         self.assertFalse(resultado)
+
+
+class TestNoSecretObjectives(unittest.TestCase):
+    """Comprueba la política nula de objetivos secretos."""
+
+    def test_no_asigna_ni_produce_victoria(self) -> None:
+        """La política desactivada no emite objetivos ni victorias."""
+        clientes = [Mock()]
+
+        NO_SECRET_OBJECTIVES.reiniciar()
+        NO_SECRET_OBJECTIVES.asignar_objetivos_aleatorios(clientes)
+
+        self.assertIsNone(NO_SECRET_OBJECTIVES.get_objetivo_jugador(1))
+        self.assertFalse(
+            NO_SECRET_OBJECTIVES.verificar_condicion_victoria(1, Mock(), Mock())
+        )
 
 
 if __name__ == "__main__":

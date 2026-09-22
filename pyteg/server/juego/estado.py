@@ -145,6 +145,9 @@ class Estado:
             "canjear_tarjetas": [cls.JUGANDO],
             "canjear_misil": [cls.JUGANDO],
             "lanzar_misil": [cls.JUGANDO],
+            "proponer_pacto": [cls.JUGANDO],
+            "aceptar_pacto": [cls.JUGANDO],
+            "romper_pacto": [cls.JUGANDO],
             "volver_lobby": [cls.FINALIZADO],
         }
 

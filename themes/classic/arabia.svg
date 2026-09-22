@@ -1,0 +1,11 @@
+<svg version="1.0" xmlns="http://www.w3.org/2000/svg"
+ width="32" height="26" viewBox="0 0 32.000000 26.000000"
+ preserveAspectRatio="xMidYMid meet">
+<g transform="translate(0.000000,26.000000) scale(0.100000,-0.100000)"
+fill="#e0dcc0" stroke="#b2a121" stroke-width="1.00" stroke-linejoin="round" vector-effect="non-scaling-stroke">
+<path d="M73 220 c-18 -20 -33 -41 -33 -46 0 -5 -9 -15 -20 -22 -32 -20 -27
+-86 9 -123 25 -25 37 -29 85 -29 49 0 57 3 75 29 12 16 21 33 21 39 0 5 21 12
+46 15 54 6 65 18 62 67 -3 33 -5 35 -40 38 -21 2 -38 7 -38 13 0 5 -9 9 -20 9
+-12 0 -25 10 -32 25 -9 20 -18 25 -47 24 -29 -1 -43 -8 -68 -39z"/>
+</g>
+</svg>
