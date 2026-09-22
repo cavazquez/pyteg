@@ -101,6 +101,16 @@ jobs:
           test -f "dist/pyteg-server-${VERSION}${{ matrix.executable_suffix }}"
           test -f "dist/pyteg-client-${VERSION}${{ matrix.executable_suffix }}"
 
+      - name: Smoke binaries with both themes
+        shell: bash
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: |
+          VERSION=${GITHUB_REF_NAME#v}
+          uv run python scripts/smoke_binaries.py \
+            --server "dist/pyteg-server-${VERSION}${{ matrix.executable_suffix }}" \
+            --client "dist/pyteg-client-${VERSION}${{ matrix.executable_suffix }}"
+
       - name: Create platform-specific archive
         shell: bash
         run: |

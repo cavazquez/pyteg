@@ -57,6 +57,8 @@ Todas las fechas en formato YYYY-MM-DD.
 - **Build Nuitka unificado**: `scripts/build_binaries.py` valida y compila las
   entradas vigentes `pyteg/server/app.py` y `pyteg/client/run.py` con todos los
   recursos.
+- **Recursos Revancha en distribución**: los verificadores de wheel/sdist y el
+  smoke de Nuitka exigen y cargan datos, cartas y SVG de `classic` y `revancha`.
 - **Release multiplataforma**: el workflow fusiona los artefactos descargados,
   comprueba los cuatro nombres versionados y publica los mismos archivos que
   describe en las notas.
@@ -66,6 +68,9 @@ Todas las fechas en formato YYYY-MM-DD.
 - **Simulación TCP de reconexión**: `simulate_game` puede cerrar y recuperar
   una sesión con `--disconnect-client` y `--reconnect-client`, verificando la
   identidad, el estado y el cierre de la partida.
+- **Simulación TCP de Revancha**: CI juega el tema completo con objetivos
+  secretos, situaciones, canjes, misiles y reconexión autenticada, conservando
+  el reporte wire-level como artefacto.
 
 ### Fixed
 - **Canje de misil**: exige conservar una unidad en el país; seis unidades ya

@@ -453,10 +453,7 @@ class TomlReader:
             if "objetivo_comun" in objetivo_data and not isinstance(
                 objetivo_data["objetivo_comun"], bool
             ):
-                msg = (
-                    f"'objetivo_comun' del objetivo '{objetivo_id}' debe ser "
-                    "booleano"
-                )
+                msg = f"'objetivo_comun' del objetivo '{objetivo_id}' debe ser booleano"
                 raise TomlReaderError(msg)
             if "publico" in objetivo_data and not isinstance(
                 objetivo_data["publico"], bool

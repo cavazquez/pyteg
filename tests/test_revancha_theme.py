@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import unittest
+from typing import ClassVar
 
 from pyteg.core.cartas.mazo import Mazo
 from pyteg.gui.mapa.overlap_check import find_pixel_overlaps, load_pais_bounds
@@ -13,6 +14,8 @@ from pyteg.utils import get_resource_path
 
 class RevanchaThemeTests(unittest.TestCase):
     """Comprueba que Revancha sea autocontenido y no mezcle Classic."""
+
+    reader: ClassVar[TomlReader]
 
     @classmethod
     def setUpClass(cls) -> None:

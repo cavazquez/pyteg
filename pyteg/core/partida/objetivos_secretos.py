@@ -265,14 +265,14 @@ class ObjetivosSecretos:
                 resultado = tiene_paises(jugador_id)
                 if isinstance(resultado, bool):
                     return resultado
-            except (AttributeError, TypeError, ValueError):
+            except AttributeError, TypeError, ValueError:
                 pass
         cantidad = getattr(mapa, "cantidad_de_paises_del_jugador", None)
         if not callable(cantidad):
             return False
         try:
             return int(cantidad(jugador_id, incluir_condominios=True)) > 0
-        except (TypeError, ValueError):
+        except TypeError, ValueError:
             return int(cantidad(jugador_id)) > 0
 
     def _all_clients(self, colores: Any) -> list[Any]:
@@ -286,7 +286,7 @@ class ObjetivosSecretos:
         if callable(dame_clientes):
             try:
                 return list(dame_clientes())
-            except (AttributeError, RuntimeError, TypeError):
+            except AttributeError, RuntimeError, TypeError:
                 return []
         return []
 
@@ -297,7 +297,7 @@ class ObjetivosSecretos:
             return None
         try:
             return int(userid())
-        except (TypeError, ValueError):
+        except TypeError, ValueError:
             return None
 
     def _client_color(self, client: Any, colores: Any) -> str | None:
@@ -307,14 +307,14 @@ class ObjetivosSecretos:
                 value = get_color(client)
                 if value is not None:
                     return self._normalizar_color(value)
-            except (AttributeError, RuntimeError, TypeError):
+            except AttributeError, RuntimeError, TypeError:
                 pass
         color_actual = getattr(client, "color_actual", None)
         if not callable(color_actual):
             return None
         try:
             color = color_actual()
-        except (AttributeError, RuntimeError, TypeError):
+        except AttributeError, RuntimeError, TypeError:
             return None
         if color is None:
             return None
@@ -351,7 +351,7 @@ class ObjetivosSecretos:
         if self._player_order is not None:
             try:
                 orden = [int(player_id) for player_id in self._player_order()]
-            except (AttributeError, RuntimeError, TypeError, ValueError):
+            except AttributeError, RuntimeError, TypeError, ValueError:
                 orden = []
         if not orden:
             orden = [
@@ -370,7 +370,7 @@ class ObjetivosSecretos:
             return []
         try:
             return [str(pais) for pais in paises()]
-        except (AttributeError, TypeError, ValueError):
+        except AttributeError, TypeError, ValueError:
             return []
 
     def _posee_exclusivamente(self, client_id: int, pais: str, mapa: Mapa) -> bool:
@@ -380,21 +380,21 @@ class ObjetivosSecretos:
                 propietario = ocupado_por(pais)
                 if isinstance(propietario, int):
                     return propietario == int(client_id)
-            except (AttributeError, RuntimeError, TypeError, ValueError):
+            except AttributeError, RuntimeError, TypeError, ValueError:
                 pass
         es_condominio = getattr(mapa, "es_condominio", None)
         if callable(es_condominio):
             try:
                 if es_condominio(pais) is True:
                     return False
-            except (AttributeError, RuntimeError, TypeError, ValueError):
+            except AttributeError, RuntimeError, TypeError, ValueError:
                 pass
         posee = getattr(mapa, "jugador_posee_pais", None)
         if callable(posee):
             try:
                 resultado = posee(client_id, pais)
                 return resultado if isinstance(resultado, bool) else False
-            except (AttributeError, RuntimeError, TypeError, ValueError):
+            except AttributeError, RuntimeError, TypeError, ValueError:
                 pass
         return False
 
@@ -418,7 +418,7 @@ class ObjetivosSecretos:
                 valor = cantidad(client_id)
                 if isinstance(valor, int):
                     return valor
-            except (AttributeError, RuntimeError, TypeError, ValueError):
+            except AttributeError, RuntimeError, TypeError, ValueError:
                 pass
         return 0
 
@@ -428,7 +428,7 @@ class ObjetivosSecretos:
             return None
         try:
             return str(continente(pais))
-        except (AttributeError, RuntimeError, TypeError, ValueError):
+        except AttributeError, RuntimeError, TypeError, ValueError:
             return None
 
     def _cumple_cuotas(
@@ -443,7 +443,7 @@ class ObjetivosSecretos:
         for continente, cuota in cuotas.items():
             try:
                 requerida = int(cuota)
-            except (TypeError, ValueError):
+            except TypeError, ValueError:
                 return False
             cantidad = sum(
                 1 for pais in propios if self._continente(mapa, pais) == str(continente)
@@ -457,13 +457,13 @@ class ObjetivosSecretos:
         if callable(es_isla):
             try:
                 return bool(es_isla(pais))
-            except (AttributeError, RuntimeError, TypeError, ValueError):
+            except AttributeError, RuntimeError, TypeError, ValueError:
                 pass
         adyacentes = getattr(mapa, "obtener_paises_adyacentes", None)
         if callable(adyacentes):
             try:
                 return len(adyacentes(pais)) == 0
-            except (AttributeError, RuntimeError, TypeError, ValueError):
+            except AttributeError, RuntimeError, TypeError, ValueError:
                 pass
         return False
 
@@ -476,7 +476,7 @@ class ObjetivosSecretos:
         try:
             requeridas_int = int(requeridas)
             minimo_continentes = int(objetivo.get("continentes_minimos_islas", 1))
-        except (TypeError, ValueError):
+        except TypeError, ValueError:
             return False
         islas = [pais for pais in propios if self._es_isla(mapa, pais)]
         continentes = {
@@ -548,7 +548,7 @@ class ObjetivosSecretos:
             if callable(cantidad_unidades):
                 try:
                     unidades = cantidad_unidades(pais)
-                except (AttributeError, RuntimeError, TypeError, ValueError):
+                except AttributeError, RuntimeError, TypeError, ValueError:
                     continue
                 if isinstance(unidades, int) and unidades >= tropas_minimas:
                     paises_con_tropas_suficientes += 1
