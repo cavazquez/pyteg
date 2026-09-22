@@ -6,6 +6,7 @@ import unittest
 from unittest.mock import MagicMock
 
 from pyteg.config import DEFAULT_TURN_SECONDS, VICTORY_ALL_COUNTRIES
+from pyteg.core.turnos.timer import NullTurnTimer
 from pyteg.server.juego.coordinator import ServerGameCoordinator
 from pyteg.server.juego.estado import Estado
 
@@ -102,6 +103,15 @@ class TestServerGameCoordinator(unittest.TestCase):
     def test_game_none_hasta_empezar(self) -> None:
         """game() es None antes de empezar_partida."""
         self.assertIsNone(self.coordinator.game())
+        self.assertIsNone(self.coordinator.turno_timer())
+
+    def test_estado_inicial_usa_temporizador_nulo_idempotente(self) -> None:
+        """Detener antes de iniciar no requiere una rama especial de None."""
+        self.assertIsInstance(self.coordinator._turno_timer, NullTurnTimer)  # noqa: SLF001
+
+        self.coordinator.detener()
+        self.coordinator.detener()
+
         self.assertIsNone(self.coordinator.turno_timer())
 
     def test_finalizar_partida_detiene_timer_y_difunde_estado(self) -> None:

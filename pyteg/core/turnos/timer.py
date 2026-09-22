@@ -4,11 +4,65 @@ from __future__ import annotations
 
 import threading
 import time
-from typing import Any
+from typing import Any, Protocol
 
 from pyteg.logger import get_logger
 
 LOGGER = get_logger(__name__)
+
+
+class TurnTimerProtocol(Protocol):
+    """Puerto mínimo que necesita el coordinador para gestionar un timer."""
+
+    def start(self) -> None:
+        """Inicia el temporizador real o ejecuta un no-op seguro."""
+        ...
+
+    def detener(self) -> None:
+        """Solicita detener el temporizador."""
+        ...
+
+    def join(self, timeout: float | None = None) -> None:
+        """Espera el cierre del temporizador si tiene hilo."""
+        ...
+
+    def is_alive(self) -> bool:
+        """Indica si existe un hilo de temporizador activo."""
+        ...
+
+
+class NullTurnTimer:
+    """Objeto nulo para el estado anterior al inicio de una partida.
+
+    No hereda de ``threading.Thread`` y por lo tanto no crea hilos ni puede
+    encolar vencimientos. Su API coincide con la que usa el coordinador para
+    que detener una partida, volver al lobby o iniciar una revancha sea
+    idempotente.
+    """
+
+    def __init__(self) -> None:
+        """Crea un temporizador inerte."""
+        self._detenido = True
+
+    def start(self) -> None:
+        """No inicia ningún hilo."""
+
+    def detener(self) -> None:
+        """Mantiene el temporizador detenido y no hace trabajo adicional."""
+        self._detenido = True
+
+    def join(self, timeout: float | None = None) -> None:
+        """No espera porque este objeto nunca tiene un hilo."""
+        del timeout
+
+    def is_alive(self) -> bool:
+        """Siempre retorna ``False`` porque no existe un hilo asociado.
+
+        Returns:
+            Siempre ``False``.
+
+        """
+        return False
 
 
 class TurnoTimer(threading.Thread):

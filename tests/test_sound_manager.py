@@ -6,7 +6,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-from pyteg.sound_manager import SoundManager
+from pyteg.sound_manager import NullAudioOutput, SoundManager
 
 
 class TestSoundManager(unittest.TestCase):
@@ -30,6 +30,18 @@ class TestSoundManager(unittest.TestCase):
         manager.play("attack")
 
         self.assertFalse(manager.is_enabled())
+
+    def test_salida_nula_no_crea_reproductores(self) -> None:
+        """La salida nula permite usar el gestor sin backend multimedia."""
+        manager = SoundManager(output=NullAudioOutput())
+
+        manager.play("attack")
+        manager.set_volume(0.25)
+        manager.stop_all()
+        manager.cleanup()
+
+        self.assertTrue(manager.is_enabled())
+        self.assertEqual(manager.get_volume(), 0.25)
 
     def test_get_sound_path_desconocido_devuelve_none(self) -> None:
         """Un nombre de evento inexistente no tiene archivo asociado."""

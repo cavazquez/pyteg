@@ -22,6 +22,7 @@ from pyteg.server.msg import (
     MsgMisilAgregado,
     MsgObjetivoSecreto,
     MsgPais,
+    MsgPing,
     MsgReconexion,
     MsgResultadoBatalla,
     MsgResultadoMisil,
@@ -44,6 +45,8 @@ if TYPE_CHECKING:
 
 LOGGER = get_logger(__name__)
 
+_MapState = dict[str, tuple[int | None, int]]
+
 
 class ServerTransmisor:
     """Transmisor de mensajes del servidor al cliente."""
@@ -56,6 +59,11 @@ class ServerTransmisor:
 
         """
         self._conn = conn
+        # ``enviar_mapa`` conserva el formato incremental histórico (un evento
+        # ``pais`` por cambio), pero no vuelve a enviar los 50 países cuando la
+        # transición sólo modificó uno. Un snapshot completo actualiza este
+        # caché también, así una resincronización no fuerza otro envío completo.
+        self._last_map_state: _MapState | None = None
 
     def _send_message(self, msg: IMsg) -> None:
         """Envía un mensaje al cliente.
@@ -186,6 +194,10 @@ class ServerTransmisor:
         """Confirma el resultado de la negociación."""
         self._send_message(MsgHelloAck(accepted))
 
+    def enviar_ping(self, heartbeat_id: str) -> None:
+        """Solicita que el cliente confirme que todavía está conectado."""
+        self._send_message(MsgPing(heartbeat_id))
+
     def enviar_fase(self, fase: str, jugador_id: int, unidades_pendientes: int) -> None:
         """Envía la fase validada por el servidor."""
         self._send_message(MsgFase(fase, jugador_id, unidades_pendientes))
@@ -193,6 +205,9 @@ class ServerTransmisor:
     def enviar_snapshot(self, snapshot: dict[str, Any]) -> None:
         """Envía un estado público atómico."""
         self._send_message(MsgSnapshot(snapshot))
+        map_state = self._map_state_from_snapshot(snapshot)
+        if map_state is not None:
+            self._last_map_state = map_state
 
     def enviar_resultado_comando(
         self,
@@ -279,8 +294,45 @@ class ServerTransmisor:
         msg = MsgActualizarListaJugadores(jugadores)
         self._send_message(msg)
 
+    @staticmethod
+    def _map_state_from_snapshot(snapshot: dict[str, Any]) -> _MapState | None:
+        """Extrae propietarios y unidades de un snapshot válido.
+
+        Returns:
+            Estado de países o ``None`` si el campo no cumple el contrato.
+
+        """
+        countries = snapshot.get("countries")
+        if not isinstance(countries, dict):
+            return None
+        state: _MapState = {}
+        for name, raw_country in countries.items():
+            if not isinstance(name, str) or not isinstance(raw_country, dict):
+                return None
+            owner = raw_country.get("userid")
+            units = raw_country.get("unidades")
+            if owner is not None and not isinstance(owner, int):
+                return None
+            if not isinstance(units, int):
+                return None
+            state[name] = (owner, units)
+        return state
+
+    @staticmethod
+    def _map_state_from_map(mapa: Any) -> _MapState:
+        """Obtiene el estado público mínimo usado por los eventos ``pais``.
+
+        Returns:
+            Mapeo de país a propietario y cantidad de unidades.
+
+        """
+        return {
+            str(pais): (mapa.ocupado_por(pais), int(mapa.cantidad_unidades(pais)))
+            for pais in mapa.paises()
+        }
+
     def enviar_mapa(self, mapa: Any, game: Any) -> None:  # noqa: ARG002
-        """Envía el estado actual del mapa al cliente.
+        """Envía sólo los países que cambiaron desde la última actualización.
 
         Args:
             mapa: Instancia del mapa del juego.
@@ -288,11 +340,25 @@ class ServerTransmisor:
                 disponibles se envían vía `enviar_unidades_disponibles`).
 
         """
+        current_state = self._map_state_from_map(mapa)
+        previous_state = self._last_map_state
+        changed = (
+            current_state
+            if previous_state is None
+            else {
+                pais: state
+                for pais, state in current_state.items()
+                if previous_state.get(pais) != state
+            }
+        )
         for pais in mapa.paises():
-            unidades = mapa.cantidad_unidades(pais)
-            userid = mapa.ocupado_por(pais)
+            state = changed.get(str(pais))
+            if state is None:
+                continue
+            userid, unidades = state
             LOGGER.debug("%s userid=%s unidades=%s", pais, userid, unidades)
             self.enviar_pais(pais, userid, unidades)
+        self._last_map_state = current_state
 
     def enviar_resultado_batalla(self, batalla_data: BattleResultPayload) -> None:
         """Envía el resultado de una batalla al cliente.
@@ -352,7 +418,7 @@ class ServerTransmisor:
         )
         self._send_message(msg)
 
-    def enviar_tarjetas_jugador(self, tarjetas: list[dict[str, str]]) -> None:
+    def enviar_tarjetas_jugador(self, tarjetas: list[dict[str, Any]]) -> None:
         """Envía las tarjetas del jugador al cliente.
 
         Args:

@@ -10,6 +10,88 @@ if TYPE_CHECKING:
     from pyteg.gui.managers.protocols import MainWindowProtocol
 
 
+_FASES_MOSTRABLES = {
+    "colocacion": "Colocación",
+    "acciones": "Acciones",
+}
+
+
+def texto_fase(fase: str | None) -> str:
+    """Convierte el identificador de fase del protocolo en texto de UI.
+
+    Returns:
+        Nombre de la fase traducido para mostrar al usuario.
+
+    """
+    if fase is None:
+        return _("Acciones")
+    return _(_FASES_MOSTRABLES.get(fase, fase.capitalize()))
+
+
+def contexto_partida(main_window: MainWindowProtocol | Any) -> str | None:
+    """Devuelve el contexto compacto que se muestra en la barra de estado.
+
+    La barra conserva el estado global (conectado, esperando o finalizado) y
+    agrega este contexto solamente mientras hay una partida en curso. De esa
+    forma una fase vieja no queda visible después de desconectar al cliente.
+
+    Returns:
+        Texto compacto del contexto, o ``None`` si solo corresponde mostrar
+        el estado global.
+
+    """
+    if getattr(main_window, "partida_finalizada", False) is True:
+        return None
+
+    estado = getattr(main_window, "estado_actual", None)
+    fase = getattr(main_window, "fase_actual", None)
+    if estado not in {None, "", "JUGANDO"}:
+        return None
+
+    jugador = getattr(main_window, "jugador_actual_nombre", None)
+    if not jugador:
+        jugador_id = getattr(main_window, "jugador_actual_id", None)
+        jugador = _("Jugador {}").format(jugador_id) if jugador_id else _("Sin turno")
+
+    try:
+        pendientes = max(
+            0, int(getattr(main_window, "unidades_pendientes_servidor", 0))
+        )
+    except TypeError, ValueError:
+        pendientes = 0
+
+    contexto = _("Fase: {} · Activo: {} · Refuerzos: {}").format(
+        texto_fase(fase),
+        jugador,
+        pendientes,
+    )
+    situacion = _situacion_activa(main_window)
+    if situacion is not None:
+        contexto += _(" · Situación: {}").format(situacion)
+    return contexto
+
+
+def _situacion_activa(main_window: MainWindowProtocol | Any) -> str | None:
+    """Obtiene el nombre público de la situación desde el snapshot.
+
+    Returns:
+        Nombre visible o ``None`` cuando no hay situación activa.
+
+    """
+    model = getattr(main_window, "client_state_model", None)
+    snapshot = getattr(model, "snapshot", None)
+    if not isinstance(snapshot, dict):
+        return None
+    situacion = snapshot.get("situacion")
+    if not isinstance(situacion, dict):
+        return None
+    identifier = situacion.get("id")
+    name = situacion.get("nombre")
+    if identifier in {None, "", "none"} or not isinstance(name, str):
+        return None
+    return name
+
+
 def es_mi_turno(main_window: MainWindowProtocol | Any) -> bool:
     """Indica si el jugador local tiene el turno activo.
 
@@ -101,4 +183,18 @@ def refresh_acciones_juego(main_window: MainWindowProtocol | Any) -> None:
                     hay_dos_paises_seleccionados=hay_dos_paises and acciones_combate
                 )
             if hasattr(toolbar, "actualizar_botones_turno"):
-                toolbar.actualizar_botones_turno(es_mi_turno=mi_turno)
+                toolbar.actualizar_botones_turno(
+                    es_mi_turno=mi_turno,
+                    puede_finalizar_turno=acciones_combate,
+                )
+            if hasattr(toolbar, "actualizar_motivos_acciones"):
+                toolbar.actualizar_motivos_acciones(
+                    hay_dos_paises_seleccionados=hay_dos_paises,
+                    puede_actuar=acciones_combate,
+                    es_mi_turno=mi_turno,
+                )
+
+    status_manager = getattr(main_window, "status_manager", None)
+    update_context = getattr(status_manager, "update_gameplay_context", None)
+    if callable(update_context):
+        update_context()

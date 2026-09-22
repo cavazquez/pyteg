@@ -28,6 +28,11 @@ from pyteg.server.tasks.lobby import (
     ServerTaskSeleccionarColor,
     ServerTaskSetUsername,
 )
+from pyteg.server.tasks.pactos import (
+    ServerTaskAceptarPacto,
+    ServerTaskProponerPacto,
+    ServerTaskRomperPacto,
+)
 from pyteg.server.tasks.reconectar import ServerTaskReconectar
 from pyteg.server.tasks.rematch import ServerTaskVolverLobby
 from pyteg.server.tasks.snapshot import ServerTaskSolicitarSnapshot
@@ -54,6 +59,9 @@ dict_task: dict[str, TaskFactory] = {
     "canjear_tarjetas": ServerTaskCanjearTarjetas,
     "canjear_misil": ServerTaskCanjearMisil,
     "lanzar_misil": ServerTaskLanzarMisil,
+    "proponer_pacto": ServerTaskProponerPacto,
+    "aceptar_pacto": ServerTaskAceptarPacto,
+    "romper_pacto": ServerTaskRomperPacto,
     "reconectar": ServerTaskReconectar,
     "hello": ServerTaskHello,
     "solicitar_snapshot": ServerTaskSolicitarSnapshot,
@@ -64,6 +72,7 @@ __all__ = [
     "LOGGER",
     "BaseTaskData",
     "IServerTask",
+    "ServerTaskAceptarPacto",
     "ServerTaskAgregarUnidad",
     "ServerTaskAtacar",
     "ServerTaskCanjeEspecial",
@@ -76,8 +85,10 @@ __all__ = [
     "ServerTaskLanzarMisil",
     "ServerTaskMoverUnidad",
     "ServerTaskNull",
+    "ServerTaskProponerPacto",
     "ServerTaskReclamarTarjeta",
     "ServerTaskReconectar",
+    "ServerTaskRomperPacto",
     "ServerTaskSeleccionarColor",
     "ServerTaskSetUsername",
     "ServerTaskSolicitarSnapshot",

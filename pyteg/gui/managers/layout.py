@@ -9,8 +9,11 @@ from typing import TYPE_CHECKING, cast
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
+    QFrame,
     QGridLayout,
     QLabel,
+    QScrollArea,
+    QSizePolicy,
     QSplitter,
     QVBoxLayout,
     QWidget,
@@ -25,6 +28,11 @@ from pyteg.i18n import translate as _
 
 if TYPE_CHECKING:
     from pyteg.gui.managers.protocols import MainWindowProtocol
+
+
+_INITIAL_VIEW_SIZE = 1000
+_INITIAL_CHAT_SIZE = 120
+_SPLITTER_PARTS = 2
 
 
 class LayoutManager:
@@ -58,6 +66,13 @@ class LayoutManager:
         """Configurar chat y toolbar."""
         # Agrego el Chat
         self.main_window.chat = Chat(self.main_window)
+        # El ``sizeHint`` de QTextEdit es alto aunque el chat esté vacío.
+        # Ignorar ese hint permite que el splitter use una reserva compacta.
+        self.main_window.chat.setSizePolicy(
+            QSizePolicy.Policy.Preferred,
+            QSizePolicy.Policy.Ignored,
+        )
+        self.main_window.chat.setMinimumHeight(0)
         self.main_window.chat.show()
 
         # Agrego la barra de herramientas
@@ -84,12 +99,18 @@ class LayoutManager:
         """
         vertical_splitter = QSplitter()
         vertical_splitter.setOrientation(Qt.Orientation.Vertical)
+        vertical_splitter.setChildrenCollapsible(True)
         if self.main_window.view is not None:
             vertical_splitter.addWidget(self.main_window.view)
         if self.main_window.chat is not None:
             vertical_splitter.addWidget(self.main_window.chat)
-        vertical_splitter.setStretchFactor(0, 9)
-        vertical_splitter.setStretchFactor(1, 1)
+        vertical_splitter.setCollapsible(0, False)  # noqa: FBT003
+        vertical_splitter.setCollapsible(1, True)  # noqa: FBT003
+        vertical_splitter.setStretchFactor(0, 1)
+        vertical_splitter.setStretchFactor(1, 0)
+        vertical_splitter.setSizes([_INITIAL_VIEW_SIZE, _INITIAL_CHAT_SIZE])
+        vertical_splitter.setHandleWidth(6)
+        self.main_window.vertical_splitter = vertical_splitter
         return vertical_splitter
 
     def _create_horizontal_splitter(self, vertical_splitter: QSplitter) -> QSplitter:
@@ -102,13 +123,17 @@ class LayoutManager:
         # Create a horizontal splitter to hold the vertical splitter
         horizontal_splitter = QSplitter()
         horizontal_splitter.setOrientation(Qt.Orientation.Horizontal)
+        horizontal_splitter.setChildrenCollapsible(True)
+        horizontal_splitter.setHandleWidth(6)
         horizontal_splitter.addWidget(vertical_splitter)
+        self.main_window.horizontal_splitter = horizontal_splitter
         return horizontal_splitter
 
     def _setup_right_column(self) -> None:
         """Configurar la columna derecha con unidades y jugadores."""
         # Widget principal para la columna derecha
         self.main_window.right_column_widget = QWidget()
+        self.main_window.right_column_widget.setMinimumWidth(200)
         layout = QVBoxLayout(self.main_window.right_column_widget)
         layout.setContentsMargins(10, 15, 10, 10)
         layout.setSpacing(8)
@@ -122,6 +147,22 @@ class LayoutManager:
 
         # Add the 6 values below the player list
         self._setup_continent_values(layout)
+
+        # El contenido puede crecer con muchos jugadores; el scroll evita que
+        # las últimas filas queden inaccesibles en ventanas bajas.
+        right_column_scroll = QScrollArea()
+        right_column_scroll.setWidgetResizable(True)
+        right_column_scroll.setFrameShape(QFrame.Shape.NoFrame)
+        right_column_scroll.setHorizontalScrollBarPolicy(
+            Qt.ScrollBarPolicy.ScrollBarAlwaysOff
+        )
+        right_column_scroll.setMinimumWidth(220)
+        right_column_scroll.setSizePolicy(
+            QSizePolicy.Policy.Preferred,
+            QSizePolicy.Policy.Expanding,
+        )
+        right_column_scroll.setWidget(self.main_window.right_column_widget)
+        self.main_window.right_column_scroll = right_column_scroll
 
     def _setup_continent_values(self, layout: QVBoxLayout) -> None:
         """Delega la construcción del panel UNIDADES en `units_panel`."""
@@ -171,15 +212,45 @@ class LayoutManager:
     def _setup_main_layout(self, horizontal_splitter: QSplitter) -> None:
         """Configurar el layout principal de la ventana."""
         # Agregar columna derecha al splitter
-        horizontal_splitter.addWidget(self.main_window.right_column_widget)
+        horizontal_splitter.addWidget(self.main_window.right_column_scroll)
+        horizontal_splitter.setCollapsible(0, False)  # noqa: FBT003
+        horizontal_splitter.setCollapsible(1, True)  # noqa: FBT003
+        horizontal_splitter.setStretchFactor(0, 1)
+        horizontal_splitter.setStretchFactor(1, 0)
 
         # Create a widget to hold the QGraphicsView and input area
         self.main_window.main_widget = QWidget(cast("QWidget", self.main_window))
         main_layout = QGridLayout()
+        main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.addWidget(horizontal_splitter, 0, 0)
         self.main_window.main_widget.setLayout(main_layout)
         self.main_window.setCentralWidget(self.main_window.main_widget)
 
-        # Configurar factores de estiramiento para el splitter horizontal
-        horizontal_splitter.setStretchFactor(0, 8)  # 80% for the left side
-        horizontal_splitter.setStretchFactor(1, 2)  # 20% for the right column
+    def update_responsive_layout(self, width: int, height: int) -> None:
+        """Reserva espacio útil al mapa en resoluciones pequeñas.
+
+        El usuario conserva control de los dos paneles mediante la toolbar;
+        este ajuste solo evita que el chat o el panel lateral ocupen una
+        proporción desmedida durante un cambio de resolución.
+        """
+        vertical = getattr(self.main_window, "vertical_splitter", None)
+        if vertical is not None and vertical.isVisible() and height > 0:
+            sizes = vertical.sizes()
+            if len(sizes) == _SPLITTER_PARTS and vertical.widget(1).isVisible():
+                chat_size = min(160, max(72, round(height * 0.18)))
+                vertical.setSizes([max(1, height - chat_size), chat_size])
+
+        horizontal = getattr(self.main_window, "horizontal_splitter", None)
+        sidebar = getattr(self.main_window, "right_column_scroll", None)
+        if (
+            horizontal is None
+            or sidebar is None
+            or not sidebar.isVisible()
+            or width <= 0
+        ):
+            return
+        sizes = horizontal.sizes()
+        if len(sizes) != _SPLITTER_PARTS:
+            return
+        sidebar_size = min(300, max(220, round(width * 0.22)))
+        horizontal.setSizes([max(1, width - sidebar_size), sidebar_size])
