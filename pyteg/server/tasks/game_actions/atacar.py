@@ -74,6 +74,10 @@ class ServerTaskAtacar(IServerTask[AtacarTaskData]):
 
         TurnValidator.validate_turn(client, context.game)
 
+        validar_accion = getattr(context.game, "validar_accion_situacion", None)
+        if callable(validar_accion):
+            validar_accion(client, "atacar")
+
         CountryOwnershipValidator.validate_ownership(client, context.mapa, self._origen)
 
         CountryOwnershipValidator.validate_not_own_country(
@@ -81,6 +85,10 @@ class ServerTaskAtacar(IServerTask[AtacarTaskData]):
         )
 
         AdjacencyValidator.validate_adjacent(context.mapa, self._origen, self._destino)
+
+        validar_ataque = getattr(context.game, "validar_ataque_situacion", None)
+        if callable(validar_ataque):
+            validar_ataque(self._origen, self._destino)
 
         UnitValidator.validate_min_units(
             context.mapa,

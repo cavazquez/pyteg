@@ -1,101 +1,94 @@
-# Cartas de situaciones: contrato antes de implementar
+# Cartas de situaciones
 
-Este documento cierra el análisis de la propuesta de cartas de situaciones sin
-inventar una variante de reglas. El repositorio implementa cartas de país,
-canjes, misiles y objetivos secretos; todavía no tiene un mazo de situaciones
-ni una regla que explique cómo se roba, se juega o se resuelve una de esas
-cartas.
+Las cartas de situaciones son una regla opcional del servidor. El mapa y el
+ruleset se configuran por separado: un mapa aporta países, propietarios y
+continentes; el ruleset aporta el mazo y sus efectos.
 
-La referencia pública de [TEGNet](https://www.tegnet.com.ar/es/reglamento.htm)
-indica que su reglamento es prácticamente el del TEG de mesa, con diferencias
-por el juego en red, pero la página no define un mazo de situaciones para este
-proyecto. Hasta confirmar una edición concreta y su licencia, no se deben
-copiar textos o ilustraciones de una baraja comercial.
+La configuración predeterminada es `none`, que instala un objeto nulo y deja
+el comportamiento clásico sin cambios. Para habilitar el mazo inicial:
 
-## Decisión propuesta
-
-La primera entrega debe ser un contrato de datos y una prueba de privacidad,
-sin efectos de reglas. El mazo se mantiene separado de `cartas.toml` porque
-las cartas de país participan en canjes y las situaciones podrían tener otro
-ciclo de vida.
-
-Una definición de tema tendría esta forma conceptual:
-
-```toml
-[[Situaciones]]
-id = "situacion.ejemplo"
-titulo = "Título traducible"
-descripcion = "Texto aprobado por el proyecto"
-visibilidad = "privada"
-momento = "inicio_turno"
-efecto = "sin_efecto"
-parametros = {}
+```bash
+uv run pyteg-server --theme classic --situation-ruleset revancha
 ```
 
-Los nombres son una propuesta, no un formato estable todavía. La revisión de
-reglas debe decidir primero:
+También se puede inyectar la configuración desde Python:
 
-- si la carta se roba al comenzar el turno, al conquistar, al finalizar una
-  ronda o por una acción voluntaria;
-- si la ven todos los jugadores o sólo su dueño;
-- si tiene un efecto inmediato, una respuesta de otro jugador, una duración o
-  un descarte;
-- si se puede conservar más de una, devolver al mazo, encadenar o jugar fuera
-  de turno;
-- qué ocurre con la carta cuando el jugador se desconecta, reconecta, es
-  eliminado o inicia una revancha;
-- qué edición/reglamento y qué licencia autorizan los textos y las imágenes.
+```python
+server = Server(theme="classic", situation_ruleset="revancha")
+```
 
-## Contrato de red que se implementará cuando se cierre la regla
+## Ciclo de una partida
 
-El servidor será la única autoridad. El diseño previsto separa tres tipos de
-datos:
+- La primera ronda conserva las reglas base y no revela una carta.
+- Al iniciar cada ronda posterior el servidor revela exactamente una carta.
+- La carta se revela antes de preparar los refuerzos del primer turno de esa
+  ronda. Por eso los bonus consultan el mapa vigente y no un snapshot viejo.
+- El inicio de ronda es idempotente: repetir la misma clave de ronda por una
+  reconexión no roba otra carta ni vuelve a tirar Crisis.
+- El mazo usa `SystemRandom` en producción. Las pruebas y simulaciones pueden
+  inyectar `random.Random(seed)` para reproducibilidad.
 
-1. `situacion_activa`: evento público con `situation_id`, fase y jugador al
-   que corresponde responder, si la variante lo requiere.
-2. `carta_situacion`: evento privado con el contenido que sólo puede conocer
-   el jugador autorizado. Nunca entra en el snapshot público.
-3. `jugar_situacion` y, si hace falta, `descartar_situacion`: comandos con
-   `command_id`, validados por fase, identidad, propiedad, expiración y
-   parámetros del efecto.
+El snapshot público incluye `situacion` con `id`, `nombre`, `efecto`,
+`parametro` y `ronda`. No se agregan manos privadas ni datos de objetivos al
+snapshot.
 
-Una reconexión debe recibir de nuevo la mano privada y la situación activa
-vigente, sin reproducir eventos históricos. Los comandos repetidos con el
-mismo `command_id` deben devolver el mismo `command_result` sin volver a
-aplicar el efecto. Una revancha debe vaciar el mazo/las manos de la partida
-anterior y crear una secuencia nueva.
+## Reglas disponibles
 
-## Criterios de aceptación de la futura implementación
+El ruleset `revancha` contiene 50 cartas:
 
-- El tema que no declara situaciones sigue funcionando y conserva exactamente
-  el comportamiento actual.
-- Ningún snapshot, log público o cliente espectador revela una carta privada.
-- Un cliente no puede robar, jugar, descartar ni resolver una carta fuera de
-  la fase o del turno autorizados.
-- El efecto se aplica una sola vez aunque se repita el comando o haya una
-  reconexión en medio de la transición.
-- La simulación multicliente cubre robo, juego, descarte, desconexión,
-  reconexión, eliminación y revancha cuando la regla esté aprobada.
-- Cada texto y recurso visual tiene origen y licencia documentados.
+- 20 de `Combate clásico`.
+- 4 de `Nieve`: suma un dado al defensor, hasta cuatro.
+- 4 de `Viento a favor`: suma un dado al atacante, hasta cuatro.
+- 4 de `Crisis`: tira un dado por jugador al revelar la carta; todos los
+  empatados en el menor resultado no pueden reclamar tarjeta de país durante
+  esa ronda.
+- 4 de `Refuerzos extras`: suma la mitad entera de los países ocupados al
+  refuerzo general de cada jugador.
+- 4 de `Fronteras abiertas`: permite atacar sólo entre continentes distintos.
+- 4 de `Fronteras cerradas`: permite atacar sólo dentro del mismo continente.
+- 6 de `Descanso`: el color indicado no puede atacar ni mover unidades, pero
+  sí puede colocar refuerzos.
 
-## Descomposición atómica
+Las elecciones de máximo de dados, redondeo de refuerzos y empates están
+centralizadas en los efectos y cubiertas por tests. Si la edición física que
+se quiere reproducir usa otra interpretación, se cambia el efecto o se crea
+otro ruleset sin acoplarlo a nombres de países.
 
-Cuando el usuario confirme una variante, conviene abrir estos cambios en
-orden:
+## Diseño
 
-1. **Especificación de reglas y fuente**: cerrar momento, visibilidad, efectos
-   y licencia con ejemplos de una partida.
-2. **Modelo y carga de tema**: validar `Situaciones` y rechazar IDs,
-   momentos o efectos desconocidos.
-3. **Mazo privado y snapshots**: reparto, descarte, reconexión y revancha sin
-   filtrar información.
-4. **Comandos y eventos validados**: esquema de protocolo, autoridad del
-   servidor e idempotencia.
-5. **Primera carta sin efecto**: recorrido vertical para probar UI y transporte
-   sin alterar las reglas de combate.
-6. **Efectos individuales**: un issue por efecto, con tests de dominio,
-   integración TCP y simulación.
+El código está en `pyteg/core/situaciones/`:
 
-No se implementa el punto 5 hasta que el punto 1 tenga una respuesta escrita:
-una carta sin una regla de robo y de resolución sólo agrega estado que los
-clientes no pueden interpretar de forma consistente.
+- `SituationCard` y `SituationContext` son modelos inmutables y expresan sólo
+  datos del dominio.
+- `SituationEffect` es la estrategia base. Cada carta concreta implementa
+  únicamente la política que modifica.
+- `NoSituationEffect` y `NoSituationCard` forman el Null Object para `none`,
+  mazos agotados y mapas sin un color de descanso compatible.
+- `SituationDeck` separa orden, descarte y aleatoriedad del mapa.
+- `SituationRuntime` es el estado de una partida: revela, inicializa el
+  efecto, conserva resultados de Crisis y delega validaciones.
+- `catalog.py` es la fábrica/registro. Agregar un ruleset no requiere cambiar
+  `Game` ni la GUI.
+
+Los efectos reciben `IMapProtocol` y consultan sólo `paises()`,
+`ocupado_por()` y `continente()`. No hay nombres de países ni continentes
+clavados en el mazo, así que un tema compatible puede usar las mismas cartas.
+Una carta `Descanso` cuyo color no participa se descarta y se intenta otra; si
+no queda ninguna aplicable se usa el objeto nulo.
+
+## Autoridad y extensiones
+
+Las tareas TCP validan las restricciones de ataque, movimiento y reclamo
+antes de modificar el dominio. Los clientes sólo renderizan la situación del
+snapshot; el servidor sigue siendo la autoridad.
+
+Para sumar una carta:
+
+1. Añadir una estrategia pequeña en `effects.py`.
+2. Registrarla en `_EFFECTS` y, si corresponde, en `build_situation_deck`.
+3. Declarar qué capacidades del mapa necesita en `is_applicable`.
+4. Cubrir el efecto con tests unitarios y una prueba de ronda idempotente.
+5. Actualizar este documento y el contrato público si cambia el snapshot.
+
+Los textos e imágenes de una futura interfaz deben tener una fuente y licencia
+documentadas; el ruleset actual sólo usa nombres y datos propios del proyecto.

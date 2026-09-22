@@ -183,15 +183,7 @@ class ToolBarActionsMixin:
             True si está conectado, False en caso contrario.
 
         """
-        if not hasattr(self.main_window, "transmisor"):
-            return False
-        if self.main_window.transmisor is None:
-            return False
-        if hasattr(self.main_window.transmisor, "esta_conectado"):
-            result = self.main_window.transmisor.esta_conectado()
-            return bool(result) if result is not None else False
-        transmisor_type_name = type(self.main_window.transmisor).__name__
-        return bool(not transmisor_type_name.endswith("NullTransmisor"))
+        return bool(self.main_window.transmisor.esta_conectado())
 
     def _habilitar_solo_conectar(self) -> None:
         """Deshabilita todos los botones excepto el de conectar."""

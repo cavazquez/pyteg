@@ -6,6 +6,10 @@ from typing import TYPE_CHECKING
 
 from pyteg.config import CONTINENT_UNIT_SUFFIX, CONTINENTS
 from pyteg.core.combate.calculos import Calculos
+from pyteg.core.partida.reinforcement_policy import (
+    NO_EXTRA_REINFORCEMENTS,
+    ReinforcementPolicy,
+)
 
 if TYPE_CHECKING:
     from pyteg.server.juego.mapa import Mapa
@@ -19,16 +23,23 @@ class SiguientesTurnos:
     se reflejan en los refuerzos del jugador que todavía no comenzó.
     """
 
-    def __init__(self, jugador: int, mapa: Mapa) -> None:
+    def __init__(
+        self,
+        jugador: int,
+        mapa: Mapa,
+        reinforcement_policy: ReinforcementPolicy = NO_EXTRA_REINFORCEMENTS,
+    ) -> None:
         """Inicializa un turno posterior al segundo.
 
         Args:
             jugador: userid (int) del jugador en turno.
             mapa: Mapa del juego para calcular unidades.
+            reinforcement_policy: Política de refuerzos adicionales.
 
         """
         self._jugador = jugador
         self._mapa = mapa
+        self._reinforcement_policy = reinforcement_policy
         self._unidades = 0
         self._unidades_calculadas = False
         for spec in CONTINENTS:
@@ -44,6 +55,9 @@ class SiguientesTurnos:
                 self._mapa, self._jugador, spec.map_id
             )
             setattr(self, f"_unidades_{spec.unit_suffix}", cantidad)
+        self._unidades += max(
+            0, int(self._reinforcement_policy.extra_for(self._jugador))
+        )
         self._unidades_calculadas = True
 
     def unidades_por_tipo(self) -> dict[str, int]:
@@ -123,15 +137,31 @@ class SiguientesTurnos:
 class SegundoTurno:
     """Representa el segundo turno de un jugador."""
 
-    def __init__(self, jugador: int) -> None:
+    def __init__(
+        self,
+        jugador: int,
+        reinforcement_policy: ReinforcementPolicy = NO_EXTRA_REINFORCEMENTS,
+    ) -> None:
         """Inicializa el segundo turno.
 
         Args:
             jugador: userid (int) del jugador en turno.
+            reinforcement_policy: Política de refuerzos adicionales.
 
         """
         self._jugador = jugador
         self._unidades = 3
+        self._reinforcement_policy = reinforcement_policy
+        self._unidades_calculadas = False
+
+    def preparar(self) -> None:
+        """Calcula una vez el bonus de situación al entrar al turno."""
+        if self._unidades_calculadas:
+            return
+        self._unidades += max(
+            0, int(self._reinforcement_policy.extra_for(self._jugador))
+        )
+        self._unidades_calculadas = True
 
     def jugador_actual(self) -> int:
         """Obtiene el userid del jugador actual.
@@ -144,6 +174,7 @@ class SegundoTurno:
 
     def usar_unidad(self) -> None:
         """Consume una unidad."""
+        self.preparar()
         self._unidades -= 1
 
     def cant_unidades(self) -> int:
@@ -153,6 +184,7 @@ class SegundoTurno:
             Cantidad de unidades.
 
         """
+        self.preparar()
         return self._unidades
 
     def agregar_unidades_generales(self, num: int) -> None:
@@ -162,6 +194,7 @@ class SegundoTurno:
             num: Cantidad de unidades a agregar.
 
         """
+        self.preparar()
         self._unidades += num
 
     def unidades_por_tipo(self) -> dict[str, int]:
@@ -171,6 +204,7 @@ class SegundoTurno:
             Diccionario con las unidades de infantería disponibles.
 
         """
+        self.preparar()
         return {"infanteria": self._unidades}
 
 

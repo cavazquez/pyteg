@@ -8,6 +8,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from pyteg.core.partida.reinforcement_policy import (
+    NO_EXTRA_REINFORCEMENTS,
+    ReinforcementPolicy,
+)
 from pyteg.core.turnos.turnos import PrimerTurno, SegundoTurno, SiguientesTurnos
 
 if TYPE_CHECKING:
@@ -30,14 +34,20 @@ class TurnManager:
     y el orden de los jugadores.
     """
 
-    def __init__(self, mapa: Mapa) -> None:
+    def __init__(
+        self,
+        mapa: Mapa,
+        reinforcement_policy: ReinforcementPolicy = NO_EXTRA_REINFORCEMENTS,
+    ) -> None:
         """Inicializa el gestor de turnos.
 
         Args:
             mapa: Instancia del mapa del juego.
+            reinforcement_policy: Política de refuerzos adicionales.
 
         """
         self._mapa = mapa
+        self._reinforcement_policy = reinforcement_policy
         self._turnos: list[TurnoType] = [PrimerTurno(_USERID_PLACEHOLDER)]
         self._num_turno = 0
         self._num_ronda = 1
@@ -181,9 +191,14 @@ class TurnManager:
 
         """
         if es_segundo_turno:
-            self._turnos = [SegundoTurno(j) for j in jugadores_userids]
+            self._turnos = [
+                SegundoTurno(j, self._reinforcement_policy) for j in jugadores_userids
+            ]
         else:
-            self._turnos = [SiguientesTurnos(j, self._mapa) for j in jugadores_userids]
+            self._turnos = [
+                SiguientesTurnos(j, self._mapa, self._reinforcement_policy)
+                for j in jugadores_userids
+            ]
         self._num_turno = 0
         self._num_ronda += 1
 
@@ -265,8 +280,12 @@ class TurnManager:
         if isinstance(turno_actual, PrimerTurno):
             turno: TurnoType = PrimerTurno(jugador_id)
         elif isinstance(turno_actual, SegundoTurno):
-            turno = SegundoTurno(jugador_id)
+            turno = SegundoTurno(jugador_id, self._reinforcement_policy)
         else:
-            turno = SiguientesTurnos(jugador_id, self._mapa)
+            turno = SiguientesTurnos(
+                jugador_id,
+                self._mapa,
+                self._reinforcement_policy,
+            )
         self._turnos.append(turno)
         return True

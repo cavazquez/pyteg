@@ -9,6 +9,12 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 from pyteg.config import DEFAULT_TURN_SECONDS, VICTORY_ALL_COUNTRIES
+from pyteg.core.situaciones.catalog import (
+    DEFAULT_SITUATION_RULESET,
+    available_situation_rulesets,
+    build_situation_deck,
+)
+from pyteg.core.situaciones.runtime import SituationRuntime
 from pyteg.core.turnos.timer import TurnoTimer
 from pyteg.logger import get_logger
 from pyteg.server.juego.game import Game
@@ -40,6 +46,8 @@ class ServerGameCoordinator:
         get_clients: Any,
         broadcaster: Any,
         color_manager: Any,
+        situation_ruleset: str = DEFAULT_SITUATION_RULESET,
+        situation_rng: Any = None,
     ) -> None:
         """Inicializa el coordinador de partidas.
 
@@ -51,6 +59,11 @@ class ServerGameCoordinator:
             get_clients: Función o método que retorna la lista de clientes.
             broadcaster: Instancia del broadcaster de mensajes.
             color_manager: Instancia del gestor de colores.
+            situation_ruleset: Identificador del ruleset de situaciones.
+            situation_rng: Fuente opcional para pruebas reproducibles.
+
+        Raises:
+            ValueError: Si el ruleset de situaciones no está registrado.
 
         """
         self._mapa = mapa
@@ -60,6 +73,12 @@ class ServerGameCoordinator:
         self._get_clients = get_clients
         self._broadcaster = broadcaster
         self._color_manager = color_manager
+        normalized_situation_ruleset = str(situation_ruleset).strip().lower()
+        if normalized_situation_ruleset not in available_situation_rulesets():
+            msg = f"Ruleset de situaciones desconocido: {situation_ruleset}"
+            raise ValueError(msg)
+        self._situation_ruleset = normalized_situation_ruleset
+        self._situation_rng = situation_rng
 
         # Configuración de partida
         self._segundos_por_turno: int = DEFAULT_TURN_SECONDS
@@ -109,6 +128,28 @@ class ServerGameCoordinator:
         """
         self._misiles_habilitados = activados
 
+    def set_situation_ruleset(self, ruleset: str) -> None:
+        """Selecciona explícitamente el ruleset de situaciones.
+
+        Raises:
+            ValueError: Si el ruleset de situaciones no está registrado.
+
+        """
+        normalized = str(ruleset).strip().lower()
+        if normalized not in available_situation_rulesets():
+            msg = f"Ruleset de situaciones desconocido: {ruleset}"
+            raise ValueError(msg)
+        self._situation_ruleset = normalized
+
+    def situation_ruleset(self) -> str:
+        """Devuelve el ruleset de situaciones configurado.
+
+        Returns:
+            Identificador del ruleset activo.
+
+        """
+        return self._situation_ruleset
+
     def misiles_habilitados(self) -> bool:
         """Retorna si los misiles están habilitados en esta partida.
 
@@ -131,7 +172,7 @@ class ServerGameCoordinator:
             misiles_habilitados=self._misiles_habilitados,
         )
 
-    def configuracion_partida(self) -> dict[str, int | bool]:
+    def configuracion_partida(self) -> dict[str, int | bool | str]:
         """Devuelve la configuración pública vigente de la partida.
 
         Returns:
@@ -143,6 +184,7 @@ class ServerGameCoordinator:
             "paises_para_victoria": self._paises_para_victoria,
             "objetivos_secretos": self._objetivos_secretos_activados,
             "misiles_habilitados": self._misiles_habilitados,
+            "situation_ruleset": self._situation_ruleset,
         }
 
     def empezar_partida(self, server: Any) -> Game:
@@ -165,6 +207,14 @@ class ServerGameCoordinator:
         )
 
         # Crear e iniciar el juego, pasando la referencia al servidor
+        situation_runtime = SituationRuntime(
+            self._mapa,
+            build_situation_deck(
+                self._situation_ruleset,
+                rng=self._situation_rng,
+            ),
+            dice_rng=self._situation_rng,
+        )
         self._game = Game(
             self._mapa,
             self._mazo,
@@ -172,6 +222,7 @@ class ServerGameCoordinator:
             server,
             self._paises_para_victoria,
             objetivos_secretos_activados=self._objetivos_secretos_activados,
+            situation_runtime=situation_runtime,
         )
         self._game.empezar()
 
@@ -266,6 +317,7 @@ class ServerGameCoordinator:
         self._paises_para_victoria = VICTORY_ALL_COUNTRIES
         self._objetivos_secretos_activados = False
         self._misiles_habilitados = False
+        self._situation_ruleset = DEFAULT_SITUATION_RULESET
         promover_admin = getattr(server, "promover_administrador", None)
         if callable(promover_admin):
             promover_admin()

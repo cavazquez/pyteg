@@ -13,6 +13,7 @@ from PySide6.QtNetwork import QAbstractSocket
 from PySide6.QtWidgets import QApplication
 
 from pyteg.client.conexion.connection import ConnectionClient
+from pyteg.client.conexion.transmisor import ClientNullTransmisor
 from pyteg.codecs_utils import (
     FrameTooLargeError,
     IncompleteFrameError,
@@ -236,6 +237,21 @@ class TestTcpConnectionFraming(unittest.TestCase):
         self.assertTrue(connection.esta_ocupada())
         fake_socket.socket_state = QAbstractSocket.SocketState.UnconnectedState
         self.assertFalse(connection.esta_ocupada())
+
+    @patch("pyteg.client.conexion.connection.QTcpSocket")
+    def test_qt_state_disconnect_installs_null_transmitter(
+        self,
+        qtcp_socket: MagicMock,
+    ) -> None:
+        """Una desconexión devuelve la GUI al transmisor nulo."""
+        qtcp_socket.return_value = _FakeQtSocket([])
+        main_window = MagicMock()
+        main_window.transmisor = MagicMock()
+
+        connection = ConnectionClient(main_window)
+        connection.on_state_changed(QAbstractSocket.SocketState.UnconnectedState)
+
+        self.assertIsInstance(main_window.transmisor, ClientNullTransmisor)
 
     @patch("pyteg.client.conexion.connection.QTcpSocket")
     @patch("pyteg.client.conexion.connection.ClientTaskManager.msg_to_task")

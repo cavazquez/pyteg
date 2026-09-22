@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import random
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any, Protocol, cast
 
 from pyteg.logger import get_logger
 
@@ -11,6 +11,58 @@ if TYPE_CHECKING:
     from pyteg.server.juego.mapa import Mapa
 
 LOGGER = get_logger("server.objetivos_secretos")
+
+
+class SecretObjectiveEvaluator(Protocol):
+    """Contrato para asignar y evaluar objetivos secretos."""
+
+    def reiniciar(self) -> None:
+        """Descarta el estado de objetivos de la partida."""
+
+    def asignar_objetivos_aleatorios(self, clientes: list[Any]) -> None:
+        """Asigna objetivos a los clientes que participan de una partida."""
+
+    def get_objetivo_jugador(self, client_id: int) -> dict[str, Any] | None:
+        """Obtiene el objetivo privado de un jugador, si existe."""
+
+    def verificar_condicion_victoria(
+        self, client_id: int, mapa: Mapa, colores: Any
+    ) -> bool:
+        """Indica si el jugador cumplió su objetivo secreto."""
+
+
+class NoSecretObjectives:
+    """Implementación nula cuando la partida no usa objetivos secretos."""
+
+    def reiniciar(self) -> None:
+        """No conserva estado entre partidas."""
+
+    def asignar_objetivos_aleatorios(self, _clientes: list[Any]) -> None:
+        """No asigna objetivos a los clientes."""
+
+    def get_objetivo_jugador(self, _client_id: int) -> dict[str, Any] | None:
+        """Devuelve que el jugador no tiene objetivo secreto.
+
+        Returns:
+            Siempre ``None``.
+
+        """
+        objetivo: dict[str, Any] | None = None
+        return objetivo
+
+    def verificar_condicion_victoria(
+        self, _client_id: int, _mapa: Mapa, _colores: Any
+    ) -> bool:
+        """Indica que ningún objetivo secreto puede producir una victoria.
+
+        Returns:
+            Siempre ``False``.
+
+        """
+        return False
+
+
+NO_SECRET_OBJECTIVES = NoSecretObjectives()
 
 
 class ObjetivosSecretos:

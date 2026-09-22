@@ -59,6 +59,10 @@ class ServerTaskMoverUnidad(IServerTask[MoverUnidadTaskData]):
         TurnValidator.validate_turn(client, context.game)
         PhaseValidator.validate_command(context.game, "mover_unidad")
 
+        validar_accion = getattr(context.game, "validar_accion_situacion", None)
+        if callable(validar_accion):
+            validar_accion(client, "mover_unidad")
+
         CountryOwnershipValidator.validate_ownership(client, context.mapa, self._origen)
 
         AdjacencyValidator.validate_adjacent(context.mapa, self._origen, self._destino)
