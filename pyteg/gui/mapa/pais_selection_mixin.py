@@ -41,9 +41,6 @@ class PaisSelectionMixin:
         """Establece el indicador visual de selección usando oscurecimiento."""
         self.limpiar_seleccion_visual()
         item = cast("QGraphicsPixmapItem", self)
-        label = getattr(self, "_country_label", None)
-        if label is not None:
-            label.set_selected(True)
 
         if tipo == "origen":
             effect = QGraphicsOpacityEffect()
@@ -57,8 +54,5 @@ class PaisSelectionMixin:
     def limpiar_seleccion_visual(self) -> None:
         """Elimina el indicador visual de selección."""
         item = cast("QGraphicsPixmapItem", self)
-        label = getattr(self, "_country_label", None)
-        if label is not None:
-            label.set_selected(False)
         if item.graphicsEffect():
             item.setGraphicsEffect(None)  # type: ignore[arg-type]

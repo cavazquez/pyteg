@@ -1,4 +1,4 @@
-"""Regresión de assets vectoriales y etiquetas del mapa clásico."""
+"""Regresión de assets SVG del mapa clásico."""
 
 # ruff: noqa: D102
 
@@ -14,7 +14,6 @@ from PySide6.QtCore import QRectF
 from PySide6.QtGui import QImage, QPainter
 from PySide6.QtWidgets import QApplication
 
-from pyteg.gui.mapa.country_label import display_country_name
 from pyteg.gui.mapa.pais import Pais
 from pyteg.gui.mapa.scene import QCustomGraphicsScene
 from pyteg.toml_reader import TomlReader
@@ -24,8 +23,8 @@ if TYPE_CHECKING:
     from PySide6.QtWidgets import QApplication as QApplicationType
 
 
-class MapSvgLabelsTests(unittest.TestCase):
-    """Comprueba carga, render y política de etiquetas sin abrir una ventana."""
+class MapSvgAssetsTests(unittest.TestCase):
+    """Comprueba carga y render de assets sin abrir una ventana."""
 
     app: ClassVar[QApplicationType]
 
@@ -65,26 +64,6 @@ class MapSvgLabelsTests(unittest.TestCase):
             self.assertEqual(asset.suffix, ".svg", country)
             self.assertTrue(asset.with_suffix(".png").is_file(), country)
 
-    def test_etiquetas_cambian_de_visibilidad_y_recuperan_nombre_completo(self) -> None:
-        scene = self._scene()
-        chile = scene.paises["Chile"]
-        label = chile._country_label  # noqa: SLF001
-        self.assertEqual(label.toPlainText(), "Chile")
-
-        scene.update_label_visibility(0.5)
-        self.assertFalse(label.isVisible())
-
-        label.set_hovered(True)
-        self.assertTrue(label.isVisible())
-        self.assertEqual(label.toPlainText(), "Chile")
-        label.set_hovered(False)
-
-        gran_bretana = scene.paises["GranBretana"]._country_label  # noqa: SLF001
-        self.assertEqual(gran_bretana.full_name, "Gran Bretaña")
-        scene.update_label_visibility(1.0)
-        self.assertTrue(gran_bretana.isVisible())
-        self.assertEqual(gran_bretana.toPlainText(), "Gran Bretaña")
-
     def test_render_vectorial_no_queda_vacio_en_zoom(self) -> None:
         scene = self._scene()
         image = QImage(1280, 800, QImage.Format.Format_ARGB32_Premultiplied)
@@ -94,10 +73,6 @@ class MapSvgLabelsTests(unittest.TestCase):
         painter.end()
         self.assertGreater(image.sizeInBytes(), 0)
         self.assertTrue(any(image.pixelColor(x, 400).alpha() > 0 for x in range(1280)))
-
-    def test_nombre_legible_desde_clave_toml(self) -> None:
-        self.assertEqual(display_country_name("GranBretana"), "Gran Bretaña")
-        self.assertEqual(display_country_name("NuevaYork"), "Nueva York")
 
     def test_svg_invalido_usa_png_de_respaldo(self) -> None:
         with TemporaryDirectory() as temp_dir:
