@@ -4,7 +4,7 @@ version = "0.1.0"
 requires-python = ">=3.14,<3.15"
 dependencies = [
     "polib==1.2.0",
-    "pyside6==6.11.1",
+    "pyside6==6.11.2",
 ]
 
 [project.scripts]
