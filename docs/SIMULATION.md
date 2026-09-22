@@ -81,6 +81,21 @@ Este smoke cubre la capa Qt y su transporte; la partida completa continúa
 siendo responsabilidad de `simulate_game`, que usa clientes headless para
 ejercitar colocación, combate, conquistas, canjes y misiles.
 
+Para comprobar el aislamiento de clientes lentos y la saturación de la cola de
+salida, ejecutá el smoke de transporte:
+
+```bash
+uv run python scripts/stress_slow_clients.py
+```
+
+El smoke abre dos conexiones TCP reales. Una deja de leer y recibe tramas de
+32 KiB hasta llenar la cola acotada; el servidor debe cerrarla sin bloquear al
+productor. La otra drena en paralelo y debe recibir marcadores durante y
+después de la saturación. El comando imprime evidencia JSON y devuelve un
+código distinto de cero si el cliente saludable también se desconecta o si el
+lento no recibe EOF. Se puede ajustar la presión con `--frames`,
+`--payload-bytes` y `--timeout`.
+
 ## Victoria observada y cierre de partida
 
 El reporte distingue `victory_observed` de `all_clients_finalized`. Una victoria
@@ -234,8 +249,9 @@ que un usuario pueda jugar la misma partida sin problemas de interfaz o red.
 
 Las acciones se envían secuencialmente en conexiones locales. La fragmentación
 del framing, los frames coalescidos, JSON inválido y las colas acotadas se
-prueban en la suite TCP; este harness no simula clientes lentos, comandos
-simultáneos, latencia WAN ni vencimiento del timer. Las opciones de desconexión y reconexión ejercitan el
+prueban en la suite TCP; `stress_slow_clients.py` agrega una prueba con un
+cliente que deja de leer. Estos harnesses no simulan comandos simultáneos,
+latencia WAN ni vencimiento del timer. Las opciones de desconexión y reconexión ejercitan el
 cierre real de un socket, la continuidad de los clientes restantes y el
 handshake autenticado de recuperación. Los objetivos secretos siguen fuera de
 alcance. La estrategia utiliza colocación,
