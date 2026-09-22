@@ -50,6 +50,9 @@ class MainWindowProtocol(GameWindowProtocol, Protocol):
     jugador_actual_id: int | None
     jugador_actual_nombre: str | None
     jugador_actual_color: str | None
+    estado_actual: str
+    fase_actual: str | None
+    unidades_pendientes_servidor: int
     last_units: dict[str, int]
     ultimo_pais_colocado: str | None
     ultimo_continente_colocado: str | None
