@@ -47,15 +47,7 @@ from unittest.mock import patch
 from pyteg.client.event_processor import ClientEventProcessor
 from pyteg.client.state_model import ClientStateModel
 from pyteg.codecs_utils import NulDelimitedUtf8Codec
-from pyteg.config import (
-    CARDS_FOR_EXCHANGE,
-    MAX_CARDS_BEFORE_FORCE_EXCHANGE,
-    MIN_UNITS_FOR_MISSILE_EXCHANGE,
-    MISSILE_DAMAGE_DISTANCE_1,
-    MISSILE_DAMAGE_DISTANCE_2,
-    MISSILE_DAMAGE_DISTANCE_3,
-    MISSILE_MAX_DISTANCE,
-)
+from pyteg.core.partida.reglas import load_theme_rules
 from pyteg.core.situaciones.catalog import available_situation_rulesets
 from pyteg.protocol import PROTOCOL_VERSION, map_hash_for_theme
 from pyteg.protocol_validation import MessageValidationError, validate_client_event
@@ -361,7 +353,12 @@ class Simulation:
         self.reconnections = 0
         self.situations_seen: list[str] = []
         self.exercise_cards = bool(args.exercise_cards or args.exercise_exchanges)
-        self.exercise_missiles = bool(args.exercise_missiles or args.exercise_exchanges)
+        self.rules = load_theme_rules(args.theme)
+        self.exercise_missiles = bool(
+            args.exercise_missiles
+            or args.exercise_exchanges
+            or self.rules.missiles_enabled
+        )
         self._disconnect_done = False
         self.port = 0
         theme_dir = ROOT / "themes" / args.theme
@@ -376,7 +373,10 @@ class Simulation:
             if isinstance(info, dict) and "continente" in info
         }
         self.total_countries = len(self.continents)
-        self.target = args.victory or self.total_countries
+        configured_target = (
+            self.rules.victory_countries if args.victory is None else args.victory
+        )
+        self.target = configured_target or self.total_countries
         if args.clients > self.total_countries:
             msg = f"{args.theme} has only {self.total_countries} countries"
             raise ValueError(msg)
@@ -759,13 +759,12 @@ class Simulation:
             msg = "Card claim did not update the requesting client's hand"
             raise RuntimeError(msg)
         if (
-            cards_before >= MAX_CARDS_BEFORE_FORCE_EXCHANGE
+            cards_before >= self.rules.max_cards_before_force_exchange
             and len(bot.cards) < cards_before
         ):
             self.forced_card_exchanges += 1
 
-    @staticmethod
-    def _card_selection(bot: Bot) -> list[dict[str, str]]:
+    def _card_selection(self, bot: Bot) -> list[dict[str, str]]:
         """Select a valid three-card exchange from a public card snapshot.
 
         Returns:
@@ -776,8 +775,8 @@ class Simulation:
         for card in bot.cards:
             cards_by_symbol.setdefault(card["simbolo"], []).append(card)
         for cards in cards_by_symbol.values():
-            if len(cards) >= CARDS_FOR_EXCHANGE:
-                return cards[:CARDS_FOR_EXCHANGE]
+            if len(cards) >= self.rules.cards_for_exchange:
+                return cards[: self.rules.cards_for_exchange]
         distinct: list[dict[str, str]] = []
         seen_symbols: set[str] = set()
         for card in bot.cards:
@@ -785,7 +784,9 @@ class Simulation:
                 distinct.append(card)
                 seen_symbols.add(card["simbolo"])
         return (
-            distinct[:CARDS_FOR_EXCHANGE] if len(distinct) == CARDS_FOR_EXCHANGE else []
+            distinct[: self.rules.cards_for_exchange]
+            if len(distinct) == self.rules.cards_for_exchange
+            else []
         )
 
     def exchange_cards(self, bot: Bot) -> None:
@@ -798,11 +799,11 @@ class Simulation:
         if not self.exercise_cards:
             return
         selection = self._card_selection(bot)
-        if len(selection) != CARDS_FOR_EXCHANGE:
+        if len(selection) != self.rules.cards_for_exchange:
             return
         cards_before = len(bot.cards)
         self.command(bot, "canjear_tarjetas", tarjetas=selection)
-        if len(bot.cards) != cards_before - CARDS_FOR_EXCHANGE:
+        if len(bot.cards) != cards_before - self.rules.cards_for_exchange:
             msg = "Card exchange did not consume the selected cards"
             raise RuntimeError(msg)
         self.card_exchanges += 1
@@ -851,19 +852,16 @@ class Simulation:
                     queue.append((neighbor, distance + 1))
         return -1
 
-    @staticmethod
-    def _missile_damage(distance: int) -> int:
+    def _missile_damage(self, distance: int) -> int:
         """Return the configured damage for a missile distance.
 
         Returns:
             Configured damage, or zero for a distance outside missile range.
 
         """
-        return {
-            1: MISSILE_DAMAGE_DISTANCE_1,
-            2: MISSILE_DAMAGE_DISTANCE_2,
-            3: MISSILE_DAMAGE_DISTANCE_3,
-        }.get(distance, 0)
+        if distance < 1 or distance > len(self.rules.missile_damage_by_distance):
+            return 0
+        return self.rules.missile_damage_by_distance[distance - 1]
 
     def exchange_missile(self, bot: Bot) -> None:
         """Convert six units in one owned country into a missile.
@@ -877,7 +875,9 @@ class Simulation:
         options = [
             (country, units)
             for country, (owner, units) in bot.countries.items()
-            if owner == bot.userid and units >= MIN_UNITS_FOR_MISSILE_EXCHANGE
+            if owner == bot.userid
+            and units
+            >= self.rules.missile_unit_cost + self.rules.missile_min_units_to_leave
         ]
         if not options:
             return
@@ -907,7 +907,10 @@ class Simulation:
                     continue
                 distance = self._distance(origin, target)
                 damage = self._missile_damage(distance)
-                if 1 <= distance <= MISSILE_MAX_DISTANCE and target_units > damage:
+                if (
+                    1 <= distance <= self.rules.missile_max_distance
+                    and target_units > damage
+                ):
                     options.append((target_units, -distance, origin, target))
         if not options:
             return
@@ -1190,6 +1193,7 @@ class Simulation:
         return {
             "theme": self.args.theme,
             "situation_ruleset": self.args.situation_ruleset,
+            "rules": self.rules.to_public_dict(),
             "situations_seen": list(self.situations_seen),
             "seed": self.args.seed,
             "seed_source": self.args.seed_source,
@@ -1267,11 +1271,13 @@ class Simulation:
 
 def _arguments() -> argparse.Namespace:  # noqa: C901
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--theme", choices=("classic", "test"), default="classic")
+    parser.add_argument(
+        "--theme", choices=("classic", "revancha", "test"), default="classic"
+    )
     parser.add_argument(
         "--situation-ruleset",
         choices=available_situation_rulesets(),
-        default="none",
+        default=None,
         help="Ruleset opcional de cartas de situaciones.",
     )
     parser.add_argument("--clients", type=int, default=3)
@@ -1281,7 +1287,15 @@ def _arguments() -> argparse.Namespace:  # noqa: C901
         default=None,
         help="Seed explícita; si se omite se genera con secrets.",
     )
-    parser.add_argument("--victory", type=int, default=0, help="0 means all countries")
+    parser.add_argument(
+        "--victory",
+        type=int,
+        default=None,
+        help=(
+            "Target country count; omitted uses the theme profile, "
+            "0 means all countries"
+        ),
+    )
     parser.add_argument("--timeout", type=float, default=300)
     parser.add_argument("--command-timeout", type=float, default=10)
     parser.add_argument("--max-rounds", type=int, default=200)
@@ -1341,16 +1355,17 @@ def _arguments() -> argparse.Namespace:  # noqa: C901
     args = parser.parse_args()
     if not MIN_CLIENTS <= args.clients <= MAX_CLIENTS:
         parser.error("--clients must be between 2 and 6")
-    if (
-        args.victory < 0
-        or min(args.timeout, args.command_timeout, args.max_rounds) <= 0
-    ):
+    if (args.victory is not None and args.victory < 0) or min(
+        args.timeout, args.command_timeout, args.max_rounds
+    ) <= 0:
         parser.error("Timeouts/rounds must be positive and victory must be nonnegative")
     if args.seed is None:
         args.seed = secrets.randbits(64)
         args.seed_source = "generated_by_secrets"
     else:
         args.seed_source = "explicit"
+    if args.situation_ruleset is None:
+        args.situation_ruleset = load_theme_rules(args.theme).situation_ruleset
     if args.disconnect_client is None and args.disconnect_after_turn:
         parser.error("--disconnect-after-turn requires --disconnect-client")
     if args.reconnect_client is not None and args.disconnect_client is None:

@@ -13,25 +13,33 @@ from pyteg.exceptions import CountryNotFoundError
 if TYPE_CHECKING:
     from collections.abc import Callable
 
+    from pyteg.core.partida.reglas import ThemeRules
+
 
 class Mapa:
     """Representa el mapa del juego con países, continentes y jugadores."""
 
-    def __init__(self, build_mapa: Callable[[], dict[str, list[Any]]]) -> None:
+    def __init__(
+        self,
+        build_mapa: Callable[[], dict[str, list[Any]]],
+        rules: ThemeRules | None = None,
+    ) -> None:
         """Inicializa el mapa del juego.
 
         Args:
             build_mapa: Función que construye y retorna el diccionario del mapa.
+            rules: Perfil de reglas opcional del tema.
 
         """
         mapa_raw = build_mapa()
         self._build_mapa = build_mapa
+        self._rules = rules
         # Convertir listas a CountryData para mejor type safety
         self._mapa: dict[str, CountryData] = {}
         for pais, data in mapa_raw.items():
             self._mapa[pais] = CountryData.from_list(data)
         # Inicializar sistema de misiles
-        self._missile_system = MissileSystem(self)
+        self._missile_system = MissileSystem(self, rules)
 
     def reiniciar(self) -> None:
         """Restaura países, unidades y misiles al mapa original del tema."""
@@ -39,7 +47,12 @@ class Mapa:
         self._mapa = {
             pais: CountryData.from_list(data) for pais, data in mapa_raw.items()
         }
-        self._missile_system = MissileSystem(self)
+        self._missile_system = MissileSystem(self, self._rules)
+
+    def configurar_reglas(self, rules: ThemeRules) -> None:
+        """Asocia el perfil público a los cálculos dependientes del tema."""
+        self._rules = rules
+        self._missile_system = MissileSystem(self, rules)
 
     def pais_existe(self, pais: str) -> bool:
         """Indica si un país está definido en el mapa.

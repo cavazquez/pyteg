@@ -298,10 +298,20 @@ class AttackRestrictionValidator:
 
         """
         turno_actual = game.turno_actual()
-        if isinstance(turno_actual, PrimerTurno | SegundoTurno):
+        reglas_getter = getattr(game, "reglas", None)
+        reglas = reglas_getter() if callable(reglas_getter) else None
+        ronda_getter = getattr(game, "num_ronda", None)
+        ronda = ronda_getter() if callable(ronda_getter) else None
+        no_attack = getattr(reglas, "first_turns_no_attack", FIRST_TURNS_NO_ATTACK)
+        bloqueado = (
+            isinstance(turno_actual, PrimerTurno | SegundoTurno)
+            if ronda is None
+            else int(ronda) <= int(no_attack)
+        )
+        if bloqueado and int(no_attack) > 0:
             msg = error_message or (
                 f"No se puede atacar en los primeros "
-                f"{FIRST_TURNS_NO_ATTACK} turnos. "
+                f"{no_attack} turnos. "
                 "Debe esperar al tercer turno."
             )
             raise InvalidActionError(msg)

@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, cast
 
-from pyteg.config import CARDS_FOR_EXCHANGE
 from pyteg.exceptions import InvalidActionError, MissingFieldError
 from pyteg.server.juego.validators import (
     GameStateValidator,
@@ -21,13 +20,16 @@ if TYPE_CHECKING:
     from pyteg.server.juego.game import Game
 
 
-def _validar_seleccion_canje(simbolos: list[str]) -> None:
-    if len(simbolos) != CARDS_FOR_EXCHANGE:
-        msg = f"Debes seleccionar exactamente {CARDS_FOR_EXCHANGE} tarjetas"
+def _validar_seleccion_canje(simbolos: list[str], cantidad: int) -> None:
+    if len(simbolos) != cantidad:
+        msg = f"Debes seleccionar exactamente {cantidad} tarjetas"
         raise InvalidActionError(msg)
     unicos = len(set(simbolos))
-    if unicos not in {1, CARDS_FOR_EXCHANGE}:
-        msg = "Canje inválido: selecciona 3 del mismo símbolo o 3 símbolos distintos"
+    if unicos not in {1, cantidad}:
+        msg = (
+            f"Canje inválido: selecciona {cantidad} del mismo símbolo "
+            f"o {cantidad} símbolos distintos"
+        )
         raise InvalidActionError(msg)
 
 
@@ -92,7 +94,7 @@ class ServerTaskCanjearTarjetas(IServerTask[CanjearTarjetasTaskData]):
         tarjetas_asignadas = game.mazo().tarjetas_asignadas(client)
         tarjetas = _resolver_tarjetas_jugador(tarjetas_payload, tarjetas_asignadas)
         simbolos = [t.simbolo for t in tarjetas]
-        _validar_seleccion_canje(simbolos)
+        _validar_seleccion_canje(simbolos, context.reglas().cards_for_exchange)
 
         game.canjear(client, tarjetas)
 

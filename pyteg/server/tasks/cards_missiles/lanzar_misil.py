@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from pyteg.config import MIN_UNITS_TO_LEAVE, MISSILE_MAX_DISTANCE
 from pyteg.exceptions import (
     InsufficientUnitsError,
     InvalidActionError,
@@ -166,15 +165,18 @@ class ServerTaskLanzarMisil(IServerTask[LanzarMisilTaskData]):
             msg = f"No hay camino entre {self._pais_origen} y {self._pais_destino}"
             raise InvalidActionError(msg)
 
-        if distancia > MISSILE_MAX_DISTANCE:
-            raise MissileOutOfRangeError(distancia, MISSILE_MAX_DISTANCE)
+        rules = context.reglas()
+        max_distance = rules.missile_max_distance
+        if distancia > max_distance:
+            raise MissileOutOfRangeError(distancia, max_distance)
 
         dano = context.mapa.calcular_dano_misil(distancia)
         unidades_destino = context.mapa.cantidad_unidades(self._pais_destino)
+        min_units_to_leave = rules.missile_min_units_to_leave
         if unidades_destino <= dano:
             raise InsufficientUnitsError(
                 self._pais_destino,
-                MIN_UNITS_TO_LEAVE + 1,
+                min_units_to_leave + 1,
                 unidades_destino,
             )
 

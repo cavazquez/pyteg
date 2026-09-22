@@ -22,6 +22,7 @@ from pyteg.server.juego.game import Game
 if TYPE_CHECKING:
     from pyteg.core.cartas.mazo import Mazo
     from pyteg.core.partida.objetivos_secretos import ObjetivosSecretos
+    from pyteg.core.partida.reglas import ThemeRules
     from pyteg.server.juego.estado import Estado
     from pyteg.server.juego.mapa import Mapa
 
@@ -48,6 +49,7 @@ class ServerGameCoordinator:
         color_manager: Any,
         situation_ruleset: str = DEFAULT_SITUATION_RULESET,
         situation_rng: Any = None,
+        rules: ThemeRules | None = None,
     ) -> None:
         """Inicializa el coordinador de partidas.
 
@@ -61,6 +63,7 @@ class ServerGameCoordinator:
             color_manager: Instancia del gestor de colores.
             situation_ruleset: Identificador del ruleset de situaciones.
             situation_rng: Fuente opcional para pruebas reproducibles.
+            rules: Perfil de reglas opcional del tema.
 
         Raises:
             ValueError: Si el ruleset de situaciones no está registrado.
@@ -79,12 +82,23 @@ class ServerGameCoordinator:
             raise ValueError(msg)
         self._situation_ruleset = normalized_situation_ruleset
         self._situation_rng = situation_rng
+        self._rules = rules
 
         # Configuración de partida
-        self._segundos_por_turno: int = DEFAULT_TURN_SECONDS
-        self._paises_para_victoria: int = VICTORY_ALL_COUNTRIES
-        self._objetivos_secretos_activados: bool = False
-        self._misiles_habilitados: bool = False
+        self._segundos_por_turno: int = (
+            rules.turn_seconds if rules is not None else DEFAULT_TURN_SECONDS
+        )
+        self._paises_para_victoria: int = (
+            rules.lobby_victory_countries
+            if rules is not None
+            else VICTORY_ALL_COUNTRIES
+        )
+        self._objetivos_secretos_activados: bool = (
+            rules.objectives_enabled if rules is not None else False
+        )
+        self._misiles_habilitados: bool = (
+            rules.missiles_enabled if rules is not None else False
+        )
 
         # Referencia al juego (se crea al iniciar la partida)
         self._game: Game | None = None
@@ -172,7 +186,7 @@ class ServerGameCoordinator:
             misiles_habilitados=self._misiles_habilitados,
         )
 
-    def configuracion_partida(self) -> dict[str, int | bool | str]:
+    def configuracion_partida(self) -> dict[str, Any]:
         """Devuelve la configuración pública vigente de la partida.
 
         Returns:
@@ -185,6 +199,7 @@ class ServerGameCoordinator:
             "objetivos_secretos": self._objetivos_secretos_activados,
             "misiles_habilitados": self._misiles_habilitados,
             "situation_ruleset": self._situation_ruleset,
+            "reglas": self._rules.to_public_dict() if self._rules is not None else None,
         }
 
     def empezar_partida(self, server: Any) -> Game:
@@ -223,6 +238,7 @@ class ServerGameCoordinator:
             self._paises_para_victoria,
             objetivos_secretos_activados=self._objetivos_secretos_activados,
             situation_runtime=situation_runtime,
+            rules=self._rules,
         )
         self._game.empezar()
 
@@ -312,11 +328,27 @@ class ServerGameCoordinator:
             reiniciar_objetivos()
         self._game = None
         self._turno_timer = NullTurnTimer()
-        self._segundos_por_turno = DEFAULT_TURN_SECONDS
-        self._paises_para_victoria = VICTORY_ALL_COUNTRIES
-        self._objetivos_secretos_activados = False
-        self._misiles_habilitados = False
-        self._situation_ruleset = DEFAULT_SITUATION_RULESET
+        self._segundos_por_turno = (
+            self._rules.turn_seconds
+            if self._rules is not None
+            else DEFAULT_TURN_SECONDS
+        )
+        self._paises_para_victoria = (
+            self._rules.lobby_victory_countries
+            if self._rules is not None
+            else VICTORY_ALL_COUNTRIES
+        )
+        self._objetivos_secretos_activados = (
+            self._rules.objectives_enabled if self._rules is not None else False
+        )
+        self._misiles_habilitados = (
+            self._rules.missiles_enabled if self._rules is not None else False
+        )
+        self._situation_ruleset = (
+            self._rules.situation_ruleset
+            if self._rules is not None
+            else DEFAULT_SITUATION_RULESET
+        )
         promover_admin = getattr(server, "promover_administrador", None)
         if callable(promover_admin):
             promover_admin()

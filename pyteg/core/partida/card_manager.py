@@ -18,6 +18,7 @@ from pyteg.core.cartas.tarjeta_de_pais import _to_userid
 if TYPE_CHECKING:
     from pyteg.core.cartas.mazo import Mazo
     from pyteg.core.cartas.tarjeta_de_pais import TarjetaDePais
+    from pyteg.core.partida.reglas import ThemeRules
     from pyteg.protocols import IClientProtocol, IJugador
 
 
@@ -31,16 +32,24 @@ class CardManager:
     de tarjetas, incluyendo asignación, canjes y elegibilidad para reclamar.
     """
 
-    def __init__(self, mazo: Mazo, turn_manager: Any) -> None:
+    def __init__(
+        self,
+        mazo: Mazo,
+        turn_manager: Any,
+        *,
+        rules: ThemeRules | None = None,
+    ) -> None:
         """Inicializa el gestor de tarjetas.
 
         Args:
             mazo: Instancia del mazo de tarjetas.
             turn_manager: Instancia del gestor de turnos.
+            rules: Perfil de reglas opcional del tema.
 
         """
         self._mazo = mazo
         self._turn_manager = turn_manager
+        self._rules = rules
         self._cant_canjes: dict[int, int] = {}
         # La elegibilidad es por jugador y por conquista, pero la recompensa
         # sólo puede cobrarse una vez por turno.  Guardar el identificador y
@@ -85,7 +94,12 @@ class CardManager:
 
         """
         cant_tarjetas_asignadas = self._mazo.cant_tarjetas_asignadas(jugador)
-        if cant_tarjetas_asignadas == MAX_CARDS_BEFORE_FORCE_EXCHANGE:
+        max_cards = (
+            self._rules.max_cards_before_force_exchange
+            if self._rules is not None
+            else MAX_CARDS_BEFORE_FORCE_EXCHANGE
+        )
+        if cant_tarjetas_asignadas == max_cards:
             lista_3_tarjetas = self._mazo.dame_3_tarjetas_para_canje(jugador)
             self.canjear(jugador, lista_3_tarjetas)
         self._mazo.asignar_tarjeta(jugador)
@@ -113,9 +127,22 @@ class CardManager:
         """
         cant_canjes = self.cant_canjes(jugador)
         turno = self._turn_manager.turno_actual()
-        cantidad_a_agregar = EXCHANGE_UNITS.get(
-            cant_canjes, EXCHANGE_MULTIPLIER * cant_canjes
+        exchange_units = self._rules.exchange_units if self._rules is not None else None
+        exchange_multiplier = (
+            self._rules.exchange_multiplier
+            if self._rules is not None
+            else EXCHANGE_MULTIPLIER
         )
+        if exchange_units is None:
+            cantidad_a_agregar = EXCHANGE_UNITS.get(
+                cant_canjes, exchange_multiplier * cant_canjes
+            )
+        else:
+            cantidad_a_agregar = (
+                exchange_units[cant_canjes]
+                if cant_canjes < len(exchange_units)
+                else exchange_multiplier * cant_canjes
+            )
 
         turno.agregar_unidades_generales(cantidad_a_agregar)
         self._mazo.desasignar_tarjetas(tarjetas)
