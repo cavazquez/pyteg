@@ -6,10 +6,11 @@ de sonido en el juego, incluyendo control de volumen y mute.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Protocol
 
 from PySide6.QtCore import QUrl
-from PySide6.QtMultimedia import QAudioOutput, QMediaPlayer
+from PySide6.QtMultimedia import QAudioOutput as QQtAudioOutput
+from PySide6.QtMultimedia import QMediaPlayer
 
 from pyteg.logger import get_logger
 from pyteg.utils import get_resource_path
@@ -20,17 +21,113 @@ if TYPE_CHECKING:
 LOGGER = get_logger(__name__)
 
 
+class AudioOutput(Protocol):
+    """Salida de audio que puede utilizar ``SoundManager``."""
+
+    def play(self, sound_name: str, sound_path: Path | None) -> None:
+        """Reproduce un sonido disponible en ``sound_path``."""
+
+    def set_volume(self, volume: float) -> None:
+        """Actualiza el volumen de los sonidos activos y futuros."""
+
+    def stop_all(self) -> None:
+        """Detiene los sonidos que estén reproduciéndose."""
+
+    def cleanup(self) -> None:
+        """Libera los recursos de la salida."""
+
+
+class NullAudioOutput:
+    """Salida nula para clientes sin reproducción de audio."""
+
+    def play(self, _sound_name: str, _sound_path: Path | None) -> None:
+        """Ignora el sonido solicitado."""
+
+    def set_volume(self, _volume: float) -> None:
+        """Ignora el volumen solicitado."""
+
+    def stop_all(self) -> None:
+        """No tiene sonidos que detener."""
+
+    def cleanup(self) -> None:
+        """No tiene recursos que liberar."""
+
+
+class QtAudioOutput:
+    """Salida de audio basada en los reproductores multimedia de Qt."""
+
+    def __init__(self, *, volume: float = 0.5) -> None:
+        """Inicializa la salida multimedia con el volumen indicado."""
+        self._volume = volume
+        self._players: dict[str, QMediaPlayer] = {}
+        self._audio_outputs: dict[str, QQtAudioOutput] = {}
+
+    def play(self, sound_name: str, sound_path: Path | None) -> None:
+        """Reproduce un sonido y reinicia su reproductor si ya estaba activo."""
+        if sound_path is None:
+            return
+
+        player = self._get_or_create_player(sound_name, sound_path)
+        if player.playbackState() == QMediaPlayer.PlaybackState.PlayingState:
+            player.stop()
+        player.play()
+
+    def _get_or_create_player(self, sound_name: str, sound_path: Path) -> QMediaPlayer:
+        """Obtiene o crea un reproductor para un sonido.
+
+        Returns:
+            Reproductor multimedia asociado al nombre del sonido.
+
+        """
+        player = self._players.get(sound_name)
+        if player is not None:
+            return player
+
+        player = QMediaPlayer()
+        audio_output = QQtAudioOutput()
+        audio_output.setVolume(self._volume)
+        player.setAudioOutput(audio_output)
+        player.setSource(QUrl.fromLocalFile(str(sound_path)))
+        self._players[sound_name] = player
+        self._audio_outputs[sound_name] = audio_output
+        return player
+
+    def set_volume(self, volume: float) -> None:
+        """Actualiza el volumen de todos los reproductores."""
+        self._volume = volume
+        for audio_output in self._audio_outputs.values():
+            audio_output.setVolume(volume)
+
+    def stop_all(self) -> None:
+        """Detiene todos los sonidos en reproducción."""
+        for player in self._players.values():
+            if player.playbackState() == QMediaPlayer.PlaybackState.PlayingState:
+                player.stop()
+
+    def cleanup(self) -> None:
+        """Libera los recursos de los reproductores multimedia."""
+        self.stop_all()
+        self._players.clear()
+        self._audio_outputs.clear()
+
+
 class SoundManager:
     """Gestor centralizado de efectos de sonido del juego."""
 
-    def __init__(self) -> None:
-        """Inicializa el gestor de sonidos."""
+    def __init__(self, output: AudioOutput | None = None) -> None:
+        """Inicializa el gestor con una salida Qt o una salida inyectada.
+
+        Args:
+            output: Salida de audio. Si no se proporciona, se usa
+                ``QtAudioOutput``; ``NullAudioOutput`` permite ejecutar el
+                cliente sin crear reproductores multimedia.
+
+        """
         self._enabled = True
         self._volume = 0.5  # Volumen por defecto (0.0 a 1.0)
-        self._players: dict[
-            str, QMediaPlayer
-        ] = {}  # Cache de reproductores por tipo de sonido
-        self._audio_outputs: dict[str, QAudioOutput] = {}  # Cache de salidas de audio
+        self._output: AudioOutput = (
+            output if output is not None else QtAudioOutput(volume=self._volume)
+        )
 
         # Mapeo de eventos a archivos de sonido
         self._sound_files = {
@@ -46,6 +143,7 @@ class SoundManager:
             "connect": "connect.wav",
             "disconnect": "disconnect.wav",
         }
+        self._output.set_volume(self._volume)
 
     def _get_sound_path(self, sound_name: str) -> Path | None:
         """Obtiene la ruta completa de un archivo de sonido.
@@ -69,39 +167,6 @@ class SoundManager:
 
         return sound_path
 
-    def _get_or_create_player(self, sound_name: str) -> QMediaPlayer | None:
-        """Obtiene o crea un reproductor para un sonido específico.
-
-        Args:
-            sound_name: Nombre del sonido
-
-        Returns:
-            QMediaPlayer configurado o None si el archivo no existe
-
-        """
-        # Si ya existe el reproductor, reutilizarlo
-        if sound_name in self._players:
-            return self._players[sound_name]
-
-        # Obtener ruta del archivo
-        sound_path = self._get_sound_path(sound_name)
-        if not sound_path:
-            return None
-
-        # Crear nuevo reproductor y salida de audio
-        player = QMediaPlayer()
-        audio_output = QAudioOutput()
-        audio_output.setVolume(self._volume)
-
-        player.setAudioOutput(audio_output)
-        player.setSource(QUrl.fromLocalFile(str(sound_path)))
-
-        # Guardar en cache
-        self._players[sound_name] = player
-        self._audio_outputs[sound_name] = audio_output
-
-        return player
-
     def play(self, sound_name: str) -> None:
         """Reproduce un efecto de sonido.
 
@@ -112,15 +177,7 @@ class SoundManager:
         if not self._enabled:
             return
 
-        player = self._get_or_create_player(sound_name)
-        if not player:
-            return
-
-        # Si está reproduciendo, reiniciar
-        if player.playbackState() == QMediaPlayer.PlaybackState.PlayingState:
-            player.stop()
-
-        player.play()
+        self._output.play(sound_name, self._get_sound_path(sound_name))
 
     def set_volume(self, volume: float) -> None:
         """Establece el volumen global de los sonidos.
@@ -131,9 +188,7 @@ class SoundManager:
         """
         self._volume = max(0.0, min(1.0, volume))
 
-        # Actualizar volumen de todos los reproductores existentes
-        for audio_output in self._audio_outputs.values():
-            audio_output.setVolume(self._volume)
+        self._output.set_volume(self._volume)
 
     def get_volume(self) -> float:
         """Obtiene el volumen actual.
@@ -153,7 +208,6 @@ class SoundManager:
         """
         self._enabled = enabled
 
-        # Si se deshabilita, detener todos los sonidos en reproducción
         if not enabled:
             self.stop_all()
 
@@ -168,15 +222,11 @@ class SoundManager:
 
     def stop_all(self) -> None:
         """Detiene todos los sonidos en reproducción."""
-        for player in self._players.values():
-            if player.playbackState() == QMediaPlayer.PlaybackState.PlayingState:
-                player.stop()
+        self._output.stop_all()
 
     def cleanup(self) -> None:
         """Libera recursos de todos los reproductores."""
-        self.stop_all()
-        self._players.clear()
-        self._audio_outputs.clear()
+        self._output.cleanup()
 
     # Métodos de conveniencia para eventos comunes
     def play_attack(self) -> None:

@@ -1,0 +1,58 @@
+[meta]
+version = 1
+
+[game]
+turn_seconds = 20
+victory_countries = 45
+lobby_victory_countries = 45
+min_players = 2
+max_players = 6
+first_turn_units = 8
+second_turn_units = 4
+first_turns_no_attack = 2
+
+[combat]
+attack_dice_max = 3
+defense_dice_max = 2
+
+[reinforcements]
+minimum = 3
+countries_divisor = 2
+
+[continents]
+AmericaDelNorte = 8
+AmericaCentral = 8
+AmericaDelSur = 6
+Europa = 4
+Africa = 4
+Asia = 3
+Oceania = 3
+
+[cards]
+exchange_units = [6, 10]
+exchange_multiplier = 5
+exchange_tail_from_last = true
+special_exchange_units = 2
+max_before_force_exchange = 5
+min_same_symbol = 3
+cards_for_exchange = 3
+
+[cards.continent_exchanges]
+AmericaDelNorte = []
+Europa = []
+Asia = []
+AmericaDelSur = ["Avion", "Tanque"]
+Africa = ["Avion", "Barco"]
+AmericaCentral = ["Tanque"]
+Oceania = ["Barco"]
+
+[missiles]
+enabled = true
+unit_cost = 6
+min_units_to_leave = 1
+max_distance = 3
+damage_by_distance = [3, 2, 1]
+
+[options]
+objectives_enabled = true
+situation_ruleset = "revancha"

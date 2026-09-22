@@ -87,9 +87,7 @@ class VentanaEsperarJugadores(QWidget):
 
     def empezar_juego(self) -> None:
         """Inicia el juego enviando el mensaje al servidor."""
-        transmisor = getattr(self._main_window, "transmisor", None)
-        if transmisor is not None:
-            transmisor.empezar_partida()
+        self._main_window.transmisor.empezar_partida()
 
     def cargar_colores_asignados(self) -> None:
         """Carga y muestra los colores asignados a los jugadores."""

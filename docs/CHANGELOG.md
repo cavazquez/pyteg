@@ -4,7 +4,50 @@ Todas las fechas en formato YYYY-MM-DD.
 
 ## [Unreleased]
 
-Sin cambios publicados todavía.
+### Changed
+- **Diagnóstico estricto de fronteras**: el chequeo de mapas distingue el
+  interior sólido de los bordes antialiasados, detecta países que se cubren y
+  verifica que las fronteras terrestres declaradas se toquen; las rutas
+  marítimas siguen usando `ConexionesVisuales`.
+- **Heartbeat TCP negociado**: los clientes que anuncian `heartbeat` responden
+  `ping`/`pong`; el servidor cierra peers silenciosos después de un límite y
+  conserva compatibilidad con clientes que no anuncian la capacidad.
+- **Actualizaciones incrementales del mapa**: cada conexión recibe todos los
+  países sólo al sincronizarse por primera vez; las acciones posteriores
+  difunden únicamente los países cuyo propietario o cantidad de unidades
+  cambió. Los snapshots completos mantienen la resincronización.
+- **Smoke Qt de partida completa**: CI inicia tres ventanas reales, juega una
+  partida clásica con una conquista, reconecta un cliente durante la partida y
+  verifica `Finalizado` en todos los clientes.
+- **Reconexión Qt**: una sesión recuperada autentica el token antes de enviar
+  comandos de lobby, evitando rechazos `reconnect_required` por una carrera de
+  `set_username`.
+- **Smoke Qt multicliente**: CI conecta tres ventanas reales al servidor,
+  comprueba el lobby y verifica una reconexión autenticada conservando la
+  identidad; la simulación TCP sigue cubriendo la partida completa.
+- **Aislamiento de clientes lentos**: CI inunda una conexión TCP que no lee,
+  verifica que se cierre al alcanzar su cola acotada y confirma que otra
+  conexión saludable continúa recibiendo mensajes.
+- **Contexto de países**: el mapa muestra nombre, continente, unidades y
+  superposiciones en el tooltip y la barra de estado al pasar el cursor, sin
+  llenar el tablero con etiquetas permanentes.
+- **Contexto de turno**: la barra de estado muestra fase, jugador activo y
+  refuerzos pendientes; las acciones deshabilitadas explican el motivo en su
+  tooltip y finalizar turno queda bloqueado durante la colocación.
+- **Estado de jugadores**: el panel lateral conserva y muestra si cada jugador
+  está conectado, es administrador o fue eliminado según el snapshot público.
+- **Layout adaptable (#217)**: el mapa conserva el espacio principal en
+  1024×600, 1280×800 y 1920×1080; el chat y el panel lateral se pueden ocultar,
+  el panel lateral tiene scroll y el mapa mantiene el zoom o permite
+  desplazarse con el botón central.
+
+### Fixed
+- **Sprites del mapa clásico**: los fondos de los 50 países ahora son
+  transparentes; se eliminan rectángulos semitransparentes sobre el agua y
+  el detector de solapamientos sólo considera la silueta del país.
+- **Simulación tras reconexión**: un cliente recuperado recibe el snapshot
+  vigente y los eventos futuros; ya no se marca como divergente por no repetir
+  eventos históricos de misiles que ocurrieron antes de su nueva conexión.
 
 ## [0.1.0] - 2026-09-21
 
@@ -18,6 +61,8 @@ Sin cambios publicados todavía.
 - **Build Nuitka unificado**: `scripts/build_binaries.py` valida y compila las
   entradas vigentes `pyteg/server/app.py` y `pyteg/client/run.py` con todos los
   recursos.
+- **Recursos Revancha en distribución**: los verificadores de wheel/sdist y el
+  smoke de Nuitka exigen y cargan datos, cartas y SVG de `classic` y `revancha`.
 - **Release multiplataforma**: el workflow fusiona los artefactos descargados,
   comprueba los cuatro nombres versionados y publica los mismos archivos que
   describe en las notas.
@@ -27,6 +72,9 @@ Sin cambios publicados todavía.
 - **Simulación TCP de reconexión**: `simulate_game` puede cerrar y recuperar
   una sesión con `--disconnect-client` y `--reconnect-client`, verificando la
   identidad, el estado y el cierre de la partida.
+- **Simulación TCP de Revancha**: CI juega el tema completo con objetivos
+  secretos, situaciones, canjes, misiles y reconexión autenticada, conservando
+  el reporte wire-level como artefacto.
 
 ### Fixed
 - **Canje de misil**: exige conservar una unidad en el país; seis unidades ya

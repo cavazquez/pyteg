@@ -83,9 +83,29 @@ class QCustomGraphicsScene(QGraphicsScene):
                 )
             self.main_window.update_status_bar(msg)
         else:
-            self.main_window.update_status_bar(
-                _("Coordenadas: ({}, {})").format(scene_pos.x(), scene_pos.y()),
-            )
+            paises_bajo_cursor = [
+                item for item in self.items(scene_pos) if isinstance(item, Pais)
+            ]
+            if paises_bajo_cursor:
+                pais = paises_bajo_cursor[0]
+                superpuestos = len(paises_bajo_cursor) - 1
+                extra = (
+                    _(" | Países superpuestos: {}").format(superpuestos)
+                    if superpuestos
+                    else ""
+                )
+                msg = _(
+                    "País: {pais} | Continente: {continente} | "
+                    "Unidades: {unidades}{extra}"
+                ).format(
+                    pais=pais.nombre(),
+                    continente=pais.continente(),
+                    unidades=pais.get_unidades(),
+                    extra=extra,
+                )
+            else:
+                msg = _("Coordenadas: ({}, {})").format(scene_pos.x(), scene_pos.y())
+            self.main_window.update_status_bar(msg)
         # Llamar al evento original
         super().mouseMoveEvent(event)
 

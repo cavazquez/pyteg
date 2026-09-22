@@ -78,6 +78,20 @@ def _build_pills_and_controls(main_window: StatusBarHost) -> None:
     main_window.status_bar.addPermanentWidget(main_window.estado_label)
     _add_vseparator(main_window.status_bar)
 
+    # La fase de juego tiene un propósito distinto al estado de conexión. Se
+    # mantiene en una etiqueta propia para que el contexto no reemplace
+    # "Estado: En Juego" y siga siendo legible mientras se actualiza la red.
+    main_window.contexto_partida_label = QLabel()
+    main_window.contexto_partida_label.setObjectName("contextoPartidaLabel")
+    main_window.contexto_partida_label.setAccessibleName(_("Contexto de la partida"))
+    main_window.contexto_partida_label.setStyleSheet(styles.GAMEPLAY_CONTEXT_STYLE)
+    main_window.contexto_partida_label.setToolTip(
+        _("Fase, jugador activo y refuerzos pendientes")
+    )
+    main_window.contexto_partida_label.setVisible(False)
+    main_window.status_bar.addPermanentWidget(main_window.contexto_partida_label)
+    _add_vseparator(main_window.status_bar)
+
     main_window.seleccion_label = QLabel(_("Selección: Ninguna"))
     main_window.seleccion_label.setProperty("class", "pill")
     main_window.status_bar.addPermanentWidget(main_window.seleccion_label)

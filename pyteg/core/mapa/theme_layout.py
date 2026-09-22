@@ -33,10 +33,13 @@ class ThemeVisualConnection:
     """Conexión visual opcional entre dos países de un tema.
 
     ``puntos`` contiene puntos intermedios en coordenadas absolutas de la
-    escena. Los extremos se calculan desde el centro de cada imagen para que
-    un cambio de tamaño del asset no obligue a actualizar el TOML.
+    escena. En una conexión con ``envolver="horizontal"``, sus dos puntos
+    marcan la salida por el borde izquierdo y la reentrada por el derecho.
+    Los extremos se calculan desde el centro de cada imagen para que un cambio
+    de tamaño del asset no obligue a actualizar el TOML.
     """
 
     origen: str
     destino: str
     puntos: tuple[tuple[float, float], ...] = ()
+    envolver: str | None = None

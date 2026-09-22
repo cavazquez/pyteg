@@ -11,6 +11,8 @@ Todos los mensajes siguen un formato JSON con un campo `mensaje` que identifica 
 ## Índice de Mensajes
 
 1. [Conexión y Autenticación](#conexión-y-autenticación)
+   - [hello](#hello)
+   - [pong](#pong)
    - [set_username](#set_username)
    - [seleccionar_color](#seleccionar_color)
 
@@ -29,6 +31,25 @@ Todos los mensajes siguen un formato JSON con un campo `mensaje` que identifica 
 ---
 
 ## Conexión y Autenticación
+
+### hello
+Anuncia la versión de protocolo, el tema, el hash del mapa y las capacidades
+del cliente. Un cliente que desea supervisión de conexión incluye
+`"heartbeat"` en `capabilities`.
+
+### pong
+Responde un `ping` del servidor sin ejecutar una acción de partida.
+
+**Formato JSON:**
+```json
+{
+  "mensaje": "pong",
+  "heartbeat_id": "token-opaco"
+}
+```
+
+El servidor valida que `heartbeat_id` sea una cadena no vacía y descarta el
+mensaje después de registrar la actividad del socket.
 
 ### set_username
 Establece el nombre de usuario del jugador.

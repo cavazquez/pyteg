@@ -1,0 +1,47 @@
+[meta]
+version = 1
+
+[game]
+turn_seconds = 20
+victory_countries = 30
+lobby_victory_countries = 0
+min_players = 2
+max_players = 6
+first_turn_units = 6
+second_turn_units = 3
+first_turns_no_attack = 2
+
+[combat]
+attack_dice_max = 3
+defense_dice_max = 2
+
+[reinforcements]
+minimum = 3
+countries_divisor = 2
+
+[continents]
+Sudamerica = 3
+Norteamerica = 5
+Europa = 5
+Asia = 7
+Africa = 3
+Oceania = 2
+
+[cards]
+exchange_units = [4, 7]
+exchange_multiplier = 5
+special_exchange_units = 2
+max_before_force_exchange = 5
+min_same_symbol = 3
+cards_for_exchange = 3
+
+[missiles]
+enabled = false
+unit_cost = 6
+min_units_to_leave = 1
+max_distance = 3
+damage_by_distance = [3, 2, 1]
+
+[options]
+objectives_enabled = false
+situation_ruleset = "none"

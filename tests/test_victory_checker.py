@@ -118,8 +118,7 @@ class TestVictoryChecker(unittest.TestCase):
         checker = VictoryChecker(
             mapa,
             paises_para_victoria=2,
-            objetivos_secretos=objetivos,
-            objetivos_secretos_activados=True,
+            secret_objectives=objetivos,
             color_manager=color_manager,
         )
         jugadores = _jugadores(_Jugador(2, "Mengano"), _Jugador(1, "Fulano"))

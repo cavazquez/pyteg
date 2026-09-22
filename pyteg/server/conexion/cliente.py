@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import secrets
 import threading
+import time
 from collections import OrderedDict
 from copy import deepcopy
 from typing import TYPE_CHECKING, Any
@@ -15,6 +16,10 @@ from pyteg.server.conexion.transmisor import ServerTransmisor
 
 if TYPE_CHECKING:
     from pyteg.colores import IColor
+
+
+_HEARTBEAT_POLL_SECONDS = 1.0
+_HEARTBEAT_RESPONSE_TIMEOUT_SECONDS = 3.0
 
 
 class Client:
@@ -53,6 +58,9 @@ class Client:
         self._cleanup_completed = False
         self._command_results: OrderedDict[str, dict[str, Any]] = OrderedDict()
         self._command_payloads: OrderedDict[str, dict[str, Any]] = OrderedDict()
+        self._heartbeat_enabled = False
+        self._heartbeat_pending = False
+        self._heartbeat_sent_at = 0.0
 
     def asignar_color(self, color: IColor | None) -> None:
         """Asigna un color al cliente.
@@ -113,6 +121,67 @@ class Client:
     def marcar_handshake(self, accepted: bool) -> None:  # noqa: FBT001
         """Guarda el resultado de la negociación del protocolo."""
         self._handshake_status = bool(accepted)
+
+    def configurar_heartbeat(self, *, enabled: bool) -> None:
+        """Activa la supervisión de la conexión tras negociar capacidades.
+
+        Args:
+            enabled: Si el cliente confirmó que responde mensajes ``ping``.
+
+        """
+        self._heartbeat_enabled = enabled
+        self._heartbeat_pending = False
+        self._heartbeat_sent_at = 0.0
+        timeout = _HEARTBEAT_POLL_SECONDS if enabled else None
+        setter = getattr(self._conn, "set_receive_timeout", None)
+        if callable(setter):
+            setter(timeout)
+
+    def _heartbeat_on_timeout(self) -> bool:
+        """Envía un ping o informa que el peer no respondió a tiempo.
+
+        Returns:
+            ``True`` para conservar el ciclo de lectura; ``False`` para cerrar
+            una conexión sin actividad después de un ping pendiente.
+
+        """
+        if not self._heartbeat_enabled:
+            return True
+        now = time.monotonic()
+        if self._heartbeat_pending:
+            if now - self._heartbeat_sent_at >= _HEARTBEAT_RESPONSE_TIMEOUT_SECONDS:
+                self._logger.warning(
+                    "Heartbeat vencido para el cliente %s", self._user_id
+                )
+                return False
+            return True
+        self._heartbeat_pending = True
+        self._heartbeat_sent_at = now
+        self.transmisor.enviar_ping(secrets.token_urlsafe(12))
+        return True
+
+    def _heartbeat_on_activity(self) -> None:
+        """Marca la conexión viva al recibir cualquier byte del peer."""
+        if self._heartbeat_enabled:
+            self._heartbeat_pending = False
+            self._heartbeat_sent_at = 0.0
+
+    def _process_receive_status(self) -> bool:
+        """Actualiza heartbeat y decide si el ciclo de lectura debe continuar.
+
+        Returns:
+            ``False`` sólo cuando venció la respuesta del peer.
+
+        """
+        consume_activity = getattr(self._conn, "consume_receive_activity", None)
+        if callable(consume_activity) and consume_activity():
+            self._heartbeat_on_activity()
+        consume_timeout = getattr(self._conn, "consume_receive_timeout", None)
+        return not (
+            callable(consume_timeout)
+            and consume_timeout()
+            and not self._heartbeat_on_timeout()
+        )
 
     def command_result(self, command_id: str) -> dict[str, Any] | None:
         """Obtiene un resultado cacheado para un reintento.
@@ -318,7 +387,12 @@ class Client:
                 protocol_version,
                 theme,
                 map_hash,
-                capabilities=["snapshots", "command_results", "reconnect"],
+                capabilities=[
+                    "snapshots",
+                    "command_results",
+                    "reconnect",
+                    "heartbeat",
+                ],
                 rules=["validated_phases", "one_card_per_turn"],
             )
             if self.es_reconexion_pendiente():
@@ -346,6 +420,9 @@ class Client:
             while True:
                 datas = self.recibir()
                 if datas is None:
+                    break
+
+                if not self._process_receive_status():
                     break
 
                 for data in datas:
@@ -400,6 +477,9 @@ class Client:
                 validar(self, dict(validated_data))
             else:
                 self.marcar_handshake(True)  # noqa: FBT003
+            return
+
+        if mensaje == "pong":
             return
 
         if mensaje != "hello" and self.handshake_status() is not True:

@@ -11,7 +11,7 @@ SNAPSHOT_VERSION = 1
 
 
 def map_hash_for_theme(theme: str) -> str:
-    """Calcula el hash de las dos fuentes públicas del mapa.
+    """Calcula el hash del mapa y del perfil público de reglas.
 
     Returns:
         Hash SHA-256 hexadecimal de los metadatos públicos del tema.
@@ -19,8 +19,12 @@ def map_hash_for_theme(theme: str) -> str:
     """
     theme_dir = get_resource_path(f"themes/{theme}")
     digest = hashlib.sha256()
-    for filename in ("paises.toml", "adyacencias.toml"):
+    # ``reglas.toml`` es opcional para conservar compatibilidad con temas
+    # externos antiguos; si existe forma parte del contrato del handshake.
+    for filename in ("paises.toml", "adyacencias.toml", "reglas.toml"):
         path = theme_dir / filename
+        if not path.is_file():
+            continue
         digest.update(filename.encode("utf-8"))
         digest.update(path.read_bytes())
     return digest.hexdigest()

@@ -5,7 +5,22 @@ from __future__ import annotations
 import unittest
 from unittest.mock import MagicMock, patch
 
-from pyteg.core.turnos.timer import TurnoTimer
+from pyteg.core.turnos.timer import NullTurnTimer, TurnoTimer
+
+
+class TestNullTurnTimer(unittest.TestCase):
+    """El estado sin partida no crea hilos ni vencimientos."""
+
+    def test_api_es_idempotente_y_no_tiene_hilo(self) -> None:
+        """La API no crea un hilo y acepta llamadas repetidas."""
+        timer = NullTurnTimer()
+
+        timer.start()
+        timer.detener()
+        timer.join(timeout=0.01)
+
+        self.assertFalse(timer.is_alive())
+        self.assertFalse(isinstance(timer, TurnoTimer))
 
 
 class TestTurnoTimerBroadcast(unittest.TestCase):

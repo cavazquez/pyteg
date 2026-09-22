@@ -1,7 +1,10 @@
+# ruff: noqa: C901, PLR0912, PLR0914, PLR0915, TRY003, EM101, PLR2004
+
 """Tarea: atacar desde un país propio a un país adyacente enemigo."""
 
 from __future__ import annotations
 
+import inspect
 from typing import TYPE_CHECKING
 
 from pyteg.config import MIN_UNITS_FOR_ATTACK
@@ -18,6 +21,12 @@ from pyteg.server.juego.validators import (
 )
 from pyteg.server.tasks.base import LOGGER, IServerTask
 from pyteg.server.tasks.types import AtacarTaskData
+
+_POSITIONAL_PARAMETER_KINDS = frozenset({
+    inspect.Parameter.POSITIONAL_ONLY,
+    inspect.Parameter.POSITIONAL_OR_KEYWORD,
+})
+_RECLAMO_COUNTRY_PARAMETER_COUNT = 2
 
 if TYPE_CHECKING:
     from pyteg.core.partida.context import GameContext
@@ -53,6 +62,7 @@ class ServerTaskAtacar(IServerTask[AtacarTaskData]):
         self._origen: str | None = data.get("origen")
         self._destino: str | None = data.get("destino")
         self._cantidad_unidades = data.get("cantidad_unidades")
+        self._objetivo_jugador = data.get("objetivo_jugador")
         self._action_name = "atacar"
 
     def _execute(self, client: IClientProtocol, context: GameContext) -> None:
@@ -74,13 +84,46 @@ class ServerTaskAtacar(IServerTask[AtacarTaskData]):
 
         TurnValidator.validate_turn(client, context.game)
 
+        validar_accion = getattr(context.game, "validar_accion_situacion", None)
+        if callable(validar_accion):
+            validar_accion(client, "atacar")
+
         CountryOwnershipValidator.validate_ownership(client, context.mapa, self._origen)
 
-        CountryOwnershipValidator.validate_not_own_country(
-            client, context.mapa, self._destino
+        destino_compartido = getattr(context.mapa, "es_condominio", None)
+        es_compartido = callable(destino_compartido) and bool(
+            destino_compartido(self._destino)
         )
+        if es_compartido:
+            ocupantes: dict[int, int] = getattr(
+                context.mapa, "ocupantes", lambda _pais: {}
+            )(self._destino)
+            if self._objetivo_jugador is None:
+                raise ValidationError(
+                    "Un país en condominio requiere indicar el ocupante objetivo"
+                )
+            if int(self._objetivo_jugador) not in ocupantes:
+                raise ValidationError("El jugador indicado no ocupa el país objetivo")
+            if int(self._objetivo_jugador) == int(client.userid()):
+                raise ValidationError("No puedes atacar tus propias unidades")
+        else:
+            CountryOwnershipValidator.validate_not_own_country(
+                client, context.mapa, self._destino
+            )
 
         AdjacencyValidator.validate_adjacent(context.mapa, self._origen, self._destino)
+
+        validar_ataque = getattr(context.game, "validar_ataque_situacion", None)
+        if callable(validar_ataque):
+            validar_ataque(self._origen, self._destino)
+        validar_pacto = getattr(context.game, "validar_pacto_ataque", None)
+        if callable(validar_pacto):
+            validar_pacto(
+                client,
+                self._origen,
+                self._destino,
+                self._objetivo_jugador,
+            )
 
         UnitValidator.validate_min_units(
             context.mapa,
@@ -107,9 +150,33 @@ class ServerTaskAtacar(IServerTask[AtacarTaskData]):
 
         if context.game is None:
             return
-        info_batalla = context.game.atacar(
-            self._origen, self._destino, self._cantidad_unidades
+        atacar = context.game.atacar
+        parametros = inspect.signature(atacar).parameters.values()
+        acepta_participantes = (
+            any(
+                parametro.kind is inspect.Parameter.VAR_POSITIONAL
+                for parametro in parametros
+            )
+            or sum(
+                parametro.kind in _POSITIONAL_PARAMETER_KINDS
+                for parametro in parametros
+            )
+            >= 5
         )
+        if acepta_participantes:
+            info_batalla = atacar(
+                self._origen,
+                self._destino,
+                self._cantidad_unidades,
+                int(client.userid()),
+                self._objetivo_jugador,
+            )
+        else:
+            info_batalla = atacar(
+                self._origen,
+                self._destino,
+                self._cantidad_unidades,
+            )
 
         unidades_origen_post = context.mapa.cantidad_unidades(self._origen)
         unidades_destino_post = context.mapa.cantidad_unidades(self._destino)
@@ -162,4 +229,22 @@ class ServerTaskAtacar(IServerTask[AtacarTaskData]):
                 self._destino,
             )
             if context.game is not None:
-                context.game.marcar_jugador_puede_reclamar(client)
+                marcar_reclamo = context.game.marcar_jugador_puede_reclamar
+                parametros = inspect.signature(marcar_reclamo).parameters.values()
+                acepta_pais = (
+                    any(
+                        parametro.kind is inspect.Parameter.VAR_POSITIONAL
+                        for parametro in parametros
+                    )
+                    or sum(
+                        parametro.kind in _POSITIONAL_PARAMETER_KINDS
+                        for parametro in parametros
+                    )
+                    >= _RECLAMO_COUNTRY_PARAMETER_COUNT
+                )
+                if acepta_pais:
+                    marcar_reclamo(client, self._destino)
+                else:
+                    # Compatibility with older game doubles/servers that only
+                    # tracked the generic per-turn card eligibility.
+                    marcar_reclamo(client)
