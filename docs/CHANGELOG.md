@@ -19,6 +19,9 @@ Todas las fechas en formato YYYY-MM-DD.
   desplazarse con el botón central.
 
 ### Fixed
+- **Sprites del mapa clásico**: los fondos de los 50 países ahora son
+  transparentes; se eliminan rectángulos semitransparentes sobre el agua y
+  el detector de solapamientos sólo considera la silueta del país.
 - **Simulación tras reconexión**: un cliente recuperado recibe el snapshot
   vigente y los eventos futuros; ya no se marca como divergente por no repetir
   eventos históricos de misiles que ocurrieron antes de su nueva conexión.
