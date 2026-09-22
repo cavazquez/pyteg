@@ -131,3 +131,24 @@ jobs:
             name: pyteg-multiclient-simulation
             path: logs/simulations/classic-197
             if-no-files-found: error
+        - name: Revancha multiclient TCP simulation
+          run: |
+            uv run python -m scripts.simulate_game \
+              --theme revancha \
+              --clients 5 \
+              --victory 30 \
+              --seed 234 \
+              --secret-objectives \
+              --disconnect-client 2 \
+              --disconnect-after-turn 5 \
+              --reconnect-client 2 \
+              --exercise-exchanges \
+              --require-finalized \
+              --timeout 240
+        - name: Upload Revancha simulation evidence
+          if: always()
+          uses: actions/upload-artifact@v4
+          with:
+            name: pyteg-revancha-simulation
+            path: logs/simulations/revancha-234
+            if-no-files-found: error
