@@ -30,8 +30,11 @@ La decisión de usar esta matriz como baseline es de compatibilidad del software
 aristas que el jugador debe poder seguir cuando los sprites quedan separados
 por agua o por el salto del mapa. La lista del tema clásico cubre los quince
 puentes entre continentes auditados y las rutas insulares `NuevaYork–Groenlandia`,
-`Labrador–Groenlandia`, `GranBretana–Islandia`, `Japon–Kamchatka`, `Australia–Sumatra`,
-`Australia–Borneo` y `Australia–Java`. Las fronteras terrestres restantes se
+`Labrador–Groenlandia`, `GranBretana–Islandia`, `GranBretana–Espana`,
+`Japon–Kamchatka`, `Australia–Sumatra`, `Australia–Borneo` y `Australia–Java`.
+La conexión `GranBretana–Espana` pertenece al grafo clásico aunque ambos países
+estén en Europa; se dibuja porque sus sprites quedan separados en la escena.
+Las fronteras terrestres restantes se
 leen en los contornos de los países y siguen estando respaldadas por
 `Adyacencias`.
 

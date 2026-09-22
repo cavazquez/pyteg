@@ -148,6 +148,14 @@ def _edges(adjacency: dict[str, list[str]]) -> set[frozenset[str]]:
 class ClassicMapAuditTests(unittest.TestCase):
     """Verifica que el tema clásico conserve la topología auditada."""
 
+    def test_gran_bretana_limita_con_espana_y_no_con_francia(self) -> None:
+        """Evita confundir la frontera clásica con una conexión a Francia."""
+        reader = TomlReader.from_theme("classic", strict=True)
+
+        neighbors = set(reader.obtener_paises_adyacentes("GranBretana"))
+        self.assertIn("Espana", neighbors)
+        self.assertNotIn("Francia", neighbors)
+
     def test_continents_and_countries_match_classic_board(self) -> None:
         """Verifica la lista de países y su continente."""
         reader = TomlReader.from_theme("classic", strict=True)

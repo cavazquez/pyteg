@@ -106,6 +106,10 @@ origen = "Espana"
 destino = "Sahara"
 
 [[ConexionesVisuales]]
+origen = "GranBretana"
+destino = "Espana"
+
+[[ConexionesVisuales]]
 origen = "Groenlandia"
 destino = "Islandia"
 

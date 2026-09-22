@@ -26,6 +26,7 @@ EXPECTED_CLASSIC_VISUAL_CONNECTIONS = {
     ("Egipto", "Polonia"),
     ("Egipto", "Turquia"),
     ("Espana", "Sahara"),
+    ("GranBretana", "Espana"),
     ("GranBretana", "Islandia"),
     ("Groenlandia", "Islandia"),
     ("India", "Sumatra"),
