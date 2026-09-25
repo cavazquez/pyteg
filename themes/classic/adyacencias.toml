@@ -122,12 +122,24 @@ origen = "GranBretana"
 destino = "Espana"
 
 [[ConexionesVisuales]]
+origen = "GranBretana"
+destino = "Alemania"
+
+[[ConexionesVisuales]]
 origen = "Groenlandia"
 destino = "Islandia"
 
 [[ConexionesVisuales]]
 origen = "GranBretana"
 destino = "Islandia"
+
+[[ConexionesVisuales]]
+origen = "Islandia"
+destino = "Suecia"
+
+[[ConexionesVisuales]]
+origen = "China"
+destino = "Japon"
 
 [[ConexionesVisuales]]
 origen = "Japon"

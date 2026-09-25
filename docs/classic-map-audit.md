@@ -29,9 +29,12 @@ La decisión de usar esta matriz como baseline es de compatibilidad del software
 `ConexionesVisuales` no crea reglas nuevas: es la representación de las
 aristas que el jugador debe poder seguir cuando los sprites quedan separados
 por agua o por el salto del mapa. La lista del tema clásico cubre los quince
-puentes entre continentes auditados y las rutas insulares `NuevaYork–Groenlandia`,
-`Labrador–Groenlandia`, `GranBretana–Islandia`, `GranBretana–Espana`,
-`Japon–Kamchatka`, `Australia–Sumatra`, `Australia–Borneo` y `Australia–Java`.
+puentes entre continentes auditados y trece rutas dentro de un continente
+que atraviesan agua: `NuevaYork–Groenlandia`, `Labrador–Groenlandia`,
+`GranBretana–Islandia`, `GranBretana–Espana`, `GranBretana–Alemania`,
+`Islandia–Suecia`, `Japon–Kamchatka`, `China–Japon`,
+`Madagascar–Egipto`, `Madagascar–Zaire`, `Australia–Sumatra`,
+`Australia–Borneo` y `Australia–Java`.
 La conexión `GranBretana–Espana` pertenece al grafo clásico aunque ambos países
 estén en Europa; se dibuja porque sus sprites quedan separados en la escena.
 Las fronteras terrestres restantes se
@@ -58,8 +61,10 @@ Las regresiones de `tests/test_classic_map_audit.py` cubren países, continentes
 
 ## Diagnóstico geométrico estricto
 
-La auditoría separa el relleno del trazo SVG: un trazo de frontera compartido
-no se considera territorio superpuesto. Las siluetas visibles de las fronteras
+La auditoría separa el relleno del trazo SVG y comprueba los interiores a
+escala 4× para evitar falsos solapes del antialiasing a tamaño normal: un trazo
+de frontera compartido no se considera territorio superpuesto. Las siluetas
+visibles de las fronteras
 terrestres deben tocarse dentro de un píxel; las rutas incluidas en
 `ConexionesVisuales` se excluyen porque cruzan agua o el salto del mapa.
 
@@ -70,11 +75,28 @@ QT_QPA_PLATFORM=offscreen uv run python scripts/check_map_overlaps.py \
   --theme classic --strict-boundaries --max-contact-gap 1
 ```
 
-Las siete separaciones detectadas se cerraron en el vector de los países. Cada
-extensión de 3 px termina en el contorno del vecino, y se actualizaron los PNG
-de respaldo. Los pares son `Canada–NuevaYork`, `Aral–Mongolia`, `China–Iran`,
-`China–Mongolia`, `China–Siberia`, `India–Iran` e `Iran–Mongolia`. El grafo de
-adyacencias permanece igual.
+Las cinco masas terrestres principales se guardan como bloques y particiones
+comunes en `themes/classic/geometry/`: Norteamérica, Sudamérica, Europa,
+África y Asia. Cada píxel de la partición a escala 4× pertenece exactamente a
+un país o al agua; la unión de los 41 países continentales coincide píxel por
+píxel con su bloque. `scripts/generate_classic_geometry.py` deriva de esa
+misma partición los SVG individuales, el contorno exterior y las divisiones
+internas, que se dibujan una sola vez en Qt. Así, dos países vecinos comparten
+la *misma* frontera, sin alargar salientes para cerrar huecos. Los nueve países
+insulares conservan sus siluetas independientes y sus rutas sobre agua.
+
+Los pares que antes mostraban una barra —`Canada–NuevaYork`,
+`Aral–Mongolia`, `China–Iran`, `China–Mongolia`, `China–Siberia`,
+`India–Iran` e `Iran–Mongolia`— ahora comparten un tramo de la partición.
+El grafo de reglas permanece igual. Las rutas visuales incluyen además
+`GranBretana–Alemania`, `Islandia–Suecia` y `China–Japon`, conexiones que
+atraviesan agua en el dibujo aunque sean adyacencias válidas.
+
+Para verificar que los SVG no se alejaron de sus máscaras fuente:
+
+```bash
+uv run python scripts/generate_classic_geometry.py --check
+```
 
 La auditoría estricta ahora confirma cero solapamientos de relleno y cero
 fronteras terrestres separadas. El gate adicional de bounding boxes permite

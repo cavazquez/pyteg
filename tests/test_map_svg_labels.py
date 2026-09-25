@@ -46,7 +46,7 @@ class MapSvgAssetsTests(unittest.TestCase):
         scene = self._scene()
         self.assertEqual(len(scene.paises), 50)
         for name, size in {
-            "Chile": (20, 80),
+            "Chile": (21, 81),
             "Groenlandia": (83, 89),
             "Australia": (67, 52),
         }.items():

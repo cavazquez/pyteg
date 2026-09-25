@@ -1,0 +1,70 @@
+{
+  "origin": [
+    299.0,
+    17.0
+  ],
+  "size": [
+    168.0,
+    188.0
+  ],
+  "scale": 4,
+  "country_order": [
+    "Francia",
+    "Espana",
+    "Alemania",
+    "Italia",
+    "Polonia",
+    "Rusia",
+    "Suecia"
+  ],
+  "country_bounds": {
+    "Francia": [
+      343,
+      126,
+      41,
+      55
+    ],
+    "Espana": [
+      300,
+      150,
+      48,
+      49
+    ],
+    "Alemania": [
+      372,
+      110,
+      51,
+      53
+    ],
+    "Italia": [
+      375,
+      160,
+      48,
+      44
+    ],
+    "Polonia": [
+      389,
+      102,
+      60,
+      55
+    ],
+    "Rusia": [
+      385,
+      23,
+      81,
+      98
+    ],
+    "Suecia": [
+      343,
+      18,
+      49,
+      54
+    ]
+  },
+  "partition_png": "partition.png",
+  "shell_png": "shell.png",
+  "partition_labels": "0=agua; 1..N=country_order[index-1]",
+  "shell_values": "0=agua; 255=tierra",
+  "fill": "#f4e1f1",
+  "stroke": "#602354"
+}

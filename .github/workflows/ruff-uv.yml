@@ -59,6 +59,8 @@ jobs:
             uv run ruff check --config=pyproject.toml --output-format=github .
         - name: Test with unittest
           run: uv run python -m unittest discover
+        - name: Verify generated classic map geometry
+          run: uv run python scripts/generate_classic_geometry.py --check
         - name: Network and rematch integration smoke
           run: |
             uv run python -m unittest \

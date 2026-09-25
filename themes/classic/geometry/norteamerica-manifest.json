@@ -1,0 +1,84 @@
+{
+  "origin": [
+    16.0,
+    -4.0
+  ],
+  "size": [
+    227.0,
+    244.0
+  ],
+  "scale": 4,
+  "country_order": [
+    "Canada",
+    "Yukon",
+    "Alaska",
+    "Oregon",
+    "California",
+    "Mexico",
+    "NuevaYork",
+    "Terranova",
+    "Labrador"
+  ],
+  "country_bounds": {
+    "Canada": [
+      94,
+      -3,
+      93,
+      119
+    ],
+    "Yukon": [
+      60,
+      31,
+      55,
+      92
+    ],
+    "Alaska": [
+      17,
+      67,
+      59,
+      74
+    ],
+    "Oregon": [
+      22,
+      112,
+      127,
+      81
+    ],
+    "California": [
+      65,
+      160,
+      117,
+      64
+    ],
+    "Mexico": [
+      116,
+      182,
+      62,
+      57
+    ],
+    "NuevaYork": [
+      119,
+      96,
+      102,
+      83
+    ],
+    "Terranova": [
+      151,
+      92,
+      77,
+      60
+    ],
+    "Labrador": [
+      190,
+      58,
+      52,
+      66
+    ]
+  },
+  "partition_png": "partition.png",
+  "shell_png": "shell.png",
+  "partition_labels": "0=agua; 1..N=country_order[index-1]",
+  "shell_values": "0=agua; 255=tierra",
+  "fill": "#f7e9d9",
+  "stroke": "#ffba59"
+}

@@ -1,0 +1,63 @@
+{
+  "origin": [
+    174.0,
+    209.0
+  ],
+  "size": [
+    123.0,
+    168.0
+  ],
+  "scale": 4,
+  "country_order": [
+    "Argentina",
+    "Brasil",
+    "Peru",
+    "Colombia",
+    "Chile",
+    "Uruguay"
+  ],
+  "country_bounds": {
+    "Argentina": [
+      209,
+      285,
+      42,
+      91
+    ],
+    "Brasil": [
+      208,
+      221,
+      88,
+      69
+    ],
+    "Peru": [
+      175,
+      254,
+      47,
+      39
+    ],
+    "Colombia": [
+      178,
+      210,
+      61,
+      46
+    ],
+    "Chile": [
+      191,
+      288,
+      21,
+      81
+    ],
+    "Uruguay": [
+      242,
+      286,
+      37,
+      45
+    ]
+  },
+  "partition_png": "partition.png",
+  "shell_png": "shell.png",
+  "partition_labels": "0=agua; 1..N=country_order[index-1]",
+  "shell_values": "0=agua; 255=tierra",
+  "fill": "#beddd3",
+  "stroke": "#0a5e4e"
+}
