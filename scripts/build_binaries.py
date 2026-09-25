@@ -51,8 +51,8 @@ def _nuitka_command(
         "--assume-yes-for-downloads",
         "--enable-plugin=pyside6",
     ]
-    if disable_console:
-        command.append("--disable-console")
+    if disable_console and os.name == "nt":
+        command.append("--windows-console-mode=disable")
     command.extend(
         f"--include-data-dir={directory}={directory}" for directory in RESOURCE_DIRS
     )

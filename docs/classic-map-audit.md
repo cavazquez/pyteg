@@ -1,12 +1,19 @@
 # Auditoría del grafo clásico del TEG
 
-Fecha de la auditoría: 2026-09-21.
+Fecha de la auditoría: 2026-09-24.
 
 ## Referencias
 
 - [Matriz de adyacencias de Tenés Empanadas Graciela](https://github.com/wfx/teg/blob/master/common/limitrof.h): fuente primaria para compatibilidad con la implementación libre de TEG. La matriz GPL enumera las 50 posiciones del mapa y sus 89 aristas.
+- [Descripción oficial de TEGNet](https://www.tegnet.com.ar/es/que_es_tegnet.htm): confirma que el tablero se divide en 50 países.
+- [Historial oficial de TEGNet](https://www.tegnet.com.ar/es/versiones.htm): indica que en la versión 1.3.5 se agregó el límite faltante entre Irán e India.
 - [Reglamento de TEGNet](https://www.tegnet.com.ar/es/reglamento.htm): segunda implementación de TEG usada para contrastar reglas de partida en red; su página ofrece el reglamento de TEGNet y el reglamento de mesa.
 - [Mapa del TEG](https://www.calculadorteg.com/mapa-del-teg.html): índice auxiliar para leer las fronteras y los puentes en lenguaje humano. No se usa como autoridad única.
+
+El contraste con TEGNet verifica el total de países y confirma la frontera
+Irán–India. No certifica que las coordenadas y siluetas SVG reproduzcan el arte
+original: los vectores actuales se generan desde las máscaras mantenidas en
+este repositorio y no son un calco de los recursos gráficos de TEGNet.
 
 ## Resultado
 
@@ -49,6 +56,10 @@ renderer crea dos subtramos independientes para que no haya una línea continua
 cruzando el tablero. Las conexiones se colocan detrás de los países, con trazo
 discontinuo oscuro, extremos redondeados y ancho cosmético para que mantengan
 contraste al cambiar el zoom.
+
+El renderer recorta los extremos sobre el contorno visible de los países. Si un
+waypoint cae dentro del país de salida o llegada, lo omite para que el trazado
+no atraviese el sprite antes de alcanzar el agua.
 
 La captura de regresión generada con Qt offscreen queda en
 [`docs/screenshots/classic-map-bridges.png`](screenshots/classic-map-bridges.png).

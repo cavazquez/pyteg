@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import os
 import subprocess  # noqa: S404 -- sólo ejecuta los binarios recién construidos
+import tempfile
 import time
 from pathlib import Path
 
@@ -24,7 +25,7 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def _run_server(server: Path, theme: str) -> None:
+def _run_server(server: Path, theme: str, cwd: Path, env: dict[str, str]) -> None:
     process = subprocess.Popen(  # noqa: S603 -- ruta validada por el workflow
         [
             str(server),
@@ -36,7 +37,8 @@ def _run_server(server: Path, theme: str) -> None:
             theme,
             "--quiet",
         ],
-        env=os.environ | {"PYTEG_VERSION": "smoke"},
+        cwd=cwd,
+        env=env,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         text=True,
@@ -56,10 +58,11 @@ def _run_server(server: Path, theme: str) -> None:
             process.wait(timeout=5)
 
 
-def _run_client(client: Path) -> None:
+def _run_client(client: Path, cwd: Path, env: dict[str, str]) -> None:
     process = subprocess.Popen(  # noqa: S603 -- ruta validada por el workflow
         [str(client), "--quiet"],
-        env=os.environ | {"QT_QPA_PLATFORM": "offscreen"},
+        cwd=cwd,
+        env=env,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         text=True,
@@ -91,9 +94,19 @@ def main() -> int:
         if not executable.is_file():
             print(f"Binario no encontrado: {executable}")
             return 2
-    for theme in ("classic", "revancha"):
-        _run_server(args.server, theme)
-    _run_client(args.client)
+
+    clean_env = os.environ.copy()
+    clean_env.pop("PYTHONHOME", None)
+    clean_env.pop("PYTHONPATH", None)
+    clean_env["PYTEG_VERSION"] = "smoke"
+    clean_env["QT_QPA_PLATFORM"] = "offscreen"
+    server = args.server.resolve()
+    client = args.client.resolve()
+    with tempfile.TemporaryDirectory(prefix="pyteg-binary-smoke-") as temp_dir:
+        clean_cwd = Path(temp_dir)
+        for theme in ("classic", "revancha"):
+            _run_server(server, theme, clean_cwd, clean_env)
+        _run_client(client, clean_cwd, clean_env)
     print("Binarios Nuitka verificados para classic y revancha")
     return 0
 

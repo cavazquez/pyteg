@@ -20,7 +20,12 @@ from PySide6.QtWidgets import (
 from pyteg.client.conexion.connection import ConnectionClient
 from pyteg.client.conexion.transmisor import ClientTransmisor
 from pyteg.gui.dialogs.conectar import styles
-from pyteg.gui.dialogs.conectar.validation import ValidationError, validate
+from pyteg.gui.dialogs.conectar.validation import (
+    TCP_MAX_PORT,
+    TCP_MIN_PORT,
+    ValidationError,
+    validate,
+)
 from pyteg.i18n import translate as _
 from pyteg.logger import get_logger
 
@@ -157,7 +162,7 @@ class VentanaConectar(QDialog):
         self.addr.setPlaceholderText(_("Dirección del servidor"))
 
         self.port = QLineEdit("65432")
-        self.port.setValidator(QIntValidator())
+        self.port.setValidator(QIntValidator(TCP_MIN_PORT, TCP_MAX_PORT, self.port))
         self.port.setPlaceholderText(_("Puerto"))
 
         self.username = QLineEdit()

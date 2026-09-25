@@ -116,13 +116,13 @@ jobs:
           run: |
             uv run python -m scripts.simulate_game \
               --theme classic \
-              --clients 3 \
+              --clients 5 \
               --victory 30 \
-              --seed 197 \
+              --seed 903 \
               --secret-objectives \
-              --disconnect-client 2 \
-              --disconnect-after-turn 5 \
-              --reconnect-client 2 \
+              --disconnect-client 3 \
+              --disconnect-after-turn 8 \
+              --reconnect-client 3 \
               --exercise-exchanges \
               --require-finalized \
               --timeout 240
@@ -131,7 +131,7 @@ jobs:
           uses: actions/upload-artifact@v7
           with:
             name: pyteg-multiclient-simulation
-            path: logs/simulations/classic-197
+            path: logs/simulations/classic-903
             if-no-files-found: warn
         - name: Revancha multiclient TCP simulation
           run: |

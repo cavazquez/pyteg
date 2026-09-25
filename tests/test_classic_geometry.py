@@ -42,6 +42,28 @@ REPAIRED_BORDERS = (
     ("Iran", "Mongolia"),
 )
 ALPHA_THRESHOLD = 127
+_SRGB_LINEAR_THRESHOLD = 0.04045
+
+
+def _luminance(color: str) -> float:
+    channels = [int(color[index : index + 2], 16) / 255 for index in (1, 3, 5)]
+
+    def linearize(value: float) -> float:
+        return (
+            value / 12.92
+            if value <= _SRGB_LINEAR_THRESHOLD
+            else ((value + 0.055) / 1.055) ** 2.4
+        )
+
+    return sum(
+        weight * linearize(channel)
+        for weight, channel in zip((0.2126, 0.7152, 0.0722), channels, strict=True)
+    )
+
+
+def _contrast_ratio(first: str, second: str) -> float:
+    high, low = sorted((_luminance(first), _luminance(second)), reverse=True)
+    return (high + 0.05) / (low + 0.05)
 
 
 def _country_path(canonical: ET.Element, country: str) -> str:
@@ -255,6 +277,14 @@ class ClassicGeometryTests(unittest.TestCase):
                     renderer = QSvgRenderer(str(path))
                     self.assertTrue(renderer.isValid(), str(path))
                     self.assertFalse(renderer.viewBoxF().isEmpty())
+
+    def test_fronteras_tienen_contraste_legible_con_el_relleno(self) -> None:
+        """Las líneas de país conservan al menos 4.5:1 de contraste."""
+        for mass, manifest in self.manifests.items():
+            with self.subTest(mass=mass):
+                self.assertGreaterEqual(
+                    _contrast_ratio(manifest["fill"], manifest["stroke"]), 4.5
+                )
 
 
 if __name__ == "__main__":
