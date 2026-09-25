@@ -9,6 +9,9 @@ from dataclasses import dataclass
 
 from pyteg.i18n import translate as _
 
+TCP_MIN_PORT = 1
+TCP_MAX_PORT = 65535
+
 
 @dataclass(frozen=True)
 class ValidationError:
@@ -40,16 +43,17 @@ def validate(
         `ValidationError` con el primer problema encontrado.
 
     """
-    if not addr:
+    address = addr.strip()
+    if not address:
         return ValidationError(
             _("Por favor ingresa una dirección de servidor válida"),
             "addr",
         )
     try:
-        port = int(port_text)
+        port = int(port_text.strip())
     except TypeError, ValueError:
         return ValidationError(_("Por favor ingresa un puerto válido"), "port")
-    if port <= 0:
+    if not TCP_MIN_PORT <= port <= TCP_MAX_PORT:
         return ValidationError(_("Por favor ingresa un puerto válido"), "port")
     name = username.strip()
     if not name:
@@ -57,4 +61,4 @@ def validate(
             _("Por favor ingresa un nombre de usuario"),
             "username",
         )
-    return (addr, port, name)
+    return (address, port, name)

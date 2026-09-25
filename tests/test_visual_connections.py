@@ -8,9 +8,10 @@ import unittest
 from types import SimpleNamespace
 from typing import cast
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import QPointF, Qt
 from PySide6.QtWidgets import QApplication, QGraphicsPathItem
 
+from pyteg.gui.mapa.overlap_check import load_pais_bounds, paises_en_punto
 from pyteg.gui.mapa.scene import QCustomGraphicsScene
 from pyteg.toml_reader import TomlReader, TomlReaderError
 
@@ -258,6 +259,102 @@ class VisualConnectionSceneTests(unittest.TestCase):
                 {(arrow.elementAt(0).x, arrow.elementAt(1).x) for arrow in arrows},
                 {(0.0, 6.0), (634.0, 640.0)},
             )
+
+    def test_rutas_empiezan_y_terminan_en_el_contorno_del_pais(self) -> None:
+        reader = TomlReader.from_theme("classic", strict=True)
+        scene = QCustomGraphicsScene(SimpleNamespace(), theme="classic")
+
+        for config, route in zip(
+            reader.get_conexiones_visuales(), scene.visual_connections, strict=True
+        ):
+            with self.subTest(origen=config.origen, destino=config.destino):
+                path = route.path()
+                start = path.elementAt(0)
+                end = path.elementAt(path.elementCount() - 1)
+                for country_name, point in (
+                    (config.origen, (start.x, start.y)),
+                    (config.destino, (end.x, end.y)),
+                ):
+                    country = scene.paises[country_name]
+                    anchor = country.mapFromScene(QPointF(*point))
+                    self.assertFalse(country.shape().contains(anchor))
+                    self.assertGreater(
+                        (
+                            country.mapToScene(country.boundingRect().center()) - anchor
+                        ).manhattanLength(),
+                        1,
+                    )
+
+    def test_descarta_waypoints_ocultos_dentro_del_pais_de_origen(self) -> None:
+        reader = TomlReader.from_theme("classic", strict=True)
+        scene = QCustomGraphicsScene(SimpleNamespace(), theme="classic")
+        route_configs = reader.get_conexiones_visuales()
+        index = next(
+            i
+            for i, connection in enumerate(route_configs)
+            if (connection.origen, connection.destino) == ("NuevaYork", "Groenlandia")
+        )
+        config = route_configs[index]
+        path = scene.visual_connections[index].path()
+        origin = scene.paises[config.origen]
+        hidden_waypoint = QPointF(*config.puntos[0])
+
+        self.assertTrue(origin.shape().contains(origin.mapFromScene(hidden_waypoint)))
+        self.assertEqual(path.elementCount(), 3)
+        self.assertNotIn(
+            (hidden_waypoint.x(), hidden_waypoint.y()),
+            [
+                (path.elementAt(i).x, path.elementAt(i).y)
+                for i in range(path.elementCount())
+            ],
+        )
+
+    def test_seleccion_cerca_de_las_costas_sigue_eligiendo_el_pais(self) -> None:
+        host = SimpleNamespace(
+            scene=None,
+            update_status_bar=lambda *_args: None,
+            clear_status_bar=lambda: None,
+        )
+        scene = QCustomGraphicsScene(host, theme="classic")
+        host.scene = scene
+        reader = TomlReader.from_theme("classic", strict=True)
+        bounds = load_pais_bounds("classic")
+
+        for config, route in zip(
+            reader.get_conexiones_visuales(), scene.visual_connections, strict=True
+        ):
+            path = route.path()
+            first = path.elementAt(0)
+            last = path.elementAt(path.elementCount() - 1)
+            for country_name, point in (
+                (config.origen, QPointF(first.x, first.y)),
+                (config.destino, QPointF(last.x, last.y)),
+            ):
+                with self.subTest(origen=config.origen, pais=country_name):
+                    country = scene.paises[country_name]
+                    center = country.mapToScene(country.boundingRect().center())
+                    dx, dy = center.x() - point.x(), center.y() - point.y()
+                    distance = (dx**2 + dy**2) ** 0.5
+                    candidate = None
+                    for step in range(1, 13):
+                        offset = step * 0.5 / distance
+                        probe = QPointF(
+                            point.x() + dx * offset, point.y() + dy * offset
+                        )
+                        if paises_en_punto(bounds, probe.x(), probe.y()) == [
+                            country_name
+                        ]:
+                            candidate = probe
+                            break
+                    if candidate is None:
+                        self.fail(
+                            "No se encontró un punto seleccionable junto al ancla"
+                        )
+                    scene.selection_manager.cancelar_seleccion()
+                    self.assertTrue(scene.handle_country_click(candidate))
+                    self.assertEqual(
+                        scene.selection_manager.get_pais_origen(), country_name
+                    )
 
 
 if __name__ == "__main__":

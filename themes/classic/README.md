@@ -14,6 +14,8 @@ En `adyacencias.toml`, las conexiones `Alaska–Kamchatka` y
 `Chile–Australia` usan `envolver = "horizontal"`: los puntos listados marcan
 la salida por el borde izquierdo y la reentrada por el derecho. El renderer
 las dibuja como dos tramos separados, con flechas en los extremos del mapa.
+El resto de las rutas recorta sus extremos al contorno visible de cada país y
+descarta waypoints ocultos dentro de los sprites de salida o llegada.
 
 Las masas de Norteamérica, Sudamérica, Europa, África y Asia se definen por
 una máscara de bloque y una partición etiquetada a 4× en `geometry/`. Los

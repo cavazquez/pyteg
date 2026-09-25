@@ -115,5 +115,5 @@
   "partition_labels": "0=agua; 1..N=country_order[index-1]",
   "shell_values": "0=agua; 255=tierra",
   "fill": "#e0dcc0",
-  "stroke": "#b2a121"
+  "stroke": "#6c5e10"
 }
