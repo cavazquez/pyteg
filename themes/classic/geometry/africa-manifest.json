@@ -1,0 +1,56 @@
+{
+  "origin": [
+    335.0,
+    249.0
+  ],
+  "size": [
+    165.0,
+    129.0
+  ],
+  "scale": 4,
+  "country_order": [
+    "Sahara",
+    "Etiopia",
+    "Egipto",
+    "Zaire",
+    "Sudafrica"
+  ],
+  "country_bounds": {
+    "Sahara": [
+      336,
+      265,
+      79,
+      69
+    ],
+    "Etiopia": [
+      403,
+      286,
+      80,
+      45
+    ],
+    "Egipto": [
+      393,
+      250,
+      106,
+      52
+    ],
+    "Zaire": [
+      380,
+      310,
+      65,
+      42
+    ],
+    "Sudafrica": [
+      437,
+      329,
+      42,
+      48
+    ]
+  },
+  "partition_png": "partition.png",
+  "shell_png": "shell.png",
+  "partition_labels": "0=agua; 1..N=country_order[index-1]",
+  "shell_values": "0=agua; 255=tierra",
+  "fill": "#ead0a8",
+  "stroke": "#7f4907"
+}

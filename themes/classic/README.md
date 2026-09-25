@@ -15,8 +15,16 @@ En `adyacencias.toml`, las conexiones `Alaska–Kamchatka` y
 la salida por el borde izquierdo y la reentrada por el derecho. El renderer
 las dibuja como dos tramos separados, con flechas en los extremos del mapa.
 
-Los SVG de `Canada–NuevaYork`, `Aral–Mongolia`, `China–Iran`,
-`China–Mongolia`, `China–Siberia`, `India–Iran` e `Iran–Mongolia` comparten
-ahora un tramo vectorial corto: cada extensión termina en el contorno del país
-vecino. Los PNG equivalentes se regeneraron como respaldo del mismo dibujo; el
-grafo de adyacencias no cambia.
+Las masas de Norteamérica, Sudamérica, Europa, África y Asia se definen por
+una máscara de bloque y una partición etiquetada a 4× en `geometry/`. Los
+SVG de los 41 países continentales, los cinco contornos exteriores y sus
+divisiones internas se generan a partir de esas mismas máscaras mediante
+`scripts/generate_classic_geometry.py`. La escena dibuja las divisiones una
+sola vez; las siluetas individuales siguen siendo interactivas y tienen PNG
+de respaldo. Los nueve países insulares mantienen sus siluetas independientes.
+
+Para cambiar una frontera terrestre, se edita la partición y se regenera. El
+comando `uv run python scripts/generate_classic_geometry.py --check` comprueba
+que los SVG y PNG publicados coincidan con las fuentes. La tabla de reglas en
+`adyacencias.toml` sigue siendo independiente y debe coincidir con los
+contactos terrestres y las rutas dibujadas.

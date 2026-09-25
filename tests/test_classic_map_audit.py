@@ -143,6 +143,12 @@ EXPECTED_BRIDGES = {
     )
 }
 
+ISLAND_ROUTES = {
+    frozenset(("GranBretana", "Alemania")),
+    frozenset(("Islandia", "Suecia")),
+    frozenset(("China", "Japon")),
+}
+
 
 def _edges(adjacency: dict[str, list[str]]) -> set[frozenset[str]]:
     return {
@@ -216,6 +222,16 @@ class ClassicMapAuditTests(unittest.TestCase):
                 connection.destino,
                 reader.obtener_paises_adyacentes(connection.origen),
             )
+
+    def test_islands_have_visual_routes_instead_of_land_borders(self) -> None:
+        """Las islas mantienen su arista de juego sin pegarse al continente."""
+        reader = TomlReader.from_theme("classic", strict=True)
+        visual = {
+            frozenset((connection.origen, connection.destino))
+            for connection in reader.get_conexiones_visuales()
+        }
+
+        self.assertLessEqual(ISLAND_ROUTES, visual)
 
     def test_no_hay_solapamiento_solido_entre_paises(self) -> None:
         """Ningún país debe tapar píxeles sólidos de otro, sea vecino o no."""

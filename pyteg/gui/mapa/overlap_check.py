@@ -8,7 +8,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from PySide6.QtCore import QByteArray, Qt
+from PySide6.QtCore import QByteArray, QRectF, Qt
 from PySide6.QtGui import QImage, QPainter
 from PySide6.QtSvg import QSvgRenderer
 
@@ -172,7 +172,7 @@ def _masks(
 
 
 @lru_cache(maxsize=128)
-def _load_image(path: Path, *, ignore_strokes: bool = False) -> QImage:
+def _load_image(path: Path, *, ignore_strokes: bool = False, scale: int = 1) -> QImage:
     """Carga un sprite y, para SVG, puede separar el relleno del contorno.
 
     El contorno es una línea de dibujo compartida y no representa territorio.
@@ -183,12 +183,18 @@ def _load_image(path: Path, *, ignore_strokes: bool = False) -> QImage:
         Imagen rasterizada del sprite, opcionalmente sin los trazos del SVG.
 
     """
-    if not ignore_strokes or path.suffix.lower() != ".svg":
+    if path.suffix.lower() != ".svg":
+        image = QImage(str(path))
+        if scale > 1:
+            image = image.scaled(image.width() * scale, image.height() * scale)
+        return image
+    if not ignore_strokes and scale == 1:
         return QImage(str(path))
 
     source = path.read_text(encoding="utf-8")
-    fill_only = re.sub(r"\bstroke\s*=\s*['\"][^'\"]*['\"]", 'stroke="none"', source)
-    renderer = QSvgRenderer(QByteArray(fill_only.encode("utf-8")))
+    if ignore_strokes:
+        source = re.sub(r"\bstroke\s*=\s*['\"][^'\"]*['\"]", 'stroke="none"', source)
+    renderer = QSvgRenderer(QByteArray(source.encode("utf-8")))
     if not renderer.isValid():
         return QImage(str(path))
 
@@ -196,10 +202,14 @@ def _load_image(path: Path, *, ignore_strokes: bool = False) -> QImage:
     if not size.isValid() or size.width() <= 0 or size.height() <= 0:
         return QImage(str(path))
 
-    image = QImage(size, QImage.Format.Format_ARGB32_Premultiplied)
+    image = QImage(
+        size.width() * scale,
+        size.height() * scale,
+        QImage.Format.Format_ARGB32_Premultiplied,
+    )
     image.fill(Qt.GlobalColor.transparent)
     painter = QPainter(image)
-    renderer.render(painter)
+    renderer.render(painter, QRectF(0, 0, image.width(), image.height()))
     painter.end()
     return image
 
@@ -224,7 +234,7 @@ def _masks_touch(
     return False
 
 
-def count_opaque_overlap(
+def count_opaque_overlap(  # noqa: PLR0914
     a: PaisBounds,
     image_a: QImage,
     b: PaisBounds,
@@ -238,23 +248,32 @@ def count_opaque_overlap(
         Cantidad de píxeles donde ambos sprites son opacos.
 
     """
-    left = int(max(a.left, b.left))
-    top = int(max(a.top, b.top))
-    right = int(min(a.right, b.right))
-    bottom = int(min(a.bottom, b.bottom))
+    scale = image_a.width() // a.width
+    left = int(max(a.left, b.left) * scale)
+    top = int(max(a.top, b.top) * scale)
+    right = int(min(a.right, b.right) * scale)
+    bottom = int(min(a.bottom, b.bottom) * scale)
     if left >= right or top >= bottom:
         return 0
 
+    image_a = image_a.convertToFormat(QImage.Format.Format_RGBA8888)
+    image_b = image_b.convertToFormat(QImage.Format.Format_RGBA8888)
+    pixels_a = image_a.constBits()
+    pixels_b = image_b.constBits()
+    stride_a = image_a.bytesPerLine()
+    stride_b = image_b.bytesPerLine()
+    a_left = int(a.left * scale)
+    a_top = int(a.top * scale)
+    b_left = int(b.left * scale)
+    b_top = int(b.top * scale)
     count = 0
     for scene_y in range(top, bottom):
+        row_a = (scene_y - a_top) * stride_a
+        row_b = (scene_y - b_top) * stride_b
         for scene_x in range(left, right):
-            ax = scene_x - int(a.left)
-            ay = scene_y - int(a.top)
-            bx = scene_x - int(b.left)
-            by = scene_y - int(b.top)
             if (
-                image_a.pixelColor(ax, ay).alpha() >= alpha_threshold
-                and image_b.pixelColor(bx, by).alpha() >= alpha_threshold
+                pixels_a[row_a + (scene_x - a_left) * 4 + 3] >= alpha_threshold
+                and pixels_b[row_b + (scene_x - b_left) * 4 + 3] >= alpha_threshold
             ):
                 count += 1
     return count
@@ -266,6 +285,7 @@ def find_pixel_overlaps(
     min_pixels: int = 1,
     alpha_threshold: int = _ALPHA_THRESHOLD,
     ignore_strokes: bool = False,
+    scale: int = 1,
 ) -> list[PixelOverlap]:
     """Pares con píxeles opacos superpuestos (más preciso que solo bbox).
 
@@ -275,7 +295,9 @@ def find_pixel_overlaps(
     """
     overlaps: list[PixelOverlap] = []
     images = {
-        item.name: _load_image(item.image_path, ignore_strokes=ignore_strokes)
+        item.name: _load_image(
+            item.image_path, ignore_strokes=ignore_strokes, scale=scale
+        )
         for item in bounds
     }
 
@@ -302,8 +324,9 @@ def find_solid_overlaps(
 ) -> list[PixelOverlap]:
     """Encuentra solapamientos entre los interiores sólidos de los sprites.
 
-    Para SVG se omite el trazo de frontera: dos países pueden dibujar el mismo
-    límite compartido sin que ninguno tape el relleno del otro.
+    Para SVG se omite el trazo de frontera. El análisis se realiza a 4x:
+    al tamaño lógico de 1x, el antialiasing comparte algunos píxeles en una
+    frontera exacta aunque las áreas vectoriales no se superpongan.
 
     Returns:
         Solapamientos ordenados por cantidad de píxeles sólidos compartidos.
@@ -314,6 +337,7 @@ def find_solid_overlaps(
         min_pixels=min_pixels,
         alpha_threshold=_SOLID_ALPHA_THRESHOLD,
         ignore_strokes=True,
+        scale=4,
     )
 
 

@@ -1,0 +1,119 @@
+{
+  "origin": [
+    461.0,
+    -31.0
+  ],
+  "size": [
+    186.0,
+    239.0
+  ],
+  "scale": 4,
+  "country_order": [
+    "Arabia",
+    "Aral",
+    "China",
+    "India",
+    "Iran",
+    "Tartaria",
+    "Taimiria",
+    "Kamchatka",
+    "Siberia",
+    "Mongolia",
+    "Gobi",
+    "Malasia",
+    "Turquia",
+    "Israel"
+  ],
+  "country_bounds": {
+    "Arabia": [
+      497,
+      163,
+      33,
+      27
+    ],
+    "Aral": [
+      462,
+      20,
+      38,
+      44
+    ],
+    "China": [
+      560,
+      21,
+      86,
+      131
+    ],
+    "India": [
+      546,
+      145,
+      53,
+      62
+    ],
+    "Iran": [
+      477,
+      62,
+      96,
+      100
+    ],
+    "Tartaria": [
+      475,
+      -6,
+      55,
+      46
+    ],
+    "Taimiria": [
+      517,
+      -30,
+      36,
+      44
+    ],
+    "Kamchatka": [
+      563,
+      -6,
+      42,
+      40
+    ],
+    "Siberia": [
+      494,
+      -1,
+      88,
+      59
+    ],
+    "Mongolia": [
+      493,
+      49,
+      88,
+      47
+    ],
+    "Gobi": [
+      512,
+      78,
+      61,
+      58
+    ],
+    "Malasia": [
+      596,
+      138,
+      41,
+      45
+    ],
+    "Turquia": [
+      466,
+      138,
+      76,
+      38
+    ],
+    "Israel": [
+      465,
+      168,
+      35,
+      28
+    ]
+  },
+  "partition_png": "partition.png",
+  "shell_png": "shell.png",
+  "partition_labels": "0=agua; 1..N=country_order[index-1]",
+  "shell_values": "0=agua; 255=tierra",
+  "fill": "#e0dcc0",
+  "stroke": "#b2a121"
+}

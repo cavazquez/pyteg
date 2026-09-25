@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from operator import itemgetter
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from PySide6.QtCore import QPoint, QPointF, Qt
 from PySide6.QtGui import (
@@ -20,6 +20,7 @@ from PySide6.QtWidgets import (
 )
 
 from pyteg.config import DEFAULT_MAP_THEME
+from pyteg.gui.mapa.landmass_layers import add_landmass_layers
 from pyteg.gui.mapa.menu import Menu
 from pyteg.gui.mapa.overlap_check import (
     PaisBounds,
@@ -32,6 +33,9 @@ from pyteg.gui.mapa.visual_connections import add_visual_connections
 from pyteg.i18n import translate as _
 from pyteg.toml_reader import TomlReader
 from pyteg.utils import get_resource_path
+
+if TYPE_CHECKING:
+    from PySide6.QtSvgWidgets import QGraphicsSvgItem
 
 
 class QCustomGraphicsScene(QGraphicsScene):
@@ -57,6 +61,8 @@ class QCustomGraphicsScene(QGraphicsScene):
         self.map_theme = theme
         self.paises: dict[str, Pais] = {}
         self.visual_connections: list[QGraphicsPathItem] = []
+        self.landmass_shells: list[QGraphicsSvgItem] = []
+        self.landmass_borders: list[QGraphicsSvgItem] = []
         self.setBackgroundBrush(QBrush(QColor("#87CEEB")))
         self.selection_manager = CountrySelectionManager(main_window, self)
         self.load_map_data(theme=theme)
@@ -211,6 +217,7 @@ class QCustomGraphicsScene(QGraphicsScene):
                 self.paises[pais] = pixmap_item
                 self.addItem(pixmap_item)
 
+        self.landmass_shells, self.landmass_borders = add_landmass_layers(self, theme)
         self.visual_connections = add_visual_connections(
             self, reader.get_conexiones_visuales(), self.paises
         )
