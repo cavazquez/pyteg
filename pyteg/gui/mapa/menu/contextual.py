@@ -21,22 +21,26 @@ _PLACE_PRESETS = (1, 3, 5)
 
 
 class Menu(MenuActionsMixin, QMenu):
-    """Menú contextual que se muestra al hacer clic derecho en un país."""
+    """Menú contextual de un país o del par origen/destino seleccionado."""
 
     def __init__(
         self,
-        pais: str,
-        continente_mapa: str,
+        pais: str | None,
+        continente_mapa: str | None,
         main_window: Any,
         parent: QWidget | None = None,
+        *,
+        solo_seleccion: bool = False,
     ) -> None:
         """Inicializa el menú contextual para un país.
 
         Args:
-            pais: Nombre del país.
-            continente_mapa: ID de continente del mapa (TOML).
+            pais: País bajo el cursor, si el menú depende de un país concreto.
+            continente_mapa: ID de continente del mapa (TOML), si aplica.
             main_window: Ventana principal de la aplicación.
             parent: Widget padre (opcional). En Wayland se usa main_window.
+            solo_seleccion: Muestra las acciones del par origen/destino sin
+                acciones del país bajo el cursor.
 
         """
         super().__init__(parent or main_window)
@@ -44,12 +48,13 @@ class Menu(MenuActionsMixin, QMenu):
         self.continente_mapa = continente_mapa
         self.main_window = main_window
         self.transmisor = main_window.transmisor
+        self.solo_seleccion = solo_seleccion
 
         # i18n: este menú es efímero. `QCustomGraphicsScene.contextMenuEvent` lo
         # reconstruye en cada clic derecho, por lo que las etiquetas siempre se
         # crean con el idioma vigente y no se necesita un `refresh_labels()`
         # conectado a `LanguageManager` (a diferencia de la toolbar, que sí persiste).
-        self.action_pais = QAction(pais, self)
+        self.action_pais = QAction(pais or _("Países seleccionados"), self)
         self.action_pais.setEnabled(False)
 
         self.submenu_colocar = QMenu(_("Colocar unidad"), self)
@@ -75,6 +80,13 @@ class Menu(MenuActionsMixin, QMenu):
     def actualizar_menu(self) -> None:
         """Actualiza las opciones del menú según el estado actual de selección."""
         self.clear()
+
+        if self.solo_seleccion:
+            self._actualizar_menu_seleccion()
+            return
+
+        if self.pais is None or self.continente_mapa is None:
+            return
 
         self.addAction(self.action_pais)
         self.addSeparator()
@@ -108,24 +120,55 @@ class Menu(MenuActionsMixin, QMenu):
             pais_origen = None
             pais_destino = None
 
-        if pais_origen is None:
-            pass
-        elif pais_origen == self.pais or pais_destino is None:
-            self.addAction(self.action_cancelar_seleccion)
-        else:
-            if pais_destino == self.pais:
-                puede_combate = puede_atacar_o_mover(self.main_window)
-                self.action_atacar.setEnabled(puede_combate)
-                self.action_mover_seleccion.setEnabled(puede_combate)
-                self.addAction(self.action_atacar)
-                self.addAction(self.action_mover_seleccion)
-                if (
-                    misiles_habilitados
-                    and puede_combate
-                    and self._puede_lanzar_misil(pais_origen)
-                ):
-                    self.addAction(self.action_lanzar_misil)
-            self.addAction(self.action_cancelar_seleccion)
+        if pais_origen is not None:
+            if pais_origen == self.pais or pais_destino is None:
+                self.addAction(self.action_cancelar_seleccion)
+            else:
+                if pais_destino == self.pais:
+                    puede_combate = puede_atacar_o_mover(self.main_window)
+                    self.action_atacar.setEnabled(puede_combate)
+                    self.action_mover_seleccion.setEnabled(puede_combate)
+                    self.addAction(self.action_atacar)
+                    self.addAction(self.action_mover_seleccion)
+                    if (
+                        misiles_habilitados
+                        and puede_combate
+                        and self._puede_lanzar_misil(pais_origen)
+                    ):
+                        self.addAction(self.action_lanzar_misil)
+                self.addAction(self.action_cancelar_seleccion)
+
+    def _actualizar_menu_seleccion(self) -> None:
+        """Muestra sólo acciones que usan el par origen/destino seleccionado."""
+        scene = getattr(self.main_window, "scene", None)
+        selection_manager = getattr(scene, "selection_manager", None)
+        if selection_manager is None:
+            return
+
+        origen = selection_manager.get_pais_origen()
+        destino = selection_manager.get_pais_destino()
+        if origen is None or destino is None:
+            return
+
+        self.action_pais.setText(f"{origen} → {destino}")
+        self.addAction(self.action_pais)
+        self.addSeparator()
+
+        puede_combate = puede_atacar_o_mover(self.main_window)
+        self.action_atacar.setEnabled(puede_combate)
+        self.action_mover_seleccion.setEnabled(puede_combate)
+        self.addAction(self.action_atacar)
+        self.addAction(self.action_mover_seleccion)
+
+        misiles_habilitados = bool(
+            getattr(self.main_window, "misiles_habilitados", False)
+        )
+        if misiles_habilitados and self._puede_lanzar_misil(origen):
+            self.action_lanzar_misil.setEnabled(puede_combate)
+            self.addAction(self.action_lanzar_misil)
+
+        self.addSeparator()
+        self.addAction(self.action_cancelar_seleccion)
 
     def _poblar_submenu_colocar(self, total: int) -> None:
         """Añade cantidades 1/3/5 y atajo para el resto en un solo clic."""

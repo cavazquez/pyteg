@@ -16,6 +16,8 @@ class MenuActionsMixin:
 
     def colocar_unidades(self: MenuHost, cantidad: int) -> None:
         """Coloca la cantidad indicada en el país."""
+        if self.pais is None or self.continente_mapa is None:
+            return
         if not es_mi_turno(self.main_window):
             avisar_fuera_de_turno(self.main_window)
             return
@@ -47,7 +49,7 @@ class MenuActionsMixin:
 
     def canjear_misil(self: MenuHost) -> None:
         """Canjea unidades por 1 misil en el país actual."""
-        if hasattr(self.main_window, "canjear_misil"):
+        if self.pais is not None and hasattr(self.main_window, "canjear_misil"):
             self.main_window.canjear_misil(self.pais)
 
     def lanzar_misil(self: MenuHost) -> None:

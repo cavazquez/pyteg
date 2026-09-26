@@ -5,8 +5,9 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, cast
 
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (
-    QGraphicsOpacityEffect,
+    QGraphicsColorizeEffect,
     QGraphicsPixmapItem,
     QGraphicsSceneMouseEvent,
 )
@@ -20,6 +21,7 @@ class PaisSelectionMixin:
 
     _nombre: str
     _main_window: MainWindowProtocol | None
+    _seleccion_visual: str | None
 
     def mousePressEvent(self, event: QGraphicsSceneMouseEvent) -> None:  # noqa: N802
         """Delega la selección a la escena (soporta superposiciones)."""
@@ -38,21 +40,30 @@ class PaisSelectionMixin:
         QGraphicsPixmapItem.mousePressEvent(item, event)
 
     def set_seleccion_visual(self, tipo: str) -> None:
-        """Establece el indicador visual de selección usando oscurecimiento."""
-        self.limpiar_seleccion_visual()
-        item = cast("QGraphicsPixmapItem", self)
-
-        if tipo == "origen":
-            effect = QGraphicsOpacityEffect()
-            effect.setOpacity(0.7)
-            item.setGraphicsEffect(effect)
-        elif tipo == "destino":
-            effect = QGraphicsOpacityEffect()
-            effect.setOpacity(0.5)
-            item.setGraphicsEffect(effect)
+        """Oscurece el país según su rol, sin transparentarlo ni afectar sus marcas."""
+        if tipo not in {"origen", "destino"}:
+            self.limpiar_seleccion_visual()
+            return
+        self._seleccion_visual = tipo
+        self._restaurar_efecto_seleccion()
 
     def limpiar_seleccion_visual(self) -> None:
         """Elimina el indicador visual de selección."""
+        self._seleccion_visual = None
         item = cast("QGraphicsPixmapItem", self)
-        if item.graphicsEffect():
+        if getattr(self, "_titilacion_effect", None) is None:
             item.setGraphicsEffect(None)  # type: ignore[arg-type]
+        item.update()
+
+    def _restaurar_efecto_seleccion(self) -> None:
+        """Aplica el sombreado si no hay una animación de batalla activa."""
+        if (
+            self._seleccion_visual is None
+            or getattr(self, "_titilacion_effect", None) is not None
+        ):
+            return
+
+        effect = QGraphicsColorizeEffect()
+        effect.setColor(QColor(0, 0, 0))
+        effect.setStrength(0.55 if self._seleccion_visual == "origen" else 0.75)
+        cast("QGraphicsPixmapItem", self).setGraphicsEffect(effect)

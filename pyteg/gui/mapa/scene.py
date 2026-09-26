@@ -180,7 +180,22 @@ class QCustomGraphicsScene(QGraphicsScene):
             event: Evento de menú contextual.
 
         """
-        # Verificar si se hizo clic derecho sobre el QGraphicsPixmapItem
+        selection_manager = self.selection_manager
+        if (
+            selection_manager.get_pais_origen() is not None
+            and selection_manager.get_pais_destino() is not None
+        ):
+            menu = Menu(
+                None,
+                None,
+                self.main_window,
+                parent=self.main_window,
+                solo_seleccion=True,
+            )
+            menu.exec_(event.screenPos())
+            event.accept()
+            return
+
         items = self.items(event.scenePos())
         for item in items:
             if isinstance(item, Pais):
