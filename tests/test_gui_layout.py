@@ -14,6 +14,7 @@ from PySide6.QtGui import QMouseEvent
 from PySide6.QtWidgets import QApplication, QMainWindow, QSplitter, QWidget
 
 from pyteg.client.app import Client
+from pyteg.config import DEFAULT_MAP_THEME
 from pyteg.gui import Gui
 from pyteg.gui.managers.layout import LayoutManager
 from pyteg.gui.toolbar.toolbar import ToolBar
@@ -48,6 +49,7 @@ class GuiLayoutTests(unittest.TestCase):
         window = cast("MainWindowProtocol", QMainWindow())
         window.view = cast("QCustomGraphicsView", QWidget())
         window.chat = cast("Chat", QWidget())
+        window.map_theme = DEFAULT_MAP_THEME
         window.theme_manager = MagicMock()
         manager = LayoutManager(window)
 

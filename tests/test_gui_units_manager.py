@@ -7,6 +7,7 @@ from types import SimpleNamespace
 from typing import TYPE_CHECKING, cast
 from unittest.mock import MagicMock
 
+from pyteg.config import DEFAULT_MAP_THEME
 from pyteg.gui.managers.units import UnitsManager
 
 if TYPE_CHECKING:
@@ -23,6 +24,7 @@ class TestUnitsManager(unittest.TestCase):
         self.label_misiles = MagicMock()
         self.row_misiles = MagicMock()
         self.main_window = SimpleNamespace(
+            map_theme=DEFAULT_MAP_THEME,
             value_labels={
                 "Generales": self.label_generales,
                 "África": self.label_africa,
