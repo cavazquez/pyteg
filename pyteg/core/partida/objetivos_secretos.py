@@ -215,35 +215,36 @@ class ObjetivosSecretos:
 
         """
         objetivo_id = self.objetivos_asignados.get(int(client_id))
-        if objetivo_id:
-            if objetivo_id in self.objetivos_comunes:
+        if not objetivo_id or objetivo_id in self.objetivos_comunes:
+            return None
+
+        objetivo = self.toml_reader.get_objetivo_secreto(objetivo_id)
+        if objetivo is None:
+            return None
+
+        adicional_id = self.objetivos_adicionales.get(int(client_id))
+        if adicional_id is not None:
+            adicional = self.toml_reader.get_objetivo_secreto(adicional_id)
+            if adicional is None:
                 return None
-            objetivo = self.toml_reader.get_objetivo_secreto(objetivo_id)
-            if objetivo is not None:
-                adicional_id = self.objetivos_adicionales.get(int(client_id))
-                if adicional_id is not None:
-                    adicional = self.toml_reader.get_objetivo_secreto(adicional_id)
-                    if adicional is None:
-                        return None
-                    return {
-                        "id": f"{objetivo_id}+{adicional_id}",
-                        "descripcion": (
-                            "Cumplir ambos objetivos:\n"
-                            f"1. {objetivo['descripcion']}\n"
-                            f"2. {adicional['descripcion']}"
-                        ),
-                    }
-                if self._revancha_players == _REVANCHA_THREE_PLAYERS:
-                    return {
-                        **objetivo,
-                        "descripcion": (
-                            f"{objetivo['descripcion']}\n"
-                            "Además, ocupar 10 países adicionales a los "
-                            "necesarios para el objetivo."
-                        ),
-                    }
-                return cast("dict[str, Any]", objetivo)
-        return None
+            return {
+                "id": f"{objetivo_id}+{adicional_id}",
+                "descripcion": (
+                    "Cumplir ambos objetivos:\n"
+                    f"1. {objetivo['descripcion']}\n"
+                    f"2. {adicional['descripcion']}"
+                ),
+            }
+        if self._revancha_players == _REVANCHA_THREE_PLAYERS:
+            return {
+                **objetivo,
+                "descripcion": (
+                    f"{objetivo['descripcion']}\n"
+                    "Además, ocupar 10 países adicionales a los "
+                    "necesarios para el objetivo."
+                ),
+            }
+        return cast("dict[str, Any]", objetivo)
 
     def verificar_condicion_victoria(
         self, client_id: int, mapa: Mapa, colores: Any
