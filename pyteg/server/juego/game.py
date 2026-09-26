@@ -16,6 +16,7 @@ from pyteg.core.partida.objetivos_secretos import NO_SECRET_OBJECTIVES
 from pyteg.core.partida.pactos import PactManager
 from pyteg.core.partida.reglas import ThemeRules
 from pyteg.core.partida.turn_manager import TurnManager
+from pyteg.core.partida.turn_order_rotator import TurnOrderRotator
 from pyteg.core.partida.victory_checker import VictoryChecker
 from pyteg.core.situaciones.runtime import SituationRuntime
 from pyteg.core.turnos.turnos import PrimerTurno, SegundoTurno, SiguientesTurnos
@@ -100,6 +101,9 @@ class Game:
             mapa,
             reinforcement_policy=self._situation_runtime,
             rules=rules,
+        )
+        self._turn_order_rotator = TurnOrderRotator(
+            self._turn_manager.lista_jugadores_orden_turno
         )
 
         # Inicializar gestor de tarjetas
@@ -388,16 +392,20 @@ class Game:
     def _iniciar_nueva_ronda(
         self, jugadores_activos: Sequence[IClientProtocol]
     ) -> None:
-        """Rota el orden y crea los turnos de una ronda nueva."""
+        """Coordina las reglas y notificaciones de una ronda nueva."""
         ganador = self._victory_checker.verificar_condicion_victoria(jugadores_activos)
         if ganador:
             self._finalizar_partida(ganador)
             return
 
-        jugadores_rotados = self._turn_manager.rotar_jugadores(jugadores_activos)
-        jugadores_userids = [int(j.userid()) for j in jugadores_rotados]
+        jugadores_por_id = {int(j.userid()): j for j in jugadores_activos}
+        jugadores_userids = self._turn_order_rotator.rotar(
+            list(jugadores_por_id),
+        )
+        turnos_actuales = self._turn_manager.turnos()
         es_segundo_turno = (
-            isinstance(self._turn_manager.turno_actual(), PrimerTurno)
+            bool(turnos_actuales)
+            and isinstance(turnos_actuales[0], PrimerTurno)
             and not self._revancha_duel
         )
         self._turn_manager.iniciar_nueva_ronda(
@@ -408,8 +416,8 @@ class Game:
             self.num_ronda(),
             jugadores_userids,
             {
-                int(jugador.userid()): self._color_key(jugador)
-                for jugador in jugadores_rotados
+                jugador_id: self._color_key(jugadores_por_id[jugador_id])
+                for jugador_id in jugadores_userids
             },
         )
         self._actualizar_fase()
