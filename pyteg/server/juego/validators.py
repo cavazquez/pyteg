@@ -104,6 +104,22 @@ class CountryOwnershipValidator:
         return None
 
     @staticmethod
+    def _owns_country(mapa: Mapa | IMapProtocol, jugador: int, pais: str) -> bool:
+        """Consulta la propiedad del país, incluidos los condominios.
+
+        Returns:
+            True si el jugador posee el país.
+
+        """
+        posee = getattr(mapa, "jugador_posee_pais", None)
+        if callable(posee):
+            resultado = posee(jugador, pais)
+            if isinstance(resultado, bool):
+                return resultado
+        # Los mapas anteriores al condominio solo informan un ocupante.
+        return mapa.ocupado_por(pais) == jugador
+
+    @staticmethod
     def validate_ownership(
         client: Client | IClientProtocol,
         mapa: Mapa | IMapProtocol,
@@ -126,18 +142,7 @@ class CountryOwnershipValidator:
         jugador = CountryOwnershipValidator._client_userid(client)
         if jugador is None:
             raise CountryNotOwnedError(pais, error_message)
-        # Los condominios tienen varios ocupantes y ``ocupado_por`` devuelve
-        # None para no inventar un dueño único. Los mapas mínimos de tests y
-        # las implementaciones antiguas siguen usando la comparación clásica.
-        posee = getattr(mapa, "jugador_posee_pais", None)
-        if callable(posee):
-            resultado = posee(jugador, pais)
-            if isinstance(resultado, bool):
-                if not resultado:
-                    raise CountryNotOwnedError(pais, error_message)
-                return
-        ocupante = mapa.ocupado_por(pais)
-        if ocupante != jugador:
+        if not CountryOwnershipValidator._owns_country(mapa, jugador, pais):
             raise CountryNotOwnedError(pais, error_message)
 
     @staticmethod
@@ -163,16 +168,7 @@ class CountryOwnershipValidator:
         jugador = CountryOwnershipValidator._client_userid(client)
         if jugador is None:
             return
-        posee = getattr(mapa, "jugador_posee_pais", None)
-        if callable(posee):
-            resultado = posee(jugador, pais)
-            if isinstance(resultado, bool):
-                if resultado:
-                    msg = error_message or f"No puedes atacar tu propio país: {pais}"
-                    raise InvalidActionError(msg)
-                return
-        ocupante = mapa.ocupado_por(pais)
-        if ocupante == jugador:
+        if CountryOwnershipValidator._owns_country(mapa, jugador, pais):
             msg = error_message or f"No puedes atacar tu propio país: {pais}"
             raise InvalidActionError(msg)
 
