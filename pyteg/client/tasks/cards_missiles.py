@@ -11,6 +11,8 @@ from pyteg.client.tasks.types import (
     ResultadoMisilTaskData,
     TarjetasJugadorTaskData,
 )
+from pyteg.i18n import ngettext
+from pyteg.i18n import translate as _
 
 if TYPE_CHECKING:
     from pyteg.client.tasks.protocols import GameWindowProtocol
@@ -86,20 +88,24 @@ class ClientTaskResultadoMisil(IClientTask[ResultadoMisilTaskData]):
             if not jugador_nombre:
                 jugador_nombre = self._jugador_fallback or str(self._jugador_id)
 
-            mensaje = (
-                f"🚀 {jugador_nombre} lanzó un misil desde {self._pais_origen} "
-                f"hacia {self._pais_destino} (distancia: {self._distancia}). "
-                f"Daño: {self._dano} unidades. "
-                f"Unidades restantes: {self._unidades_restantes}"
+            mensaje = _(
+                "🚀 {} lanzó un misil desde {} hacia {} (distancia: {}). "
+                "Daño: {} unidades. Unidades restantes: {}"
+            ).format(
+                jugador_nombre,
+                self._pais_origen,
+                self._pais_destino,
+                self._distancia,
+                self._dano,
+                self._unidades_restantes,
             )
             if main_window.chat is not None:
                 main_window.chat.append(mensaje, "system")
 
-            status_mensaje = (
-                f"Misil: {self._pais_origen} → {self._pais_destino} "
-                f"(-{self._dano} unidades)"
+            status_mensaje = _("Misil: {} → {} (-{} unidades)").format(
+                self._pais_origen, self._pais_destino, self._dano
             )
-            main_window.status_bar.showMessage(status_mensaje, 5000)
+            main_window.update_status_bar(status_mensaje, "blue")
 
         except (AttributeError, KeyError, TypeError) as e:
             CLIENT_TASKS_LOG.warning("Error al procesar resultado de misil: %s", e)
@@ -122,17 +128,20 @@ class ClientTaskMisilAgregado(IClientTask[MisilAgregadoTaskData]):
     def run(self, main_window: GameWindowProtocol) -> None:
         """Ejecuta la tarea actualizando la cantidad de misiles en la interfaz."""
         try:
-            if (
-                main_window.scene is not None
-                and self._pais is not None
-                and self._cantidad_misiles is not None
-            ):
+            if self._pais is None or self._cantidad_misiles is None:
+                return
+
+            if main_window.scene is not None:
                 pais_widget = main_window.scene.obtener_pais(self._pais)
                 if pais_widget and hasattr(pais_widget, "actualizar_misiles"):
                     pais_widget.actualizar_misiles(self._cantidad_misiles)
 
-            mensaje = f"{self._pais} ahora tiene {self._cantidad_misiles} misil(es)"
-            main_window.status_bar.showMessage(mensaje, 3000)
+            mensaje = _("{} ahora tiene {} {}").format(
+                self._pais,
+                self._cantidad_misiles,
+                ngettext("misil", "misiles", self._cantidad_misiles),
+            )
+            main_window.update_status_bar(mensaje, "blue")
 
         except (AttributeError, KeyError, TypeError) as e:
             CLIENT_TASKS_LOG.warning(

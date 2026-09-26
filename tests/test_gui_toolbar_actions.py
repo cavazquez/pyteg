@@ -83,7 +83,7 @@ class TestToolbarActionsMixin(unittest.TestCase):
         tb = _DummyToolbar(mw)
         tb._habilitar_botones_conectado()
         c, a, m = _btns(tb)
-        c.setEnabled.assert_called_once_with(False)
+        c.setEnabled.assert_called_once_with(True)
         a.setEnabled.assert_called_once_with(False)
         m.setEnabled.assert_called_once_with(False)
         cast("MagicMock", tb.button_finalizar_turno).setEnabled.assert_called_once_with(

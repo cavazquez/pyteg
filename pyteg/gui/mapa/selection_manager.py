@@ -4,10 +4,13 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Protocol
 
+from pyteg.gui.action_availability import selection_availability
 from pyteg.gui.gameplay_state import refresh_acciones_juego
+from pyteg.gui.mapa.map_rules import es_mi_pais
 from pyteg.i18n import translate as _
 
 if TYPE_CHECKING:
+    from pyteg.gui.action_availability import SelectionAvailability
     from pyteg.gui.mapa.pais import Pais
 
 
@@ -88,6 +91,13 @@ class CountrySelectionManager:
 
     def _actualizar_seleccion_label(self) -> None:
         """Actualiza el label de selección en la barra de estado."""
+        self.render_selection_label()
+        self._actualizar_botones_toolbar()
+
+    def render_selection_label(
+        self, available: SelectionAvailability | None = None
+    ) -> None:
+        """Redibuja la instrucción sin iniciar otro refresco de toolbar."""
         if hasattr(self.main_window, "seleccion_label"):
             if self._pais_origen is None:
                 self.main_window.seleccion_label.setText(
@@ -105,17 +115,30 @@ class CountrySelectionManager:
                     )
                 )
             else:
-                self.main_window.seleccion_label.setText(
-                    _(
-                        "Origen: {origen} | Destino: {destino} | "
-                        "Clic derecho: Atacar/Mover"
-                    ).format(
-                        origen=self._pais_origen,
-                        destino=self._pais_destino,
-                    )
+                available = available or selection_availability(
+                    self.main_window, self._pais_origen, self._pais_destino
                 )
-
-        self._actualizar_botones_toolbar()
+                actions = [
+                    label
+                    for enabled, label in (
+                        (available.attack.enabled, _("Atacar")),
+                        (available.move.enabled, _("Mover")),
+                        (available.launch_missile.enabled, _("Lanzar misil")),
+                    )
+                    if enabled
+                ]
+                selection = _("Origen: {} | Destino: {}").format(
+                    self._pais_origen, self._pais_destino
+                )
+                if actions:
+                    hint = _("Clic derecho: {}").format(", ".join(actions))
+                elif es_mi_pais(self.main_window, self._pais_destino):
+                    hint = available.move.explanation()
+                else:
+                    hint = available.attack.explanation()
+                self.main_window.seleccion_label.setText(
+                    f"{selection} | {hint}" if hint else selection
+                )
 
     def _actualizar_botones_toolbar(self) -> None:
         """Actualiza toolbar según selección y turno."""

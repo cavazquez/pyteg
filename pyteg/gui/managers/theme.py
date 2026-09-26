@@ -33,6 +33,13 @@ class ThemeManager:
         # Aplicar tema global a toda la app (fondos, textos, menús, etc.)
         self._apply_global_theme()
         self._apply_statusbar_theme()
+        for name in ("language_selector", "sound_control"):
+            widget = getattr(self.main_window, name, None)
+            if widget is not None:
+                widget.apply_theme(theme)
+        status_manager = getattr(self.main_window, "status_manager", None)
+        if status_manager is not None:
+            status_manager.refresh_theme()
         # Reaplicar estilos en secciones
         self._apply_units_theme()
         # Reaplicar estilos tarjetas jugadores
@@ -63,6 +70,16 @@ class ThemeManager:
                     background: #3a3f47; border: 1px solid #4a5060;
                     border-radius: 10px; padding: 2px 8px; color: #e6e6e6;
                 }
+                QStatusBar QLabel#miJugadorText { color: #c0c6d0; }
+                QStatusBar QLabel#contextoPartidaLabel {
+                    background: #19384b; color: #d7efff;
+                    border: 1px solid #52768a; border-radius: 3px;
+                    font-weight: 600; padding: 2px 8px;
+                }
+                QStatusBar QToolButton {
+                    background: #3a3f47; color: #e6e6e6;
+                    border: 1px solid #4a5060; border-radius: 3px;
+                }
                 QFrame { color: #e6e6e6; }
                 """
             )
@@ -74,6 +91,16 @@ class ThemeManager:
                 QLabel[class="pill"] {
                     background: #eef1f7; border: 1px solid #d7dbe6;
                     border-radius: 10px; padding: 2px 8px;
+                }
+                QStatusBar QLabel#miJugadorText { color: #555; }
+                QStatusBar QLabel#contextoPartidaLabel {
+                    background: #e8f1fb; color: #17324d;
+                    border: 1px solid #b6cde5; border-radius: 3px;
+                    font-weight: 600; padding: 2px 8px;
+                }
+                QStatusBar QToolButton {
+                    background: #eef1f7; color: #333;
+                    border: 1px solid #d7dbe6; border-radius: 3px;
                 }
                 QFrame { color: #333; }
                 """

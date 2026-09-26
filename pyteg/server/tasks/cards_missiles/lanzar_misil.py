@@ -141,6 +141,13 @@ class ServerTaskLanzarMisil(IServerTask[LanzarMisilTaskData]):
             msg = "No puedes lanzar misiles a tus propios países"
             raise InvalidActionError(msg)
 
+        # El misil no identifica a un ocupante objetivo. Restar sólo el total
+        # de un condominio dejaría sus aportes individuales desincronizados.
+        es_condominio = getattr(context.mapa, "es_condominio", None)
+        if callable(es_condominio) and es_condominio(self._pais_destino):
+            msg = "No se puede lanzar un misil a un país compartido"
+            raise InvalidActionError(msg)
+
         validar_pacto = getattr(context.game, "validar_pacto_ataque", None)
         if callable(validar_pacto):
             validar_pacto(client, self._pais_origen, self._pais_destino)

@@ -9,8 +9,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, cast
 
-from PySide6.QtWidgets import QDialog, QMessageBox, QWidget
+from PySide6.QtWidgets import QDialog, QInputDialog, QMessageBox, QWidget
 
+from pyteg.gui.action_availability import pact_allows_defender
 from pyteg.gui.connection_utils import cliente_esta_conectado
 from pyteg.gui.dialogs.attack import AttackDialog
 from pyteg.gui.dialogs.move import MoveDialog
@@ -20,7 +21,12 @@ from pyteg.gui.gameplay_state import (
     es_mi_turno,
     puede_atacar_o_mover,
 )
-from pyteg.gui.mapa.map_rules import es_mi_pais, es_pais_enemigo, son_adyacentes
+from pyteg.gui.mapa.map_rules import (
+    es_mi_pais,
+    es_pais_enemigo,
+    son_adyacentes,
+    unidades_propias_en_pais,
+)
 from pyteg.gui.units_placement import unidades_colocables_en_pais
 from pyteg.i18n import _, ngettext
 from pyteg.logger import get_logger
@@ -182,8 +188,18 @@ class GameActionsManager:
         if dialog.exec() != QDialog.DialogCode.Accepted:
             return
 
+        target_selected, target_player = self._elegir_objetivo_condominio(
+            origen, destino
+        )
+        if not target_selected:
+            return
         cantidad_unidades = dialog.get_cantidad_unidades()
-        transmisor.atacar(origen, destino, cantidad_unidades)
+        if target_player is None:
+            transmisor.atacar(origen, destino, cantidad_unidades)
+        else:
+            transmisor.atacar(
+                origen, destino, cantidad_unidades, objetivo_jugador=target_player
+            )
         self.main_window.update_status_bar(
             _("Atacando de {} a {} con {} {}…").format(
                 origen,
@@ -194,6 +210,76 @@ class GameActionsManager:
             "blue",
         )
         selection_manager.cancelar_seleccion()
+
+    def _elegir_objetivo_condominio(  # noqa: PLR0911
+        self, origen: str, destino: str
+    ) -> tuple[bool, int | None]:
+        """Resuelve el ocupante rival exigido al atacar un país compartido.
+
+        Returns:
+            Si se eligió un defensor y su identificador, cuando corresponde.
+
+        """
+        model = getattr(self.main_window, "client_state_model", None)
+        snapshot = getattr(model, "snapshot", None)
+        if not isinstance(snapshot, dict):
+            return True, None
+        countries = snapshot.get("countries")
+        country = countries.get(destino) if isinstance(countries, dict) else None
+        if not isinstance(country, dict) or country.get("compartido") is not True:
+            return True, None
+        local_userid = self.main_window.client.userid()
+        occupants = country.get("ocupantes")
+        if not isinstance(occupants, list):
+            return False, None
+        enemies = [
+            occupant["userid"]
+            for occupant in occupants
+            if isinstance(occupant, dict)
+            and isinstance(occupant.get("userid"), int)
+            and occupant["userid"] != local_userid
+            and isinstance(occupant.get("unidades"), int)
+            and occupant["unidades"] > 0
+            and pact_allows_defender(
+                self.main_window, origen, destino, occupant["userid"]
+            )
+        ]
+        if not enemies:
+            self.main_window.update_status_bar(
+                _("Un pacto público impide atacar ese objetivo"), "orange"
+            )
+            return False, None
+        if len(enemies) == 1:
+            return True, enemies[0]
+
+        players = snapshot.get("players")
+        names = (
+            {
+                player.get("userid"): str(
+                    player.get("username")
+                    or _("Jugador {}").format(player.get("userid"))
+                )
+                for player in players
+                if isinstance(player, dict)
+            }
+            if isinstance(players, list)
+            else {}
+        )
+        choices = [
+            f"{names.get(userid, _('Jugador {}').format(userid))} (#{userid})"
+            for userid in enemies
+        ]
+        choice, accepted = QInputDialog.getItem(
+            cast("QWidget", self.main_window),
+            _("Elegir defensor"),
+            _("Ocupante objetivo en {}").format(destino),
+            choices,
+            0,
+            editable=False,
+        )
+        if not accepted:
+            return False, None
+        return True, enemies[choices.index(choice)]
 
     def atacar(self) -> None:
         """Método llamado cuando se hace clic en el botón Atacar de la toolbar."""
@@ -223,7 +309,9 @@ class GameActionsManager:
         if pais not in paises:
             return 0
 
-        unidades_totales = paises[pais].get_unidades()
+        unidades_totales = unidades_propias_en_pais(self.main_window, pais)
+        if unidades_totales is None:
+            unidades_totales = paises[pais].get_unidades()
         return max(0, unidades_totales - 1)
 
     def _ejecutar_movimiento(
@@ -304,7 +392,9 @@ class GameActionsManager:
             return 0
 
         pais_widget = paises[pais]
-        unidades_totales = pais_widget.get_unidades()
+        unidades_totales = unidades_propias_en_pais(self.main_window, pais)
+        if unidades_totales is None:
+            unidades_totales = pais_widget.get_unidades()
         # Se necesita dejar al menos 1 unidad en el país
         unidades_disponibles = max(0, unidades_totales - 1)
         # Máximo 3 unidades para atacar
@@ -324,7 +414,9 @@ class GameActionsManager:
             return
 
         self.main_window.transmisor.canjear_misil(pais)
-        self.main_window.status_bar.showMessage(f"Canjeando misil en {pais}...", 3000)
+        self.main_window.update_status_bar(
+            _("Canjeando misil en {}…").format(pais), "blue"
+        )
 
     def colocar_unidad_en_pais(
         self, pais: str, continente_mapa: str, cantidad: int
@@ -368,34 +460,52 @@ class GameActionsManager:
             "blue",
         )
 
-    def lanzar_misil(self, pais_origen: str, pais_destino: str) -> None:
+    def lanzar_misil(  # noqa: PLR0911
+        self, pais_origen: str, pais_destino: str
+    ) -> bool:
         """Lanza un misil desde un país hacia otro.
 
         Args:
             pais_origen: País desde donde se lanza el misil.
             pais_destino: País objetivo del misil.
 
+        Returns:
+            True si se transmitió el lanzamiento; False si se canceló o falló
+            una validación local.
+
         """
         if not cliente_esta_conectado(self.main_window):
-            return
+            return False
 
         if not es_mi_turno(self.main_window):
             avisar_fuera_de_turno(self.main_window)
-            return
+            return False
         if not puede_atacar_o_mover(self.main_window):
             avisar_fase_reparto(self.main_window)
-            return
+            return False
 
         if not es_mi_pais(self.main_window, pais_origen):
             self.main_window.update_status_bar(
                 _("{} no es tu país").format(pais_origen), "orange"
             )
-            return
-        if not es_pais_enemigo(self.main_window, pais_destino):
+            return False
+        if es_mi_pais(self.main_window, pais_destino) or not es_pais_enemigo(
+            self.main_window, pais_destino
+        ):
             self.main_window.update_status_bar(
                 _("No puedes lanzar misiles a tus propios países"), "orange"
             )
-            return
+            return False
+
+        model = getattr(self.main_window, "client_state_model", None)
+        snapshot = getattr(model, "snapshot", None)
+        countries = snapshot.get("countries") if isinstance(snapshot, dict) else None
+        target = countries.get(pais_destino) if isinstance(countries, dict) else None
+        if isinstance(target, dict) and target.get("compartido") is True:
+            self.main_window.update_status_bar(
+                _("No se puede lanzar un misil a un país compartido"), "orange"
+            )
+            return False
 
         reply = QMessageBox.question(
             cast("QWidget", self.main_window),
@@ -405,10 +515,11 @@ class GameActionsManager:
             QMessageBox.StandardButton.No,
         )
         if reply != QMessageBox.StandardButton.Yes:
-            return
+            return False
 
         self.main_window.transmisor.lanzar_misil(pais_origen, pais_destino)
         self.main_window.update_status_bar(
             _("Lanzando misil de {} a {}…").format(pais_origen, pais_destino),
             "blue",
         )
+        return True

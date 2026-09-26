@@ -6,10 +6,7 @@ from typing import TYPE_CHECKING
 
 from pyteg.client.tasks.base import IClientTask
 from pyteg.client.tasks.types import TiempoTaskData, TurnoTaskData
-from pyteg.config import (
-    TIMER_COLOR_GREEN_THRESHOLD,
-    TIMER_COLOR_ORANGE_THRESHOLD,
-)
+from pyteg.config import DEFAULT_TURN_SECONDS
 from pyteg.i18n import _
 
 if TYPE_CHECKING:
@@ -69,17 +66,28 @@ class ClientTaskTiempo(IClientTask[TiempoTaskData]):
 
     def run(self, main_window: GameWindowProtocol) -> None:
         """Ejecuta la tarea actualizando el display del tiempo."""
-        tiempo = int(self._msg.get("tiempo", 0))
-        if tiempo > 0:
-            if tiempo > TIMER_COLOR_GREEN_THRESHOLD:
-                color = "green"
-            elif tiempo > TIMER_COLOR_ORANGE_THRESHOLD:
-                color = "orange"
-            else:
-                color = "red"
+        if getattr(main_window, "partida_finalizada", False) is True or (
+            getattr(main_window, "estado_actual", "JUGANDO") != "JUGANDO"
+        ):
+            return
+        tiempo = max(0, int(self._msg.get("tiempo", 0)))
+        config_manager = getattr(main_window, "config_manager", None)
+        configured = getattr(config_manager, "segundos_por_turno", None)
+        total = configured() if callable(configured) else configured
+        if not isinstance(total, int) or total < 1:
+            total = DEFAULT_TURN_SECONDS
 
-            main_window.update_timer_display(
-                _("Tiempo: {}s").format(tiempo), color=color
-            )
+        status_manager = getattr(main_window, "status_manager", None)
+        update_seconds = getattr(status_manager, "update_timer_seconds", None)
+        if callable(update_seconds):
+            update_seconds(tiempo, total)
+            return
+
+        # Hosts livianos sin StatusManager conservan la API pública anterior.
+        if tiempo * 2 > total:
+            color = "green"
+        elif tiempo * 4 > total:
+            color = "orange"
         else:
-            main_window.update_timer_display("")
+            color = "red"
+        main_window.update_timer_display(_("Tiempo: {}s").format(tiempo), color)

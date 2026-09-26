@@ -11,7 +11,14 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, Protocol
 
 if TYPE_CHECKING:
-    from PySide6.QtWidgets import QHBoxLayout, QLabel, QStatusBar, QWidget
+    from PySide6.QtWidgets import (
+        QFrame,
+        QHBoxLayout,
+        QLabel,
+        QStatusBar,
+        QToolButton,
+        QWidget,
+    )
 
     from pyteg.gui.widgets.language_selector import LanguageSelector
     from pyteg.gui.widgets.sound_control import SoundControlWidget
@@ -28,8 +35,12 @@ class StatusBarHost(Protocol):
     sound_manager: SoundManager
     theme_manager: Any
     language_manager: Any
+    theme: str
 
     status_bar: QStatusBar
+    status_bar_sections: dict[str, tuple[QWidget, QFrame | None]]
+    status_message_label: QLabel
+    status_details_button: QToolButton
     jugador_actual_widget: QWidget
     jugador_actual_layout: QHBoxLayout
     turno_label: QLabel
@@ -44,5 +55,7 @@ class StatusBarHost(Protocol):
     language_selector: LanguageSelector
     sound_control: SoundControlWidget
     timer_label: QLabel
+
+    def width(self) -> int: ...
 
     def setStatusBar(self, status_bar: QStatusBar) -> Any: ...  # noqa: N802

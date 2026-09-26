@@ -139,9 +139,14 @@ class MainWindowDelegatesMixin:
             pais, continente_mapa, cantidad
         )
 
-    def lanzar_misil(self, pais_origen: str, pais_destino: str) -> None:
-        """Lanza un misil entre dos países."""
-        self.game_actions_manager.lanzar_misil(pais_origen, pais_destino)
+    def lanzar_misil(self, pais_origen: str, pais_destino: str) -> bool:
+        """Lanza un misil entre dos países; informa si se envió la orden.
+
+        Returns:
+            True cuando se envió la orden, False en caso contrario.
+
+        """
+        return self.game_actions_manager.lanzar_misil(pais_origen, pais_destino)
 
     def set_configuracion_partida(
         self,

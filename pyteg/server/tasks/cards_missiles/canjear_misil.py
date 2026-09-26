@@ -79,20 +79,42 @@ class ServerTaskCanjearMisil(IServerTask[CanjearMisilTaskData]):
 
         rules = context.reglas()
         missile_cost = rules.missile_unit_cost
-        min_units = missile_cost + rules.missile_min_units_to_leave
-        UnitValidator.validate_min_units(
-            context.mapa,
-            self._pais,
-            min_units,
-            (
-                f"Se requieren al menos {min_units} unidades "
-                f"para canjear un misil. {self._pais} tiene "
-                f"{context.mapa.cantidad_unidades(self._pais)} unidades."
-            ),
+        is_shared = getattr(context.mapa, "es_condominio", None)
+        shared = callable(is_shared) and is_shared(self._pais) is True
+        # Un ocupante que canjea debe conservar al menos una unidad para que
+        # el misil siga perteneciendo a un país que efectivamente ocupa.
+        leave = (
+            max(1, rules.missile_min_units_to_leave)
+            if shared
+            else rules.missile_min_units_to_leave
         )
-
-        for _ in range(missile_cost):
-            context.mapa.restar_una_unidad(self._pais)
+        min_units = missile_cost + leave
+        own_units = getattr(context.mapa, "cantidad_unidades_jugador", None)
+        subtract_own = getattr(context.mapa, "restar_unidad_jugador", None)
+        if shared and callable(own_units) and callable(subtract_own):
+            userid = int(client.userid())
+            available = own_units(self._pais, userid)
+            if available < min_units:
+                msg = (
+                    f"Se requieren al menos {min_units} unidades propias "
+                    f"para canjear un misil. {self._pais} tiene {available}."
+                )
+                raise ValidationError(msg)
+            for _ in range(missile_cost):
+                subtract_own(self._pais, userid)
+        else:
+            UnitValidator.validate_min_units(
+                context.mapa,
+                self._pais,
+                min_units,
+                (
+                    f"Se requieren al menos {min_units} unidades "
+                    f"para canjear un misil. {self._pais} tiene "
+                    f"{context.mapa.cantidad_unidades(self._pais)} unidades."
+                ),
+            )
+            for _ in range(missile_cost):
+                context.mapa.restar_una_unidad(self._pais)
 
         context.mapa.agregar_misil(self._pais)
         cantidad_misiles = context.mapa.cantidad_misiles(self._pais)

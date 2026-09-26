@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import unittest
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 from pyteg.gui.mapa.selection_manager import CountrySelectionManager
 from tests.locale_fixtures import use_spanish
@@ -54,7 +54,13 @@ class TestCountrySelectionManagerRefreshLabels(unittest.TestCase):
         manager, mw = _make_manager()
         manager._pais_origen = "Argentina"
         manager._pais_destino = "Brasil"
-        manager.refresh_labels()
+        with patch(
+            "pyteg.gui.mapa.selection_manager.selection_availability"
+        ) as available:
+            available.return_value.attack.enabled = True
+            available.return_value.move.enabled = False
+            available.return_value.launch_missile.enabled = False
+            manager.refresh_labels()
         text = mw.seleccion_label.setText.call_args[0][0]
         self.assertIn("Argentina", text)
         self.assertIn("Brasil", text)

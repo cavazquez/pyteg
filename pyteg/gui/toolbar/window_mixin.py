@@ -4,9 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from PySide6.QtWidgets import QApplication
-
-from pyteg.gui.toolbar.size import center_window_on_screen
+from pyteg.gui.toolbar.size import center_window_on_screen, screen_for_window
 from pyteg.i18n import translate as _
 
 _SPLITTER_PARTS = 2
@@ -41,12 +39,16 @@ class ToolBarWindowMixin:
 
     def fit_to_screen(self) -> None:
         """Ajusta la ventana al tamaño de la pantalla con un margen."""
-        screen = QApplication.primaryScreen().availableGeometry()
-        width = int(screen.width() * 0.9)
-        height = int(screen.height() * 0.9)
+        current_screen = screen_for_window(self.main_window)
+        if current_screen is None:
+            return
+        geometry = current_screen.availableGeometry()
+        width = int(geometry.width() * 0.9)
+        height = int(geometry.height() * 0.9)
         self.main_window.showNormal()
         self.main_window.resize(width, height)
-        self.center_window()
+        center_window_on_screen(self.main_window, current_screen)
+        self._sync_fullscreen_action()
 
     def center_window(self) -> None:
         """Centra la ventana en la pantalla."""
@@ -63,13 +65,18 @@ class ToolBarWindowMixin:
             if self.button_fullscreen:
                 self.button_fullscreen.setChecked(True)
 
+    def _sync_fullscreen_action(self) -> None:
+        """Sincroniza el botón si la ventana cambia de estado por otro medio."""
+        if self.button_fullscreen is not None:
+            self.button_fullscreen.setChecked(self.main_window.isFullScreen())
+
     def _reset_map_zoom(self) -> None:
         """Resetea el zoom del mapa para ajustarlo a la ventana."""
         view = getattr(self.main_window, "view", None)
         if view is not None and hasattr(view, "reset_zoom"):
             view.reset_zoom()
-            self.main_window.status_bar.showMessage(
-                _("Mapa ajustado al tamaño de la ventana"), 2000
+            self.main_window.update_status_bar(
+                _("Mapa ajustado al tamaño de la ventana"), "blue"
             )
 
     def toggle_chat(self, visible: bool) -> None:  # noqa: FBT001
