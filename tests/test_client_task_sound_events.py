@@ -74,7 +74,7 @@ class ClientTaskSoundEventsTests(unittest.TestCase):
         }).run(main_window)
 
         main_window.sound_manager.play_error.assert_called_once()
-        message_box_cls.return_value.exec.assert_called_once()
+        message_box_cls.return_value.open.assert_called_once()
 
 
 if __name__ == "__main__":

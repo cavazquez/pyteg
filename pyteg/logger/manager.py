@@ -54,6 +54,9 @@ class PyTegLogger:
 
         logger = logging.getLogger(name)
         logger.setLevel(logging.DEBUG)
+        # Cada logger gestionado tiene handlers propios. Evitamos que sus mensajes
+        # se vuelvan a emitir a través de los handlers de un logger padre.
+        logger.propagate = False
 
         if not logger.handlers:
             process_type = determine_process_type()

@@ -76,6 +76,7 @@ class Game:
         self._start = False
         self._finalizada = False
         self._jugadores: list[IClientProtocol] = list(jugadores)
+        self._solo_mode = len(self._jugadores) == 1
         self._revancha_duel = (
             rules is not None
             and rules.theme == "revancha"
@@ -376,7 +377,7 @@ class Game:
             return
 
         jugadores_activos = self.jugadores_activos()
-        if len(jugadores_activos) == 1:
+        if not self._solo_mode and len(jugadores_activos) == 1:
             self._finalizar_partida(jugadores_activos[0])
             return
 
@@ -393,7 +394,13 @@ class Game:
         self, jugadores_activos: Sequence[IClientProtocol]
     ) -> None:
         """Coordina las reglas y notificaciones de una ronda nueva."""
-        ganador = self._victory_checker.verificar_condicion_victoria(jugadores_activos)
+        # En una partida solitaria todos los países son propios desde el inicio;
+        # evaluar la victoria terminaría la práctica en la primera ronda.
+        ganador = (
+            None
+            if self._solo_mode
+            else self._victory_checker.verificar_condicion_victoria(jugadores_activos)
+        )
         if ganador:
             self._finalizar_partida(ganador)
             return
@@ -500,7 +507,18 @@ class Game:
         if self._turn_manager.turnos():
             self._actualizar_fase()
         jugadores_activos = self.jugadores_activos()
-        if len(jugadores_activos) == 1:
+        if self._solo_mode and not jugadores_activos:
+            # Sin rival ni conexión no queda un turno que anunciar. Cerrar la
+            # práctica permite que el servidor reabra el lobby vacío. El
+            # snapshot del cierre se crea antes de retornar, por lo que el
+            # juego debe dejar de exponer su turno ya eliminado.
+            self._start = False
+            if self._server.finalizar_partida():
+                self._finalizada = True
+            else:
+                self._start = True
+            return True
+        if not self._solo_mode and len(jugadores_activos) == 1:
             self._finalizar_partida(jugadores_activos[0])
         elif self._turn_manager.ronda_completada():
             self._iniciar_nueva_ronda(jugadores_activos)
@@ -868,7 +886,7 @@ class Game:
         self._server.enviar_colores_asignados()
 
         jugadores_activos = self.jugadores_activos()
-        if len(jugadores_activos) == 1:
+        if not self._solo_mode and len(jugadores_activos) == 1:
             self._finalizar_partida(jugadores_activos[0])
 
         return True

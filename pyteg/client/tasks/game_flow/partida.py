@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, cast
 from PySide6.QtWidgets import QMessageBox, QWidget
 
 from pyteg.client.tasks.base import IClientTask
+from pyteg.client.tasks.dialogs import open_message_box
 from pyteg.client.tasks.logging_helper import CLIENT_TASKS_LOG
 from pyteg.client.tasks.types import (
     ConfiguracionPartidaTaskData,
@@ -80,13 +81,12 @@ class ClientTaskVictoria(IClientTask[VictoriaTaskData]):
                     _("{} ha ganado la partida.").format(self._ganador_nombre)
                 )
 
-            msg_box.exec()
-
             if main_window.chat is not None:
                 main_window.chat.append(
                     _("🏆 ¡{} ha ganado la partida!").format(self._ganador_nombre),
                     "system",
                 )
+            open_message_box(msg_box)
 
         except (AttributeError, RuntimeError) as e:
             CLIENT_TASKS_LOG.warning("Error al mostrar mensaje de victoria: %s", e)

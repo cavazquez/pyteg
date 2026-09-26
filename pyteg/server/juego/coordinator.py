@@ -318,7 +318,7 @@ class ServerGameCoordinator:
             ``True`` si se reabrió la sala.
 
         """
-        if not self._estado.volver_al_lobby():
+        if not self._estado.es_finalizado():
             return False
         partida_anterior = self._game
         self.detener()
@@ -359,6 +359,7 @@ class ServerGameCoordinator:
         promover_admin = getattr(server, "promover_administrador", None)
         if callable(promover_admin):
             promover_admin()
+        self._estado.volver_al_lobby()
         server.enviar_estado()
         server.bump_state_revision()
         server.enviar_snapshot()
