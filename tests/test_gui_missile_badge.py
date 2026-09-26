@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import unittest
-from typing import cast
+from typing import ClassVar, cast
 
 from PySide6.QtWidgets import (
     QApplication,
@@ -31,10 +31,12 @@ class _Pais(PaisBattleFxMixin, QGraphicsPixmapItem):
 class MissileBadgeTests(unittest.TestCase):
     """Comprueba el contraste y el ciclo visible del marcador de misil."""
 
+    _app: ClassVar[QApplication]
+
     @classmethod
     def setUpClass(cls) -> None:
         """Inicializa Qt para poder crear elementos gráficos."""
-        cls._app = QApplication.instance() or QApplication([])
+        cls._app = cast("QApplication", QApplication.instance() or QApplication([]))
 
     def test_badge_contrasta_y_muestra_la_cantidad(self) -> None:
         """Muestra icono y cantidad en una placa contrastante."""
