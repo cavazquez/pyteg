@@ -11,6 +11,7 @@ from PySide6.QtSvg import QSvgRenderer
 from PySide6.QtWidgets import (
     QGraphicsColorizeEffect,
     QGraphicsPixmapItem,
+    QGraphicsRectItem,
     QGraphicsTextItem,
 )
 
@@ -59,6 +60,7 @@ class Pais(PaisBattleFxMixin, PaisSelectionMixin, QGraphicsPixmapItem):
         self._titilacion_direccion = 1
         self._perdida_flotante: QGraphicsTextItem | None = None
 
+        self._misiles_badge: QGraphicsRectItem | None = None
         self._misiles_text: QGraphicsTextItem | None = None
         self._cantidad_misiles = 0
 
@@ -152,12 +154,15 @@ class Pais(PaisBattleFxMixin, PaisSelectionMixin, QGraphicsPixmapItem):
         return self._asset_path
 
     def _actualizar_tooltip(self) -> None:
-        """Mantiene el nombre, continente y unidades accesibles al pasar el cursor."""
-        self.setToolTip(
+        """Mantiene nombre, continente, unidades y misiles en el tooltip."""
+        tooltip = (
             f"País: {self._nombre}\n"
             f"Continente: {self._continente}\n"
             f"Unidades: {self.get_unidades()}"
         )
+        if self._cantidad_misiles > 0:
+            tooltip += f"\nMisiles: {self._cantidad_misiles}"
+        self.setToolTip(tooltip)
 
     def cargar_circulo(self) -> None:
         """Carga y posiciona el círculo que muestra las unidades."""
