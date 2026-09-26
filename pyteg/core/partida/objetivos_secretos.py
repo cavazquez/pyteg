@@ -1,5 +1,8 @@
 """Módulo para gestionar objetivos secretos del juego."""
 
+# Las estrategias de este módulo comparten los helpers internos de ObjetivosSecretos.
+# ruff: noqa: SLF001
+
 from __future__ import annotations
 
 import random
@@ -293,19 +296,13 @@ class ObjetivosSecretos:
 
         """
         tipo = objetivo.get("tipo")
-
-        if tipo == "destruir_jugador":
-            return self._verificar_destruir_jugador(client_id, objetivo, mapa, colores)
-        if tipo == "conquistar_continentes":
-            return self._verificar_conquistar_continentes(client_id, objetivo, mapa)
-        if tipo == "conquistar_paises":
-            return self._verificar_conquistar_paises(client_id, objetivo, mapa)
-        if tipo == "conquistar_paises_con_tropas":
-            return self._verificar_conquistar_paises_con_tropas(
-                client_id, objetivo, mapa
-            )
-
-        return False
+        if not isinstance(tipo, str):
+            return False
+        # El lector puede incorporar objetivos después de crear el evaluador.
+        strategy = _OBJECTIVE_STRATEGIES.get(tipo)
+        if strategy is None:
+            return False
+        return strategy.cumple(self, client_id, objetivo, mapa, colores)
 
     def _paises_minimos_objetivo(self, objetivo: dict[str, Any], mapa: Mapa) -> int:
         """Cuenta los países mínimos exigidos antes de los diez extras.
@@ -350,47 +347,6 @@ class ObjetivosSecretos:
                 continentes_islas - continentes_incluidos,
             )
         return max(base, int(objetivo.get("cantidad_paises", 0)))
-
-    def _verificar_destruir_jugador(
-        self, client_id: int, objetivo: dict[str, Any], mapa: Mapa, colores: Any
-    ) -> bool:
-        """Verifica si se ha destruido completamente al jugador objetivo.
-
-        Returns:
-            True si el jugador objetivo ha sido destruido, False en caso contrario.
-
-        """
-        all_clients = self._all_clients(colores)
-        color_objetivo = self._normalizar_color(objetivo.get("color_objetivo"))
-        objetivo_id: int | None = None
-
-        for client in all_clients:
-            cid = self._client_id(client)
-            if cid is None or self._client_color(client, colores) != color_objetivo:
-                continue
-            if cid != int(client_id):
-                objetivo_id = cid
-                break
-
-        # La carta sólo puede apuntar al color elegido si ese color está
-        # ocupado por otro jugador. Si no, el reglamento manda usar el vecino
-        # de la derecha/izquierda o la alternativa de países.
-        if objetivo_id is not None:
-            return not self._jugador_tiene_paises(objetivo_id, mapa)
-
-        relativo = objetivo.get("objetivo_relativo") or objetivo.get(
-            "jugador_alternativo"
-        )
-        if objetivo_id is None and relativo in {"derecha", "izquierda"}:
-            relativo_id = self._jugador_relativo(int(client_id), str(relativo), colores)
-            if relativo_id is not None and relativo_id != int(client_id):
-                return not self._jugador_tiene_paises(relativo_id, mapa)
-
-        paises_alternativos = int(objetivo.get("paises_alternativos", 24))
-        return (
-            self._cantidad_paises_exclusivos(int(client_id), mapa)
-            >= paises_alternativos
-        )
 
     def _jugador_tiene_paises(self, jugador_id: int, mapa: Mapa) -> bool:
         tiene_paises = getattr(mapa, "tiene_paises", None)
@@ -620,8 +576,95 @@ class ObjetivosSecretos:
         }
         return len(islas) >= requeridas_int and len(continentes) >= minimo_continentes
 
-    def _verificar_conquistar_continentes(
-        self, client_id: int, objetivo: dict[str, Any], mapa: Mapa
+
+class _ObjectiveStrategy(Protocol):
+    """Contrato de una regla de victoria para una tarjeta individual."""
+
+    def cumple(
+        self,
+        evaluator: ObjetivosSecretos,
+        client_id: int,
+        objetivo: dict[str, Any],
+        mapa: Mapa,
+        colores: Any,
+        /,
+    ) -> bool:
+        """Evalúa una tarjeta con el estado vivo de la partida.
+
+        Returns:
+            ``True`` si el jugador cumplió la tarjeta.
+
+        """
+        ...
+
+
+class _DestruirJugador:
+    """Regla de destrucción por color con alternativa relativa o territorial."""
+
+    def cumple(
+        self,
+        evaluator: ObjetivosSecretos,
+        client_id: int,
+        objetivo: dict[str, Any],
+        mapa: Mapa,
+        colores: Any,
+        /,
+    ) -> bool:
+        """Verifica si se ha destruido completamente al jugador objetivo.
+
+        Returns:
+            True si el jugador objetivo ha sido destruido, False en caso contrario.
+
+        """
+        all_clients = evaluator._all_clients(colores)
+        color_objetivo = evaluator._normalizar_color(objetivo.get("color_objetivo"))
+        objetivo_id: int | None = None
+
+        for client in all_clients:
+            cid = evaluator._client_id(client)
+            if (
+                cid is None
+                or evaluator._client_color(client, colores) != color_objetivo
+            ):
+                continue
+            if cid != int(client_id):
+                objetivo_id = cid
+                break
+
+        # La carta sólo puede apuntar al color elegido si ese color está
+        # ocupado por otro jugador. Si no, el reglamento manda usar el vecino
+        # de la derecha/izquierda o la alternativa de países.
+        if objetivo_id is not None:
+            return not evaluator._jugador_tiene_paises(objetivo_id, mapa)
+
+        relativo = objetivo.get("objetivo_relativo") or objetivo.get(
+            "jugador_alternativo"
+        )
+        if objetivo_id is None and relativo in {"derecha", "izquierda"}:
+            relativo_id = evaluator._jugador_relativo(
+                int(client_id), str(relativo), colores
+            )
+            if relativo_id is not None and relativo_id != int(client_id):
+                return not evaluator._jugador_tiene_paises(relativo_id, mapa)
+
+        paises_alternativos = int(objetivo.get("paises_alternativos", 24))
+        return (
+            evaluator._cantidad_paises_exclusivos(int(client_id), mapa)
+            >= paises_alternativos
+        )
+
+
+class _ConquistarContinentes:
+    """Regla de continentes completos, cuotas e islas."""
+
+    def cumple(
+        self,
+        evaluator: ObjetivosSecretos,
+        client_id: int,
+        objetivo: dict[str, Any],
+        mapa: Mapa,
+        _colores: Any,
+        /,
     ) -> bool:
         """Verifica si se han conquistado los continentes requeridos.
 
@@ -630,19 +673,29 @@ class ObjetivosSecretos:
             False en caso contrario.
 
         """
-        propios = self._paises_exclusivos(client_id, mapa)
+        propios = evaluator._paises_exclusivos(client_id, mapa)
         continentes_objetivo = objetivo.get("continentes", [])
 
         for continente in continentes_objetivo:
             if not mapa.jugador_controla_continente(client_id, continente):
                 return False
 
-        return self._cumple_cuotas(objetivo, mapa, propios) and self._cumple_islas(
+        return evaluator._cumple_cuotas(
             objetivo, mapa, propios
-        )
+        ) and evaluator._cumple_islas(objetivo, mapa, propios)
 
-    def _verificar_conquistar_paises(
-        self, client_id: int, objetivo: dict[str, Any], mapa: Mapa
+
+class _ConquistarPaises:
+    """Regla de cantidad de países exclusivos, cuotas e islas."""
+
+    def cumple(
+        self,
+        evaluator: ObjetivosSecretos,
+        client_id: int,
+        objetivo: dict[str, Any],
+        mapa: Mapa,
+        _colores: Any,
+        /,
     ) -> bool:
         """Verifica si se ha conquistado la cantidad de países requerida.
 
@@ -651,20 +704,30 @@ class ObjetivosSecretos:
 
         """
         cantidad_objetivo = int(objetivo.get("cantidad_paises", 24))
-        propios = self._paises_exclusivos(client_id, mapa)
+        propios = evaluator._paises_exclusivos(client_id, mapa)
         paises_count = (
             len(propios)
             if propios
-            else self._cantidad_paises_exclusivos(client_id, mapa)
+            else evaluator._cantidad_paises_exclusivos(client_id, mapa)
         )
         return bool(
             paises_count >= cantidad_objetivo
-            and self._cumple_cuotas(objetivo, mapa, propios)
-            and self._cumple_islas(objetivo, mapa, propios)
+            and evaluator._cumple_cuotas(objetivo, mapa, propios)
+            and evaluator._cumple_islas(objetivo, mapa, propios)
         )
 
-    def _verificar_conquistar_paises_con_tropas(
-        self, client_id: int, objetivo: dict[str, Any], mapa: Mapa
+
+class _ConquistarPaisesConTropas:
+    """Regla de cantidad de países con una guarnición mínima."""
+
+    def cumple(
+        self,
+        evaluator: ObjetivosSecretos,
+        client_id: int,
+        objetivo: dict[str, Any],
+        mapa: Mapa,
+        _colores: Any,
+        /,
     ) -> bool:
         """Verifica si se han conquistado países con tropas mínimas.
 
@@ -677,7 +740,7 @@ class ObjetivosSecretos:
 
         paises_con_tropas_suficientes = 0
 
-        for pais in self._paises_exclusivos(client_id, mapa):
+        for pais in evaluator._paises_exclusivos(client_id, mapa):
             cantidad_unidades = getattr(mapa, "cantidad_unidades", None)
             if callable(cantidad_unidades):
                 try:
@@ -688,3 +751,12 @@ class ObjetivosSecretos:
                     paises_con_tropas_suficientes += 1
 
         return bool(paises_con_tropas_suficientes >= cantidad_paises)
+
+
+# Las reglas no guardan estado; todas las partidas comparten estas instancias.
+_OBJECTIVE_STRATEGIES: dict[str, _ObjectiveStrategy] = {
+    "destruir_jugador": _DestruirJugador(),
+    "conquistar_continentes": _ConquistarContinentes(),
+    "conquistar_paises": _ConquistarPaises(),
+    "conquistar_paises_con_tropas": _ConquistarPaisesConTropas(),
+}
