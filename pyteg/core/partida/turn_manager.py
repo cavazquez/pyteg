@@ -6,6 +6,7 @@ separando esta responsabilidad del Game principal.
 
 from __future__ import annotations
 
+from dataclasses import dataclass, replace
 from typing import TYPE_CHECKING
 
 from pyteg.core.partida.reinforcement_policy import (
@@ -27,6 +28,34 @@ TurnoType = PrimerTurno | SegundoTurno | SiguientesTurnos
 _USERID_PLACEHOLDER = 0
 _REVANCHA_TWO_PLAYERS = 2
 _REVANCHA_TWO_PLAYER_INITIAL_UNITS = 18
+
+
+@dataclass(frozen=True, slots=True)
+class _TurnFactory:
+    """Construye los turnos de cada ronda con las mismas reglas y dependencias."""
+
+    mapa: Mapa
+    reinforcement_policy: ReinforcementPolicy
+    rules: ThemeRules | None
+    first_units: int
+    second_units: int
+
+    def crear(self, jugador_id: int, tipo_turno: type[TurnoType]) -> TurnoType:
+        """Crea un turno nuevo para un jugador, sin reutilizar su estado anterior.
+
+        Returns:
+            Turno del tipo solicitado para el jugador.
+
+        """
+        if issubclass(tipo_turno, PrimerTurno):
+            return PrimerTurno(jugador_id, self.first_units)
+        if issubclass(tipo_turno, SegundoTurno):
+            return SegundoTurno(
+                jugador_id, self.reinforcement_policy, self.second_units
+            )
+        return SiguientesTurnos(
+            jugador_id, self.mapa, self.reinforcement_policy, self.rules
+        )
 
 
 class TurnManager:
@@ -51,14 +80,17 @@ class TurnManager:
             rules: Perfil de reglas opcional del tema.
 
         """
-        self._mapa = mapa
-        self._reinforcement_policy = reinforcement_policy
         self._first_turn_units = rules.first_turn_units if rules is not None else 6
-        self._initial_round_units = self._first_turn_units
-        self._second_turn_units = rules.second_turn_units if rules is not None else 3
         self._rules = rules
+        self._turn_factory = _TurnFactory(
+            mapa=mapa,
+            reinforcement_policy=reinforcement_policy,
+            rules=rules,
+            first_units=self._first_turn_units,
+            second_units=rules.second_turn_units if rules is not None else 3,
+        )
         self._turnos: list[TurnoType] = [
-            PrimerTurno(_USERID_PLACEHOLDER, self._first_turn_units)
+            self._turn_factory.crear(_USERID_PLACEHOLDER, PrimerTurno)
         ]
         self._num_turno = 0
         self._num_ronda = 1
@@ -80,8 +112,10 @@ class TurnManager:
             and len(jugadores_userids) == _REVANCHA_TWO_PLAYERS
         ):
             initial_units = _REVANCHA_TWO_PLAYER_INITIAL_UNITS
-        self._initial_round_units = initial_units
-        self._turnos = [PrimerTurno(j, initial_units) for j in jugadores_userids]
+        self._turn_factory = replace(self._turn_factory, first_units=initial_units)
+        self._turnos = [
+            self._turn_factory.crear(j, PrimerTurno) for j in jugadores_userids
+        ]
         self._num_turno = 0
         self._turno_logico = 0
 
@@ -209,25 +243,12 @@ class TurnManager:
             es_segundo_turno: Si True, crea SegundoTurno, sino SiguientesTurnos.
 
         """
-        if es_segundo_turno:
-            self._turnos = [
-                SegundoTurno(
-                    j,
-                    self._reinforcement_policy,
-                    self._second_turn_units,
-                )
-                for j in jugadores_userids
-            ]
-        else:
-            self._turnos = [
-                SiguientesTurnos(
-                    j,
-                    self._mapa,
-                    self._reinforcement_policy,
-                    self._rules,
-                )
-                for j in jugadores_userids
-            ]
+        tipo_turno: type[TurnoType] = (
+            SegundoTurno if es_segundo_turno else SiguientesTurnos
+        )
+        self._turnos = [
+            self._turn_factory.crear(j, tipo_turno) for j in jugadores_userids
+        ]
         self._num_turno = 0
         self._num_ronda += 1
 
@@ -305,21 +326,5 @@ class TurnManager:
         if not self._turnos:
             return False
 
-        turno_actual = self._turnos[0]
-        if isinstance(turno_actual, PrimerTurno):
-            turno: TurnoType = PrimerTurno(jugador_id, self._initial_round_units)
-        elif isinstance(turno_actual, SegundoTurno):
-            turno = SegundoTurno(
-                jugador_id,
-                self._reinforcement_policy,
-                self._second_turn_units,
-            )
-        else:
-            turno = SiguientesTurnos(
-                jugador_id,
-                self._mapa,
-                self._reinforcement_policy,
-                self._rules,
-            )
-        self._turnos.append(turno)
+        self._turnos.append(self._turn_factory.crear(jugador_id, type(self._turnos[0])))
         return True
