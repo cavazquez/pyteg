@@ -86,29 +86,31 @@ class Gui(QMainWindow, MainWindowDelegatesMixin):
     last_units: dict[str, object]
     status_temp_label: object
 
-    def __init__(self, client: Client) -> None:
+    def __init__(self, client: Client, *, map_theme: str = DEFAULT_MAP_THEME) -> None:
         """Inicializa la ventana principal de la GUI.
 
         Args:
             client: Cliente del juego.
+            map_theme: Tema del mapa que se mostrará al iniciar.
 
         """
         super().__init__()
-        self._gui_init_core_state(client)
+        self._gui_init_core_state(client, map_theme)
         self._gui_init_window_and_managers()
         self._gui_init_turn_tracking()
         self.layout_manager.setup_graphics_view()
         build_status_bar(self)
         self.show()
 
-    def _gui_init_core_state(self, client: Client) -> None:
+    def _gui_init_core_state(self, client: Client, map_theme: str) -> None:
         self._vivo = True
         self.client: Client = client
         self.theme: str = "light"
-        self.map_theme: str = DEFAULT_MAP_THEME
+        self.map_theme: str = map_theme
         self.client_by_id: dict[int, Client] = {}
         self.transmisor = ClientNullTransmisor()
         self.conexion: ConnectionClient | None = None
+        self.client_state_model = None
         self.w: LobbyWindowProtocol | None = None
         self.ventana_conectar: VentanaConectar | None = None
         self.scene: QCustomGraphicsScene | None = None
@@ -130,7 +132,7 @@ class Gui(QMainWindow, MainWindowDelegatesMixin):
         self.units_section_title_label: object = None
 
     def _gui_init_window_and_managers(self) -> None:
-        self.setWindowTitle(_("PyTeg"))
+        self.setWindowTitle(self.map_window_title())
         self.resize(QSize(1280, 800))
         mw = cast("MainWindowProtocol", self)
         self.layout_manager = LayoutManager(mw)
@@ -163,6 +165,73 @@ class Gui(QMainWindow, MainWindowDelegatesMixin):
         self.ultimo_continente_colocado: str | None = None
         self.unidades_antes_colocar: dict[str, int] = {}
         self.colores = Colores()
+
+    def map_window_title(self) -> str:
+        """Muestra el mapa activo en el título de la ventana.
+
+        Returns:
+            Título traducido con el nombre del mapa.
+
+        """
+        if self.map_theme == "classic":
+            map_name = _("Clásico")
+        elif self.map_theme == "revancha":
+            map_name = _("Revancha")
+        else:
+            map_name = self.map_theme
+        return f"{_('PyTeg')} — {map_name}"
+
+    def set_map_theme(self, theme: str) -> None:
+        """Cambia el mapa antes de conectar y actualiza la vista y el panel.
+
+        Raises:
+            ValueError: Si no hay tema o ya existe una conexión activa.
+
+        """
+        if theme == self.map_theme and (
+            self.scene is None or self.scene.map_theme == theme
+        ):
+            return
+        if not theme:
+            msg = _("Seleccioná un mapa válido")
+            raise ValueError(msg)
+        if self.conexion is not None and self.conexion.esta_ocupada():
+            msg = _("Desconectá la partida antes de cambiar de mapa")
+            raise ValueError(msg)
+
+        from pyteg.gui.mapa.scene import QCustomGraphicsScene  # noqa: PLC0415
+
+        new_scene = QCustomGraphicsScene(self, theme=theme)
+        old_scene = self.scene
+        old_theme = self.map_theme
+        self.map_theme = theme
+        self.scene = new_scene
+        if self.view is not None:
+            self.view.setScene(new_scene)
+            self.view.resetTransform()
+            self.view.reset_zoom()
+        self.layout_manager.rebuild_units_panel()
+        self.setWindowTitle(self.map_window_title())
+        if theme != old_theme:
+            self.client.reset_session()
+            self.client_by_id.clear()
+            self.tarjetas_jugador.clear()
+            self.config_manager.set_objetivo_secreto(None, None)
+            self.client_state_model = None
+            self.client_public_revision = -1
+            self.client_command_results.clear()
+            self.misiles_habilitados = False
+            self.partida_finalizada = False
+            self._gui_init_turn_tracking()
+            self.players_manager.current_player_name = None
+            self.players_manager.update_player_list([])
+            self.turno_label.setText(_("Turno: 0"))
+            self.timer_label.setText("")
+            self.update_game_state("Desconectado")
+            self.status_manager.update_mi_jugador_info()
+        new_scene.selection_manager.refresh_labels()
+        if old_scene is not None:
+            old_scene.deleteLater()
 
     def vivo(self) -> bool:
         """Verifica si la ventana está activa.

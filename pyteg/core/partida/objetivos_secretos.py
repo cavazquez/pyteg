@@ -14,6 +14,10 @@ if TYPE_CHECKING:
 
 LOGGER = get_logger("server.objetivos_secretos")
 _MIN_RELATIVE_PLAYERS = 2
+_REVANCHA_TWO_PLAYERS = 2
+_REVANCHA_THREE_PLAYERS = 3
+_REVANCHA_EXTRA_COUNTRIES = 10
+_REVANCHA_EXCLUDED_COUNTRY_OBJECTIVE = 35
 
 
 class SecretObjectiveEvaluator(Protocol):
@@ -101,27 +105,51 @@ class ObjetivosSecretos:
         self._rng = rng if rng is not None else random.SystemRandom()
         # client_userid (int) -> objetivo_id (str)
         self.objetivos_asignados: dict[int, str] = {}
+        self.objetivos_adicionales: dict[int, str] = {}
+        self._revancha_players: int | None = None
         self._player_order: Callable[[], list[int]] | None = None
 
     def reiniciar(self) -> None:
         """Descarta objetivos de la partida anterior."""
         self.objetivos_asignados.clear()
+        self.objetivos_adicionales.clear()
+        self._revancha_players = None
 
-    def asignar_objetivos_aleatorios(self, clientes: list[Any]) -> None:
+    def asignar_objetivos_aleatorios(
+        self, clientes: list[Any], *, revancha_players: int | None = None
+    ) -> None:
         """Asigna objetivos secretos aleatorios a una lista de clientes.
 
         Args:
             clientes: Lista de objetos cliente con atributo user_id
+            revancha_players: Cantidad inicial de jugadores de Revancha.
+
+        Raises:
+            ValueError: Si faltan objetivos válidos para repartir sin repetir.
 
         """
+        self.objetivos_asignados.clear()
+        self.objetivos_adicionales.clear()
+        self._revancha_players = (
+            revancha_players
+            if revancha_players in {_REVANCHA_TWO_PLAYERS, _REVANCHA_THREE_PLAYERS}
+            else None
+        )
         if not clientes:
             return
-
-        self.objetivos_asignados.clear()
 
         # Los objetivos comunes se publican en las reglas y nunca se entregan
         # como objetivo privado a un jugador.
         objetivos_ids = list(self.objetivos_asignables.keys())
+        if self._revancha_players is not None:
+            objetivos_ids = [
+                objetivo_id
+                for objetivo_id in objetivos_ids
+                if self.objetivos_asignables[objetivo_id].get("tipo")
+                != "destruir_jugador"
+                and self.objetivos_asignables[objetivo_id].get("cantidad_paises")
+                != _REVANCHA_EXCLUDED_COUNTRY_OBJECTIVE
+            ]
         if not objetivos_ids:
             LOGGER.warning(
                 "No hay objetivos secretos definidos en el tema; omitiendo asignación"
@@ -129,15 +157,26 @@ class ObjetivosSecretos:
             return
 
         self._rng.shuffle(objetivos_ids)
+        required_cards = len(clientes) * (
+            _REVANCHA_TWO_PLAYERS
+            if self._revancha_players == _REVANCHA_TWO_PLAYERS
+            else 1
+        )
+        if self._revancha_players is not None and len(objetivos_ids) < required_cards:
+            msg = "No hay suficientes objetivos válidos para esta partida de Revancha"
+            raise ValueError(msg)
 
         LOGGER.info("=== ASIGNANDO OBJETIVOS SECRETOS ===")
         LOGGER.info("Objetivos disponibles: %s", objetivos_ids)
         LOGGER.info("Clientes a asignar: %s", len(clientes))
 
         for i, client in enumerate(clientes):
-            objetivo_id = objetivos_ids[i % len(objetivos_ids)]
+            card_index = i * 2 if self._revancha_players == _REVANCHA_TWO_PLAYERS else i
+            objetivo_id = objetivos_ids[card_index % len(objetivos_ids)]
             user_id = int(client.userid())
             self.objetivos_asignados[user_id] = objetivo_id
+            if self._revancha_players == _REVANCHA_TWO_PLAYERS:
+                self.objetivos_adicionales[user_id] = objetivos_ids[card_index + 1]
             LOGGER.info(
                 "Asignado objetivo '%s' a cliente %s (ID: %s)",
                 objetivo_id,
@@ -181,6 +220,28 @@ class ObjetivosSecretos:
                 return None
             objetivo = self.toml_reader.get_objetivo_secreto(objetivo_id)
             if objetivo is not None:
+                adicional_id = self.objetivos_adicionales.get(int(client_id))
+                if adicional_id is not None:
+                    adicional = self.toml_reader.get_objetivo_secreto(adicional_id)
+                    if adicional is None:
+                        return None
+                    return {
+                        "id": f"{objetivo_id}+{adicional_id}",
+                        "descripcion": (
+                            "Cumplir ambos objetivos:\n"
+                            f"1. {objetivo['descripcion']}\n"
+                            f"2. {adicional['descripcion']}"
+                        ),
+                    }
+                if self._revancha_players == _REVANCHA_THREE_PLAYERS:
+                    return {
+                        **objetivo,
+                        "descripcion": (
+                            f"{objetivo['descripcion']}\n"
+                            "Además, ocupar 10 países adicionales a los "
+                            "necesarios para el objetivo."
+                        ),
+                    }
                 return cast("dict[str, Any]", objetivo)
         return None
 
@@ -198,10 +259,38 @@ class ObjetivosSecretos:
             True si el jugador ha cumplido su objetivo secreto
 
         """
-        objetivo = self.get_objetivo_jugador(client_id)
-        if not objetivo:
+        objetivo_id = self.objetivos_asignados.get(int(client_id))
+        if objetivo_id is None or objetivo_id in self.objetivos_comunes:
             return False
+        objetivo = self.toml_reader.get_objetivo_secreto(objetivo_id)
+        if objetivo is None or not self._cumple_objetivo(
+            client_id, objetivo, mapa, colores
+        ):
+            return False
+        adicional_id = self.objetivos_adicionales.get(int(client_id))
+        if adicional_id is not None:
+            adicional = self.toml_reader.get_objetivo_secreto(adicional_id)
+            if adicional is None or not self._cumple_objetivo(
+                client_id, adicional, mapa, colores
+            ):
+                return False
+        if self._revancha_players == _REVANCHA_THREE_PLAYERS:
+            base = self._paises_minimos_objetivo(objetivo, mapa)
+            return (
+                self._cantidad_paises_exclusivos(client_id, mapa)
+                >= base + _REVANCHA_EXTRA_COUNTRIES
+            )
+        return True
 
+    def _cumple_objetivo(
+        self, client_id: int, objetivo: dict[str, Any], mapa: Mapa, colores: Any
+    ) -> bool:
+        """Evalúa una tarjeta individual, también dentro de un objetivo doble.
+
+        Returns:
+            ``True`` si se cumplió la tarjeta.
+
+        """
         tipo = objetivo.get("tipo")
 
         if tipo == "destruir_jugador":
@@ -216,6 +305,50 @@ class ObjetivosSecretos:
             )
 
         return False
+
+    def _paises_minimos_objetivo(self, objetivo: dict[str, Any], mapa: Mapa) -> int:
+        """Cuenta los países mínimos exigidos antes de los diez extras.
+
+        Returns:
+            Mínimo de países para cumplir la tarjeta sin el requisito adicional.
+
+        """
+        paises = self._paises(mapa)
+        requeridos: dict[str, int] = {}
+        for continente in objetivo.get("continentes", []):
+            requeridos[str(continente)] = sum(
+                self._continente(mapa, pais) == continente for pais in paises
+            )
+        for continente, cantidad in objetivo.get("cuotas_continentes", {}).items():
+            nombre = str(continente)
+            requeridos[nombre] = max(requeridos.get(nombre, 0), int(cantidad))
+
+        base = sum(requeridos.values())
+        islas_requeridas = int(objetivo.get("islas", 0))
+        continentes_islas = int(objetivo.get("continentes_minimos_islas", 0))
+        if islas_requeridas:
+            islas_disponibles = {
+                continente: sum(
+                    self._continente(mapa, pais) == continente
+                    and self._es_isla(mapa, pais)
+                    for pais in paises
+                )
+                for continente in requeridos
+            }
+            islas_incluidas = sum(
+                min(cantidad, islas_disponibles[continente])
+                for continente, cantidad in requeridos.items()
+            )
+            continentes_incluidos = sum(
+                cantidad > 0 and islas_disponibles[continente] > 0
+                for continente, cantidad in requeridos.items()
+            )
+            base += max(
+                0,
+                islas_requeridas - islas_incluidas,
+                continentes_islas - continentes_incluidos,
+            )
+        return max(base, int(objetivo.get("cantidad_paises", 0)))
 
     def _verificar_destruir_jugador(
         self, client_id: int, objetivo: dict[str, Any], mapa: Mapa, colores: Any

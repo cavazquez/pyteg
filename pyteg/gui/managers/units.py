@@ -13,7 +13,7 @@ from PySide6.QtCore import QTimer
 
 from pyteg.config import MAP_CONTINENT_TO_PANEL_LABEL
 from pyteg.gui.gameplay_state import refresh_acciones_juego
-from pyteg.gui.managers.units_panel import format_unit_label
+from pyteg.gui.managers.units_panel import continent_panel_pairs, format_unit_label
 from pyteg.gui.units_placement import unidades_colocables_en_pais
 from pyteg.i18n import _
 
@@ -103,7 +103,7 @@ class UnitsManager:
         )
 
     def _update_continentes(self, unidades: dict[str, int]) -> None:
-        for map_id, gui_name in MAP_CONTINENT_TO_PANEL_LABEL.items():
+        for map_id, gui_name in continent_panel_pairs(self.main_window.map_theme):
             if gui_name not in self.main_window.value_labels:
                 continue
             if map_id in unidades:

@@ -142,9 +142,12 @@ CONTINENT_PANEL_LABELS: tuple[str, ...] = tuple(spec.panel_label for spec in CON
 """Orden de filas de bonificación continental en el panel UNIDADES."""
 
 MAP_CONTINENT_TO_PANEL_LABEL: dict[str, str] = {
-    spec.map_id: spec.panel_label for spec in CONTINENTS
+    **{spec.map_id: spec.panel_label for spec in CONTINENTS},
+    "AmericaDelNorte": "América del Norte",
+    "AmericaCentral": "América Central",
+    "AmericaDelSur": "América del Sur",
 }
-"""ID del mapa (TOML) → etiqueta del panel UNIDADES."""
+"""ID de cualquier mapa incluido → etiqueta del panel UNIDADES."""
 
 CONTINENT_UNIT_SUFFIX: dict[str, str] = {
     spec.map_id: spec.unit_suffix for spec in CONTINENTS

@@ -45,6 +45,7 @@ class CountrySelectionManager:
             self._actualizar_seleccion_label()
         elif self._pais_origen == nombre_pais:
             self.cancelar_seleccion()
+            return
         elif self._pais_destino is None:
             self._pais_destino = nombre_pais
             self._pais_destino_widget = self.scene.paises.get(nombre_pais)
@@ -54,6 +55,8 @@ class CountrySelectionManager:
         else:
             self.cancelar_seleccion()
             self.seleccionar_pais(nombre_pais)
+            return
+        self._refresh_connection_hints()
 
     def cancelar_seleccion(self) -> None:
         """Cancela la selección actual de países."""
@@ -67,7 +70,13 @@ class CountrySelectionManager:
         self._pais_origen_widget = None
         self._pais_destino_widget = None
         self._actualizar_seleccion_label()
+        self._refresh_connection_hints()
         refresh_acciones_juego(self.main_window)
+
+    def _refresh_connection_hints(self) -> None:
+        refresh = getattr(self.scene, "refresh_revancha_connection_hints", None)
+        if callable(refresh):
+            refresh(self._pais_origen)
 
     def refresh_labels(self) -> None:
         """Re-aplica las traducciones del label de selección y notifica a la toolbar.
@@ -88,6 +97,11 @@ class CountrySelectionManager:
                 self.main_window.seleccion_label.setText(
                     _("Origen: {} | Haz clic en otro país para destino").format(
                         self._pais_origen
+                    )
+                    + (
+                        " | " + _("Dorado: conexiones jugables")
+                        if getattr(self.scene, "map_theme", None) == "revancha"
+                        else ""
                     )
                 )
             else:

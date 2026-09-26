@@ -15,7 +15,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from pyteg.config import DEFAULT_TURN_SECONDS, DEFAULT_VICTORY_COUNTRIES
+from pyteg.config import DEFAULT_MAP_THEME
+from pyteg.core.partida.reglas import load_theme_rules
 from pyteg.i18n import translate as _
 
 
@@ -32,6 +33,7 @@ class VentanaAdmin(QWidget):
         super().__init__()
         self.main_window = main_window
         self.setWindowTitle(_("Admin"))
+        rules = load_theme_rules(getattr(main_window, "map_theme", DEFAULT_MAP_THEME))
 
         self._layout = QVBoxLayout()
 
@@ -42,7 +44,7 @@ class VentanaAdmin(QWidget):
         self.seconds_input.setPlaceholderText(_("p. ej., 30, 60, 120"))
         self.seconds_input.setToolTip(_("Duración del turno en segundos"))
         self.seconds_input.setValidator(QIntValidator(0, 3600, self))
-        self.seconds_input.setText(str(DEFAULT_TURN_SECONDS))  # valor por defecto
+        self.seconds_input.setText(str(rules.turn_seconds))
 
         self.seconds_layout.addWidget(self.seconds_label)
         self.seconds_layout.addWidget(self.seconds_input)
@@ -67,7 +69,7 @@ class VentanaAdmin(QWidget):
         self.countries_input.setPlaceholderText(_("p. ej., 30, 50, 42"))
         self.countries_input.setToolTip(_("Cantidad de países necesarios para ganar"))
         self.countries_input.setValidator(QIntValidator(1, 999, self))
-        self.countries_input.setText(str(DEFAULT_VICTORY_COUNTRIES))
+        self.countries_input.setText(str(rules.victory_countries))
 
         self.countries_layout.addWidget(self.countries_label)
         self.countries_layout.addWidget(self.countries_input)

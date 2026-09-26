@@ -43,7 +43,10 @@ class LanguageManager:
 
         """
         # Actualizar título de la ventana
-        self.main_window.setWindowTitle(_("PyTeg"))
+        map_title = getattr(self.main_window, "map_window_title", None)
+        self.main_window.setWindowTitle(
+            map_title() if callable(map_title) else _("PyTeg")
+        )
 
         # Actualizar etiquetas de la barra de estado
         self.main_window.mi_jugador_text.setText(_("Mi jugador:"))

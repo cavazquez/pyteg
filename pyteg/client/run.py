@@ -9,6 +9,7 @@ from PySide6.QtWidgets import QApplication
 
 from pyteg.client.app import Client
 from pyteg.client.logging_setup import configure_client_logging
+from pyteg.config import DEFAULT_MAP_THEME
 from pyteg.gui import Gui
 from pyteg.log_cli import add_log_arguments
 from pyteg.version import NAME, VERSION
@@ -22,6 +23,12 @@ def parse_arguments() -> tuple[argparse.Namespace, list[str]]:
 
     """
     parser = argparse.ArgumentParser(description="Cliente del juego de estrategia TEG.")
+    parser.add_argument(
+        "--theme",
+        choices=("classic", "revancha"),
+        default=DEFAULT_MAP_THEME,
+        help="Mapa inicial (predeterminado: classic)",
+    )
     add_log_arguments(
         parser,
         verbose_help="Nivel DEBUG en consola (conexión, mensajes, tareas)",
@@ -42,7 +49,7 @@ def main() -> None:
 
     client = Client()
     app = QApplication([sys.argv[0], *qt_argv])
-    gui = Gui(client)
+    gui = Gui(client, map_theme=args.theme)
 
     gui.show()
     sys.exit(app.exec())

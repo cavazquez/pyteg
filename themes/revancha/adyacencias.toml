@@ -75,55 +75,61 @@ Australia = ['Chile', 'Filipinas', 'Sumatra', 'Tasmania', 'Tonga']
 Tasmania = ['Australia', 'NuevaZelandia']
 NuevaZelandia = ['Tasmania']
 
-# Rutas visuales: únicamente aristas existentes en Adyacencias.
+# Rutas visuales: puentes confirmados en el grafo del tema.
 
 [[ConexionesVisuales]]
 origen = "Alaska"
 destino = "Chukchi"
-puntos = [[600.0, -20.0], [1180.0, -20.0]]
+puntos = [[539.85, 136.29], [784.11, 138.06]]
 
 [[ConexionesVisuales]]
 origen = "Alaska"
 destino = "Kamchatka"
-puntos = [[600.0, -40.0]]
+puntos = [[493.83, 277.89], [764.64, 297.36], [939.87, 284.97]]
 
 [[ConexionesVisuales]]
 origen = "Groenlandia"
 destino = "Islandia"
+puntos = [[577.02, 226.56]]
 
 [[ConexionesVisuales]]
 origen = "California"
 destino = "Tonga"
-puntos = [[61.0, 540.0], [1045.0, 540.0]]
+envolver = "horizontal"
+puntos = [[0, 520.38], [1416, 746.94]]
 
 [[ConexionesVisuales]]
 origen = "Brasil"
 destino = "Sahara"
-puntos = [[245.0, 480.0], [420.0, 480.0]]
+puntos = [[596.49, 759.33]]
 
 [[ConexionesVisuales]]
 origen = "Uruguay"
 destino = "Nigeria"
-puntos = [[245.0, 500.0], [737.0, 500.0]]
+puntos = [[548.7, 888.54]]
 
 [[ConexionesVisuales]]
 origen = "Espana"
 destino = "Sahara"
-puntos = [[820.0, 210.0], [800.0, 280.0]]
+puntos = [[667.29, 614.19]]
 
 [[ConexionesVisuales]]
 origen = "Polonia"
 destino = "Egipto"
+puntos = [[885, 497.37], [867.3, 601.8]]
 
 [[ConexionesVisuales]]
 origen = "Chile"
 destino = "Australia"
-puntos = [[337.0, 540.0], [861.0, 540.0]]
+envolver = "horizontal"
+puntos = [[0, 920.4], [1416, 874.38]]
 
 [[ConexionesVisuales]]
 origen = "India"
 destino = "Sumatra"
+puntos = [[1111.56, 647.82]]
 
 [[ConexionesVisuales]]
 origen = "Filipinas"
 destino = "Australia"
+puntos = [[1246.08, 762.87]]

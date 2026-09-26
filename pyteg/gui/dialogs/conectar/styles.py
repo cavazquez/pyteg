@@ -18,7 +18,7 @@ DESC_LABEL_STYLE = """
 FORM_LABEL_STYLE = "font-weight: bold; color: #495057; font-size: 13px;"
 
 INPUT_STYLE = """
-    QLineEdit {
+    QLineEdit, QComboBox {
         padding: 5px;
         border: 1px solid #ced4da;
         border-radius: 4px;
@@ -27,7 +27,7 @@ INPUT_STYLE = """
         min-height: 16px;
         height: 24px;
     }
-    QLineEdit:focus {
+    QLineEdit:focus, QComboBox:focus {
         border-color: #4361ee;
         outline: none;
     }

@@ -9,6 +9,7 @@ from PySide6.QtCore import QPoint, QPointF, Qt
 from PySide6.QtGui import (
     QBrush,
     QColor,
+    QPen,
 )
 from PySide6.QtWidgets import (
     QGraphicsPathItem,
@@ -20,6 +21,7 @@ from PySide6.QtWidgets import (
 )
 
 from pyteg.config import DEFAULT_MAP_THEME
+from pyteg.core.mapa.theme_layout import ThemeVisualConnection
 from pyteg.gui.mapa.landmass_layers import add_landmass_layers
 from pyteg.gui.mapa.menu import Menu
 from pyteg.gui.mapa.overlap_check import (
@@ -61,6 +63,9 @@ class QCustomGraphicsScene(QGraphicsScene):
         self.map_theme = theme
         self.paises: dict[str, Pais] = {}
         self.visual_connections: list[QGraphicsPathItem] = []
+        self.connection_hints: list[QGraphicsPathItem] = []
+        self._adjacencies: dict[str, list[str]] = {}
+        self._visual_route_by_pair: dict[frozenset[str], ThemeVisualConnection] = {}
         self.landmass_shells: list[QGraphicsSvgItem] = []
         self.landmass_borders: list[QGraphicsSvgItem] = []
         self.setBackgroundBrush(QBrush(QColor("#87CEEB")))
@@ -208,11 +213,21 @@ class QCustomGraphicsScene(QGraphicsScene):
                     parent=self.main_window,
                 )
                 menu.exec_(event.screenPos())
+                event.accept()
+                return
+
+        event.ignore()
 
     def load_map_data(self, theme: str = DEFAULT_MAP_THEME) -> None:
         """Carga los datos del mapa desde archivos TOML y crea los widgets de países."""
         folder = "themes/"
         reader = TomlReader.from_theme(theme, strict=True)
+        if theme == "revancha":
+            self._adjacencies = reader.adyacencias
+            self._visual_route_by_pair = {
+                frozenset((connection.origen, connection.destino)): connection
+                for connection in reader.get_conexiones_visuales()
+            }
 
         for continente in reader.get_continentes():
             cor_x, cor_y = reader.coordenadas_continente(continente)
@@ -234,10 +249,53 @@ class QCustomGraphicsScene(QGraphicsScene):
 
         self.landmass_shells, self.landmass_borders = add_landmass_layers(self, theme)
         self.visual_connections = add_visual_connections(
-            self, reader.get_conexiones_visuales(), self.paises
+            self, reader.get_conexiones_visuales(), self.paises, theme=theme
         )
         self._apply_country_z_order()
         self._elevate_army_markers()
+
+    def refresh_revancha_connection_hints(self, origin: str | None) -> None:
+        """Highlight all playable neighbors of the selected Revancha country."""
+        for item in self.connection_hints:
+            self.removeItem(item)
+        self.connection_hints.clear()
+        if self.map_theme != "revancha" or origin not in self._adjacencies:
+            return
+
+        connections: list[ThemeVisualConnection] = []
+        for neighbor in sorted(self._adjacencies[origin]):
+            country = self.paises[neighbor]
+            outline = QGraphicsPathItem(country.mapToScene(country.shape()))
+            pen = QPen(QColor("#b45b12"))
+            pen.setWidthF(3.2)
+            pen.setCosmetic(True)
+            outline.setPen(pen)
+            outline.setZValue(95.0)
+            outline.setAcceptedMouseButtons(Qt.MouseButton.NoButton)
+            outline.setToolTip(
+                _("Conexión jugable: {origen} ↔ {destino}").format(
+                    origen=origin, destino=neighbor
+                )
+            )
+            self.addItem(outline)
+            self.connection_hints.append(outline)
+
+            pair = frozenset((origin, neighbor))
+            connections.append(
+                self._visual_route_by_pair.get(
+                    pair, ThemeVisualConnection(origen=origin, destino=neighbor)
+                )
+            )
+
+        self.connection_hints.extend(
+            add_visual_connections(
+                self,
+                connections,
+                self.paises,
+                theme="revancha",
+                highlight=True,
+            )
+        )
 
     def _apply_country_z_order(self) -> None:
         """Países más pequeños quedan encima para facilitar el clic."""

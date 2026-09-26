@@ -267,6 +267,10 @@ class ConnectionClient(QWidget):
             self._socket.disconnectFromHost()
             _LOG.info("Solicitando desconexión del servidor")
 
+    def abortar(self) -> None:
+        """Cierra enseguida una conexión cuya negociación fue rechazada."""
+        self._socket.abort()
+
     def display_error(self) -> None:
         """Maneja y muestra errores de conexión."""
         err = self._socket.errorString()

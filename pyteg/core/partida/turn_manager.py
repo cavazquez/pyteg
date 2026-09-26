@@ -25,6 +25,8 @@ TurnoType = PrimerTurno | SegundoTurno | SiguientesTurnos
 
 # Userid placeholder usado antes de que se inicialicen los turnos reales.
 _USERID_PLACEHOLDER = 0
+_REVANCHA_TWO_PLAYERS = 2
+_REVANCHA_TWO_PLAYER_INITIAL_UNITS = 18
 
 
 class TurnManager:
@@ -52,6 +54,7 @@ class TurnManager:
         self._mapa = mapa
         self._reinforcement_policy = reinforcement_policy
         self._first_turn_units = rules.first_turn_units if rules is not None else 6
+        self._initial_round_units = self._first_turn_units
         self._second_turn_units = rules.second_turn_units if rules is not None else 3
         self._rules = rules
         self._turnos: list[TurnoType] = [
@@ -70,9 +73,15 @@ class TurnManager:
             jugadores_userids: Lista de userids (int) de jugadores en orden.
 
         """
-        self._turnos = [
-            PrimerTurno(j, self._first_turn_units) for j in jugadores_userids
-        ]
+        initial_units = self._first_turn_units
+        if (
+            self._rules is not None
+            and self._rules.theme == "revancha"
+            and len(jugadores_userids) == _REVANCHA_TWO_PLAYERS
+        ):
+            initial_units = _REVANCHA_TWO_PLAYER_INITIAL_UNITS
+        self._initial_round_units = initial_units
+        self._turnos = [PrimerTurno(j, initial_units) for j in jugadores_userids]
         self._num_turno = 0
         self._turno_logico = 0
 
@@ -298,7 +307,7 @@ class TurnManager:
 
         turno_actual = self._turnos[0]
         if isinstance(turno_actual, PrimerTurno):
-            turno: TurnoType = PrimerTurno(jugador_id, self._first_turn_units)
+            turno: TurnoType = PrimerTurno(jugador_id, self._initial_round_units)
         elif isinstance(turno_actual, SegundoTurno):
             turno = SegundoTurno(
                 jugador_id,

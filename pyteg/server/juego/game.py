@@ -36,6 +36,7 @@ if TYPE_CHECKING:
 TurnoType = PrimerTurno | SegundoTurno | SiguientesTurnos
 
 LOGGER = get_logger(__name__)
+_REVANCHA_TWO_PLAYERS = 2
 
 
 class Game:
@@ -74,6 +75,11 @@ class Game:
         self._start = False
         self._finalizada = False
         self._jugadores: list[IClientProtocol] = list(jugadores)
+        self._revancha_duel = (
+            rules is not None
+            and rules.theme == "revancha"
+            and len(self._jugadores) == _REVANCHA_TWO_PLAYERS
+        )
         self._eliminados: set[int] = set()
         self._desconectados: set[int] = set()
         self._reconnect_tokens: dict[int, str] = {}
@@ -209,6 +215,10 @@ class Game:
 
         """
         return self._turn_manager.num_ronda()
+
+    def rondas_sin_ataque(self) -> int:
+        """Devuelve cuántas rondas iniciales son sólo de incorporación."""
+        return 1 if self._revancha_duel else self.reglas().first_turns_no_attack
 
     def fase_actual(self) -> str:
         """Devuelve la fase del turno vigente.
@@ -386,7 +396,10 @@ class Game:
 
         jugadores_rotados = self._turn_manager.rotar_jugadores(jugadores_activos)
         jugadores_userids = [int(j.userid()) for j in jugadores_rotados]
-        es_segundo_turno = isinstance(self._turn_manager.turno_actual(), PrimerTurno)
+        es_segundo_turno = (
+            isinstance(self._turn_manager.turno_actual(), PrimerTurno)
+            and not self._revancha_duel
+        )
         self._turn_manager.iniciar_nueva_ronda(
             jugadores_userids, es_segundo_turno=es_segundo_turno
         )
@@ -641,10 +654,11 @@ class Game:
             max(self._rules.attack_dice_max if self._rules else 3, 4),
             max(unidades_atacante - 1, 0),
         )
-        dados_defensor_count = self._situation_runtime.defense_dice(
-            Batalla.calcular_cant_dados_defensor(unidades_defensor)
-        )
         max_defense_dice = self._rules.defense_dice_max if self._rules else 2
+        dados_defensor_base = min(
+            Batalla.calcular_cant_dados_defensor(unidades_defensor), max_defense_dice
+        )
+        dados_defensor_count = self._situation_runtime.defense_dice(dados_defensor_base)
         dados_defensor_count = min(
             dados_defensor_count,
             max(max_defense_dice, 4),

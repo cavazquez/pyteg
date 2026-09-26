@@ -1,5 +1,5 @@
-# Datos estructurales de TEG La Revancha.
-# Las siluetas son provisionales y serán reemplazadas por #227.
+# Composición aproximada a partir de la foto frontal del tablero.
+# Coordenadas y SVG originales del tema; las rutas siguen el grafo auditado.
 
 [AmericaDelNorte]
 pos_x = 0
@@ -8,98 +8,98 @@ pos_y = 0
 [AmericaDelNorte.California]
 continente = "AmericaDelNorte"
 file = "revancha/countries/California.svg"
-pos_x = 20
-pos_y = 20
-army_x = 30
-army_y = 18
+pos_x = 84
+pos_y = 421
+army_x = 87
+army_y = 79
 
 [AmericaDelNorte.NuevaYork]
 continente = "AmericaDelNorte"
 file = "revancha/countries/NuevaYork.svg"
-pos_x = 112
-pos_y = 20
-army_x = 30
-army_y = 18
+pos_x = 339
+pos_y = 291
+army_x = 51
+army_y = 27
 
 [AmericaDelNorte.LasVegas]
 continente = "AmericaDelNorte"
 file = "revancha/countries/LasVegas.svg"
-pos_x = 204
-pos_y = 20
-army_x = 30
-army_y = 18
+pos_x = 77
+pos_y = 361
+army_x = 126
+army_y = 68
 
 [AmericaDelNorte.Florida]
 continente = "AmericaDelNorte"
 file = "revancha/countries/Florida.svg"
-pos_x = 296
-pos_y = 20
-army_x = 30
-army_y = 18
+pos_x = 298
+pos_y = 440
+army_x = 57
+army_y = 41
 
 [AmericaDelNorte.Chicago]
 continente = "AmericaDelNorte"
 file = "revancha/countries/Chicago.svg"
-pos_x = 20
-pos_y = 88
-army_x = 30
-army_y = 18
+pos_x = 282
+pos_y = 344
+army_x = 68
+army_y = 55
 
 [AmericaDelNorte.Terranova]
 continente = "AmericaDelNorte"
 file = "revancha/countries/Terranova.svg"
-pos_x = 112
-pos_y = 88
-army_x = 30
-army_y = 18
+pos_x = 276
+pos_y = 235
+army_x = 28
+army_y = 47
 
 [AmericaDelNorte.Labrador]
 continente = "AmericaDelNorte"
 file = "revancha/countries/Labrador.svg"
-pos_x = 204
-pos_y = 88
-army_x = 30
-army_y = 18
+pos_x = 346
+pos_y = 205
+army_x = 42
+army_y = 49
 
 [AmericaDelNorte.Canada]
 continente = "AmericaDelNorte"
 file = "revancha/countries/Canada.svg"
-pos_x = 296
-pos_y = 88
-army_x = 30
-army_y = 18
+pos_x = 131
+pos_y = 214
+army_x = 107
+army_y = 68
 
 [AmericaDelNorte.Oregon]
 continente = "AmericaDelNorte"
 file = "revancha/countries/Oregon.svg"
-pos_x = 20
-pos_y = 156
-army_x = 30
-army_y = 18
+pos_x = 74
+pos_y = 309
+army_x = 148
+army_y = 56
 
 [AmericaDelNorte.IslaVictoria]
 continente = "AmericaDelNorte"
 file = "revancha/countries/IslaVictoria.svg"
-pos_x = 112
-pos_y = 156
-army_x = 30
-army_y = 18
+pos_x = 260
+pos_y = 174
+army_x = 70
+army_y = 29
 
 [AmericaDelNorte.Alaska]
 continente = "AmericaDelNorte"
 file = "revancha/countries/Alaska.svg"
-pos_x = 204
-pos_y = 156
-army_x = 30
-army_y = 18
+pos_x = 71
+pos_y = 153
+army_x = 79
+army_y = 39
 
 [AmericaDelNorte.Groenlandia]
 continente = "AmericaDelNorte"
 file = "revancha/countries/Groenlandia.svg"
-pos_x = 296
-pos_y = 156
-army_x = 30
-army_y = 18
+pos_x = 417
+pos_y = 89
+army_x = 64
+army_y = 57
 
 [AmericaCentral]
 pos_x = 0
@@ -108,50 +108,50 @@ pos_y = 0
 [AmericaCentral.Mexico]
 continente = "AmericaCentral"
 file = "revancha/countries/Mexico.svg"
-pos_x = 20
-pos_y = 250
-army_x = 30
-army_y = 18
+pos_x = 267
+pos_y = 451
+army_x = 67
+army_y = 47
 
 [AmericaCentral.Honduras]
 continente = "AmericaCentral"
 file = "revancha/countries/Honduras.svg"
-pos_x = 112
-pos_y = 250
-army_x = 30
-army_y = 18
+pos_x = 416
+pos_y = 536
+army_x = 10
+army_y = 14
 
 [AmericaCentral.ElSalvador]
 continente = "AmericaCentral"
 file = "revancha/countries/ElSalvador.svg"
-pos_x = 204
-pos_y = 250
-army_x = 30
-army_y = 18
+pos_x = 414
+pos_y = 560
+army_x = 22
+army_y = 13
 
 [AmericaCentral.Nicaragua]
 continente = "AmericaCentral"
 file = "revancha/countries/Nicaragua.svg"
-pos_x = 20
-pos_y = 318
-army_x = 30
-army_y = 18
+pos_x = 445
+pos_y = 585
+army_x = 20
+army_y = 19
 
 [AmericaCentral.Cuba]
 continente = "AmericaCentral"
 file = "revancha/countries/Cuba.svg"
-pos_x = 112
-pos_y = 318
-army_x = 30
-army_y = 18
+pos_x = 375
+pos_y = 454
+army_x = 17
+army_y = 21
 
 [AmericaCentral.Jamaica]
 continente = "AmericaCentral"
 file = "revancha/countries/Jamaica.svg"
-pos_x = 204
-pos_y = 318
-army_x = 30
-army_y = 18
+pos_x = 365
+pos_y = 516
+army_x = 36
+army_y = 28
 
 [AmericaDelSur]
 pos_x = 0
@@ -160,66 +160,66 @@ pos_y = 0
 [AmericaDelSur.Brasil]
 continente = "AmericaDelSur"
 file = "revancha/countries/Brasil.svg"
-pos_x = 20
-pos_y = 390
-army_x = 30
-army_y = 18
+pos_x = 421
+pos_y = 716
+army_x = 63
+army_y = 117
 
 [AmericaDelSur.Argentina]
 continente = "AmericaDelSur"
 file = "revancha/countries/Argentina.svg"
-pos_x = 112
-pos_y = 390
-army_x = 30
-army_y = 18
+pos_x = 316
+pos_y = 902
+army_x = 57
+army_y = 26
 
 [AmericaDelSur.Uruguay]
 continente = "AmericaDelSur"
 file = "revancha/countries/Uruguay.svg"
-pos_x = 204
-pos_y = 390
-army_x = 30
-army_y = 18
+pos_x = 408
+pos_y = 894
+army_x = 46
+army_y = 42
 
 [AmericaDelSur.Chile]
 continente = "AmericaDelSur"
 file = "revancha/countries/Chile.svg"
-pos_x = 296
-pos_y = 390
-army_x = 30
-army_y = 18
+pos_x = 258
+pos_y = 833
+army_x = 54
+army_y = 76
 
 [AmericaDelSur.Colombia]
 continente = "AmericaDelSur"
 file = "revancha/countries/Colombia.svg"
-pos_x = 20
-pos_y = 458
-army_x = 30
-army_y = 18
+pos_x = 224
+pos_y = 661
+army_x = 83
+army_y = 85
 
 [AmericaDelSur.Bolivia]
 continente = "AmericaDelSur"
 file = "revancha/countries/Bolivia.svg"
-pos_x = 112
-pos_y = 458
-army_x = 30
-army_y = 18
+pos_x = 301
+pos_y = 813
+army_x = 64
+army_y = 57
 
 [AmericaDelSur.Paraguay]
 continente = "AmericaDelSur"
 file = "revancha/countries/Paraguay.svg"
-pos_x = 204
-pos_y = 458
-army_x = 30
-army_y = 18
+pos_x = 396
+pos_y = 844
+army_x = 31
+army_y = 58
 
 [AmericaDelSur.Venezuela]
 continente = "AmericaDelSur"
 file = "revancha/countries/Venezuela.svg"
-pos_x = 296
-pos_y = 458
-army_x = 30
-army_y = 18
+pos_x = 347
+pos_y = 657
+army_x = 43
+army_y = 100
 
 [Europa]
 pos_x = 0
@@ -228,130 +228,130 @@ pos_y = 0
 [Europa.Islandia]
 continente = "Europa"
 file = "revancha/countries/Islandia.svg"
-pos_x = 420
-pos_y = 20
-army_x = 30
-army_y = 18
+pos_x = 594
+pos_y = 201
+army_x = 53
+army_y = 28
 
 [Europa.Irlanda]
 continente = "Europa"
 file = "revancha/countries/Irlanda.svg"
-pos_x = 512
-pos_y = 20
-army_x = 30
-army_y = 18
+pos_x = 602
+pos_y = 310
+army_x = 24
+army_y = 41
 
 [Europa.GranBretana]
 continente = "Europa"
 file = "revancha/countries/GranBretana.svg"
-pos_x = 604
-pos_y = 20
-army_x = 30
-army_y = 18
+pos_x = 649
+pos_y = 281
+army_x = 33
+army_y = 54
 
 [Europa.Noruega]
 continente = "Europa"
 file = "revancha/countries/Noruega.svg"
-pos_x = 696
-pos_y = 20
-army_x = 30
-army_y = 18
+pos_x = 714
+pos_y = 210
+army_x = 57
+army_y = 39
 
 [Europa.Finlandia]
 continente = "Europa"
 file = "revancha/countries/Finlandia.svg"
-pos_x = 420
-pos_y = 88
-army_x = 30
-army_y = 18
+pos_x = 802
+pos_y = 220
+army_x = 43
+army_y = 39
 
 [Europa.Bielorrusia]
 continente = "Europa"
 file = "revancha/countries/Bielorrusia.svg"
-pos_x = 512
-pos_y = 88
+pos_x = 881
+pos_y = 227
 army_x = 30
-army_y = 18
+army_y = 8
 
 [Europa.Portugal]
 continente = "Europa"
 file = "revancha/countries/Portugal.svg"
-pos_x = 604
-pos_y = 88
-army_x = 30
-army_y = 18
+pos_x = 594
+pos_y = 443
+army_x = 25
+army_y = 60
 
 [Europa.Espana]
 continente = "Europa"
 file = "revancha/countries/Espana.svg"
-pos_x = 696
-pos_y = 88
-army_x = 30
-army_y = 18
+pos_x = 625
+pos_y = 435
+army_x = 31
+army_y = 77
 
 [Europa.Francia]
 continente = "Europa"
 file = "revancha/countries/Francia.svg"
-pos_x = 420
-pos_y = 156
-army_x = 30
-army_y = 18
+pos_x = 678
+pos_y = 417
+army_x = 57
+army_y = 74
 
 [Europa.Alemania]
 continente = "Europa"
 file = "revancha/countries/Alemania.svg"
-pos_x = 512
-pos_y = 156
-army_x = 30
-army_y = 18
+pos_x = 726
+pos_y = 358
+army_x = 66
+army_y = 94
 
 [Europa.Italia]
 continente = "Europa"
 file = "revancha/countries/Italia.svg"
-pos_x = 604
-pos_y = 156
-army_x = 30
-army_y = 18
+pos_x = 751
+pos_y = 500
+army_x = 41
+army_y = 37
 
 [Europa.Croacia]
 continente = "Europa"
 file = "revancha/countries/Croacia.svg"
-pos_x = 696
-pos_y = 156
-army_x = 30
-army_y = 18
+pos_x = 796
+pos_y = 457
+army_x = 37
+army_y = 32
 
 [Europa.Serbia]
 continente = "Europa"
 file = "revancha/countries/Serbia.svg"
-pos_x = 420
-pos_y = 224
-army_x = 30
-army_y = 18
+pos_x = 835
+pos_y = 412
+army_x = 33
+army_y = 40
 
 [Europa.Polonia]
 continente = "Europa"
 file = "revancha/countries/Polonia.svg"
-pos_x = 512
-pos_y = 224
-army_x = 30
-army_y = 18
+pos_x = 788
+pos_y = 316
+army_x = 91
+army_y = 58
 
 [Europa.Albania]
 continente = "Europa"
 file = "revancha/countries/Albania.svg"
-pos_x = 604
-pos_y = 224
-army_x = 30
-army_y = 18
+pos_x = 829
+pos_y = 502
+army_x = 6
+army_y = 25
 
 [Europa.Ucrania]
 continente = "Europa"
 file = "revancha/countries/Ucrania.svg"
-pos_x = 696
-pos_y = 224
-army_x = 30
-army_y = 18
+pos_x = 895
+pos_y = 287
+army_x = 49
+army_y = 59
 
 [Africa]
 pos_x = 0
@@ -360,66 +360,66 @@ pos_y = 0
 [Africa.Sahara]
 continente = "Africa"
 file = "revancha/countries/Sahara.svg"
-pos_x = 420
-pos_y = 300
-army_x = 30
-army_y = 18
+pos_x = 606
+pos_y = 606
+army_x = 78
+army_y = 152
 
 [Africa.Egipto]
 continente = "Africa"
 file = "revancha/countries/Egipto.svg"
-pos_x = 512
-pos_y = 300
-army_x = 30
-army_y = 18
+pos_x = 714
+pos_y = 608
+army_x = 144
+army_y = 44
 
 [Africa.Etiopia]
 continente = "Africa"
 file = "revancha/countries/Etiopia.svg"
-pos_x = 604
-pos_y = 300
-army_x = 30
-army_y = 18
+pos_x = 749
+pos_y = 666
+army_x = 89
+army_y = 59
 
 [Africa.Nigeria]
 continente = "Africa"
 file = "revancha/countries/Nigeria.svg"
-pos_x = 696
-pos_y = 300
-army_x = 30
-army_y = 18
+pos_x = 679
+pos_y = 726
+army_x = 92
+army_y = 75
 
 [Africa.Angola]
 continente = "Africa"
 file = "revancha/countries/Angola.svg"
-pos_x = 420
-pos_y = 368
-army_x = 30
-army_y = 18
+pos_x = 843
+pos_y = 687
+army_x = 62
+army_y = 98
 
 [Africa.Mauritania]
 continente = "Africa"
 file = "revancha/countries/Mauritania.svg"
-pos_x = 512
-pos_y = 368
-army_x = 30
-army_y = 18
+pos_x = 872
+pos_y = 794
+army_x = 56
+army_y = 40
 
 [Africa.Madagascar]
 continente = "Africa"
 file = "revancha/countries/Madagascar.svg"
-pos_x = 604
-pos_y = 368
-army_x = 30
-army_y = 18
+pos_x = 1015
+pos_y = 796
+army_x = 11
+army_y = 47
 
 [Africa.Sudafrica]
 continente = "Africa"
 file = "revancha/countries/Sudafrica.svg"
-pos_x = 696
-pos_y = 368
-army_x = 30
-army_y = 18
+pos_x = 795
+pos_y = 843
+army_x = 96
+army_y = 47
 
 [Asia]
 pos_x = 0
@@ -428,130 +428,130 @@ pos_y = 0
 [Asia.Rusia]
 continente = "Asia"
 file = "revancha/countries/Rusia.svg"
-pos_x = 820
-pos_y = 20
-army_x = 30
-army_y = 18
+pos_x = 961
+pos_y = 265
+army_x = 54
+army_y = 44
 
 [Asia.Siberia]
 continente = "Asia"
 file = "revancha/countries/Siberia.svg"
-pos_x = 912
-pos_y = 20
-army_x = 30
-army_y = 18
+pos_x = 937
+pos_y = 114
+army_x = 94
+army_y = 48
 
 [Asia.Chechenia]
 continente = "Asia"
 file = "revancha/countries/Chechenia.svg"
-pos_x = 1004
-pos_y = 20
-army_x = 30
-army_y = 18
+pos_x = 1085
+pos_y = 114
+army_x = 49
+army_y = 57
 
 [Asia.Chukchi]
 continente = "Asia"
 file = "revancha/countries/Chukchi.svg"
-pos_x = 1096
-pos_y = 20
-army_x = 30
-army_y = 18
+pos_x = 936
+pos_y = 201
+army_x = 97
+army_y = 28
 
 [Asia.Kamchatka]
 continente = "Asia"
 file = "revancha/countries/Kamchatka.svg"
-pos_x = 820
-pos_y = 88
-army_x = 30
-army_y = 18
+pos_x = 1105
+pos_y = 233
+army_x = 73
+army_y = 97
 
 [Asia.Iran]
 continente = "Asia"
 file = "revancha/countries/Iran.svg"
-pos_x = 912
-pos_y = 88
-army_x = 30
-army_y = 18
+pos_x = 925
+pos_y = 352
+army_x = 60
+army_y = 59
 
 [Asia.Irak]
 continente = "Asia"
 file = "revancha/countries/Irak.svg"
-pos_x = 1004
-pos_y = 88
-army_x = 30
-army_y = 18
+pos_x = 980
+pos_y = 424
+army_x = 37
+army_y = 46
 
 [Asia.China]
 continente = "Asia"
 file = "revancha/countries/China.svg"
-pos_x = 1096
-pos_y = 88
-army_x = 30
-army_y = 18
+pos_x = 1038
+pos_y = 307
+army_x = 53
+army_y = 78
 
 [Asia.Corea]
 continente = "Asia"
 file = "revancha/countries/Corea.svg"
-pos_x = 820
-pos_y = 156
-army_x = 30
-army_y = 18
+pos_x = 1150
+pos_y = 345
+army_x = 49
+army_y = 36
 
 [Asia.Japon]
 continente = "Asia"
 file = "revancha/countries/Japon.svg"
-pos_x = 912
-pos_y = 156
-army_x = 30
-army_y = 18
+pos_x = 1231
+pos_y = 173
+army_x = 44
+army_y = 175
 
 [Asia.Malasia]
 continente = "Asia"
 file = "revancha/countries/Malasia.svg"
-pos_x = 1004
-pos_y = 156
-army_x = 30
-army_y = 18
+pos_x = 1042
+pos_y = 448
+army_x = 40
+army_y = 56
 
 [Asia.Turquia]
 continente = "Asia"
 file = "revancha/countries/Turquia.svg"
-pos_x = 1096
-pos_y = 156
-army_x = 30
-army_y = 18
+pos_x = 929
+pos_y = 441
+army_x = 24
+army_y = 54
 
 [Asia.Israel]
 continente = "Asia"
 file = "revancha/countries/Israel.svg"
-pos_x = 820
-pos_y = 224
-army_x = 30
-army_y = 18
+pos_x = 960
+pos_y = 508
+army_x = 32
+army_y = 36
 
 [Asia.Arabia]
 continente = "Asia"
 file = "revancha/countries/Arabia.svg"
-pos_x = 912
-pos_y = 224
-army_x = 30
-army_y = 18
+pos_x = 1004
+pos_y = 548
+army_x = 29
+army_y = 46
 
 [Asia.India]
 continente = "Asia"
 file = "revancha/countries/India.svg"
-pos_x = 1004
-pos_y = 224
-army_x = 30
-army_y = 18
+pos_x = 1066
+pos_y = 550
+army_x = 14
+army_y = 34
 
 [Asia.Vietnam]
 continente = "Asia"
 file = "revancha/countries/Vietnam.svg"
-pos_x = 1096
-pos_y = 224
-army_x = 30
-army_y = 18
+pos_x = 1133
+pos_y = 479
+army_x = 52
+army_y = 90
 
 [Oceania]
 pos_x = 0
@@ -560,47 +560,47 @@ pos_y = 0
 [Oceania.Sumatra]
 continente = "Oceania"
 file = "revancha/countries/Sumatra.svg"
-pos_x = 820
-pos_y = 350
-army_x = 30
-army_y = 18
+pos_x = 1096
+pos_y = 654
+army_x = 32
+army_y = 32
 
 [Oceania.Filipinas]
 continente = "Oceania"
 file = "revancha/countries/Filipinas.svg"
-pos_x = 912
-pos_y = 350
-army_x = 30
-army_y = 18
+pos_x = 1213
+pos_y = 687
+army_x = 36
+army_y = 22
 
 [Oceania.Tonga]
 continente = "Oceania"
 file = "revancha/countries/Tonga.svg"
-pos_x = 1004
-pos_y = 350
-army_x = 30
-army_y = 18
+pos_x = 1327
+pos_y = 730
+army_x = 40
+army_y = 25
 
 [Oceania.Australia]
 continente = "Oceania"
 file = "revancha/countries/Australia.svg"
-pos_x = 820
-pos_y = 418
-army_x = 30
-army_y = 18
+pos_x = 1066
+pos_y = 791
+army_x = 114
+army_y = 68
 
 [Oceania.Tasmania]
 continente = "Oceania"
 file = "revancha/countries/Tasmania.svg"
-pos_x = 912
-pos_y = 418
-army_x = 30
-army_y = 18
+pos_x = 1128
+pos_y = 920
+army_x = 57
+army_y = 54
 
 [Oceania.NuevaZelandia]
 continente = "Oceania"
 file = "revancha/countries/NuevaZelandia.svg"
-pos_x = 1004
-pos_y = 418
-army_x = 30
-army_y = 18
+pos_x = 1001
+pos_y = 884
+army_x = 67
+army_y = 97

@@ -145,7 +145,7 @@ class LayoutManager:
         # Add a spacer to separate the player list from the values
         layout.addStretch()
 
-        # Add the 6 values below the player list
+        # Añadir las filas de unidades correspondientes al mapa activo.
         self._setup_continent_values(layout)
 
         # El contenido puede crecer con muchos jugadores; el scroll evita que
@@ -167,6 +167,26 @@ class LayoutManager:
     def _setup_continent_values(self, layout: QVBoxLayout) -> None:
         """Delega la construcción del panel UNIDADES en `units_panel`."""
         _build_units_panel(self.main_window, layout)
+
+    def rebuild_units_panel(self) -> None:
+        """Reconstruye las filas al cambiar el tema antes de conectarse.
+
+        Raises:
+            RuntimeError: Si todavía no existe la columna derecha.
+
+        """
+        layout = self.main_window.right_column_widget.layout()
+        if layout is None:
+            msg = "La columna de unidades aún no está construida"
+            raise RuntimeError(msg)
+        section = self.main_window.row_widgets.get("Generales")
+        if section is not None:
+            old_section = section.parentWidget()
+            if old_section is not None:
+                layout.removeWidget(old_section)
+                old_section.setParent(None)
+                old_section.deleteLater()
+        _build_units_panel(self.main_window, cast("QVBoxLayout", layout))
 
     def _add_players_title(self, layout: QVBoxLayout) -> None:
         """Agregar título de la sección de jugadores."""

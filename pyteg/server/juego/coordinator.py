@@ -118,10 +118,10 @@ class ServerGameCoordinator:
         """Configura la cantidad de países necesarios para ganar.
 
         Args:
-            paises: Países necesarios para victoria (> 0).
+            paises: Países necesarios para victoria; cero exige todo el mapa.
 
         """
-        if isinstance(paises, int) and paises > 0:
+        if isinstance(paises, int) and paises >= 0:
             self._paises_para_victoria = paises
 
     def set_objetivos_secretos(self, *, activados: bool) -> None:
@@ -267,7 +267,14 @@ class ServerGameCoordinator:
         # Asignar y enviar objetivos secretos si están activados
         if self._objetivos_secretos_activados:
             LOGGER.info("Asignando objetivos secretos a los jugadores...")
-            self._objetivos_secretos.asignar_objetivos_aleatorios(jugadores)
+            revancha_players = (
+                len(jugadores)
+                if self._rules is not None and self._rules.theme == "revancha"
+                else None
+            )
+            self._objetivos_secretos.asignar_objetivos_aleatorios(
+                jugadores, revancha_players=revancha_players
+            )
             server.enviar_objetivos_secretos()
 
         # Publicar una primera revisión completa cuando la asignación inicial

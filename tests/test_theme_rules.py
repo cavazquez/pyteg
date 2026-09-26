@@ -22,15 +22,17 @@ class ThemeRulesTests(unittest.TestCase):
         self.assertEqual(
             rules.continent_bonus_map,
             {
-                "AmericaDelNorte": 8,
-                "AmericaCentral": 8,
-                "AmericaDelSur": 6,
-                "Europa": 4,
+                "AmericaDelNorte": 6,
+                "AmericaCentral": 3,
+                "AmericaDelSur": 4,
+                "Europa": 8,
                 "Africa": 4,
-                "Asia": 3,
+                "Asia": 8,
                 "Oceania": 3,
             },
         )
+        self.assertEqual(rules.min_general_units, 4)
+        self.assertEqual(rules.defense_dice_max, 3)
         self.assertEqual(rules.exchange_units, (6, 10))
         self.assertTrue(rules.exchange_tail_from_last)
         self.assertEqual(

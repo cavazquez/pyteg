@@ -1,10 +1,16 @@
 # Licencia y procedencia de los assets
 
-Los SVG de `countries/` y `cards/` fueron generados para este repositorio y no
-se copiaron del tablero, de Yetem ni de otro proyecto. Se distribuyen bajo la
-licencia GPL-3.0-or-later del repositorio (`LICENSE`).
+Los SVG de `countries/`, `cards/` y `geometry/` se generan para este
+repositorio y se distribuyen bajo GPL-3.0-or-later (`LICENSE`). La composición
+vectorial del mapa usa como guía la foto frontal del tablero compartida para
+#227. Sus masas continentales y fronteras son aproximaciones originales; no se
+copiaron ilustraciones del tablero ni assets de Yetem.
 
-Son siluetas estructurales provisionales para validar carga vectorial, z-order,
-selección y empaquetado. El diseño final del mapa y de las cartas se resolverá
-en #227 cuando se cierre la auditoría de topología y se documenten las rutas
-marítimas.
+`geometry/generate_revancha_map.py` contiene los contornos y centros de
+referencia y regenera los SVG, las posiciones de `paises.toml` y las rutas
+visuales permanentes. Su partición de píxeles evita solapes y abre una separación
+visible cuando dos países cercanos no son adyacentes en las reglas. Los contornos
+y la costa siguen siendo aproximados. La geometría de presentación se mantiene
+separada del grafo ejecutable: las rutas y los resaltados solo representan
+aristas auditadas y no habilitan movimientos. Las discrepancias pendientes
+continúan fuera del grafo.
