@@ -228,6 +228,27 @@ msgstr "Tamaño por defecto"
 msgid "Cambiar tamaño de la ventana"
 msgstr "Cambiar tamaño de la ventana"
 
+msgid "Ajustar o elegir tamaño de ventana"
+msgstr "Ajustar o elegir tamaño de ventana"
+
+msgid "Desconectar"
+msgstr "Desconectar"
+
+msgid "Desconectar del servidor"
+msgstr "Desconectar del servidor"
+
+msgid "Salir de la conexión actual"
+msgstr "Salir de la conexión actual"
+
+msgid "¿Querés desconectarte de la partida actual?"
+msgstr "¿Querés desconectarte de la partida actual?"
+
+msgid "Ver mis tarjetas"
+msgstr "Ver mis tarjetas"
+
+msgid "Mostrar tarjetas asignadas al jugador"
+msgstr "Mostrar tarjetas asignadas al jugador"
+
 msgid "Atacando desde {} hacia {}"
 msgstr "Atacando desde {} hacia {}"
 
@@ -487,3 +508,218 @@ msgstr "Refuerzos por control de {}"
 
 msgid "{}: {}"
 msgstr "{}: {}"
+
+msgid "Esperá a que comience la partida"
+msgstr "Esperá a que comience la partida"
+
+msgid "Colocá todas las unidades antes de continuar"
+msgstr "Colocá todas las unidades antes de continuar"
+
+msgid "Esta acción requiere la fase de acciones"
+msgstr "Esta acción requiere la fase de acciones"
+
+msgid "Esta acción requiere la fase de colocación"
+msgstr "Esta acción requiere la fase de colocación"
+
+msgid "Seleccioná un país"
+msgstr "Seleccioná un país"
+
+msgid "El origen debe ser un país propio"
+msgstr "El origen debe ser un país propio"
+
+msgid "Este país no te pertenece"
+msgstr "Este país no te pertenece"
+
+msgid "Sólo podés atacar un país enemigo"
+msgstr "Sólo podés atacar un país enemigo"
+
+msgid "Sólo podés mover a un país propio"
+msgstr "Sólo podés mover a un país propio"
+
+msgid "Sólo podés lanzar un misil a un país enemigo"
+msgstr "Sólo podés lanzar un misil a un país enemigo"
+
+msgid "Los países no son adyacentes"
+msgstr "Los países no son adyacentes"
+
+msgid "El origen debe conservar al menos una unidad"
+msgstr "El origen debe conservar al menos una unidad"
+
+msgid "El origen no tiene misiles"
+msgstr "El origen no tiene misiles"
+
+msgid "Los misiles están desactivados"
+msgstr "Los misiles están desactivados"
+
+msgid "Se necesitan al menos {} unidades para canjear un misil"
+msgstr "Se necesitan al menos {} unidades para canjear un misil"
+
+msgid "Podés atacar a partir de la ronda {}"
+msgstr "Podés atacar a partir de la ronda {}"
+
+msgid "Tu color está en descanso: no podés atacar ni mover"
+msgstr "Tu color está en descanso: no podés atacar ni mover"
+
+msgid "Fronteras abiertas: sólo podés atacar entre continentes"
+msgstr "Fronteras abiertas: sólo podés atacar entre continentes"
+
+msgid "Fronteras cerradas: sólo podés atacar dentro del continente"
+msgstr "Fronteras cerradas: sólo podés atacar dentro del continente"
+
+msgid "Este país está bloqueado para recibir refuerzos"
+msgstr "Este país está bloqueado para recibir refuerzos"
+
+msgid "Canjear Misil"
+msgstr "Canjear Misil"
+
+msgid "Elegir defensor"
+msgstr "Elegir defensor"
+
+msgid "Ocupante objetivo en {}"
+msgstr "Ocupante objetivo en {}"
+
+msgid "Un pacto público impide atacar ese objetivo"
+msgstr "Un pacto público impide atacar ese objetivo"
+
+msgid "No se puede lanzar un misil a un país compartido"
+msgstr "No se puede lanzar un misil a un país compartido"
+
+msgid "Compartido: {}"
+msgstr "Compartido: {}"
+
+msgid "País: {}"
+msgstr "País: {}"
+
+msgid "Continente: {}"
+msgstr "Continente: {}"
+
+msgid "Unidades: {}"
+msgstr "Unidades: {}"
+
+msgid "Misiles: {}"
+msgstr "Misiles: {}"
+
+msgid "Vol:"
+msgstr "Vol:"
+
+msgid "Misil: {} → {} (-{} unidades)"
+msgstr "Misil: {} → {} (-{} unidades)"
+
+msgid "{} ahora tiene {} {}"
+msgstr "{} ahora tiene {} {}"
+
+msgid "🚀 {} lanzó un misil desde {} hacia {} (distancia: {}). Daño: {} unidades. Unidades restantes: {}"
+msgstr "🚀 {} lanzó un misil desde {} hacia {} (distancia: {}). Daño: {} unidades. Unidades restantes: {}"
+
+msgid " · Situación: {}"
+msgstr " · Situación: {}"
+
+msgid "Clásico"
+msgstr "Clásico"
+
+msgid "Desconectá la partida antes de cambiar de mapa"
+msgstr "Desconectá la partida antes de cambiar de mapa"
+
+msgid "PyTeg"
+msgstr "PyTeg"
+
+msgid "Revancha"
+msgstr "Revancha"
+
+msgid "Seleccioná un mapa válido"
+msgstr "Seleccioná un mapa válido"
+
+msgid "Canjeando misil en {}…"
+msgstr "Canjeando misil en {}…"
+
+msgid "Mi jugador:"
+msgstr "Mi jugador:"
+
+msgid "Conectado"
+msgstr "Conectado"
+
+msgid "Esperando Jugadores"
+msgstr "Esperando Jugadores"
+
+msgid "Esperando turno"
+msgstr "Esperando turno"
+
+msgid "Finalizado"
+msgstr "Finalizado"
+
+msgid "Inicial"
+msgstr "Inicial"
+
+msgid "Acciones en {}"
+msgstr "Acciones en {}"
+
+msgid "Canjear unidades por un misil en este país"
+msgstr "Canjear unidades por un misil en este país"
+
+msgid "Lanzar misil al país seleccionado"
+msgstr "Lanzar misil al país seleccionado"
+
+msgid "Países seleccionados"
+msgstr "Países seleccionados"
+
+msgid " | Países superpuestos: {}"
+msgstr " | Países superpuestos: {}"
+
+msgid "Bajo cursor: {}"
+msgstr "Bajo cursor: {}"
+
+msgid "Conexión jugable: {origen} ↔ {destino}"
+msgstr "Conexión jugable: {origen} ↔ {destino}"
+
+msgid "Coordenadas: ({}, {}) — sin país"
+msgstr "Coordenadas: ({}, {}) — sin país"
+
+msgid "País: {pais} | Continente: {continente} | Unidades: {unidades}{extra}"
+msgstr "País: {pais} | Continente: {continente} | Unidades: {unidades}{extra}"
+
+msgid "Países bajo cursor"
+msgstr "Países bajo cursor"
+
+msgid "Clic derecho: {}"
+msgstr "Clic derecho: {}"
+
+msgid "Dorado: conexiones jugables"
+msgstr "Dorado: conexiones jugables"
+
+msgid "Origen: {} | Destino: {}"
+msgstr "Origen: {} | Destino: {}"
+
+msgid "Contexto de la partida"
+msgstr "Contexto de la partida"
+
+msgid "Fase, jugador activo y refuerzos pendientes"
+msgstr "Fase, jugador activo y refuerzos pendientes"
+
+msgid "Ajustar Mapa"
+msgstr "Ajustar Mapa"
+
+msgid "Ajustar mapa a la ventana"
+msgstr "Ajustar mapa a la ventana"
+
+msgid "Resetear zoom y ajustar mapa al tamaño de la ventana"
+msgstr "Resetear zoom y ajustar mapa al tamaño de la ventana"
+
+msgid "Tarjetas"
+msgstr "Tarjetas"
+
+msgid "Mapa ajustado al tamaño de la ventana"
+msgstr "Mapa ajustado al tamaño de la ventana"
+
+msgid "Idioma:"
+msgstr "Idioma:"
+
+msgid "Ajustar volumen"
+msgstr "Ajustar volumen"
+
+msgid "Silenciar/Activar sonidos"
+msgstr "Silenciar/Activar sonidos"
+
+msgid "misil"
+msgid_plural "misiles"
+msgstr[0] "misil"
+msgstr[1] "misiles"

@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, cast
 
-from PySide6.QtCore import QSize, Qt
-from PySide6.QtGui import QAction
+from PySide6.QtCore import QEvent, QObject, QSize, Qt
+from PySide6.QtGui import QAction, QKeySequence
 from PySide6.QtWidgets import (
     QSizePolicy,
     QToolBar,
+    QToolButton,
     QWidget,
 )
 
@@ -44,10 +45,10 @@ class ToolBar(ToolBarActionsMixin, ToolBarWindowMixin, QToolBar):
         self.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
         self.setIconSize(QSize(24, 24))
         self.main_window = main_window
+        self._observed_window = cast("QObject", main_window)
 
         # Referencias a los botones que se activan/desactivan
         self.button_conectar: QAction | None = None
-        self.button_desconectar: QAction | None = None
         self.button_atacar: QAction | None = None
         self.button_mover: QAction | None = None
         self.button_finalizar_turno: QAction | None = None
@@ -58,6 +59,8 @@ class ToolBar(ToolBarActionsMixin, ToolBarWindowMixin, QToolBar):
         self.button_configuracion: QAction | None = None
         self.button_toggle_chat: QAction | None = None
         self.button_toggle_sidebar: QAction | None = None
+        self.size_button: QToolButton | None = None
+        self._panel_splitters_connected = False
         self.size_menu = create_size_menu(self)
 
         # Configurar la barra de herramientas
@@ -66,6 +69,21 @@ class ToolBar(ToolBarActionsMixin, ToolBarWindowMixin, QToolBar):
 
         # Establecer estado inicial (desconectado)
         self._habilitar_solo_conectar()
+        self._observed_window.installEventFilter(self)
+
+    def eventFilter(self, watched: QObject, event: QEvent) -> bool:  # noqa: N802
+        """Mantiene el toggle de fullscreen acorde al estado real de la ventana.
+
+        Returns:
+            Si el evento fue procesado por el filtro heredado.
+
+        """
+        if (
+            watched is self._observed_window
+            and event.type() == QEvent.Type.WindowStateChange
+        ):
+            self._sync_fullscreen_action()
+        return super().eventFilter(watched, event)
 
     def update_language(self, lang_code: str) -> None:
         """Actualiza todos los textos de la toolbar cuando cambia el idioma."""
@@ -74,10 +92,8 @@ class ToolBar(ToolBarActionsMixin, ToolBarWindowMixin, QToolBar):
         # Actualizar botones principales
         if self.button_tarjetas:
             self.button_tarjetas.setText(_("Tarjetas"))
-        if self.button_conectar:
-            self.button_conectar.setText(_("Conectar"))
-            self.button_conectar.setToolTip(_("Conectar al servidor"))
-            self.button_conectar.setStatusTip(_("Abrir ventana de conexión"))
+            self._actualizar_ayuda_tarjetas()
+        self._actualizar_accion_conexion(conectado=self._esta_conectado())
 
         if self.button_atacar:
             self.button_atacar.setText(_("Atacar"))
@@ -122,6 +138,17 @@ class ToolBar(ToolBarActionsMixin, ToolBarWindowMixin, QToolBar):
         self._update_panel_language()
 
         self._update_size_menu()
+        if self.size_button is not None:
+            self.size_button.setToolTip(_("Cambiar tamaño de la ventana"))
+            self.size_button.setStatusTip(_("Ajustar o elegir tamaño de ventana"))
+            self.size_button.setText(_("Cambiar tamaño de la ventana"))
+            self.size_button.setAccessibleName(_("Cambiar tamaño de la ventana"))
+            self.size_button.setAccessibleDescription(
+                _("Ajustar o elegir tamaño de ventana")
+            )
+        refresh_actions = getattr(self.main_window, "refresh_gameplay_actions", None)
+        if callable(refresh_actions):
+            refresh_actions()
 
     def update_responsive_layout(self, width: int) -> None:
         """Reduce la toolbar a íconos cuando la ventana no tiene ancho suficiente."""
@@ -131,6 +158,35 @@ class ToolBar(ToolBarActionsMixin, ToolBarWindowMixin, QToolBar):
             else Qt.ToolButtonStyle.ToolButtonIconOnly
         )
         self.setToolButtonStyle(style)
+        self._connect_panel_splitters()
+        self._sync_panel_actions()
+
+    def _connect_panel_splitters(self) -> None:
+        """Observa ajustes manuales de los splitters cuando ya están creados."""
+        if self._panel_splitters_connected:
+            return
+        vertical = getattr(self.main_window, "vertical_splitter", None)
+        horizontal = getattr(self.main_window, "horizontal_splitter", None)
+        if vertical is None or horizontal is None:
+            return
+        vertical.splitterMoved.connect(self._sync_panel_actions)
+        horizontal.splitterMoved.connect(self._sync_panel_actions)
+        self._panel_splitters_connected = True
+
+    def _sync_panel_actions(self, *_args: object) -> None:
+        """Refleja paneles colapsados o restaurados fuera de la toolbar."""
+        chat = getattr(self.main_window, "chat", None)
+        vertical = getattr(self.main_window, "vertical_splitter", None)
+        if chat is not None and vertical is not None and self.button_toggle_chat:
+            sizes = vertical.sizes()
+            visible = not chat.isHidden() and len(sizes) > 1 and sizes[1] > 0
+            self.button_toggle_chat.setChecked(visible)
+        panel = getattr(self.main_window, "right_column_scroll", None)
+        horizontal = getattr(self.main_window, "horizontal_splitter", None)
+        if panel is not None and horizontal is not None and self.button_toggle_sidebar:
+            sizes = horizontal.sizes()
+            visible = not panel.isHidden() and len(sizes) > 1 and sizes[1] > 0
+            self.button_toggle_sidebar.setChecked(visible)
 
     def _update_panel_language(self) -> None:
         """Actualiza textos de los toggles de paneles."""
@@ -170,7 +226,7 @@ class ToolBar(ToolBarActionsMixin, ToolBarWindowMixin, QToolBar):
     def _toolbar_add_connection_group(self) -> None:
         icono_conectar = cargar_icono_toolbar("icons/conectar.png", "conectar")
         self.button_conectar = QAction(icono_conectar, _("Conectar"), self)
-        self.button_conectar.triggered.connect(self.main_window.abrir_ventana_conectar)
+        self.button_conectar.triggered.connect(self._accion_conexion)
         self.button_conectar.setToolTip(_("Conectar al servidor"))
         self.button_conectar.setStatusTip(_("Abrir ventana de conexión"))
         self.addAction(self.button_conectar)
@@ -195,9 +251,9 @@ class ToolBar(ToolBarActionsMixin, ToolBarWindowMixin, QToolBar):
         self.addAction(self.button_mover)
         self.addSeparator()
 
-        icono_tarjetas = cargar_icono_toolbar("icons/default_size.png", "tarjetas")
+        icono_tarjetas = cargar_icono_toolbar("icons/cards.svg", "tarjetas")
         self.button_tarjetas = QAction(icono_tarjetas, _("Tarjetas"), self)
-        self.button_tarjetas.setEnabled(True)
+        self.button_tarjetas.setEnabled(False)
         self.button_tarjetas.triggered.connect(self.main_window.mostrar_tarjetas)
         self.button_tarjetas.setToolTip(_("Ver mis tarjetas"))
         self.button_tarjetas.setStatusTip(_("Mostrar tarjetas asignadas al jugador"))
@@ -217,7 +273,7 @@ class ToolBar(ToolBarActionsMixin, ToolBarWindowMixin, QToolBar):
         self.addSeparator()
 
     def _toolbar_add_view_options_group(self) -> None:
-        icono_config = cargar_icono_toolbar("icons/resize.png", "configuración")
+        icono_config = cargar_icono_toolbar("icons/settings.svg", "configuración")
         self.button_configuracion = QAction(icono_config, _("Configuración"), self)
         self.button_configuracion.setEnabled(True)
         self.button_configuracion.triggered.connect(
@@ -229,9 +285,10 @@ class ToolBar(ToolBarActionsMixin, ToolBarWindowMixin, QToolBar):
         )
         self.addAction(self.button_configuracion)
 
-        icono_zoom = cargar_icono_toolbar("icons/default_size.png", "resetear zoom")
+        icono_zoom = cargar_icono_toolbar("icons/fit_map.svg", "resetear zoom")
         self.button_reset_zoom = QAction(icono_zoom, _("Ajustar Mapa"), self)
         self.button_reset_zoom.setEnabled(True)
+        self.button_reset_zoom.setShortcut(QKeySequence("Ctrl+0"))
         self.button_reset_zoom.triggered.connect(self._reset_map_zoom)
         self.button_reset_zoom.setToolTip(_("Ajustar mapa a la ventana"))
         self.button_reset_zoom.setStatusTip(
@@ -239,8 +296,8 @@ class ToolBar(ToolBarActionsMixin, ToolBarWindowMixin, QToolBar):
         )
         self.addAction(self.button_reset_zoom)
 
-        icono_panel = cargar_icono_toolbar("icons/resize.png", "paneles")
-        self.button_toggle_chat = QAction(icono_panel, _("Chat"), self)
+        icono_chat = cargar_icono_toolbar("icons/chat.svg", "chat")
+        self.button_toggle_chat = QAction(icono_chat, _("Chat"), self)
         self.button_toggle_chat.setCheckable(True)
         self.button_toggle_chat.setChecked(True)
         self.button_toggle_chat.triggered.connect(self.toggle_chat)
@@ -248,7 +305,8 @@ class ToolBar(ToolBarActionsMixin, ToolBarWindowMixin, QToolBar):
         self.button_toggle_chat.setStatusTip(_("Mostrar u ocultar el chat"))
         self.addAction(self.button_toggle_chat)
 
-        self.button_toggle_sidebar = QAction(icono_panel, _("Panel lateral"), self)
+        icono_sidebar = cargar_icono_toolbar("icons/sidebar.svg", "panel lateral")
+        self.button_toggle_sidebar = QAction(icono_sidebar, _("Panel lateral"), self)
         self.button_toggle_sidebar.setCheckable(True)
         self.button_toggle_sidebar.setChecked(True)
         self.button_toggle_sidebar.triggered.connect(self.toggle_sidebar)
@@ -262,7 +320,7 @@ class ToolBar(ToolBarActionsMixin, ToolBarWindowMixin, QToolBar):
 
     def _setup_size_menu(self) -> None:
         """Configura el menú de tamaño y su botón."""
-        size_button = create_size_button(self, self.size_menu)
+        self.size_button = create_size_button(self, self.size_menu)
 
         # Botón Pantalla Completa (toggle)
         self.button_fullscreen = QAction(self)
@@ -271,6 +329,7 @@ class ToolBar(ToolBarActionsMixin, ToolBarWindowMixin, QToolBar):
         )
         self.button_fullscreen.setIcon(icono_full)
         self.button_fullscreen.setCheckable(True)
+        self.button_fullscreen.setShortcut(QKeySequence("F11"))
         self.button_fullscreen.setText(_("Pantalla Completa"))
         self.button_fullscreen.setToolTip(_("Alternar pantalla completa"))
         self.button_fullscreen.setStatusTip(_("Entrar/salir de pantalla completa"))
@@ -280,4 +339,4 @@ class ToolBar(ToolBarActionsMixin, ToolBarWindowMixin, QToolBar):
         # Espaciador para empujar controles de tamaño a la derecha
         self._setup_spacers_right()
         # Agregar el botón al extremo derecho
-        self.addWidget(size_button)
+        self.addWidget(self.size_button)

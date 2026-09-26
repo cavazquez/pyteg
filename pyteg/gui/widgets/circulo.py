@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QBrush, QColor, QPen
+from PySide6.QtGui import QBrush, QColor, QConicalGradient, QPen
 from PySide6.QtWidgets import QGraphicsEllipseItem
 
 from pyteg.gui.widgets.unidades import Unidades
@@ -55,6 +55,23 @@ class Circulo(QGraphicsEllipseItem):
                 _LOG.warning("Color no válido: %s", color)
         except (ValueError, TypeError) as exc:
             _LOG.warning("Error al establecer el color: %s", exc)
+
+    def set_colores_compartidos(self, colores: list[QColor]) -> None:
+        """Divide el indicador entre los colores de los ocupantes."""
+        validos = [color for color in colores if color.isValid()]
+        if not validos:
+            self.set_color(QColor("#888888"))
+            return
+        if len(validos) == 1:
+            self.set_color(validos[0])
+            return
+        gradient = QConicalGradient(self.rect().center(), 90)
+        paso = 1 / len(validos)
+        for indice, color in enumerate(validos):
+            gradient.setColorAt(indice * paso, color)
+            gradient.setColorAt((indice + 1) * paso - 0.001, color)
+        gradient.setColorAt(1, validos[0])
+        self.setBrush(QBrush(gradient))
 
     def set_unidades(self, cant: int | str) -> None:
         """Establece la cantidad de unidades a mostrar.

@@ -163,36 +163,21 @@ def avisar_fase_reparto(main_window: MainWindowProtocol | Any) -> None:
 
 
 def refresh_acciones_juego(main_window: MainWindowProtocol | Any) -> None:
-    """Actualiza toolbar según turno, fase y selección."""
+    """Actualiza toolbar y contexto desde la disponibilidad compartida."""
+    from pyteg.gui.action_availability import selection_availability  # noqa: PLC0415
     from pyteg.gui.toolbar import ToolBar  # noqa: PLC0415
 
-    mi_turno = es_mi_turno(main_window)
-    acciones_combate = puede_atacar_o_mover(main_window)
+    availability = selection_availability(main_window)
+
     scene = getattr(main_window, "scene", None)
-    hay_dos_paises = False
-    if scene is not None and hasattr(scene, "selection_manager"):
-        sm = scene.selection_manager
-        hay_dos_paises = (
-            sm.get_pais_origen() is not None and sm.get_pais_destino() is not None
-        )
+    selection_manager = getattr(scene, "selection_manager", None)
+    render_selection = getattr(selection_manager, "render_selection_label", None)
+    if callable(render_selection):
+        render_selection(availability)
 
     if hasattr(main_window, "findChildren"):
         for toolbar in main_window.findChildren(ToolBar):
-            if hasattr(toolbar, "actualizar_botones_seleccion"):
-                toolbar.actualizar_botones_seleccion(
-                    hay_dos_paises_seleccionados=hay_dos_paises and acciones_combate
-                )
-            if hasattr(toolbar, "actualizar_botones_turno"):
-                toolbar.actualizar_botones_turno(
-                    es_mi_turno=mi_turno,
-                    puede_finalizar_turno=acciones_combate,
-                )
-            if hasattr(toolbar, "actualizar_motivos_acciones"):
-                toolbar.actualizar_motivos_acciones(
-                    hay_dos_paises_seleccionados=hay_dos_paises,
-                    puede_actuar=acciones_combate,
-                    es_mi_turno=mi_turno,
-                )
+            toolbar.aplicar_disponibilidad(availability)
 
     status_manager = getattr(main_window, "status_manager", None)
     update_context = getattr(status_manager, "update_gameplay_context", None)

@@ -61,7 +61,6 @@ class MainWindowProtocol(GameWindowProtocol, Protocol):
     unidades_antes_colocar: dict[str, int]
     row_widgets: dict[str, QFrame]
     value_labels: dict[str, QLabel]
-    status_temp_label: QLabel | None
     players_title_label: QLabel | None
     units_section_title_label: QLabel | None
 
@@ -104,6 +103,10 @@ class MainWindowProtocol(GameWindowProtocol, Protocol):
 
     def setWindowTitle(self, title: str) -> None:  # noqa: N802
         """Establece el título de la ventana (heredado de QWidget)."""
+        ...
+
+    def width(self) -> int:
+        """Devuelve el ancho actual de la ventana."""
         ...
 
     def setCentralWidget(self, widget: QWidget) -> None:  # noqa: N802

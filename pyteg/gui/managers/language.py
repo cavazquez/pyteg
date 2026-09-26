@@ -48,35 +48,8 @@ class LanguageManager:
             map_title() if callable(map_title) else _("PyTeg")
         )
 
-        # Actualizar etiquetas de la barra de estado
-        self.main_window.mi_jugador_text.setText(_("Mi jugador:"))
-
-        # Actualizar estados si están en valores por defecto
-        if self.main_window.estado_label.text() in {
-            "Estado: Esperando jugadores",
-            "Estado: Waiting for players",
-        }:
-            self.main_window.estado_label.setText(_("Estado: Esperando jugadores"))
-
-        if self.main_window.turno_label.text() in {
-            "Esperando turno",
-            "Waiting for turn",
-        }:
-            self.main_window.turno_label.setText(_("Esperando turno"))
-
-        # Refrescar el label de selección desde la fuente de verdad
-        # (CountrySelectionManager) en vez de comparar cadenas literales.
-        scene = getattr(self.main_window, "scene", None)
-        selection_manager = getattr(scene, "selection_manager", None)
-        if selection_manager is not None and hasattr(
-            selection_manager, "refresh_labels"
-        ):
-            selection_manager.refresh_labels()
-
-        # Actualizar la toolbar
-        if self.main_window.toolbar is not None:
-            self.main_window.toolbar.update_language(lang_code)
-        self._refresh_gameplay_actions()
+        self._refresh_status_and_controls(lang_code)
+        self._refresh_selection_and_toolbar(lang_code)
 
         players_title = getattr(self.main_window, "players_title_label", None)
         if players_title is not None:
@@ -107,6 +80,38 @@ class LanguageManager:
         # su propio estado
 
         _LOG.debug("GUI actualizada al idioma: %s", lang_code)
+
+    def _refresh_status_and_controls(self, lang_code: str) -> None:
+        """Reconstruye las etiquetas de estado y controles persistentes."""
+        status_manager = getattr(self.main_window, "status_manager", None)
+        refresh_status = getattr(status_manager, "refresh_language", None)
+        if callable(refresh_status):
+            refresh_status()
+        else:
+            # Compatibilidad con hosts mínimos que no montan StatusManager.
+            self.main_window.mi_jugador_text.setText(_("Mi jugador:"))
+
+        for name in ("language_selector", "sound_control"):
+            widget = getattr(self.main_window, name, None)
+            update_language = getattr(widget, "update_language", None)
+            if callable(update_language):
+                update_language(lang_code)
+
+    def _refresh_selection_and_toolbar(self, lang_code: str) -> None:
+        """Reaplica textos de selección y acciones tras el cambio de idioma."""
+        # Refrescar el label de selección desde la fuente de verdad
+        # (CountrySelectionManager) en vez de comparar cadenas literales.
+        scene = getattr(self.main_window, "scene", None)
+        selection_manager = getattr(scene, "selection_manager", None)
+        if selection_manager is not None and hasattr(
+            selection_manager, "refresh_labels"
+        ):
+            selection_manager.refresh_labels()
+
+        # Actualizar la toolbar
+        if self.main_window.toolbar is not None:
+            self.main_window.toolbar.update_language(lang_code)
+        self._refresh_gameplay_actions()
 
     def _refresh_gameplay_actions(self) -> None:
         """Reaplica textos dinámicos de la fase después de cambiar idioma."""

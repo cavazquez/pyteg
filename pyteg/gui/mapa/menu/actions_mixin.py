@@ -59,6 +59,5 @@ class MenuActionsMixin:
         if selection_manager and hasattr(self.main_window, "lanzar_misil"):
             origen = selection_manager.get_pais_origen()
             destino = selection_manager.get_pais_destino()
-            if origen and destino:
-                self.main_window.lanzar_misil(origen, destino)
-            selection_manager.cancelar_seleccion()
+            if origen and destino and self.main_window.lanzar_misil(origen, destino):
+                selection_manager.cancelar_seleccion()

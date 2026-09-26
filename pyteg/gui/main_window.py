@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, cast
 
-from PySide6.QtCore import QSize
+from PySide6.QtCore import QEvent, QSize
 from PySide6.QtWidgets import QMainWindow, QWidget
 
 from pyteg.client.colores.paleta import Colores
@@ -22,17 +22,20 @@ from pyteg.gui.managers.theme import ThemeManager
 from pyteg.gui.managers.units import UnitsManager
 from pyteg.gui.managers.window import WindowManager
 from pyteg.gui.status_bar import build_status_bar
+from pyteg.gui.status_bar.builder import update_status_bar_layout
 from pyteg.i18n import translate as _
 from pyteg.sound_manager import SoundManager
 
 if TYPE_CHECKING:
-    from PySide6.QtGui import QResizeEvent
+    from PySide6.QtGui import QResizeEvent, QStatusTipEvent
     from PySide6.QtWidgets import (
+        QFrame,
         QHBoxLayout,
         QLabel,
         QScrollArea,
         QSplitter,
         QStatusBar,
+        QToolButton,
     )
 
     from pyteg.client.app import Client
@@ -53,6 +56,9 @@ class Gui(QMainWindow, MainWindowDelegatesMixin):
     """Ventana principal de la interfaz gráfica del juego."""
 
     status_bar: QStatusBar
+    status_bar_sections: dict[str, tuple[QWidget, QFrame | None]]
+    status_message_label: QLabel
+    status_details_button: QToolButton
     jugador_actual_widget: QWidget
     jugador_actual_layout: QHBoxLayout
     turno_label: QLabel
@@ -84,7 +90,6 @@ class Gui(QMainWindow, MainWindowDelegatesMixin):
 
     row_widgets: dict[str, object]
     last_units: dict[str, object]
-    status_temp_label: object
 
     def __init__(self, client: Client, *, map_theme: str = DEFAULT_MAP_THEME) -> None:
         """Inicializa la ventana principal de la GUI.
@@ -127,7 +132,6 @@ class Gui(QMainWindow, MainWindowDelegatesMixin):
         self.client_command_results: dict[str, dict[str, object]] = {}
         self.row_widgets: dict[str, object] = {}
         self.last_units: dict[str, object] = {}
-        self.status_temp_label: object = None
         self.players_title_label: object = None
         self.units_section_title_label: object = None
 
@@ -155,6 +159,22 @@ class Gui(QMainWindow, MainWindowDelegatesMixin):
         self.layout_manager.update_responsive_layout(self.width(), self.height())
         if self.toolbar is not None:
             self.toolbar.update_responsive_layout(self.width())
+        if hasattr(self, "status_bar_sections"):
+            update_status_bar_layout(self, self.width())
+
+    def event(self, event: QEvent) -> bool:
+        """Envía ayudas de acciones al canal de menor prioridad del estado.
+
+        Returns:
+            ``True`` si se procesó la ayuda; si no, el resultado de Qt.
+
+        """
+        if event.type() == QEvent.Type.StatusTip and hasattr(
+            self, "status_message_label"
+        ):
+            self.status_manager.update_status_tip(cast("QStatusTipEvent", event).tip())
+            return True
+        return super().event(event)
 
     def _gui_init_turn_tracking(self) -> None:
         self.turno_actual: int = 0
@@ -225,8 +245,7 @@ class Gui(QMainWindow, MainWindowDelegatesMixin):
             self._gui_init_turn_tracking()
             self.players_manager.current_player_name = None
             self.players_manager.update_player_list([])
-            self.turno_label.setText(_("Turno: 0"))
-            self.timer_label.setText("")
+            self.status_manager.update_timer_display("")
             self.update_game_state("Desconectado")
             self.status_manager.update_mi_jugador_info()
         new_scene.selection_manager.refresh_labels()

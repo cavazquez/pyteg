@@ -20,6 +20,7 @@ from pyteg.gui.mapa.army_position import resolve_army_position
 from pyteg.gui.mapa.pais_battle_fx_mixin import PaisBattleFxMixin
 from pyteg.gui.mapa.pais_selection_mixin import PaisSelectionMixin
 from pyteg.gui.widgets.circulo import Circulo
+from pyteg.i18n import translate as _
 
 if TYPE_CHECKING:
     from PySide6.QtCore import QPropertyAnimation, QTimer
@@ -63,6 +64,7 @@ class Pais(PaisBattleFxMixin, PaisSelectionMixin, QGraphicsPixmapItem):
         self._misiles_badge: QGraphicsRectItem | None = None
         self._misiles_text: QGraphicsTextItem | None = None
         self._cantidad_misiles = 0
+        self._ocupantes_texto: str | None = None
 
         self._opacity_animation: QPropertyAnimation | None = None
         self._movimiento_timer: QTimer | None = None
@@ -156,13 +158,33 @@ class Pais(PaisBattleFxMixin, PaisSelectionMixin, QGraphicsPixmapItem):
     def _actualizar_tooltip(self) -> None:
         """Mantiene nombre, continente, unidades y misiles en el tooltip."""
         tooltip = (
-            f"País: {self._nombre}\n"
-            f"Continente: {self._continente}\n"
-            f"Unidades: {self.get_unidades()}"
+            _("País: {}").format(self._nombre)
+            + "\n"
+            + _("Continente: {}").format(self._continente)
+            + "\n"
+            + _("Unidades: {}").format(self.get_unidades())
         )
         if self._cantidad_misiles > 0:
-            tooltip += f"\nMisiles: {self._cantidad_misiles}"
+            tooltip += "\n" + _("Misiles: {}").format(self._cantidad_misiles)
+        if self._ocupantes_texto:
+            tooltip += "\n" + _("Compartido: {}").format(self._ocupantes_texto)
         self.setToolTip(tooltip)
+
+    def actualizar_ocupantes(
+        self, ocupantes: list[tuple[str, int, QColor]] | None
+    ) -> None:
+        """Actualiza la señal visual y el detalle de un país compartido."""
+        if ocupantes is None:
+            self._ocupantes_texto = None
+        else:
+            self._ocupantes_texto = ", ".join(
+                f"{nombre} ({unidades})" for nombre, unidades, _ in ocupantes
+            )
+            if self._circle:
+                self._circle.set_colores_compartidos([
+                    color for _, _, color in ocupantes
+                ])
+        self._actualizar_tooltip()
 
     def cargar_circulo(self) -> None:
         """Carga y posiciona el círculo que muestra las unidades."""

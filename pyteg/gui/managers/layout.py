@@ -46,6 +46,8 @@ class LayoutManager:
 
         """
         self.main_window = main_window
+        self._chat_size_initialized = False
+        self._sidebar_size_initialized = False
 
     def setup_graphics_view(self) -> None:
         """Configurar la vista gráfica principal."""
@@ -247,23 +249,34 @@ class LayoutManager:
         self.main_window.setCentralWidget(self.main_window.main_widget)
 
     def update_responsive_layout(self, width: int, height: int) -> None:
-        """Reserva espacio útil al mapa en resoluciones pequeñas.
+        """Da tamaños compactos iniciales y luego respeta el ajuste del usuario.
 
-        El usuario conserva control de los dos paneles mediante la toolbar;
-        este ajuste solo evita que el chat o el panel lateral ocupen una
-        proporción desmedida durante un cambio de resolución.
+        Qt conserva los tamaños de los splitters al redimensionar la ventana.
+        Reaplicar proporciones en cada ``resizeEvent`` desharía los cambios que
+        el usuario haya hecho con sus divisores.
         """
         vertical = getattr(self.main_window, "vertical_splitter", None)
-        if vertical is not None and vertical.isVisible() and height > 0:
+        if (
+            not self._chat_size_initialized
+            and vertical is not None
+            and vertical.isVisible()
+            and height > 0
+        ):
             sizes = vertical.sizes()
-            if len(sizes) == _SPLITTER_PARTS and vertical.widget(1).isVisible():
-                chat_size = min(160, max(72, round(height * 0.18)))
-                vertical.setSizes([max(1, height - chat_size), chat_size])
+            chat_colapsado = (
+                len(sizes) == _SPLITTER_PARTS and sizes[0] > 0 and sizes[1] == 0
+            )
+            if len(sizes) == _SPLITTER_PARTS:
+                if vertical.widget(1).isVisible() and not chat_colapsado:
+                    chat_size = min(160, max(72, round(height * 0.18)))
+                    vertical.setSizes([max(1, height - chat_size), chat_size])
+                self._chat_size_initialized = True
 
         horizontal = getattr(self.main_window, "horizontal_splitter", None)
         sidebar = getattr(self.main_window, "right_column_scroll", None)
         if (
-            horizontal is None
+            self._sidebar_size_initialized
+            or horizontal is None
             or sidebar is None
             or not sidebar.isVisible()
             or width <= 0
@@ -272,5 +285,7 @@ class LayoutManager:
         sizes = horizontal.sizes()
         if len(sizes) != _SPLITTER_PARTS:
             return
-        sidebar_size = min(300, max(220, round(width * 0.22)))
-        horizontal.setSizes([max(1, width - sidebar_size), sidebar_size])
+        if not (sizes[0] > 0 and sizes[1] == 0):
+            sidebar_size = min(300, max(220, round(width * 0.22)))
+            horizontal.setSizes([max(1, width - sidebar_size), sidebar_size])
+        self._sidebar_size_initialized = True

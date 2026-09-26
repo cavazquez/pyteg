@@ -39,6 +39,18 @@ msgstr "Close"
 msgid "Conectar"
 msgstr "Connect"
 
+msgid "Desconectar"
+msgstr "Disconnect"
+
+msgid "Desconectar del servidor"
+msgstr "Disconnect from server"
+
+msgid "Salir de la conexión actual"
+msgstr "Leave the current connection"
+
+msgid "¿Querés desconectarte de la partida actual?"
+msgstr "Do you want to disconnect from the current game?"
+
 msgid "Atacar"
 msgstr "Attack"
 
@@ -312,6 +324,15 @@ msgstr "Default size"
 
 msgid "Cambiar tamaño de la ventana"
 msgstr "Change window size"
+
+msgid "Ajustar o elegir tamaño de ventana"
+msgstr "Fit or choose window size"
+
+msgid "Ver mis tarjetas"
+msgstr "View my cards"
+
+msgid "Mostrar tarjetas asignadas al jugador"
+msgstr "Show the player's cards"
 
 msgid "Atacando desde {} hacia {}"
 msgstr "Attacking from {} to {}"
@@ -647,3 +668,218 @@ msgstr "Reinforcements for controlling {}"
 
 msgid "{}: {}"
 msgstr "{}: {}"
+
+msgid "Esperá a que comience la partida"
+msgstr "Wait for the game to start"
+
+msgid "Colocá todas las unidades antes de continuar"
+msgstr "Place all units before continuing"
+
+msgid "Esta acción requiere la fase de acciones"
+msgstr "This action requires the action phase"
+
+msgid "Esta acción requiere la fase de colocación"
+msgstr "This action requires the placement phase"
+
+msgid "Seleccioná un país"
+msgstr "Select a country"
+
+msgid "El origen debe ser un país propio"
+msgstr "The origin must be a country you own"
+
+msgid "Este país no te pertenece"
+msgstr "You do not own this country"
+
+msgid "Sólo podés atacar un país enemigo"
+msgstr "You can only attack an enemy country"
+
+msgid "Sólo podés mover a un país propio"
+msgstr "You can only move to a country you own"
+
+msgid "Sólo podés lanzar un misil a un país enemigo"
+msgstr "You can only launch a missile at an enemy country"
+
+msgid "Los países no son adyacentes"
+msgstr "The countries are not adjacent"
+
+msgid "El origen debe conservar al menos una unidad"
+msgstr "The origin must keep at least one unit"
+
+msgid "El origen no tiene misiles"
+msgstr "The origin has no missiles"
+
+msgid "Los misiles están desactivados"
+msgstr "Missiles are disabled"
+
+msgid "Se necesitan al menos {} unidades para canjear un misil"
+msgstr "At least {} units are needed to exchange for a missile"
+
+msgid "Podés atacar a partir de la ronda {}"
+msgstr "You can attack starting in round {}"
+
+msgid "Tu color está en descanso: no podés atacar ni mover"
+msgstr "Your color is resting: you cannot attack or move"
+
+msgid "Fronteras abiertas: sólo podés atacar entre continentes"
+msgstr "Open borders: you can only attack across continents"
+
+msgid "Fronteras cerradas: sólo podés atacar dentro del continente"
+msgstr "Closed borders: you can only attack within a continent"
+
+msgid "Este país está bloqueado para recibir refuerzos"
+msgstr "This country is blocked from receiving reinforcements"
+
+msgid "Canjear Misil"
+msgstr "Exchange Missile"
+
+msgid "Elegir defensor"
+msgstr "Choose defender"
+
+msgid "Ocupante objetivo en {}"
+msgstr "Target occupant in {}"
+
+msgid "Un pacto público impide atacar ese objetivo"
+msgstr "A public pact prevents attacking that target"
+
+msgid "No se puede lanzar un misil a un país compartido"
+msgstr "A missile cannot target a shared country"
+
+msgid "Compartido: {}"
+msgstr "Shared: {}"
+
+msgid "País: {}"
+msgstr "Country: {}"
+
+msgid "Continente: {}"
+msgstr "Continent: {}"
+
+msgid "Unidades: {}"
+msgstr "Units: {}"
+
+msgid "Misiles: {}"
+msgstr "Missiles: {}"
+
+msgid "Vol:"
+msgstr "Vol:"
+
+msgid "Misil: {} → {} (-{} unidades)"
+msgstr "Missile: {} → {} (-{} units)"
+
+msgid "{} ahora tiene {} {}"
+msgstr "{} now has {} {}"
+
+msgid "🚀 {} lanzó un misil desde {} hacia {} (distancia: {}). Daño: {} unidades. Unidades restantes: {}"
+msgstr "🚀 {} launched a missile from {} to {} (distance: {}). Damage: {} units. Units remaining: {}"
+
+msgid " · Situación: {}"
+msgstr " · Situation: {}"
+
+msgid "Clásico"
+msgstr "Classic"
+
+msgid "Desconectá la partida antes de cambiar de mapa"
+msgstr "Disconnect from the game before changing maps"
+
+msgid "PyTeg"
+msgstr "PyTeg"
+
+msgid "Revancha"
+msgstr "Revancha"
+
+msgid "Seleccioná un mapa válido"
+msgstr "Select a valid map"
+
+msgid "Canjeando misil en {}…"
+msgstr "Exchanging for a missile in {}…"
+
+msgid "Mi jugador:"
+msgstr "My player:"
+
+msgid "Conectado"
+msgstr "Connected"
+
+msgid "Esperando Jugadores"
+msgstr "Waiting for players"
+
+msgid "Esperando turno"
+msgstr "Waiting for turn"
+
+msgid "Finalizado"
+msgstr "Finished"
+
+msgid "Inicial"
+msgstr "Initial"
+
+msgid "Acciones en {}"
+msgstr "Actions in {}"
+
+msgid "Canjear unidades por un misil en este país"
+msgstr "Exchange units for a missile in this country"
+
+msgid "Lanzar misil al país seleccionado"
+msgstr "Launch missile at the selected country"
+
+msgid "Países seleccionados"
+msgstr "Selected countries"
+
+msgid " | Países superpuestos: {}"
+msgstr " | Overlapping countries: {}"
+
+msgid "Bajo cursor: {}"
+msgstr "Under cursor: {}"
+
+msgid "Conexión jugable: {origen} ↔ {destino}"
+msgstr "Playable connection: {origen} ↔ {destino}"
+
+msgid "Coordenadas: ({}, {}) — sin país"
+msgstr "Coordinates: ({}, {}) — no country"
+
+msgid "País: {pais} | Continente: {continente} | Unidades: {unidades}{extra}"
+msgstr "Country: {pais} | Continent: {continente} | Units: {unidades}{extra}"
+
+msgid "Países bajo cursor"
+msgstr "Countries under cursor"
+
+msgid "Clic derecho: {}"
+msgstr "Right-click: {}"
+
+msgid "Dorado: conexiones jugables"
+msgstr "Gold: playable connections"
+
+msgid "Origen: {} | Destino: {}"
+msgstr "Origin: {} | Destination: {}"
+
+msgid "Contexto de la partida"
+msgstr "Game context"
+
+msgid "Fase, jugador activo y refuerzos pendientes"
+msgstr "Phase, active player and pending reinforcements"
+
+msgid "Ajustar Mapa"
+msgstr "Fit Map"
+
+msgid "Ajustar mapa a la ventana"
+msgstr "Fit map to window"
+
+msgid "Resetear zoom y ajustar mapa al tamaño de la ventana"
+msgstr "Reset zoom and fit map to window"
+
+msgid "Tarjetas"
+msgstr "Cards"
+
+msgid "Mapa ajustado al tamaño de la ventana"
+msgstr "Map fit to window"
+
+msgid "Idioma:"
+msgstr "Language:"
+
+msgid "Ajustar volumen"
+msgstr "Adjust volume"
+
+msgid "Silenciar/Activar sonidos"
+msgstr "Mute/enable sound"
+
+msgid "misil"
+msgid_plural "misiles"
+msgstr[0] "missile"
+msgstr[1] "missiles"

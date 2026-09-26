@@ -92,7 +92,6 @@ class QCustomGraphicsScene(QGraphicsScene):
                 msg = _("Coordenadas: ({}, {}) — sin país").format(
                     scene_pos.x(), scene_pos.y()
                 )
-            self.main_window.update_status_bar(msg)
         else:
             paises_bajo_cursor = [
                 item for item in self.items(scene_pos) if isinstance(item, Pais)
@@ -116,6 +115,11 @@ class QCustomGraphicsScene(QGraphicsScene):
                 )
             else:
                 msg = _("Coordenadas: ({}, {})").format(scene_pos.x(), scene_pos.y())
+        status_manager = getattr(self.main_window, "status_manager", None)
+        update_hover = getattr(status_manager, "update_hover", None)
+        if callable(update_hover):
+            update_hover(msg)
+        else:
             self.main_window.update_status_bar(msg)
         # Llamar al evento original
         super().mouseMoveEvent(event)
@@ -172,7 +176,10 @@ class QCustomGraphicsScene(QGraphicsScene):
                 )
             )
         global_pos = screen_pos if screen_pos is not None else QCursor.pos()
-        menu.exec(global_pos)
+        try:
+            menu.exec(global_pos)
+        finally:
+            menu.deleteLater()
         return True
 
     def _handle_country_click(self, scene_pos: QPointF, screen_pos: QPoint) -> bool:
@@ -186,37 +193,72 @@ class QCustomGraphicsScene(QGraphicsScene):
 
         """
         selection_manager = self.selection_manager
-        if (
+        seleccion_completa = (
             selection_manager.get_pais_origen() is not None
             and selection_manager.get_pais_destino() is not None
-        ):
+        )
+        pos = event.scenePos()
+        paises_bajo_cursor = [
+            nombre
+            for nombre in paises_en_punto(
+                self._ensure_bounds_cache(), float(pos.x()), float(pos.y())
+            )
+            if nombre in self.paises
+        ]
+
+        menu: QMenu
+        if seleccion_completa:
+            pais = paises_bajo_cursor[0] if len(paises_bajo_cursor) == 1 else None
+            continente = self.paises[pais].continente() if pais is not None else None
             menu = Menu(
-                None,
-                None,
+                pais,
+                continente,
                 self.main_window,
                 parent=self.main_window,
                 solo_seleccion=True,
             )
-            menu.exec_(event.screenPos())
-            event.accept()
+            if len(paises_bajo_cursor) > 1:
+                menu.addSeparator()
+                paises_menu = menu.addMenu(_("Países bajo cursor"))
+                self._agregar_submenus_paises(
+                    paises_menu, paises_bajo_cursor, solo_pais=True
+                )
+        elif len(paises_bajo_cursor) == 1:
+            pais = paises_bajo_cursor[0]
+            # Pasar explícitamente la ventana principal como padre para Wayland.
+            menu = Menu(
+                pais,
+                self.paises[pais].continente(),
+                self.main_window,
+                parent=self.main_window,
+            )
+        elif paises_bajo_cursor:
+            menu = QMenu(_("Seleccionar país"), self.main_window)
+            self._agregar_submenus_paises(menu, paises_bajo_cursor)
+        else:
+            event.ignore()
             return
 
-        items = self.items(event.scenePos())
-        for item in items:
-            if isinstance(item, Pais):
-                pais = item.nombre()
-                # Pasar explícitamente la ventana principal como padre para Wayland
-                menu = Menu(
-                    pais,
-                    item.continente(),
-                    self.main_window,
-                    parent=self.main_window,
-                )
-                menu.exec_(event.screenPos())
-                event.accept()
-                return
+        try:
+            menu.exec_(event.screenPos())
+        finally:
+            menu.deleteLater()
+        event.accept()
 
-        event.ignore()
+    def _agregar_submenus_paises(
+        self, menu: QMenu, nombres: list[str], *, solo_pais: bool = False
+    ) -> None:
+        """Ofrece las acciones de cada país en el mismo orden del clic izquierdo."""
+        for nombre in nombres:
+            pais_menu = Menu(
+                nombre,
+                self.paises[nombre].continente(),
+                self.main_window,
+                parent=menu,
+                solo_pais=solo_pais,
+            )
+            pais_menu.setTitle(nombre)
+            menu.addMenu(pais_menu)
 
     def load_map_data(self, theme: str = DEFAULT_MAP_THEME) -> None:
         """Carga los datos del mapa desde archivos TOML y crea los widgets de países."""

@@ -149,6 +149,7 @@ class TurnoTimer(threading.Thread):
                     not self._stop_event.is_set()
                     and self._server.turno_snapshot() == snapshot
                 ):
+                    self._broadcast_tiempo(userid_turno, 0)
                     LOGGER.info("Tiempo agotado para jugador %s", userid_turno)
                     self._server.encolar_vencimiento_turno(generation)
 

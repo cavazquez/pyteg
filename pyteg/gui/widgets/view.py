@@ -121,6 +121,10 @@ class QCustomGraphicsView(QGraphicsView):
             event: Evento de salida del mouse.
 
         """
-        # Limpiar la barra de estado cuando el mouse salga de la vista
-        self.main_window.clear_status_bar()
+        status_manager = getattr(self.main_window, "status_manager", None)
+        clear_hover = getattr(status_manager, "clear_hover", None)
+        if callable(clear_hover):
+            clear_hover()
+        else:
+            self.main_window.clear_status_bar()
         super().leaveEvent(event)

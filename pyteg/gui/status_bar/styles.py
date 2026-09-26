@@ -8,9 +8,6 @@ from __future__ import annotations
 LABEL_BOLD_STYLE = "font-weight: 600;"
 """Negrita ligera para etiquetas de turno y nombre del jugador."""
 
-LABEL_MUTED_STYLE = "color: #555;"
-"""Tono apagado para textos secundarios (`Mi jugador:` etc.)."""
-
 MI_COLOR_INDICATOR_DEFAULT_STYLE = """
     background-color: #cccccc;
     border: 1px solid #999999;
@@ -20,9 +17,3 @@ MI_COLOR_INDICATOR_DEFAULT_STYLE = """
 
 TIMER_LABEL_STYLE = "font-weight: bold; padding: 2px 8px;"
 """Estilo del temporizador alojado en la barra de estado."""
-
-GAMEPLAY_CONTEXT_STYLE = (
-    "font-weight: 600; padding: 2px 8px; color: #17324d; "
-    "background-color: #e8f1fb; border: 1px solid #b6cde5; border-radius: 3px;"
-)
-"""Contexto visible de fase, jugador activo y refuerzos pendientes."""

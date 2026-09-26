@@ -74,13 +74,6 @@ VALID_UNIT_TYPES = {"infanteria"}
 FIRST_TURNS_NO_ATTACK = 2
 """Cantidad de turnos iniciales donde no se puede atacar."""
 
-# Umbrales de tiempo para colores del timer
-TIMER_COLOR_GREEN_THRESHOLD = 20
-"""Segundos mínimos para mostrar el timer en verde."""
-
-TIMER_COLOR_ORANGE_THRESHOLD = 10
-"""Segundos mínimos para mostrar el timer en naranja."""
-
 # Configuración de tarjetas
 MAX_CARDS_BEFORE_FORCE_EXCHANGE = 5
 """Máximo de tarjetas que un jugador puede tener antes de forzar un canje."""
