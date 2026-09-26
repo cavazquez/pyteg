@@ -147,13 +147,19 @@ class ServerMessageBroadcaster:
             {"ganador_id": ganador_id, "ganador_nombre": ganador_nombre},
         )
 
-    def enviar_configuracion_partida(
+    def enviar_configuracion_partida(  # noqa: PLR0913
         self,
         segundos_por_turno: int,
         paises_para_victoria: int,
         *,
         objetivos_secretos: bool = False,
         misiles_habilitados: bool = False,
+        rules_profile: str | None = None,
+        objective_ids: list[str] | None = None,
+        situations_enabled: bool | None = None,
+        situation_effects: list[str] | None = None,
+        situation_card_ids: list[str] | None = None,
+        rule_modules: dict[str, bool] | None = None,
     ) -> None:
         """Envía la configuración de la partida a todos los clientes.
 
@@ -162,25 +168,68 @@ class ServerMessageBroadcaster:
             paises_para_victoria: Países necesarios para ganar.
             objetivos_secretos: Si los objetivos secretos están activados.
             misiles_habilitados: Si los misiles están habilitados.
+            rules_profile: Perfil de reglas elegido para la partida.
+            objective_ids: IDs de objetivos secretos habilitados.
+            situations_enabled: Si se usan cartas de situación.
+            situation_effects: Efectos de situación habilitados.
+            situation_card_ids: Cartas individuales seleccionadas.
+            rule_modules: Módulos de reglas habilitados por nombre.
 
         """
         for client in self._dame_clientes():
-            client.transmisor.enviar_configuracion_partida(
-                segundos_por_turno,
-                paises_para_victoria,
-                objetivos_secretos=objetivos_secretos,
-                misiles_habilitados=misiles_habilitados,
-            )
+            if all(
+                value is None
+                for value in (
+                    rules_profile,
+                    objective_ids,
+                    situations_enabled,
+                    situation_effects,
+                    situation_card_ids,
+                    rule_modules,
+                )
+            ):
+                client.transmisor.enviar_configuracion_partida(
+                    segundos_por_turno,
+                    paises_para_victoria,
+                    objetivos_secretos=objetivos_secretos,
+                    misiles_habilitados=misiles_habilitados,
+                )
+            else:
+                client.transmisor.enviar_configuracion_partida(
+                    segundos_por_turno,
+                    paises_para_victoria,
+                    objetivos_secretos=objetivos_secretos,
+                    misiles_habilitados=misiles_habilitados,
+                    rules_profile=rules_profile,
+                    objective_ids=objective_ids,
+                    situations_enabled=situations_enabled,
+                    situation_effects=situation_effects,
+                    situation_card_ids=situation_card_ids,
+                    rule_modules=rule_modules,
+                )
 
         # Publicar evento en MessageBus
+        event_data: dict[str, Any] = {
+            "segundos_por_turno": segundos_por_turno,
+            "paises_para_victoria": paises_para_victoria,
+            "objetivos_secretos": objetivos_secretos,
+            "misiles_habilitados": misiles_habilitados,
+        }
+        if rules_profile is not None:
+            event_data["rules_profile"] = rules_profile
+        if objective_ids is not None:
+            event_data["objective_ids"] = list(objective_ids)
+        if situations_enabled is not None:
+            event_data["situations_enabled"] = situations_enabled
+        if situation_effects is not None:
+            event_data["situation_effects"] = list(situation_effects)
+        if situation_card_ids is not None:
+            event_data["situation_card_ids"] = list(situation_card_ids)
+        if rule_modules is not None:
+            event_data["rule_modules"] = dict(rule_modules)
         get_message_bus().publish(
             EVENT_CONFIGURACION_PARTIDA,
-            {
-                "segundos_por_turno": segundos_por_turno,
-                "paises_para_victoria": paises_para_victoria,
-                "objetivos_secretos": objetivos_secretos,
-                "misiles_habilitados": misiles_habilitados,
-            },
+            event_data,
         )
 
     def enviar_resultado_batalla(self, resultado_data: BattleResultPayload) -> None:

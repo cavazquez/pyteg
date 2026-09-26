@@ -33,8 +33,7 @@ class ClientTaskEstado(IClientTask[EstadoTaskData]):
 
         if self._msg == "EsperarJugadores":
             main_window.partida_finalizada = False
-            CLIENT_TASKS_LOG.debug("Mostrando ventana de espera de jugadores")
-            main_window.ventana_esperar_jugadores()
+            self._enter_waiting_room(main_window)
         elif self._msg == "JUGANDO":
             main_window.partida_finalizada = False
             CLIENT_TASKS_LOG.debug("Cambiando a estado JUGANDO")
@@ -60,6 +59,7 @@ class ClientTaskEstado(IClientTask[EstadoTaskData]):
                 )
 
             main_window.update()
+
         elif self._msg == "Finalizado":
             main_window.partida_finalizada = True
             main_window.update_timer_display("")
@@ -73,6 +73,21 @@ class ClientTaskEstado(IClientTask[EstadoTaskData]):
                 scene.selection_manager.cancelar_seleccion()
 
             main_window.update()
+
+    def _enter_waiting_room(self, main_window: GameWindowProtocol) -> None:
+        """Abre la sala sólo tras aceptar la configuración del administrador."""
+        current_window = main_window.w
+        if current_window is not None and getattr(
+            current_window, "is_admin_configuration", False
+        ):
+            if not getattr(current_window, "start_pending", False):
+                return
+            current_window.close()
+            main_window.w = None
+        elif getattr(current_window, "is_waiting_room", False):
+            return
+        CLIENT_TASKS_LOG.debug("Mostrando ventana de espera de jugadores")
+        main_window.ventana_esperar_jugadores()
 
     def actualizar_lista_jugadores(self, main_window: GameWindowProtocol) -> None:
         """Actualiza la lista de jugadores en la interfaz de usuario."""

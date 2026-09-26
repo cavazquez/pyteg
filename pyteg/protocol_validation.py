@@ -182,6 +182,13 @@ def _is_string_list(value: object) -> bool:
     return isinstance(value, list) and all(_is_nonempty_string(item) for item in value)
 
 
+def _is_boolean_map(value: object) -> bool:
+    return isinstance(value, dict) and all(
+        _is_nonempty_string(name) and _is_boolean(enabled)
+        for name, enabled in value.items()
+    )
+
+
 def _is_snapshot_players(value: object) -> bool:  # noqa: PLR0911
     if not isinstance(value, list):
         return False
@@ -256,6 +263,11 @@ def _is_snapshot_configuration(value: object) -> bool:
         and _integer_in_range(0)(value["paises_para_victoria"])
         and _is_boolean(value["objetivos_secretos"])
         and _is_boolean(value["misiles_habilitados"])
+        and (
+            "situation_card_ids" not in value
+            or _is_string_list(value["situation_card_ids"])
+        )
+        and ("rule_modules" not in value or _is_boolean_map(value["rule_modules"]))
     )
 
 
@@ -281,7 +293,13 @@ _SERVER_COMMAND_SCHEMAS: dict[str, _MessageSchema] = {
             "segundos": _POSITIVE_INTEGER,
             "paises_para_victoria": _NONNEGATIVE_INTEGER,
             "objetivos_secretos": _is_boolean,
+            "objective_ids": _is_string_list,
             "misiles_habilitados": _is_boolean,
+            "rules_profile": _is_nonempty_string,
+            "situations_enabled": _is_boolean,
+            "situation_effects": _is_string_list,
+            "situation_card_ids": _is_string_list,
+            "rule_modules": _is_boolean_map,
         },
     ),
     "empezar_partida": _MessageSchema({}, {}),
@@ -473,7 +491,14 @@ _CLIENT_EVENT_SCHEMAS: dict[str, _MessageSchema] = {
             "objetivos_secretos": _is_boolean,
             "misiles_habilitados": _is_boolean,
         },
-        {},
+        {
+            "rules_profile": _is_nonempty_string,
+            "objective_ids": _is_string_list,
+            "situations_enabled": _is_boolean,
+            "situation_effects": _is_string_list,
+            "situation_card_ids": _is_string_list,
+            "rule_modules": _is_boolean_map,
+        },
     ),
     "tarjetas_jugador": _MessageSchema(
         {"tarjetas": _is_card_collection},

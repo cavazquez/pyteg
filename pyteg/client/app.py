@@ -70,4 +70,8 @@ class Client:
 
     def ahora_es_admin(self) -> None:
         """Marca al cliente como administrador."""
-        self._es_admin = True
+        self.asignar_admin(enabled=True)
+
+    def asignar_admin(self, *, enabled: bool) -> None:
+        """Sincroniza la autoridad local con el snapshot del servidor."""
+        self._es_admin = enabled

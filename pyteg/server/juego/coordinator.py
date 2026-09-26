@@ -11,6 +11,8 @@ from typing import TYPE_CHECKING, Any, cast
 from pyteg.config import DEFAULT_TURN_SECONDS, VICTORY_ALL_COUNTRIES
 from pyteg.core.situaciones.catalog import (
     DEFAULT_SITUATION_RULESET,
+    available_situation_cards,
+    available_situation_effects,
     available_situation_rulesets,
     build_situation_deck,
 )
@@ -81,6 +83,12 @@ class ServerGameCoordinator:
             msg = f"Ruleset de situaciones desconocido: {situation_ruleset}"
             raise ValueError(msg)
         self._situation_ruleset = normalized_situation_ruleset
+        self._situation_effects = tuple(
+            effect_id for effect_id, _name in available_situation_effects()
+        )
+        # None usa todas las cartas de los efectos seleccionados. Una tupla
+        # explícita conserva la elección individual aun con el mazo apagado.
+        self._situation_card_ids: tuple[str, ...] | None = None
         self._situation_rng = situation_rng
         self._rules = rules
 
@@ -133,6 +141,10 @@ class ServerGameCoordinator:
         """
         self._objetivos_secretos_activados = activados
 
+    def set_objective_ids(self, ids: list[str] | None) -> None:
+        """Selecciona los objetivos privados que pueden repartirse."""
+        self._objetivos_secretos.configurar_objetivos_habilitados(ids)
+
     def set_misiles_habilitados(self, *, activados: bool) -> None:
         """Configura si los misiles están habilitados.
 
@@ -154,6 +166,134 @@ class ServerGameCoordinator:
             msg = f"Ruleset de situaciones desconocido: {ruleset}"
             raise ValueError(msg)
         self._situation_ruleset = normalized
+
+    def set_situation_effects(self, effects: list[str] | None) -> None:
+        """Selecciona tipos de situación sin alterar sus multiplicidades.
+
+        Raises:
+            ValueError: Si la lista contiene IDs desconocidos o no es válida.
+
+        """
+        known = tuple(effect_id for effect_id, _name in available_situation_effects())
+        if effects is None:
+            self._situation_effects = known
+            return
+        if not isinstance(effects, list) or any(
+            not isinstance(effect_id, str) for effect_id in effects
+        ):
+            msg = "Los tipos de situación deben ser una lista de IDs"
+            raise ValueError(msg)
+        unknown = set(effects).difference(known)
+        if unknown:
+            msg = f"Tipos de situación desconocidos: {', '.join(sorted(unknown))}"
+            raise ValueError(msg)
+        self._situation_effects = tuple(
+            effect_id for effect_id in known if effect_id in effects
+        )
+
+    def set_situation_card_ids(self, card_ids: list[str] | None) -> None:
+        """Selecciona cartas individuales o restaura el filtro por efecto.
+
+        Raises:
+            ValueError: Si la selección contiene IDs de carta desconocidos.
+
+        """
+        if card_ids is None:
+            self._situation_card_ids = None
+            return
+        if not isinstance(card_ids, list) or any(
+            not isinstance(card_id, str) for card_id in card_ids
+        ):
+            msg = "Las cartas de situación deben ser una lista de IDs"
+            raise ValueError(msg)
+        known = tuple(
+            card_id for card_id, _name, _effect in available_situation_cards()
+        )
+        unknown = set(card_ids).difference(known)
+        if unknown:
+            msg = f"Cartas de situación desconocidas: {', '.join(sorted(unknown))}"
+            raise ValueError(msg)
+        self._situation_card_ids = tuple(
+            card_id for card_id in known if card_id in card_ids
+        )
+
+    def situation_card_ids(self) -> tuple[str, ...]:
+        """Devuelve las cartas seleccionadas, aunque el mazo esté apagado.
+
+        Returns:
+            IDs efectivos en el orden del catálogo.
+
+        """
+        if self._situation_card_ids is not None:
+            return self._situation_card_ids
+        enabled_effects = set(self._situation_effects)
+        return tuple(
+            card_id
+            for card_id, _name, effect_id in available_situation_cards()
+            if effect_id in enabled_effects
+        )
+
+    def _effective_situation_effects(self) -> tuple[str, ...]:
+        """Mantiene la lista pública de tipos alineada con las cartas exactas.
+
+        Returns:
+            Tipos representados en la selección de cartas.
+
+        """
+        if self._situation_card_ids is None:
+            return self._situation_effects
+        selected = set(self._situation_card_ids)
+        present = {
+            effect_id
+            for card_id, _name, effect_id in available_situation_cards()
+            if card_id in selected
+        }
+        return tuple(
+            effect_id
+            for effect_id, _name in available_situation_effects()
+            if effect_id in present
+        )
+
+    def set_rules(self, rules: ThemeRules) -> None:
+        """Aplica otro perfil en el lobby y restaura sus opciones base."""
+        self._rules = rules
+        self._segundos_por_turno = rules.turn_seconds
+        self._paises_para_victoria = rules.lobby_victory_countries
+        self._objetivos_secretos_activados = rules.objectives_enabled
+        self._misiles_habilitados = rules.missiles_enabled
+        self._situation_ruleset = rules.situation_ruleset
+        self._situation_effects = tuple(
+            effect_id for effect_id, _name in available_situation_effects()
+        )
+        self._situation_card_ids = None
+
+    def validar_configuracion_para_jugadores(self, cantidad_jugadores: int) -> None:
+        """Comprueba que los módulos activos puedan iniciar con esa selección.
+
+        Raises:
+            ValueError: Si faltan objetivos o situaciones seleccionables.
+
+        """
+        if self._rules is not None and self._paises_para_victoria > len(
+            self._mapa.paises()
+        ):
+            msg = "La meta de países supera la cantidad de países del mapa"
+            raise ValueError(msg)
+        if self._objetivos_secretos_activados:
+            revancha_players = (
+                cantidad_jugadores
+                if self._rules is not None and self._rules.objective_deal_revancha
+                else None
+            )
+            self._objetivos_secretos.validar_pool_para_jugadores(
+                cantidad_jugadores, revancha_players=revancha_players
+            )
+        if (
+            self._situation_ruleset != DEFAULT_SITUATION_RULESET
+            and not self.situation_card_ids()
+        ):
+            msg = "Seleccioná al menos una carta de situación"
+            raise ValueError(msg)
 
     def situation_ruleset(self) -> str:
         """Devuelve el ruleset de situaciones configurado.
@@ -179,11 +319,27 @@ class ServerGameCoordinator:
         Este método puede ser llamado para reenviar la configuración
         después de que la partida haya comenzado.
         """
+        options: dict[str, Any] = {
+            "objetivos_secretos": self._objetivos_secretos_activados,
+            "misiles_habilitados": self._misiles_habilitados,
+        }
+        if self._rules is not None:
+            options.update({
+                "rules_profile": self._rules.theme,
+                "rule_modules": dict(self._rules.rule_modules),
+                "objective_ids": list(
+                    self._objetivos_secretos.ids_objetivos_habilitados()
+                ),
+                "situations_enabled": (
+                    self._situation_ruleset != DEFAULT_SITUATION_RULESET
+                ),
+                "situation_effects": list(self._effective_situation_effects()),
+                "situation_card_ids": list(self.situation_card_ids()),
+            })
         self._broadcaster.enviar_configuracion_partida(
             self._segundos_por_turno,
             self._paises_para_victoria,
-            objetivos_secretos=self._objetivos_secretos_activados,
-            misiles_habilitados=self._misiles_habilitados,
+            **options,
         )
 
     def configuracion_partida(self) -> dict[str, Any]:
@@ -197,8 +353,16 @@ class ServerGameCoordinator:
             "segundos_por_turno": self._segundos_por_turno,
             "paises_para_victoria": self._paises_para_victoria,
             "objetivos_secretos": self._objetivos_secretos_activados,
+            "objective_ids": list(self._objetivos_secretos.ids_objetivos_habilitados()),
             "misiles_habilitados": self._misiles_habilitados,
+            "rules_profile": self._rules.theme if self._rules is not None else None,
+            "rule_modules": (
+                dict(self._rules.rule_modules) if self._rules is not None else {}
+            ),
             "situation_ruleset": self._situation_ruleset,
+            "situations_enabled": self._situation_ruleset != DEFAULT_SITUATION_RULESET,
+            "situation_effects": list(self._effective_situation_effects()),
+            "situation_card_ids": list(self.situation_card_ids()),
             "reglas": self._rules.to_public_dict() if self._rules is not None else None,
         }
 
@@ -227,6 +391,8 @@ class ServerGameCoordinator:
             build_situation_deck(
                 self._situation_ruleset,
                 rng=self._situation_rng,
+                enabled_effects=self._situation_effects,
+                enabled_cards=self._situation_card_ids,
             ),
             dice_rng=self._situation_rng,
         )
@@ -269,7 +435,7 @@ class ServerGameCoordinator:
             LOGGER.info("Asignando objetivos secretos a los jugadores...")
             revancha_players = (
                 len(jugadores)
-                if self._rules is not None and self._rules.theme == "revancha"
+                if self._rules is not None and self._rules.objective_deal_revancha
                 else None
             )
             self._objetivos_secretos.asignar_objetivos_aleatorios(
@@ -356,11 +522,19 @@ class ServerGameCoordinator:
             if self._rules is not None
             else DEFAULT_SITUATION_RULESET
         )
+        self._situation_effects = tuple(
+            effect_id for effect_id, _name in available_situation_effects()
+        )
+        self._situation_card_ids = None
+        self._objetivos_secretos.configurar_objetivos_habilitados(None)
+        self._estado.volver_al_lobby()
+        server.enviar_estado()
+        enviar_configuracion = getattr(server, "enviar_configuracion_partida", None)
+        if callable(enviar_configuracion):
+            enviar_configuracion()
         promover_admin = getattr(server, "promover_administrador", None)
         if callable(promover_admin):
             promover_admin()
-        self._estado.volver_al_lobby()
-        server.enviar_estado()
         server.bump_state_revision()
         server.enviar_snapshot()
         return True

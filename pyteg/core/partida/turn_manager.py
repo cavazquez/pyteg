@@ -108,7 +108,7 @@ class TurnManager:
         initial_units = self._first_turn_units
         if (
             self._rules is not None
-            and self._rules.theme == "revancha"
+            and self._rules.duel_enabled
             and len(jugadores_userids) == _REVANCHA_TWO_PLAYERS
         ):
             initial_units = _REVANCHA_TWO_PLAYER_INITIAL_UNITS

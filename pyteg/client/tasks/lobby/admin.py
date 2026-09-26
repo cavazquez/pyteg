@@ -26,4 +26,5 @@ class ClientTaskSerAdmin(IClientTask[BaseClientTaskData]):
     def run(self, main_window: GameWindowProtocol) -> None:
         """Ejecuta la tarea convirtiendo al cliente en administrador."""
         main_window.client.ahora_es_admin()
-        main_window.ventana_admin()
+        if getattr(main_window, "estado_actual", None) not in {"JUGANDO", "Finalizado"}:
+            main_window.ventana_admin()

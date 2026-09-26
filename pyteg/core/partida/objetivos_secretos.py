@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, Any, Protocol, cast
 from pyteg.logger import get_logger
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable, Iterable
 
     from pyteg.server.juego.mapa import Mapa
 
@@ -105,6 +105,9 @@ class ObjetivosSecretos:
             for objetivo_id, objetivo in self.objetivos_disponibles.items()
             if not bool(objetivo.get("objetivo_comun", False))
         }
+        # None conserva el catálogo completo; un conjunto vacío permite
+        # configurar el lobby con los objetivos secretos desactivados.
+        self._ids_objetivos_habilitados: frozenset[str] | None = None
         self._rng = rng if rng is not None else random.SystemRandom()
         # client_userid (int) -> objetivo_id (str)
         self.objetivos_asignados: dict[int, str] = {}
@@ -118,6 +121,113 @@ class ObjetivosSecretos:
         self.objetivos_adicionales.clear()
         self._revancha_players = None
 
+    def ids_objetivos_asignables(self) -> tuple[str, ...]:
+        """Devuelve los IDs privados disponibles en el catálogo del mapa.
+
+        Returns:
+            IDs asignables en el orden definido por el tema.
+
+        """
+        return tuple(self.objetivos_asignables)
+
+    def ids_objetivos_habilitados(self) -> tuple[str, ...]:
+        """Devuelve los IDs que pueden repartirse en la próxima partida.
+
+        Returns:
+            IDs seleccionados en el orden definido por el tema.
+
+        """
+        enabled = self._ids_objetivos_habilitados
+        return tuple(
+            objective_id
+            for objective_id in self.objetivos_asignables
+            if enabled is None or objective_id in enabled
+        )
+
+    def configurar_objetivos_habilitados(self, ids: Iterable[str] | None) -> None:
+        """Selecciona objetivos privados por ID; ``None`` activa todos.
+
+        Args:
+            ids: IDs asignables seleccionados, o ``None`` para restaurar todos.
+
+        Raises:
+            TypeError: Si la selección no es una colección de IDs de texto.
+            ValueError: Si la selección contiene IDs desconocidos o comunes.
+
+        """
+        if ids is None:
+            self._ids_objetivos_habilitados = None
+            return
+        if isinstance(ids, str):
+            msg = "Los objetivos habilitados deben ser una colección de IDs"
+            raise TypeError(msg)
+        selected_ids = list(ids)
+        if any(not isinstance(objective_id, str) for objective_id in selected_ids):
+            msg = "Los IDs de objetivos habilitados deben ser texto"
+            raise TypeError(msg)
+        selected = frozenset(selected_ids)
+        invalid = selected.difference(self.objetivos_asignables)
+        if invalid:
+            names = ", ".join(sorted(invalid))
+            msg = f"Objetivos secretos desconocidos o no asignables: {names}"
+            raise ValueError(msg)
+        self._ids_objetivos_habilitados = selected
+
+    def _objetivos_para_reparto(self, revancha_players: int | None) -> list[str]:
+        """Filtra la selección según la forma de reparto de Revancha.
+
+        Returns:
+            IDs que pueden participar en el sorteo actual.
+
+        """
+        objective_ids = list(self.ids_objetivos_habilitados())
+        if revancha_players not in {_REVANCHA_TWO_PLAYERS, _REVANCHA_THREE_PLAYERS}:
+            return objective_ids
+        return [
+            objective_id
+            for objective_id in objective_ids
+            if self.objetivos_asignables[objective_id].get("tipo") != "destruir_jugador"
+            and self.objetivos_asignables[objective_id].get("cantidad_paises")
+            != _REVANCHA_EXCLUDED_COUNTRY_OBJECTIVE
+        ]
+
+    def validar_pool_para_jugadores(
+        self, cantidad_jugadores: int, *, revancha_players: int | None = None
+    ) -> None:
+        """Comprueba en el lobby que hay objetivos para todos los jugadores.
+
+        Args:
+            cantidad_jugadores: Número de jugadores que iniciarán la partida.
+            revancha_players: Número inicial si se usa el reparto de Revancha.
+
+        Raises:
+            ValueError: Si no hay objetivos válidos o faltan cartas únicas.
+
+        """
+        if cantidad_jugadores < 0:
+            msg = "La cantidad de jugadores no puede ser negativa"
+            raise ValueError(msg)
+        if cantidad_jugadores == 0:
+            return
+        objective_ids = self._objetivos_para_reparto(revancha_players)
+        if not objective_ids:
+            msg = "No hay objetivos secretos habilitados para esta partida"
+            raise ValueError(msg)
+        if revancha_players == _REVANCHA_TWO_PLAYERS:
+            required = cantidad_jugadores * _REVANCHA_TWO_PLAYERS
+        elif revancha_players == _REVANCHA_THREE_PLAYERS:
+            required = cantidad_jugadores
+        else:
+            # El reparto clásico admite repetir cartas cuando el catálogo es
+            # pequeño; sólo requiere una selección no vacía.
+            required = 1
+        if len(objective_ids) < required:
+            msg = (
+                "No hay suficientes objetivos secretos distintos para esta partida: "
+                f"se necesitan {required} y hay {len(objective_ids)}"
+            )
+            raise ValueError(msg)
+
     def asignar_objetivos_aleatorios(
         self, clientes: list[Any], *, revancha_players: int | None = None
     ) -> None:
@@ -127,10 +237,10 @@ class ObjetivosSecretos:
             clientes: Lista de objetos cliente con atributo user_id
             revancha_players: Cantidad inicial de jugadores de Revancha.
 
-        Raises:
-            ValueError: Si faltan objetivos válidos para repartir sin repetir.
-
         """
+        self.validar_pool_para_jugadores(
+            len(clientes), revancha_players=revancha_players
+        )
         self.objetivos_asignados.clear()
         self.objetivos_adicionales.clear()
         self._revancha_players = (
@@ -141,33 +251,9 @@ class ObjetivosSecretos:
         if not clientes:
             return
 
-        # Los objetivos comunes se publican en las reglas y nunca se entregan
-        # como objetivo privado a un jugador.
-        objetivos_ids = list(self.objetivos_asignables.keys())
-        if self._revancha_players is not None:
-            objetivos_ids = [
-                objetivo_id
-                for objetivo_id in objetivos_ids
-                if self.objetivos_asignables[objetivo_id].get("tipo")
-                != "destruir_jugador"
-                and self.objetivos_asignables[objetivo_id].get("cantidad_paises")
-                != _REVANCHA_EXCLUDED_COUNTRY_OBJECTIVE
-            ]
-        if not objetivos_ids:
-            LOGGER.warning(
-                "No hay objetivos secretos definidos en el tema; omitiendo asignación"
-            )
-            return
-
+        # Los objetivos comunes nunca se entregan como objetivo privado.
+        objetivos_ids = self._objetivos_para_reparto(self._revancha_players)
         self._rng.shuffle(objetivos_ids)
-        required_cards = len(clientes) * (
-            _REVANCHA_TWO_PLAYERS
-            if self._revancha_players == _REVANCHA_TWO_PLAYERS
-            else 1
-        )
-        if self._revancha_players is not None and len(objetivos_ids) < required_cards:
-            msg = "No hay suficientes objetivos válidos para esta partida de Revancha"
-            raise ValueError(msg)
 
         LOGGER.info("=== ASIGNANDO OBJETIVOS SECRETOS ===")
         LOGGER.info("Objetivos disponibles: %s", objetivos_ids)

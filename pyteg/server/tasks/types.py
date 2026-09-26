@@ -32,7 +32,13 @@ class _OptEmpezar(TypedDict, total=False):
     segundos: int | str | None
     paises_para_victoria: int | str | None
     objetivos_secretos: bool
+    objective_ids: list[str]
     misiles_habilitados: bool
+    rules_profile: str
+    situations_enabled: bool
+    situation_effects: list[str]
+    situation_card_ids: list[str]
+    rule_modules: dict[str, bool]
 
 
 class EmpezarTaskData(BaseTaskData, _OptEmpezar):

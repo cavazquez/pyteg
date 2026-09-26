@@ -23,6 +23,8 @@ _LOG = get_logger("gui.esperar_jugadores")
 class VentanaEsperarJugadores(QWidget):
     """Ventana para esperar a que los jugadores se conecten y seleccionen colores."""
 
+    is_waiting_room = True
+
     def __init__(self, main_window: Any) -> None:
         """Inicializa la ventana de espera de jugadores.
 
@@ -35,6 +37,7 @@ class VentanaEsperarJugadores(QWidget):
         self._main_layout: QVBoxLayout | None = None
         self.radio_por_colores: dict[str, GuiRadioButtonColor] = {}
         self._empezar_button: QPushButton | None = None
+        self._config_button: QPushButton | None = None
         self._initialized = False
         self.inicializar_ui()
         self._initialized = True
@@ -63,20 +66,29 @@ class VentanaEsperarJugadores(QWidget):
         # Crear botones de radio para cada color
         self.actualizar_botones_colores()
 
-        # Añadir botón de "Empezar" si es admin
+        self._empezar_button = QPushButton(_("Empezar"))
+        self._empezar_button.setFixedSize(100, 50)
+        self._empezar_button.clicked.connect(self.empezar_juego)
+        self._config_button = QPushButton(_("Configurar reglas"))
+        self._config_button.clicked.connect(self.configurar_reglas)
+
+        button_layout = QHBoxLayout()
+        button_layout.addStretch()
+        button_layout.addWidget(self._config_button)
+        button_layout.addWidget(self._empezar_button)
+        button_layout.addStretch()
+        self._main_layout.addLayout(button_layout)
+        self.refresh_admin_controls()
+
+    def refresh_admin_controls(self) -> None:
+        """Muestra acciones sólo al administrador vigente de la sala."""
         client = getattr(self._main_window, "client", None)
-        if client is not None and hasattr(client, "es_admin") and client.es_admin():
-            self._empezar_button = QPushButton(_("Empezar"))
-            self._empezar_button.setFixedSize(100, 50)
-            self._empezar_button.clicked.connect(self.empezar_juego)
-
-            # Crear un layout horizontal para centrar el botón
-            button_layout = QHBoxLayout()
-            button_layout.addStretch()
-            button_layout.addWidget(self._empezar_button)
-            button_layout.addStretch()
-
-            self._main_layout.addLayout(button_layout)
+        es_admin = getattr(client, "es_admin", None)
+        is_admin = bool(callable(es_admin) and es_admin())
+        if self._empezar_button is not None:
+            self._empezar_button.setVisible(is_admin)
+        if self._config_button is not None:
+            self._config_button.setVisible(is_admin)
 
     def update_language(self, lang_code: str) -> None:
         """Re-aplica las traducciones a las etiquetas estáticas de la ventana."""
@@ -84,10 +96,19 @@ class VentanaEsperarJugadores(QWidget):
         self.setWindowTitle(_("Esperando jugadores"))
         if self._empezar_button is not None:
             self._empezar_button.setText(_("Empezar"))
+        config_button = getattr(self, "_config_button", None)
+        if config_button is not None:
+            config_button.setText(_("Configurar reglas"))
 
     def empezar_juego(self) -> None:
         """Inicia el juego enviando el mensaje al servidor."""
         self._main_window.transmisor.empezar_partida()
+
+    def configurar_reglas(self) -> None:
+        """Reabre las opciones del administrador sin salir de la sala."""
+        self.close()
+        self._main_window.w = None
+        self._main_window.ventana_admin()
 
     def cargar_colores_asignados(self) -> None:
         """Carga y muestra los colores asignados a los jugadores."""

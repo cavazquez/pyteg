@@ -6,22 +6,25 @@ import hashlib
 
 from pyteg.utils import get_resource_path
 
-PROTOCOL_VERSION = "1"
+PROTOCOL_VERSION = "2"
 SNAPSHOT_VERSION = 1
 
 
 def map_hash_for_theme(theme: str) -> str:
-    """Calcula el hash del mapa y del perfil público de reglas.
+    """Calcula el hash de los datos del mapa, sin el perfil de reglas.
 
     Returns:
-        Hash SHA-256 hexadecimal de los metadatos públicos del tema.
+        Hash SHA-256 hexadecimal del mapa y sus catálogos.
 
     """
     theme_dir = get_resource_path(f"themes/{theme}")
     digest = hashlib.sha256()
-    # ``reglas.toml`` es opcional para conservar compatibilidad con temas
-    # externos antiguos; si existe forma parte del contrato del handshake.
-    for filename in ("paises.toml", "adyacencias.toml", "reglas.toml"):
+    for filename in (
+        "paises.toml",
+        "adyacencias.toml",
+        "cartas.toml",
+        "objetivos_secretos.toml",
+    ):
         path = theme_dir / filename
         if not path.is_file():
             continue

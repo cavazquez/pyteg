@@ -43,6 +43,12 @@ class ClientNullTransmisor(IClientTransmisor):
         *,
         objetivos_secretos: bool = False,
         misiles_habilitados: bool = False,
+        rules_profile: str | None = None,
+        objective_ids: list[str] | None = None,
+        situations_enabled: bool | None = None,
+        situation_effects: list[str] | None = None,
+        situation_card_ids: list[str] | None = None,
+        rule_modules: dict[str, bool] | None = None,
     ) -> None:
         """No-op para el transmisor nulo."""
 

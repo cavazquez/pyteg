@@ -393,13 +393,19 @@ class ServerTransmisor:
         msg = MsgVictoria(ganador_id, ganador_nombre)
         self._send_message(msg)
 
-    def enviar_configuracion_partida(
+    def enviar_configuracion_partida(  # noqa: PLR0913
         self,
         segundos_por_turno: int,
         paises_para_victoria: int,
         *,
         objetivos_secretos: bool = False,
         misiles_habilitados: bool = False,
+        rules_profile: str | None = None,
+        objective_ids: list[str] | None = None,
+        situations_enabled: bool | None = None,
+        situation_effects: list[str] | None = None,
+        situation_card_ids: list[str] | None = None,
+        rule_modules: dict[str, bool] | None = None,
     ) -> None:
         """Envía la configuración de la partida al cliente.
 
@@ -408,6 +414,12 @@ class ServerTransmisor:
             paises_para_victoria (int): Número de países necesarios para ganar
             objetivos_secretos (bool): Si los objetivos secretos están activados
             misiles_habilitados (bool): Si el sistema de misiles está habilitado
+            rules_profile: Perfil de reglas elegido para la partida.
+            objective_ids: IDs de objetivos secretos habilitados.
+            situations_enabled: Si se usan cartas de situación.
+            situation_effects: Efectos de situación habilitados.
+            situation_card_ids: Cartas individuales seleccionadas.
+            rule_modules: Módulos de reglas habilitados por nombre.
 
         """
         msg = MsgConfiguracionPartida(
@@ -415,6 +427,12 @@ class ServerTransmisor:
             paises_para_victoria,
             objetivos_secretos=objetivos_secretos,
             misiles_habilitados=misiles_habilitados,
+            rules_profile=rules_profile,
+            objective_ids=objective_ids,
+            situations_enabled=situations_enabled,
+            situation_effects=situation_effects,
+            situation_card_ids=situation_card_ids,
+            rule_modules=rule_modules,
         )
         self._send_message(msg)
 

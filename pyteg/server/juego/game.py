@@ -79,7 +79,7 @@ class Game:
         self._solo_mode = len(self._jugadores) == 1
         self._revancha_duel = (
             rules is not None
-            and rules.theme == "revancha"
+            and rules.duel_enabled
             and len(self._jugadores) == _REVANCHA_TWO_PLAYERS
         )
         self._eliminados: set[int] = set()

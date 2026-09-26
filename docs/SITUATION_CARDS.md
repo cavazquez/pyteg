@@ -1,11 +1,19 @@
 # Cartas de situaciones
 
 Las cartas de situaciones son una regla opcional del servidor. El mapa y el
-ruleset se configuran por separado: un mapa aporta países, propietarios y
-continentes; el ruleset aporta el mazo y sus efectos.
+perfil de reglas se eligen por separado: el mapa aporta países, propietarios y
+continentes; las situaciones funcionan con cualquiera de los dos mapas.
 
-La configuración predeterminada es `none`, que instala un objeto nulo y deja
-el comportamiento clásico sin cambios. Para habilitar el mazo inicial:
+El perfil Clásico desactiva el mazo de forma predeterminada (`none`); el perfil
+Revancha activa sus ocho tipos. En la sala, el control maestro **Cartas de
+situación** enciende o apaga el grupo y conserva las casillas individuales.
+Cada tipo permite marcar o desmarcar todas sus copias, y cada una de las 50
+cartas físicas puede elegirse por separado. Con el grupo encendido debe
+quedar al menos una carta marcada; con el grupo apagado se permiten cero
+cartas y no se revela ninguna situación.
+
+Para habilitar el mazo completo en un servidor configurado con el mapa
+Clásico:
 
 ```bash
 uv run pyteg-server --theme classic --situation-ruleset revancha
@@ -34,20 +42,30 @@ snapshot.
 
 ## Reglas disponibles
 
-El ruleset `revancha` contiene 50 cartas:
+El ruleset de situaciones `revancha` contiene 50 cartas cuando están activos
+todos los tipos. Los IDs usados para seleccionar cada tipo son:
 
-- 20 de `Combate clásico`.
-- 4 de `Nieve`: suma un dado al defensor, hasta cuatro.
-- 4 de `Viento a favor`: suma un dado al atacante, hasta cuatro.
-- 4 de `Crisis`: tira un dado por jugador al revelar la carta; todos los
-  empatados en el menor resultado no pueden reclamar tarjeta de país durante
-  esa ronda.
-- 4 de `Refuerzos extras`: suma la mitad entera de los países ocupados al
-  refuerzo general de cada jugador.
-- 4 de `Fronteras abiertas`: permite atacar sólo entre continentes distintos.
-- 4 de `Fronteras cerradas`: permite atacar sólo dentro del mismo continente.
-- 6 de `Descanso`: el color indicado no puede atacar ni mover unidades, pero
-  sí puede colocar refuerzos.
+- 20 de `classic_combat` (Combate clásico).
+- 4 de `snow` (Nieve): suma un dado al defensor, hasta cuatro.
+- 4 de `tailwind` (Viento a favor): suma un dado al atacante, hasta cuatro.
+- 4 de `crisis` (Crisis): tira un dado por jugador al revelar la carta; todos
+  los empatados en el menor resultado no pueden reclamar tarjeta de país
+  durante esa ronda.
+- 4 de `extra_reinforcements` (Refuerzos extras): suma la mitad entera de los
+  países ocupados al refuerzo general de cada jugador.
+- 4 de `open_borders` (Fronteras abiertas): permite atacar sólo entre
+  continentes distintos.
+- 4 de `closed_borders` (Fronteras cerradas): permite atacar sólo dentro del
+  mismo continente.
+- 6 de `rest` (Descanso): el color indicado no puede atacar ni mover unidades,
+  pero sí puede colocar refuerzos.
+
+El catálogo `available_situation_effects()` devuelve los tipos; el catálogo
+`available_situation_cards()` devuelve los IDs de las 50 copias. La fábrica
+`build_situation_deck` acepta `enabled_effects` para elegir tipos o
+`enabled_cards` para elegir copias exactas. Cuando se indican cartas concretas,
+esa lista tiene prioridad. Omitir el filtro conserva el mazo completo; pasar
+una selección vacía crea un mazo vacío. Un ID desconocido produce un error.
 
 Las elecciones de máximo de dados, redondeo de refuerzos y empates están
 centralizadas en los efectos y cubiertas por tests. Si la edición física que

@@ -32,6 +32,12 @@ class IClientTransmisor(ABC):
         *,
         objetivos_secretos: bool = False,
         misiles_habilitados: bool = False,
+        rules_profile: str | None = None,
+        objective_ids: list[str] | None = None,
+        situations_enabled: bool | None = None,
+        situation_effects: list[str] | None = None,
+        situation_card_ids: list[str] | None = None,
+        rule_modules: dict[str, bool] | None = None,
     ) -> None:
         """Inicia la configuración de la partida.
 
@@ -40,6 +46,12 @@ class IClientTransmisor(ABC):
             paises_para_victoria: Cantidad de países necesarios para ganar.
             objetivos_secretos: Si los objetivos secretos están habilitados.
             misiles_habilitados: Si los misiles están habilitados.
+            rules_profile: Perfil de reglas elegido.
+            objective_ids: Identificadores de objetivos habilitados.
+            situations_enabled: Si se usan cartas de situación.
+            situation_effects: Tipos de situación habilitados.
+            situation_card_ids: Cartas físicas de situación habilitadas.
+            rule_modules: Módulos de reglas habilitados por nombre.
 
         """
 

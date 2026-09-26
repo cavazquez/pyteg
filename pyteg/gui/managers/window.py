@@ -54,6 +54,13 @@ class WindowManager:
 
     def ventana_admin(self) -> None:
         """Abre la ventana de administración."""
+        current_window = self.main_window.w
+        if current_window is not None:
+            if getattr(current_window, "is_admin_configuration", False):
+                current_window.show()
+                return
+            with contextlib.suppress(RuntimeError):
+                current_window.close()
         self.main_window.w = None
         self.main_window.w = VentanaAdmin(self.main_window)
         if self.main_window.w is not None:
@@ -63,14 +70,15 @@ class WindowManager:
         """Abre la ventana de espera de jugadores."""
         _LOG.debug("Iniciando ventana_esperar_jugadores")
         self.main_window.w = VentanaEsperarJugadores(self.main_window)
+        waiting_window = self.main_window.w
 
         # Conectar la señal de cierre para limpiar la referencia
         def limpiar_ventana() -> None:
             _LOG.debug("Limpiando referencia a la ventana de espera")
-            if self.main_window.w is not None:
+            if self.main_window.w is waiting_window:
                 with contextlib.suppress(Exception):
                     # Desconectar todas las señales para evitar llamadas duplicadas
-                    self.main_window.w.destroyed.disconnect()
+                    waiting_window.destroyed.disconnect()
 
                 self.main_window.w = None
 

@@ -1,5 +1,8 @@
 """Mensajes de lobby/pre-partida (color, chat, username, empezar)."""
 
+# Los campos opcionales preservan la compatibilidad del protocolo anterior.
+# ruff: noqa: PLR0913
+
 from __future__ import annotations
 
 import json
@@ -44,8 +47,13 @@ class MsgEmpezar(IMsg):
         *,
         objetivos_secretos: bool = False,
         misiles_habilitados: bool = False,
+        rules_profile: str | None = None,
+        objective_ids: list[str] | None = None,
+        situations_enabled: bool | None = None,
+        situation_effects: list[str] | None = None,
+        situation_card_ids: list[str] | None = None,
+        rule_modules: dict[str, bool] | None = None,
     ) -> None:
-        """Inicializa el comando de negociación."""
         """Inicializa el mensaje para empezar la partida.
 
         Args:
@@ -53,6 +61,12 @@ class MsgEmpezar(IMsg):
             paises_para_victoria: Países necesarios para ganar.
             objetivos_secretos: Si los objetivos secretos están habilitados.
             misiles_habilitados: Si los misiles están habilitados.
+            rules_profile: Perfil de reglas elegido, independiente del mapa.
+            objective_ids: Objetivos secretos habilitados en esta partida.
+            situations_enabled: Si se usan cartas de situación.
+            situation_effects: Tipos de situación habilitados.
+            situation_card_ids: Cartas físicas de situación habilitadas.
+            rule_modules: Módulos de reglas habilitados por nombre.
 
         """
         self._tipo = "empezar"
@@ -60,6 +74,12 @@ class MsgEmpezar(IMsg):
         self._paises_para_victoria = paises_para_victoria
         self._objetivos_secretos = objetivos_secretos
         self._misiles_habilitados = misiles_habilitados
+        self._rules_profile = rules_profile
+        self._objective_ids = objective_ids
+        self._situations_enabled = situations_enabled
+        self._situation_effects = situation_effects
+        self._situation_card_ids = situation_card_ids
+        self._rule_modules = dict(rule_modules) if rule_modules is not None else None
 
     def to_json(self) -> str:
         """Convierte el mensaje a formato JSON.
@@ -75,6 +95,18 @@ class MsgEmpezar(IMsg):
             data["paises_para_victoria"] = self._paises_para_victoria
         data["objetivos_secretos"] = self._objetivos_secretos
         data["misiles_habilitados"] = self._misiles_habilitados
+        if self._rules_profile is not None:
+            data["rules_profile"] = self._rules_profile
+        if self._objective_ids is not None:
+            data["objective_ids"] = self._objective_ids
+        if self._situations_enabled is not None:
+            data["situations_enabled"] = self._situations_enabled
+        if self._situation_effects is not None:
+            data["situation_effects"] = self._situation_effects
+        if self._situation_card_ids is not None:
+            data["situation_card_ids"] = self._situation_card_ids
+        if self._rule_modules is not None:
+            data["rule_modules"] = self._rule_modules
         return json.dumps(data)
 
 

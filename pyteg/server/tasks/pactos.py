@@ -32,9 +32,9 @@ def _player_exists(context: GameContext, player_id: int) -> bool:
 
 
 def _require_revancha(context: GameContext) -> None:
-    """Limita las reglas de pactos a la edición que las define."""
-    if context.reglas().theme != "revancha":
-        raise InvalidActionError("Los pactos sólo están disponibles en Revancha")
+    """Limita los pactos al módulo de reglas activado en la sala."""
+    if not context.reglas().pacts_enabled:
+        raise InvalidActionError("Los pactos están desactivados en esta partida")
 
 
 class ServerTaskProponerPacto(IServerTask[ProponerPactoTaskData]):

@@ -57,6 +57,13 @@ class ClientTaskError(IClientTask[ErrorTaskData]):
         de error al usuario.
         """
         main_window.sound_manager.play_error()
+        if self._error_type == "invalid_configuration":
+            on_error = getattr(
+                getattr(main_window, "w", None), "on_configuration_error", None
+            )
+            if callable(on_error):
+                on_error(self._message or _("Configuración inválida."))
+                return
         if self._error_type == "incompatible_theme":
             self._show_incompatible_theme(main_window)
         elif self._error_type == "reconnect_rejected":

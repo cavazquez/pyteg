@@ -410,6 +410,10 @@ class Client:
                 )
                 self.server.enviar_username()
 
+                # La ventana de administración recibe la configuración
+                # autoritativa antes de mostrar sus controles.
+                self.transmisor.enviar_snapshot(self.server.public_snapshot())
+
                 if self.es_admin():
                     self.transmisor.sos_admin()
 

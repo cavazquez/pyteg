@@ -105,6 +105,12 @@ class _OptConfiguracionPartida(TypedDict, total=False):
     paises_para_victoria: int
     objetivos_secretos: bool
     misiles_habilitados: bool
+    rules_profile: str
+    objective_ids: list[str]
+    situations_enabled: bool
+    situation_effects: list[str]
+    situation_card_ids: list[str]
+    rule_modules: dict[str, bool]
 
 
 class ConfiguracionPartidaTaskData(BaseClientTaskData, _OptConfiguracionPartida):

@@ -263,8 +263,14 @@ def _attack_round_reason(main_window: Any) -> ActionAvailability | None:
     first_rounds = _rule_int(main_window, "first_turns_no_attack", 0)
     rules = _rules(main_window)
     players = snapshot.get("players")
+    modules = rules.get("rule_modules")
+    duel_enabled = (
+        modules.get("duel", False)
+        if isinstance(modules, dict)
+        else rules.get("duel_enabled", rules.get("theme") == "revancha")
+    )
     if (
-        rules.get("theme") == "revancha"
+        duel_enabled
         and isinstance(players, list)
         and len(players) == _DUEL_PLAYER_COUNT
     ):

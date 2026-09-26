@@ -75,6 +75,12 @@ class ClientTransmisor(IClientTransmisor):
         *,
         objetivos_secretos: bool = False,
         misiles_habilitados: bool = False,
+        rules_profile: str | None = None,
+        objective_ids: list[str] | None = None,
+        situations_enabled: bool | None = None,
+        situation_effects: list[str] | None = None,
+        situation_card_ids: list[str] | None = None,
+        rule_modules: dict[str, bool] | None = None,
     ) -> None:
         """Inicia la configuración de la partida.
 
@@ -83,6 +89,12 @@ class ClientTransmisor(IClientTransmisor):
             paises_para_victoria: Cantidad de países necesarios para ganar.
             objetivos_secretos: Si los objetivos secretos están habilitados.
             misiles_habilitados: Si los misiles están habilitados.
+            rules_profile: Perfil de reglas elegido.
+            objective_ids: Identificadores de objetivos habilitados.
+            situations_enabled: Si se usan cartas de situación.
+            situation_effects: Tipos de situación habilitados.
+            situation_card_ids: Cartas físicas de situación habilitadas.
+            rule_modules: Módulos de reglas habilitados por nombre.
 
         """
         _LOG.debug("Transmisor empezar()")
@@ -91,6 +103,12 @@ class ClientTransmisor(IClientTransmisor):
             paises_para_victoria,
             objetivos_secretos=objetivos_secretos,
             misiles_habilitados=misiles_habilitados,
+            rules_profile=rules_profile,
+            objective_ids=objective_ids,
+            situations_enabled=situations_enabled,
+            situation_effects=situation_effects,
+            situation_card_ids=situation_card_ids,
+            rule_modules=rule_modules,
         )
         self._conn.send_data(msg.to_json())
 

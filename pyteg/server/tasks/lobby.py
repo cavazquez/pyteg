@@ -55,15 +55,105 @@ class ServerTaskEmpezar(IServerTask[EmpezarTaskData]):
         super().__init__(data)
         self._segundos = data.get("segundos")
         self._paises_para_victoria = data.get("paises_para_victoria")
-        self._objetivos_secretos = data.get("objetivos_secretos", False)
-        self._misiles_habilitados = data.get("misiles_habilitados", False)
+        self._objetivos_secretos = data.get("objetivos_secretos")
+        self._objective_ids = data.get("objective_ids")
+        self._misiles_habilitados = data.get("misiles_habilitados")
+        self._rules_profile = data.get("rules_profile")
+        self._rule_modules = data.get("rule_modules")
+        self._situations_enabled = data.get("situations_enabled")
+        self._situation_effects = data.get("situation_effects")
+        self._situation_card_ids = data.get("situation_card_ids")
         self._action_name = "empezar"
 
     def _execute(
         self,
         client: IClientProtocol,
         context: GameContext,  # noqa: ARG002
-    ) -> None:
+    ) -> bool:
+        if not (
+            client.server.estado.es_inicial()
+            or client.server.estado.es_esperando_jugadores()
+        ):
+            client.transmisor.enviar_error(
+                "invalid_configuration",
+                "La configuración solo puede cambiarse en el lobby",
+            )
+            return False
+        if not self._apply_selected_rules(client):
+            return False
+
+        self._apply_numeric_options(client)
+
+        if (
+            client.server.estado.es_inicial()
+            and client.server.estado.esperar_jugadores()
+        ) or client.server.estado.es_esperando_jugadores():
+            client.server.enviar_estado()
+            bump_revision = getattr(client.server, "bump_state_revision", None)
+            enviar_snapshot = getattr(client.server, "enviar_snapshot", None)
+            if callable(bump_revision) and callable(enviar_snapshot):
+                bump_revision()
+                enviar_snapshot()
+            return True
+        LOGGER.warning(
+            "No se pudo cambiar a estado EsperarJugadores desde %s",
+            client.server.estado.estado_actual(),
+        )
+        return False
+
+    def _apply_selected_rules(self, client: IClientProtocol) -> bool:
+        """Aplica perfil y filtros que pueden fallar por selección inválida.
+
+        Returns:
+            ``True`` si todas las opciones fueron aceptadas.
+
+        """
+        try:
+            self._validate_selection(client)
+            if self._rules_profile is not None:
+                client.server.set_rules_profile(self._rules_profile)
+            if self._rule_modules is not None:
+                client.server.set_rule_modules(self._rule_modules)
+            if self._objective_ids is not None:
+                client.server.set_objective_ids(self._objective_ids)
+            elif self._objetivos_secretos is True:
+                client.server.set_objective_ids(None)
+            self._apply_situation_selection(client)
+        except ValueError as exc:
+            client.transmisor.enviar_error("invalid_configuration", str(exc))
+            return False
+        return True
+
+    def _apply_situation_selection(self, client: IClientProtocol) -> None:
+        """Aplica el filtro de efectos y cartas físicas del mazo."""
+        if self._situation_effects is not None:
+            client.server.set_situation_effects(self._situation_effects)
+        elif self._situations_enabled is True:
+            client.server.set_situation_effects(None)
+        if self._situation_card_ids is not None:
+            client.server.set_situation_card_ids(self._situation_card_ids)
+        elif self._situation_effects is not None or self._situations_enabled is True:
+            # Sin selección de cartas físicas se usan todas las del efecto.
+            client.server.set_situation_card_ids(None)
+        if self._situations_enabled is not None:
+            client.server.set_situation_ruleset(
+                "revancha" if self._situations_enabled else "none"
+            )
+
+    def _validate_selection(self, client: IClientProtocol) -> None:
+        """Ejecuta la validación conjunta antes de cambiar el perfil."""
+        validar_seleccion = getattr(client.server, "validar_seleccion_lobby", None)
+        if callable(validar_seleccion):
+            validar_seleccion(
+                rules_profile=self._rules_profile,
+                rule_modules=self._rule_modules,
+                objective_ids=self._objective_ids,
+                situation_effects=self._situation_effects,
+                situation_card_ids=self._situation_card_ids,
+            )
+
+    def _apply_numeric_options(self, client: IClientProtocol) -> None:
+        """Aplica la duración, la meta de países y los módulos generales."""
         # Configurar segundos por turno si se envió desde el cliente
         if self._segundos is not None:
             try:
@@ -83,23 +173,16 @@ class ServerTaskEmpezar(IServerTask[EmpezarTaskData]):
                 pass
 
         # Configurar objetivos secretos si se envió desde el cliente
-        client.server.set_objetivos_secretos(activados=self._objetivos_secretos)
-        LOGGER.debug("Objetivos secretos configurados: %s", self._objetivos_secretos)
+        if self._objetivos_secretos is not None:
+            client.server.set_objetivos_secretos(activados=self._objetivos_secretos)
+            LOGGER.debug(
+                "Objetivos secretos configurados: %s", self._objetivos_secretos
+            )
 
         # Configurar misiles si se envió desde el cliente
-        client.server.set_misiles_habilitados(activados=self._misiles_habilitados)
-        LOGGER.debug("Misiles habilitados: %s", self._misiles_habilitados)
-
-        if (
-            client.server.estado.es_inicial()
-            and client.server.estado.esperar_jugadores()
-        ) or client.server.estado.es_esperando_jugadores():
-            client.server.enviar_estado()
-        else:
-            LOGGER.warning(
-                "No se pudo cambiar a estado EsperarJugadores desde %s",
-                client.server.estado.estado_actual(),
-            )
+        if self._misiles_habilitados is not None:
+            client.server.set_misiles_habilitados(activados=self._misiles_habilitados)
+            LOGGER.debug("Misiles habilitados: %s", self._misiles_habilitados)
 
 
 class ServerTaskSeleccionarColor(IServerTask[SeleccionarColorTaskData]):
@@ -163,6 +246,15 @@ class ServerTaskEmpezarPartida(IServerTask[BaseTaskData]):
                     "Todos los clientes deben completar un handshake compatible "
                     "antes de iniciar.",
                 )
+                return False
+        validar_configuracion = getattr(
+            client.server, "validar_configuracion_para_jugadores", None
+        )
+        if callable(validar_configuracion):
+            try:
+                validar_configuracion(len(jugadores))
+            except ValueError as exc:
+                client.transmisor.enviar_error("invalid_configuration", str(exc))
                 return False
         if client.server.estado.empezar_partida():
             client.server.enviar_estado()

@@ -11,8 +11,15 @@ from pyteg.config import DEFAULT_MAP_THEME
 from pyteg.core.cartas.mazo import Mazo
 from pyteg.core.mapa.build_mapa import build_mapa_from_reader
 from pyteg.core.partida.objetivos_secretos import ObjetivosSecretos
-from pyteg.core.partida.reglas import ThemeRules, load_theme_rules
+from pyteg.core.partida.reglas import (
+    ThemeRules,
+    available_rules_profiles,
+    load_rules_for_map,
+    load_theme_rules,
+)
 from pyteg.core.situaciones.catalog import (
+    available_situation_cards,
+    available_situation_effects,
     available_situation_rulesets,
 )
 from pyteg.log_cli import add_log_arguments
@@ -44,6 +51,24 @@ if TYPE_CHECKING:
 LOGGER = get_logger(__name__)
 
 
+def _validate_catalog_ids(ids: list[str] | None, known: set[str], label: str) -> None:
+    """Valida una selección antes de modificar la configuración del lobby.
+
+    Raises:
+        ValueError: Si hay IDs desconocidos o el payload no es una lista.
+
+    """
+    if ids is None:
+        return
+    if not isinstance(ids, list) or any(not isinstance(item, str) for item in ids):
+        msg = f"{label}: se esperaba una lista de IDs"
+        raise ValueError(msg)
+    unknown = set(ids).difference(known)
+    if unknown:
+        msg = f"{label} desconocidos: {', '.join(sorted(unknown))}"
+        raise ValueError(msg)
+
+
 class Server:
     """Gestiona clientes y sus conexiones.
 
@@ -56,6 +81,7 @@ class Server:
         theme: str = DEFAULT_MAP_THEME,
         *,
         objective_rng: Random | None = None,
+        rules_profile: str | None = None,
         situation_ruleset: str | None = None,
         situation_rng: Random | None = None,
     ) -> None:
@@ -71,7 +97,12 @@ class Server:
         """
         self.protocol_version = PROTOCOL_VERSION
         self.theme = theme
-        self._reglas = load_theme_rules(theme)
+        self._reglas = (
+            load_rules_for_map(theme, rules_profile)
+            if rules_profile is not None
+            else load_theme_rules(theme)
+        )
+        self.rules_profile = self._reglas.theme
         normalized_situation_ruleset = (
             (situation_ruleset or self._reglas.situation_ruleset).strip().lower()
         )
@@ -135,7 +166,7 @@ class Server:
         self._command_executor.start()
 
     def map_hash(self) -> str:
-        """Identificador estable de las reglas públicas del mapa.
+        """Identificador estable de la geografía y catálogos del mapa.
 
         Returns:
             Hash SHA-256 del mapa configurado.
@@ -381,6 +412,10 @@ class Server:
         """
         self._game_coordinator.set_objetivos_secretos(activados=activados)
 
+    def set_objective_ids(self, ids: list[str] | None) -> None:
+        """Selecciona los objetivos secretos del catálogo del mapa."""
+        self._game_coordinator.set_objective_ids(ids)
+
     def set_misiles_habilitados(self, *, activados: bool) -> None:
         """Configura si los misiles están habilitados.
 
@@ -394,6 +429,83 @@ class Server:
         """Configura el ruleset de situaciones para la próxima partida."""
         self._game_coordinator.set_situation_ruleset(ruleset)
         self.situation_ruleset = self._game_coordinator.situation_ruleset()
+
+    def set_situation_effects(self, effects: list[str] | None) -> None:
+        """Selecciona los tipos de cartas del mazo de situaciones."""
+        self._game_coordinator.set_situation_effects(effects)
+
+    def set_situation_card_ids(self, card_ids: list[str] | None) -> None:
+        """Selecciona las cartas individuales del mazo de situaciones."""
+        self._game_coordinator.set_situation_card_ids(card_ids)
+
+    def set_rules_profile(self, profile: str) -> None:
+        """Selecciona mecánicas independientemente del mapa en el lobby.
+
+        Raises:
+            ValueError: Si la partida ya comenzó o el perfil no existe.
+
+        """
+        if not (self.estado.es_inicial() or self.estado.es_esperando_jugadores()):
+            msg = "El perfil de reglas solo puede cambiarse en el lobby"
+            raise ValueError(msg)
+        rules = load_rules_for_map(self.theme, profile)
+        self._reglas = rules
+        self.rules_profile = profile
+        self.mapa.configurar_reglas(rules)
+        self._game_coordinator.set_rules(rules)
+        self.situation_ruleset = self._game_coordinator.situation_ruleset()
+
+    def set_rule_modules(self, modules: dict[str, bool]) -> None:
+        """Combina por separado las mecánicas Clásico y Revancha en el lobby.
+
+        Raises:
+            ValueError: Si la partida comenzó o la selección es inválida.
+
+        """
+        if not (self.estado.es_inicial() or self.estado.es_esperando_jugadores()):
+            msg = "Las reglas solo pueden cambiarse en el lobby"
+            raise ValueError(msg)
+        rules = load_rules_for_map(self.theme, self.rules_profile, rule_modules=modules)
+        self._reglas = rules
+        self.mapa.configurar_reglas(rules)
+        self._game_coordinator.set_rules(rules)
+        self.situation_ruleset = self._game_coordinator.situation_ruleset()
+
+    def validar_seleccion_lobby(
+        self,
+        *,
+        rules_profile: str | None,
+        objective_ids: list[str] | None,
+        situation_effects: list[str] | None,
+        situation_card_ids: list[str] | None,
+        rule_modules: dict[str, bool] | None = None,
+    ) -> None:
+        """Valida todos los IDs antes de aplicar cualquier cambio a la sala."""
+        if rules_profile is not None or rule_modules is not None:
+            load_rules_for_map(
+                self.theme,
+                rules_profile or self.rules_profile,
+                rule_modules=rule_modules,
+            )
+        _validate_catalog_ids(
+            objective_ids,
+            set(self.objetivos_secretos.ids_objetivos_asignables()),
+            "Objetivos secretos",
+        )
+        _validate_catalog_ids(
+            situation_effects,
+            {effect_id for effect_id, _name in available_situation_effects()},
+            "Tipos de situación",
+        )
+        _validate_catalog_ids(
+            situation_card_ids,
+            {card_id for card_id, _name, _effect in available_situation_cards()},
+            "Cartas de situación",
+        )
+
+    def validar_configuracion_para_jugadores(self, cantidad_jugadores: int) -> None:
+        """Valida la selección antes de avanzar el estado de partida."""
+        self._game_coordinator.validar_configuracion_para_jugadores(cantidad_jugadores)
 
     def misiles_habilitados(self) -> bool:
         """Retorna si los misiles están habilitados en esta partida.
@@ -986,6 +1098,12 @@ def parse_arguments() -> argparse.Namespace:
         help=(f"Tema de mapa en themes/ (predeterminado: {DEFAULT_MAP_THEME})"),
     )
     parser.add_argument(
+        "--rules-profile",
+        choices=available_rules_profiles(),
+        default=None,
+        help="Perfil de reglas, independiente del mapa (predeterminado: el del mapa)",
+    )
+    parser.add_argument(
         "--situation-ruleset",
         choices=available_situation_rulesets(),
         default=None,
@@ -1020,10 +1138,13 @@ def main(server_factory: Callable[..., Server] | None = None) -> None:
     server: Server | None = None
     try:
         factory = server_factory or Server
-        server = factory(
-            theme=args.theme,
-            situation_ruleset=args.situation_ruleset,
-        )
+        options: dict[str, Any] = {
+            "theme": args.theme,
+            "situation_ruleset": args.situation_ruleset,
+        }
+        if args.rules_profile is not None:
+            options["rules_profile"] = args.rules_profile
+        server = factory(**options)
         registrar_jugadores(server, host=args.host, port=args.port)
     except KeyboardInterrupt:
         logger.info("Servidor detenido por el usuario")

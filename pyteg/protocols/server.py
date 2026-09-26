@@ -157,6 +157,30 @@ class ServerLikeProtocol(HasEstado, Protocol):
         """Activa/desactiva los objetivos secretos."""
         ...
 
+    def set_objective_ids(self, ids: list[str] | None) -> None:
+        """Selecciona objetivos privados del catálogo del mapa."""
+        ...
+
+    def set_rules_profile(self, profile: str) -> None:
+        """Selecciona un perfil de reglas independiente del mapa."""
+        ...
+
+    def set_rule_modules(self, modules: dict[str, bool]) -> None:
+        """Selecciona las variantes de cada mecánica en el lobby."""
+        ...
+
+    def set_situation_effects(self, effects: list[str] | None) -> None:
+        """Selecciona tipos de cartas de situación."""
+        ...
+
+    def set_situation_card_ids(self, card_ids: list[str] | None) -> None:
+        """Selecciona cartas de situación individuales."""
+        ...
+
+    def set_situation_ruleset(self, ruleset: str) -> None:
+        """Activa o desactiva el mazo de situaciones."""
+        ...
+
     def set_misiles_habilitados(self, *, activados: bool) -> None:
         """Habilita/deshabilita los misiles."""
         ...

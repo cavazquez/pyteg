@@ -149,6 +149,11 @@ class QtClientStateAdapter:
             userid = player.get("userid")
             if not isinstance(userid, int):
                 continue
+            if userid == self._model.local_userid:
+                local_client = getattr(self._main_window, "client", None)
+                asignar_admin = getattr(local_client, "asignar_admin", None)
+                if callable(asignar_admin):
+                    asignar_admin(enabled=bool(player.get("admin", False)))
             username = player.get("username") or f"Jugador {userid}"
             color = self._qcolor(player.get("color"))
             username_text = str(username)
@@ -167,6 +172,11 @@ class QtClientStateAdapter:
         update_statuses = getattr(self._main_window, "update_player_statuses", None)
         if callable(update_statuses):
             update_statuses(statuses)
+        refresh_admin = getattr(
+            getattr(self._main_window, "w", None), "refresh_admin_controls", None
+        )
+        if callable(refresh_admin):
+            refresh_admin()
 
     def _sync_countries(
         self, state: dict[str, Any], names: set[str] | None = None

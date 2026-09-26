@@ -15,7 +15,7 @@ from __future__ import annotations
 
 import tomllib
 from collections.abc import Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Any
 
 from pyteg.config import (
@@ -36,11 +36,58 @@ from pyteg.config import (
     SPECIAL_EXCHANGE_UNITS,
     VICTORY_ALL_COUNTRIES,
 )
+from pyteg.toml_reader import TomlReader
 from pyteg.utils import get_resource_path
 
 
 class ThemeRulesError(ValueError):
     """Perfil de reglas inexistente o inválido."""
+
+
+def available_rules_profiles() -> tuple[str, ...]:
+    """Devuelve los perfiles que pueden elegirse desde el lobby.
+
+    Returns:
+        Identificadores de perfiles disponibles.
+
+    """
+    return ("classic", "revancha")
+
+
+def available_rule_modules() -> tuple[tuple[str, str], ...]:
+    """Mecánicas que pueden elegirse individualmente en la sala.
+
+    ``True`` usa la variante Revancha y ``False`` la variante Classic.
+
+    Returns:
+        Pares de identificador y nombre visible en el orden del formulario.
+
+    """
+    return (
+        ("initial_units", "Unidades iniciales"),
+        ("duel", "Duelo de dos jugadores"),
+        ("defense_dice", "Dados de defensa"),
+        ("reinforcements", "Refuerzos"),
+        ("card_exchanges", "Progresión de canjes"),
+        ("objective_deal", "Reparto de objetivos"),
+        ("pacts", "Pactos"),
+    )
+
+
+def default_rule_modules(profile: str) -> dict[str, bool]:
+    """Devuelve las variantes predeterminadas de un perfil conocido.
+
+    Returns:
+        Selección completa de variantes para ese perfil.
+
+    Raises:
+        ThemeRulesError: Si el perfil no existe.
+
+    """
+    if profile not in available_rules_profiles():
+        raise ThemeRulesError(f"Perfil de reglas desconocido: {profile}")
+    use_revancha = profile == "revancha"
+    return {module_id: use_revancha for module_id, _label in available_rule_modules()}
 
 
 @dataclass(frozen=True, slots=True)
@@ -77,6 +124,10 @@ class ThemeRules:
     objectives_enabled: bool
     situation_ruleset: str
     continent_card_exchanges: tuple[tuple[str, tuple[str, ...]], ...] = ()
+    duel_enabled: bool = False
+    objective_deal_revancha: bool = False
+    pacts_enabled: bool = False
+    rule_modules: tuple[tuple[str, bool], ...] = ()
 
     @property
     def continent_bonus_map(self) -> dict[str, int]:
@@ -131,6 +182,10 @@ class ThemeRules:
             "missile_damage_by_distance": list(self.missile_damage_by_distance),
             "objectives_enabled": self.objectives_enabled,
             "situation_ruleset": self.situation_ruleset,
+            "duel_enabled": self.duel_enabled,
+            "objective_deal_revancha": self.objective_deal_revancha,
+            "pacts_enabled": self.pacts_enabled,
+            "rule_modules": dict(self.rule_modules),
         }
 
     @classmethod
@@ -141,6 +196,7 @@ class ThemeRules:
             Perfil compatible con las constantes históricas del proyecto.
 
         """
+        use_revancha = theme == "revancha"
         return cls(
             theme=theme,
             version=1,
@@ -178,6 +234,13 @@ class ThemeRules:
             ),
             objectives_enabled=False,
             situation_ruleset="none",
+            duel_enabled=use_revancha,
+            objective_deal_revancha=use_revancha,
+            pacts_enabled=use_revancha,
+            rule_modules=tuple(
+                (module_id, use_revancha)
+                for module_id, _label in available_rule_modules()
+            ),
         )
 
 
@@ -203,6 +266,84 @@ def load_theme_rules(theme: str) -> ThemeRules:
     except (OSError, tomllib.TOMLDecodeError) as exc:
         raise ThemeRulesError(f"No se pudo leer {path}: {exc}") from exc
     return _build_rules(theme, raw)
+
+
+def load_rules_for_map(
+    map_theme: str,
+    rules_profile: str,
+    *,
+    rule_modules: dict[str, bool] | None = None,
+) -> ThemeRules:
+    """Combina mecánicas del perfil con continentes del mapa elegido.
+
+    Los bonos y los canjes de continentes utilizan los IDs del mapa. Las
+    mecánicas elegibles provienen de la variante de cada módulo; los demás
+    valores vienen del perfil. Las metas de países se acotan al mapa.
+
+    Returns:
+        Perfil efectivo para la pareja mapa/reglas.
+
+    Raises:
+        ThemeRulesError: Si el perfil o algún módulo no es válido.
+
+    """
+    modules = default_rule_modules(rules_profile)
+    if rule_modules is not None:
+        if not isinstance(rule_modules, dict):
+            raise ThemeRulesError("rule_modules debe ser una tabla de booleanos")
+        if any(not isinstance(module_id, str) for module_id in rule_modules):
+            raise ThemeRulesError("Los IDs de rule_modules deben ser texto")
+        unknown = set(rule_modules).difference(modules)
+        if unknown:
+            raise ThemeRulesError(
+                f"Módulos de reglas desconocidos: {', '.join(sorted(unknown))}"
+            )
+        for module_id, enabled in rule_modules.items():
+            if not isinstance(enabled, bool):
+                raise ThemeRulesError(f"rule_modules.{module_id} debe ser booleano")
+            modules[module_id] = enabled
+    profile = load_theme_rules(rules_profile)
+    classic_rules = load_theme_rules("classic")
+    revancha_rules = load_theme_rules("revancha")
+
+    def variant(module_id: str) -> ThemeRules:
+        return revancha_rules if modules[module_id] else classic_rules
+
+    initial_units = variant("initial_units")
+    duel = variant("duel")
+    defense_dice = variant("defense_dice")
+    reinforcements = variant("reinforcements")
+    card_exchanges = variant("card_exchanges")
+    country_count = len(TomlReader.from_theme(map_theme).todos_los_paises())
+    map_rules = load_theme_rules(map_theme)
+    return replace(
+        profile,
+        victory_countries=min(profile.victory_countries, country_count),
+        lobby_victory_countries=min(profile.lobby_victory_countries, country_count),
+        continent_bonuses=map_rules.continent_bonuses,
+        continent_card_exchanges=map_rules.continent_card_exchanges,
+        first_turn_units=initial_units.first_turn_units,
+        second_turn_units=initial_units.second_turn_units,
+        first_turns_no_attack=duel.first_turns_no_attack,
+        defense_dice_max=defense_dice.defense_dice_max,
+        min_general_units=reinforcements.min_general_units,
+        countries_divisor=reinforcements.countries_divisor,
+        exchange_units=card_exchanges.exchange_units,
+        exchange_multiplier=card_exchanges.exchange_multiplier,
+        special_exchange_units=card_exchanges.special_exchange_units,
+        max_cards_before_force_exchange=(
+            card_exchanges.max_cards_before_force_exchange
+        ),
+        min_cards_same_symbol_for_exchange=(
+            card_exchanges.min_cards_same_symbol_for_exchange
+        ),
+        cards_for_exchange=card_exchanges.cards_for_exchange,
+        exchange_tail_from_last=card_exchanges.exchange_tail_from_last,
+        duel_enabled=modules["duel"],
+        objective_deal_revancha=modules["objective_deal"],
+        pacts_enabled=modules["pacts"],
+        rule_modules=tuple(modules.items()),
+    )
 
 
 def _build_rules(  # noqa: C901, PLR0914, PLR0915
@@ -393,6 +534,13 @@ def _build_rules(  # noqa: C901, PLR0914, PLR0915
         missile_damage_by_distance=damage,
         objectives_enabled=objectives_enabled,
         situation_ruleset=situation_ruleset,
+        duel_enabled=theme == "revancha",
+        objective_deal_revancha=theme == "revancha",
+        pacts_enabled=theme == "revancha",
+        rule_modules=tuple(
+            (module_id, theme == "revancha")
+            for module_id, _label in available_rule_modules()
+        ),
     )
 
 
