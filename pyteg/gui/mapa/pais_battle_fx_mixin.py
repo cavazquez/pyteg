@@ -115,6 +115,10 @@ class PaisBattleFxMixin:
                     None  # type: ignore[arg-type]
                 )
                 self._titilacion_effect = None
+                if getattr(self, "_seleccion_visual", None) is not None:
+                    restaurar = getattr(self, "_restaurar_efecto_seleccion", None)
+                    if callable(restaurar):
+                        restaurar()
 
         except (AttributeError, RuntimeError) as e:
             _LOG.warning("Error deteniendo titilación en %s: %s", self._nombre, e)

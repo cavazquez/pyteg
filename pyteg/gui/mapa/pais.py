@@ -50,6 +50,7 @@ class Pais(PaisBattleFxMixin, PaisSelectionMixin, QGraphicsPixmapItem):
         self._circle: Circulo | None = None
         self._center_text: QGraphicsTextItem | None = None
         self._main_window: Any = None
+        self._seleccion_visual: str | None = None
 
         # Variables para efectos de batalla (ver PaisBattleFxMixin)
         self._titilacion_timer: QTimer | None = None
