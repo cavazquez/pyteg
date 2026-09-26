@@ -325,6 +325,21 @@ class Server:
         """Encola la baja de un jugador para actualizar sus turnos."""
         self._command_executor.enqueue_client_disconnected(user_id)
 
+    def reabrir_lobby_si_vacio(self) -> bool:
+        """Permite una nueva conexión tras una partida finalizada sin jugadores.
+
+        Returns:
+            ``True`` cuando la sala está abierta para nuevos jugadores.
+
+        """
+        if self.estado.es_inicial() or self.estado.es_esperando_jugadores():
+            return True
+        if not self.estado.es_finalizado():
+            return False
+        if self.cant_clients() != 0:
+            return False
+        return self._command_executor.wait_for_empty_lobby()
+
     def turno_snapshot(self) -> tuple[int, int] | None:
         """Obtiene ``(jugador_actual, generación)`` sin leer el juego en el timer.
 
@@ -432,6 +447,8 @@ class Server:
         if admin_changed and self.estado.es_jugando():
             self.bump_state_revision()
             self.enviar_snapshot()
+        if self.estado.es_finalizado() and self.cant_clients() == 0:
+            self._command_executor.enqueue_reopen_empty_lobby()
 
     def registrar_cliente(self, user_id: int, client: Client) -> bool:
         """Registra un nuevo cliente en el servidor.
@@ -831,6 +848,8 @@ class Server:
             self._promover_administrador()
             self.bump_state_revision()
             self.enviar_snapshot()
+            if self.cant_clients() == 0:
+                self._command_executor.enqueue_reopen_empty_lobby()
         return changed
 
     def volver_al_lobby(self) -> bool:

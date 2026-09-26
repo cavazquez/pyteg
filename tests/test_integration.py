@@ -33,6 +33,7 @@ from pyteg.server.msg import MsgError
 _CONNECT_TIMEOUT = 2.0  # segundos para conectar
 _READ_TIMEOUT = 3.0  # segundos esperando un mensaje
 _RECV_SIZE = 4096
+_SECOND_ROUND = 2
 _NON_MUTATING_COMMANDS = {
     "chat",
     "hello",
@@ -102,7 +103,7 @@ class _ServerThread:
                     break
 
                 estado = self._server.estado
-                if estado.es_finalizado():
+                if estado.es_finalizado() and not self._server.reabrir_lobby_si_vacio():
                     rejection = MsgError(
                         "game_in_progress",
                         "El juego ya está en progreso. "
@@ -1294,6 +1295,77 @@ class TestIntegration(unittest.TestCase):
         c2 = self._new_client()
         self._start_two_player_game(c1, c2)
 
+    def test_start_with_one_connected_player(self) -> None:
+        """Un administrador puede iniciar una partida sin otros jugadores."""
+        admin = self._new_client()
+        self.assertIsNotNone(admin.wait_for("user_id"))
+        self.assertIsNotNone(
+            admin.wait_for(
+                "hello_ack", extra_check=lambda message: message.get("accepted")
+            )
+        )
+        admin.send({"mensaje": "empezar", "segundos": 1})
+        self.assertIsNotNone(
+            admin.wait_for(
+                "estado",
+                extra_check=lambda message: message.get("estado") == "EsperarJugadores",
+            )
+        )
+
+        admin.send({"mensaje": "empezar_partida"})
+        self.assertIsNotNone(
+            admin.wait_for(
+                "estado",
+                timeout=4.0,
+                extra_check=lambda message: message.get("estado") == "JUGANDO",
+            )
+        )
+        game = self._server.game
+        self.assertIsNotNone(game)
+        if game is not None:
+            self.assertEqual(len(game.jugadores()), 1)
+        self.assertIsNotNone(
+            admin.wait_for(
+                "turno",
+                timeout=5.0,
+                extra_check=lambda message: message.get("num_ronda") == _SECOND_ROUND,
+            )
+        )
+        self.assertTrue(self._server.estado.es_jugando())
+
+        admin.close()
+        self._wait_for_client_count(0)
+        newcomer = self._new_client()
+        self.assertIsNotNone(newcomer.wait_for("user_id"))
+        self.assertIsNotNone(
+            newcomer.wait_for(
+                "hello_ack", extra_check=lambda message: message.get("accepted")
+            )
+        )
+        self.assertTrue(self._server.estado.es_esperando_jugadores())
+
+    def test_finalized_room_reopens_after_last_disconnect(self) -> None:
+        """Una sala vacía admite nuevos jugadores tras terminar la partida."""
+        admin = self._new_client()
+        second = self._new_client()
+        self._start_two_player_game(admin, second)
+        self.assertTrue(self._server.finalizar_partida())
+
+        admin.close()
+        second.close()
+        self._wait_for_client_count(0)
+
+        newcomer = self._new_client()
+        self.assertIsNotNone(newcomer.wait_for("user_id"))
+        self.assertIsNotNone(
+            newcomer.wait_for(
+                "hello_ack", extra_check=lambda message: message.get("accepted")
+            )
+        )
+        self.assertTrue(self._server.estado.es_esperando_jugadores())
+        self.assertIsNone(self._server.game)
+        self.assertEqual(self._server.cant_clients(), 1)
+
     def test_admin_disconnects_during_game_and_successor_can_rematch(self) -> None:
         """La partida termina con un único admin sucesor capaz de revancha."""
         c1 = self._new_client()
@@ -1333,6 +1405,8 @@ class TestIntegration(unittest.TestCase):
             ),
         )
         self.assertIsNotNone(final_snapshot, "El snapshot final no anunció al sucesor")
+        self.assertFalse(self._server.reabrir_lobby_si_vacio())
+        self.assertTrue(self._server.estado.es_finalizado())
         c2.send({"mensaje": "volver_lobby"})
         self.assertIsNotNone(
             c2.wait_for(

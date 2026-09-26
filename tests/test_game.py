@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, cast
 from unittest.mock import MagicMock, patch
 
 from pyteg.core.cartas.mazo import Mazo
+from pyteg.core.partida.reglas import load_theme_rules
 from pyteg.core.turnos.turnos import PrimerTurno, SegundoTurno, SiguientesTurnos
 from pyteg.server.app import Server
 from pyteg.server.juego.game import Game
@@ -252,6 +253,34 @@ class TestGame(unittest.TestCase):
         game.empezar()
         game.finalizar_turno()
         self.assertEqual(game.id_turno_actual(), 1)
+
+    def test_solo_game_advances_rounds_without_victory(self) -> None:
+        """Clásico y Revancha permiten practicar solo más de un turno."""
+        self.server.estado.esperar_jugadores()
+        self.server.estado.empezar_partida()
+
+        for theme in ("classic", "revancha"):
+            with self.subTest(theme=theme):
+                game = Game(
+                    self.mapa,
+                    self.mazo_placeholder,
+                    [FakePlayer(1, "Solo", self.server)],
+                    self.server,
+                    paises_para_victoria=1,
+                    rules=load_theme_rules(theme),
+                )
+                game.empezar()
+                self.assertEqual(game.cant_jugadores(), 1)
+
+                with patch.object(self.server, "enviar_victoria") as enviar_victoria:
+                    game.finalizar_turno()
+                    game.finalizar_turno()
+
+                self.assertEqual(game.num_ronda(), 3)
+                self.assertEqual(game.turno_actual().jugador_actual(), 1)
+                self.assertTrue(game.empezo())
+                self.assertTrue(self.server.estado.es_jugando())
+                enviar_victoria.assert_not_called()
 
     def test_finalizar_turno_y_primer_ronda(self) -> None:
         """Prueba finalizar turnos y llegar a la primera ronda."""

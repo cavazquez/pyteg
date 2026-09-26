@@ -18,6 +18,7 @@ class ThemeRulesTests(unittest.TestCase):
         rules = load_theme_rules("revancha")
 
         self.assertEqual(rules.victory_countries, 45)
+        self.assertEqual(rules.min_players, 1)
         self.assertEqual((rules.first_turn_units, rules.second_turn_units), (8, 4))
         self.assertEqual(
             rules.continent_bonus_map,
@@ -46,6 +47,7 @@ class ThemeRulesTests(unittest.TestCase):
         """Classic conserva el lobby histórico y declara objetivo 30."""
         rules = load_theme_rules("classic")
         self.assertEqual(rules.victory_countries, 30)
+        self.assertEqual(rules.min_players, 1)
         self.assertEqual(rules.lobby_victory_countries, 0)
 
     def test_server_snapshot_publishes_same_profile(self) -> None:

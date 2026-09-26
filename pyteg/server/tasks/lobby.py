@@ -146,7 +146,16 @@ class ServerTaskEmpezarPartida(IServerTask[BaseTaskData]):
         client: IClientProtocol,
         context: GameContext,  # noqa: ARG002
     ) -> bool:
-        for jugador in client.server.dame_clientes():
+        jugadores = client.server.dame_clientes()
+        min_players = client.server.reglas().min_players
+        if len(jugadores) < min_players:
+            client.transmisor.enviar_error(
+                "not_enough_players",
+                "Para iniciar la partida, la cantidad mínima de jugadores "
+                f"conectados es {min_players}.",
+            )
+            return False
+        for jugador in jugadores:
             estado_handshake = getattr(jugador, "handshake_status", None)
             if not callable(estado_handshake) or estado_handshake() is not True:
                 client.transmisor.enviar_error(

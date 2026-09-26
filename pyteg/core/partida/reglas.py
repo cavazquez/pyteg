@@ -149,7 +149,7 @@ class ThemeRules:
             # El servidor histórico usa 0 en el lobby para indicar todos los
             # países; la interfaz puede enviar explícitamente 30 al iniciar.
             lobby_victory_countries=VICTORY_ALL_COUNTRIES,
-            min_players=2,
+            min_players=1,
             max_players=6,
             first_turn_units=6,
             second_turn_units=3,

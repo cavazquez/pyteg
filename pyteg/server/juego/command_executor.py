@@ -60,6 +60,21 @@ class _ClientDisconnected:
         executor._execute_client_disconnected(self)  # noqa: SLF001
 
 
+@dataclass(frozen=True)
+class _ReopenEmptyLobby:
+    """Reabre una partida terminada cuando ya no queda ningún cliente."""
+
+    completed: threading.Event | None = None
+
+    def accept(self, executor: GameCommandExecutor) -> None:
+        """Procesa la reapertura y despierta al hilo de conexiones."""
+        try:
+            executor._execute_reopen_empty_lobby()  # noqa: SLF001
+        finally:
+            if self.completed is not None:
+                self.completed.set()
+
+
 _STOP = object()
 _NON_MUTATING_COMMANDS = frozenset({
     "chat",
@@ -122,6 +137,27 @@ class GameCommandExecutor:
             if not self._accepting:
                 return
             self._queue.put(_ClientDisconnected(user_id))
+
+    def enqueue_reopen_empty_lobby(self) -> None:
+        """Programa la limpieza de una partida terminada y sin conexiones."""
+        with self._state_lock:
+            if self._accepting:
+                self._queue.put(_ReopenEmptyLobby())
+
+    def wait_for_empty_lobby(self) -> bool:
+        """Espera a que el ejecutor reabra la sala, si está vacía.
+
+        Returns:
+            ``True`` si terminó en estado de lobby.
+
+        """
+        completed = threading.Event()
+        with self._state_lock:
+            if not self._accepting:
+                return False
+            self._queue.put(_ReopenEmptyLobby(completed))
+        reopened = completed.wait(timeout=5.0)
+        return reopened and self._server.estado.es_esperando_jugadores()
 
     def turn_snapshot(self) -> tuple[int, int] | None:
         """Devuelve ``(jugador_actual, generación)`` de forma atómica.
@@ -370,6 +406,11 @@ class GameCommandExecutor:
                 bump()
             if callable(snapshot):
                 snapshot()
+
+    def _execute_reopen_empty_lobby(self) -> None:
+        """Limpia la partida sólo si sigue finalizada y nadie se reconectó."""
+        if self._server.estado.es_finalizado() and self._server.cant_clients() == 0:
+            self._server.volver_al_lobby()
 
     def _refresh_turn_snapshot(self) -> None:
         """Publica el turno actual y aumenta su generación al cambiarlo."""

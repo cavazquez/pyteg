@@ -40,6 +40,10 @@ class ServerLike(Protocol):
         """Registra una conexión temporal durante una partida."""
         ...
 
+    def reabrir_lobby_si_vacio(self) -> bool:
+        """Reabre una partida finalizada sin clientes antes del registro."""
+        ...
+
 
 def _rechazar_conexion(
     conn: socket.socket,
@@ -128,7 +132,10 @@ def registrar_jugadores(
 
             logger.info("Nueva conexión aceptada desde %s", addr)
             try:
-                if server.estado.es_finalizado():
+                if (
+                    server.estado.es_finalizado()
+                    and not server.reabrir_lobby_si_vacio()
+                ):
                     estado_actual = server.estado.estado_actual()
                     logger.warning(
                         "Rechazando conexión de %s: "
