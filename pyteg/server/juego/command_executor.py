@@ -5,7 +5,7 @@ from __future__ import annotations
 import queue
 import threading
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any, Protocol, cast
 
 from pyteg.exceptions import EstadoInvalidoError, MensajeNoValidoError
 from pyteg.logger import get_logger
@@ -18,12 +18,24 @@ if TYPE_CHECKING:
 LOGGER = get_logger(__name__)
 
 
+class _QueuedEvent(Protocol):
+    """Evento interno que selecciona su transición en el ejecutor."""
+
+    def accept(self, executor: GameCommandExecutor) -> None:
+        """Selecciona la transición correspondiente al evento."""
+        ...
+
+
 @dataclass(frozen=True)
 class _ClientCommand:
     """Comando validado que llegó desde una conexión TCP."""
 
     client: IClientProtocol
     payload: dict[str, Any]
+
+    def accept(self, executor: GameCommandExecutor) -> None:
+        """Inicia la ejecución del comando del cliente."""
+        executor._execute_client_command(self)  # noqa: SLF001
 
 
 @dataclass(frozen=True)
@@ -32,12 +44,20 @@ class _TurnExpired:
 
     generation: int
 
+    def accept(self, executor: GameCommandExecutor) -> None:
+        """Inicia el tratamiento del vencimiento del turno."""
+        executor._execute_turn_expired(self)  # noqa: SLF001
+
 
 @dataclass(frozen=True)
 class _ClientDisconnected:
     """Desconexión que debe mutar el juego dentro del hilo serializador."""
 
     user_id: int
+
+    def accept(self, executor: GameCommandExecutor) -> None:
+        """Inicia el tratamiento de la desconexión del cliente."""
+        executor._execute_client_disconnected(self)  # noqa: SLF001
 
 
 _STOP = object()
@@ -130,12 +150,7 @@ class GameCommandExecutor:
             try:
                 if item is _STOP:
                     return
-                if isinstance(item, _ClientCommand):
-                    self._execute_client_command(item)
-                elif isinstance(item, _TurnExpired):
-                    self._execute_turn_expired(item)
-                elif isinstance(item, _ClientDisconnected):
-                    self._execute_client_disconnected(item)
+                cast("_QueuedEvent", item).accept(self)
             except Exception:
                 LOGGER.exception("Error al ejecutar transición de juego")
             finally:
