@@ -13,19 +13,19 @@ first_turns_no_attack = 2
 
 [combat]
 attack_dice_max = 3
-defense_dice_max = 2
+defense_dice_max = 3
 
 [reinforcements]
-minimum = 3
+minimum = 4
 countries_divisor = 2
 
 [continents]
-AmericaDelNorte = 8
-AmericaCentral = 8
-AmericaDelSur = 6
-Europa = 4
+AmericaDelNorte = 6
+AmericaCentral = 3
+AmericaDelSur = 4
+Europa = 8
 Africa = 4
-Asia = 3
+Asia = 8
 Oceania = 3
 
 [cards]

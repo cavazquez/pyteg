@@ -7,6 +7,7 @@ from typing import Any
 from PySide6.QtCore import QSize, Qt
 from PySide6.QtGui import QIntValidator
 from PySide6.QtWidgets import (
+    QComboBox,
     QDialog,
     QFormLayout,
     QHBoxLayout,
@@ -19,6 +20,8 @@ from PySide6.QtWidgets import (
 
 from pyteg.client.conexion.connection import ConnectionClient
 from pyteg.client.conexion.transmisor import ClientTransmisor
+from pyteg.config import DEFAULT_MAP_THEME
+from pyteg.exceptions import ImagenNoEncontradaError
 from pyteg.gui.dialogs.conectar import styles
 from pyteg.gui.dialogs.conectar.validation import (
     TCP_MAX_PORT,
@@ -28,6 +31,7 @@ from pyteg.gui.dialogs.conectar.validation import (
 )
 from pyteg.i18n import translate as _
 from pyteg.logger import get_logger
+from pyteg.toml_reader import TomlReaderError
 
 _LOG = get_logger("gui.conectar")
 
@@ -48,6 +52,8 @@ _CONNECT_TEXT_TO_MSGID: dict[str, str] = {
     "Port:": "Puerto:",
     "Usuario:": "Usuario:",
     "User:": "Usuario:",
+    "Mapa:": "Mapa:",
+    "Map:": "Mapa:",
     "Cancelar": "Cancelar",
     "Cancel": "Cancelar",
     "Conectar": "Conectar",
@@ -79,6 +85,7 @@ class VentanaConectar(QDialog):
         self.addr: QLineEdit
         self.port: QLineEdit
         self.username: QLineEdit
+        self.theme_selector: QComboBox
         self._conexion: ConnectionClient | None = None
 
         self._setup_window()
@@ -100,7 +107,7 @@ class VentanaConectar(QDialog):
     def _setup_window(self) -> None:
         """Configura las propiedades básicas de la ventana."""
         self.setWindowTitle(_("Conectar al servidor"))
-        self.setFixedSize(QSize(400, 300))
+        self.setFixedSize(QSize(400, 345))
         self.setWindowFlags(
             Qt.WindowType.Dialog
             | Qt.WindowType.CustomizeWindowHint
@@ -140,6 +147,9 @@ class VentanaConectar(QDialog):
         user_label = QLabel(_("Usuario:"))
         user_label.setStyleSheet(styles.FORM_LABEL_STYLE)
 
+        self.theme_label = QLabel(_("Mapa:"))
+        self.theme_label.setStyleSheet(styles.FORM_LABEL_STYLE)
+
         form_layout.addRow(addr_label, self.addr)
 
         spacer1 = QLabel()
@@ -153,6 +163,7 @@ class VentanaConectar(QDialog):
         form_layout.addRow("", spacer2)
 
         form_layout.addRow(user_label, self.username)
+        form_layout.addRow(self.theme_label, self.theme_selector)
 
         parent_layout.addLayout(form_layout)
 
@@ -168,9 +179,18 @@ class VentanaConectar(QDialog):
         self.username = QLineEdit()
         self.username.setPlaceholderText(_("Tu nombre en el juego"))
 
+        self.theme_selector = QComboBox()
+        self.theme_selector.addItem(_("Clásico"), "classic")
+        self.theme_selector.addItem(_("Revancha"), "revancha")
+        selected_theme = getattr(self._main_window, "map_theme", DEFAULT_MAP_THEME)
+        selected_index = self.theme_selector.findData(selected_theme)
+        if selected_index >= 0:
+            self.theme_selector.setCurrentIndex(selected_index)
+
         self.addr.setStyleSheet(styles.INPUT_STYLE)
         self.port.setStyleSheet(styles.INPUT_STYLE)
         self.username.setStyleSheet(styles.INPUT_STYLE)
+        self.theme_selector.setStyleSheet(styles.INPUT_STYLE)
 
     def _setup_buttons(self, parent_layout: QVBoxLayout) -> None:
         """Configura los botones de acción."""
@@ -227,6 +247,13 @@ class VentanaConectar(QDialog):
             return
 
         addr, port, username = result
+        selected_theme = self.theme_selector.currentData()
+        try:
+            self._main_window.set_map_theme(selected_theme)
+        except (OSError, ValueError, TomlReaderError, ImagenNoEncontradaError) as e:
+            self._show_error(_("No se pudo cargar el mapa: {}").format(str(e)))
+            return
+
         try:
             self._conexion = ConnectionClient(self._main_window, addr, port, username)
             self._main_window.conexion = self._conexion
@@ -280,3 +307,6 @@ class VentanaConectar(QDialog):
             self.port.setPlaceholderText(_("Puerto"))
         if hasattr(self, "username"):
             self.username.setPlaceholderText(_("Tu nombre en el juego"))
+        self.theme_label.setText(_("Mapa:"))
+        self.theme_selector.setItemText(0, _("Clásico"))
+        self.theme_selector.setItemText(1, _("Revancha"))

@@ -25,6 +25,13 @@ class Client:
         """Guarda el token para recuperar la sesión si se corta la red."""
         self._reconnect_token = token
 
+    def reset_session(self) -> None:
+        """Olvida la identidad de un servidor al cambiar de mapa."""
+        self._username = None
+        self._userid = None
+        self._es_admin = False
+        self._reconnect_token = None
+
     def reconnect_token(self) -> str | None:
         """Devuelve el token de reconexión guardado.
 

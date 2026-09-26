@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from itertools import starmap
 from math import ceil, hypot
 from typing import TYPE_CHECKING
@@ -16,16 +17,56 @@ if TYPE_CHECKING:
 
 
 _VISUAL_CONNECTION_Z = -1000.0
+_REVANCHA_CONNECTION_Z = -400.0
 _VISUAL_CONNECTION_COLOR = QColor(30, 78, 101, 225)
 _VISUAL_CONNECTION_WIDTH = 2.0
+_REVANCHA_CONNECTION_COLOR = QColor("#c48a3c")
+_REVANCHA_CONNECTION_WIDTH = 3.4
+_HINT_CONNECTION_COLOR = QColor("#b45b12")
+_HINT_CONNECTION_WIDTH = 2.8
+_HINT_CONNECTION_Z = 85.0
 _BOUNDARY_SAMPLE_STEP = 0.5
 _BOUNDARY_REFINEMENTS = 10
 
 
-def add_visual_connections(
+@dataclass(frozen=True, slots=True)
+class _ConnectionStyle:
+    color: QColor
+    width: float
+    pen_style: Qt.PenStyle
+    z: float
+
+
+def _connection_style(theme: str, *, highlight: bool = False) -> _ConnectionStyle:
+    if highlight:
+        return _ConnectionStyle(
+            _HINT_CONNECTION_COLOR,
+            _HINT_CONNECTION_WIDTH,
+            Qt.PenStyle.DashLine,
+            _HINT_CONNECTION_Z,
+        )
+    if theme == "revancha":
+        return _ConnectionStyle(
+            _REVANCHA_CONNECTION_COLOR,
+            _REVANCHA_CONNECTION_WIDTH,
+            Qt.PenStyle.SolidLine,
+            _REVANCHA_CONNECTION_Z,
+        )
+    return _ConnectionStyle(
+        _VISUAL_CONNECTION_COLOR,
+        _VISUAL_CONNECTION_WIDTH,
+        Qt.PenStyle.DashLine,
+        _VISUAL_CONNECTION_Z,
+    )
+
+
+def add_visual_connections(  # noqa: PLR0914
     scene: QGraphicsScene,
     connections: list[ThemeVisualConnection],
     countries: dict[str, Pais],
+    *,
+    theme: str = "classic",
+    highlight: bool = False,
 ) -> list[QGraphicsPathItem]:
     """Agrega las líneas del tema detrás de los países.
 
@@ -40,19 +81,25 @@ def add_visual_connections(
 
     """
     items: list[QGraphicsPathItem] = []
+    style = _connection_style(theme, highlight=highlight)
     for connection in connections:
         origin = countries[connection.origen]
         destination = countries[connection.destino]
+        use_marker_center = theme == "revancha"
+        origin_center = _country_center(origin, use_marker=use_marker_center)
+        destination_center = _country_center(destination, use_marker=use_marker_center)
         if connection.envolver == "horizontal":
             exit_point, entry_point = connection.puntos
             origin_target = _first_outside(
-                origin, [QPointF(*exit_point)], _country_center(destination)
+                origin, [QPointF(*exit_point)], destination_center
             )
             destination_target = _first_outside(
-                destination, [QPointF(*entry_point)], _country_center(origin)
+                destination, [QPointF(*entry_point)], origin_center
             )
-            origin_anchor = _boundary_anchor(origin, origin_target)
-            destination_anchor = _boundary_anchor(destination, destination_target)
+            origin_anchor = _boundary_anchor(origin, origin_target, origin_center)
+            destination_anchor = _boundary_anchor(
+                destination, destination_target, destination_center
+            )
             path = QPainterPath(origin_anchor)
             path.lineTo(QPointF(*exit_point))
             path.moveTo(QPointF(*entry_point))
@@ -69,32 +116,36 @@ def add_visual_connections(
                 destination.mapFromScene(waypoints[-1])
             ):
                 waypoints.pop()
-            origin_target = _first_outside(
-                origin, waypoints, _country_center(destination)
-            )
+            origin_target = _first_outside(origin, waypoints, destination_center)
             destination_target = _first_outside(
-                destination, list(reversed(waypoints)), _country_center(origin)
+                destination, list(reversed(waypoints)), origin_center
             )
-            origin_anchor = _boundary_anchor(origin, origin_target)
-            destination_anchor = _boundary_anchor(destination, destination_target)
+            origin_anchor = _boundary_anchor(origin, origin_target, origin_center)
+            destination_anchor = _boundary_anchor(
+                destination, destination_target, destination_center
+            )
             path = QPainterPath(origin_anchor)
             for waypoint in waypoints:
                 path.lineTo(waypoint)
             path.lineTo(destination_anchor)
 
         item = QGraphicsPathItem(path)
-        pen = QPen(_VISUAL_CONNECTION_COLOR)
-        pen.setStyle(Qt.PenStyle.DashLine)
-        pen.setWidthF(_VISUAL_CONNECTION_WIDTH)
+        pen = QPen(style.color)
+        pen.setStyle(style.pen_style)
+        pen.setWidthF(style.width)
         pen.setCosmetic(True)
         pen.setCapStyle(Qt.PenCapStyle.RoundCap)
         pen.setJoinStyle(Qt.PenJoinStyle.RoundJoin)
         item.setPen(pen)
-        item.setZValue(_VISUAL_CONNECTION_Z)
+        item.setZValue(style.z)
         item.setAcceptedMouseButtons(Qt.MouseButton.NoButton)
         item.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, enabled=False)
+        if highlight:
+            item.setToolTip(
+                f"Conexión jugable: {connection.origen} ↔ {connection.destino}"
+            )
         if connection.envolver == "horizontal":
-            _add_wrap_arrowheads(item, exit_point, entry_point)
+            _add_wrap_arrowheads(item, exit_point, entry_point, style.color)
         scene.addItem(item)
         items.append(item)
     return items
@@ -104,6 +155,7 @@ def _add_wrap_arrowheads(
     route: QGraphicsPathItem,
     exit_point: tuple[float, float],
     entry_point: tuple[float, float],
+    color: QColor,
 ) -> None:
     arrow_specs = (
         (exit_point[0], exit_point[0] + 6.0, exit_point[1]),
@@ -117,29 +169,35 @@ def _add_wrap_arrowheads(
 
         arrow = QGraphicsPathItem(arrow_path, route)
         arrow.setPen(QPen(Qt.PenStyle.NoPen))
-        arrow.setBrush(QBrush(_VISUAL_CONNECTION_COLOR))
+        arrow.setBrush(QBrush(color))
         arrow.setAcceptedMouseButtons(Qt.MouseButton.NoButton)
         arrow.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, enabled=False)
 
 
-def _country_center(country: Pais) -> QPointF:
+def _country_center(country: Pais, *, use_marker: bool = False) -> QPointF:
     """Obtiene el centro del sprite en coordenadas de escena.
 
     Returns:
         Centro del país transformado a coordenadas de escena.
 
     """
+    if use_marker:
+        return country.mapToScene(
+            QPointF(country._army_x + 8, country._army_y + 8)  # noqa: SLF001
+        )
     return country.mapToScene(country.boundingRect().center())
 
 
-def _boundary_anchor(country: Pais, target: QPointF) -> QPointF:  # noqa: PLR0914
+def _boundary_anchor(  # noqa: PLR0914
+    country: Pais, target: QPointF, center: QPointF | None = None
+) -> QPointF:
     """Intersects the ray toward ``target`` with the country's visible edge.
 
     Returns:
         A scene point on the last boundary crossing before the target.
 
     """
-    center = _country_center(country)
+    center = _country_center(country) if center is None else center
     local_center = country.mapFromScene(center)
     local_target = country.mapFromScene(target)
     delta_x = local_target.x() - local_center.x()

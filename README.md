@@ -90,6 +90,18 @@ Consejos:
 - Primero inicia el servidor. Luego abre uno o más clientes.
 - Si el juego ya está en curso, el servidor rechazará nuevas conexiones.
 
+### Elegir Clásico o Revancha
+
+El servidor define el tema de la partida. Para jugar **Clásico**, iniciá
+`uv run pyteg-server --theme classic` (es el valor predeterminado). Para jugar
+**Revancha**, iniciá `uv run pyteg-server --theme revancha`.
+
+En cada cliente elegí el mismo tema en el diálogo **Conectar** antes de entrar
+a la sala. También podés abrir el cliente con `uv run pyteg-client --theme classic`
+o `uv run pyteg-client --theme revancha` para dejar esa opción seleccionada de
+entrada. El cliente comprueba que el tema y el mapa coincidan con el servidor;
+si elegís otro tema, la conexión se rechaza.
+
 Para ejecutar automáticamente un servidor y varios bots por TCP hasta verificar
 una victoria, consultá [la guía de simulación](docs/SIMULATION.md). El diagnóstico,
 las prioridades y los issues para completar el proyecto están en

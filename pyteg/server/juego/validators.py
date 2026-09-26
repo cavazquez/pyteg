@@ -321,6 +321,9 @@ class AttackRestrictionValidator:
         ronda_getter = getattr(game, "num_ronda", None)
         ronda = ronda_getter() if callable(ronda_getter) else None
         no_attack = getattr(reglas, "first_turns_no_attack", FIRST_TURNS_NO_ATTACK)
+        rondas_iniciales = getattr(game, "rondas_sin_ataque", None)
+        if callable(rondas_iniciales):
+            no_attack = rondas_iniciales()
         bloqueado = (
             isinstance(turno_actual, PrimerTurno | SegundoTurno)
             if ronda is None
@@ -330,7 +333,7 @@ class AttackRestrictionValidator:
             msg = error_message or (
                 f"No se puede atacar en los primeros "
                 f"{no_attack} turnos. "
-                "Debe esperar al tercer turno."
+                f"Puede atacar a partir de la ronda {int(no_attack) + 1}."
             )
             raise InvalidActionError(msg)
 

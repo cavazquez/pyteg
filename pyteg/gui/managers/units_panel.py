@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from functools import lru_cache
 from typing import TYPE_CHECKING
 
 from PySide6.QtCore import Qt
@@ -15,8 +16,9 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from pyteg.config import CONTINENT_PANEL_LABELS
+from pyteg.config import CONTINENTS, DEFAULT_MAP_THEME, MAP_CONTINENT_TO_PANEL_LABEL
 from pyteg.i18n import translate as _
+from pyteg.toml_reader import TomlReader
 
 if TYPE_CHECKING:
     from pyteg.gui.managers.protocols import MainWindowProtocol
@@ -34,6 +36,28 @@ def format_unit_label(key: str, value: int) -> str:
 
     """
     return _("{}: {}").format(_(key), value)
+
+
+@lru_cache(maxsize=4)
+def continent_panel_pairs(theme: str) -> tuple[tuple[str, str], ...]:
+    """Pares ID/etiqueta de los continentes presentes en el tema activo.
+
+    Returns:
+        Continentes y etiquetas en el orden de la configuración del mapa.
+
+    """
+    reader = TomlReader.from_theme(theme, strict=True)
+    continents = reader.get_continentes()
+    if theme == DEFAULT_MAP_THEME:
+        classic_order = [spec.map_id for spec in CONTINENTS]
+        continents = [
+            *[continent for continent in classic_order if continent in continents],
+            *[continent for continent in continents if continent not in classic_order],
+        ]
+    return tuple(
+        (continent, MAP_CONTINENT_TO_PANEL_LABEL.get(continent, continent))
+        for continent in continents
+    )
 
 
 def setup_continent_values(
@@ -79,7 +103,10 @@ def setup_continent_values(
     )
     main_window.row_widgets["Misiles"].setVisible(False)
 
-    for cont in CONTINENT_PANEL_LABELS:
+    labels = dict.fromkeys(
+        label for _continent, label in continent_panel_pairs(main_window.map_theme)
+    )
+    for cont in labels:
         _create_unit_row(
             main_window,
             section_layout,
