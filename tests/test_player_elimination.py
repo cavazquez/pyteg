@@ -149,6 +149,24 @@ class TestPlayerElimination(unittest.TestCase):
         ):
             return game.atacar("Origen", "Destino", 1)
 
+    def test_conquista_conserva_misiles_del_pais_para_el_atacante(self) -> None:
+        """El atacante recibe los misiles guardados en el país conquistado."""
+        _server, mapa, _mazo, jugadores, game = self._crear_partida()
+        atacante, defensor, reserva = jugadores
+        self._preparar_mapa(
+            mapa,
+            atacante.userid(),
+            defensor.userid(),
+            reserva.userid(),
+        )
+        mapa.agregar_misil("Destino")
+
+        resultado = self._conquistar_ultimo_pais(game, defensor.userid())
+
+        self.assertTrue(resultado["conquistado"])
+        self.assertEqual(mapa.ocupado_por("Destino"), atacante.userid())
+        self.assertEqual(mapa.cantidad_misiles("Destino"), 1)
+
     def test_eliminacion_retira_turnos_transfiere_cartas_y_es_idempotente(
         self,
     ) -> None:

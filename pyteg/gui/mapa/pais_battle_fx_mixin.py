@@ -5,11 +5,12 @@ from __future__ import annotations
 from typing import cast
 
 from PySide6.QtCore import QEasingCurve, QPropertyAnimation, QTimer
-from PySide6.QtGui import QColor, QFont
+from PySide6.QtGui import QBrush, QColor, QFont, QPen
 from PySide6.QtWidgets import (
     QGraphicsColorizeEffect,
     QGraphicsOpacityEffect,
     QGraphicsPixmapItem,
+    QGraphicsRectItem,
     QGraphicsTextItem,
 )
 
@@ -25,6 +26,7 @@ class PaisBattleFxMixin:
     _nombre: str
     _army_x: float
     _army_y: float
+    _misiles_badge: QGraphicsRectItem | None
     _misiles_text: QGraphicsTextItem | None
     _cantidad_misiles: int
     _titilacion_timer: QTimer | None
@@ -40,26 +42,53 @@ class PaisBattleFxMixin:
         try:
             self._cantidad_misiles = cantidad
 
-            if cantidad == 0:
+            if cantidad <= 0:
+                if self._misiles_badge:
+                    self._misiles_badge.setVisible(False)
                 if self._misiles_text:
-                    if self._misiles_text.scene():
-                        self._misiles_text.scene().removeItem(self._misiles_text)
-                    self._misiles_text = None
+                    self._misiles_text.setVisible(False)
+                actualizar_tooltip = getattr(self, "_actualizar_tooltip", None)
+                if callable(actualizar_tooltip):
+                    actualizar_tooltip()
                 return
 
-            if self._misiles_text:
-                self._misiles_text.setPlainText(f"🚀{cantidad}")
-            else:
-                self._misiles_text = QGraphicsTextItem(f"🚀{cantidad}")
-                self._misiles_text.setParentItem(cast("QGraphicsPixmapItem", self))
+            if self._misiles_badge is None or self._misiles_text is None:
+                badge = QGraphicsRectItem()
+                badge.setParentItem(cast("QGraphicsPixmapItem", self))
+                badge.setBrush(QBrush(QColor("#9F1D16")))
+                badge.setPen(QPen(QColor("#FFE08A"), 1.5))
+                badge.setZValue(20)
 
-                font = QFont("Arial", 12, QFont.Weight.Bold)
-                self._misiles_text.setFont(font)
-                self._misiles_text.setDefaultTextColor(QColor(255, 50, 50))
+                text = QGraphicsTextItem(badge)
+                text.document().setDocumentMargin(0)
+                text.setFont(QFont("Arial", 10, QFont.Weight.Bold))
+                text.setDefaultTextColor(QColor("#FFFFFF"))
 
-                pos_x = self._army_x - 15
-                pos_y = self._army_y - 45
-                self._misiles_text.setPos(pos_x, pos_y)
+                self._misiles_badge = badge
+                self._misiles_text = text
+
+            badge = self._misiles_badge
+            text = self._misiles_text
+            if badge is None or text is None:
+                return
+
+            text.setPlainText(f"🚀 {cantidad}")
+            text.setVisible(True)
+            badge.setVisible(True)
+
+            text_bounds = text.boundingRect()
+            badge.setRect(
+                0,
+                0,
+                text_bounds.width() + 10,
+                text_bounds.height() + 4,
+            )
+            text.setPos(5, 2)
+            badge.setPos(self._army_x - 15, self._army_y - 45)
+
+            actualizar_tooltip = getattr(self, "_actualizar_tooltip", None)
+            if callable(actualizar_tooltip):
+                actualizar_tooltip()
 
         except (AttributeError, RuntimeError) as e:
             _LOG.warning("Error actualizando misiles en %s: %s", self._nombre, e)
