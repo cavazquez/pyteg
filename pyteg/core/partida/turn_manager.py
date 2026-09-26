@@ -275,37 +275,6 @@ class TurnManager:
 
         return jugadores_orden
 
-    def rotar_jugadores(
-        self, jugadores: Sequence[IClientProtocol]
-    ) -> list[IClientProtocol]:
-        """Rota la lista de jugadores para la nueva ronda.
-
-        Args:
-            jugadores: Lista actual de jugadores.
-
-        Returns:
-            Lista de jugadores rotada.
-
-        """
-        jugadores_por_id = {int(jugador.userid()): jugador for jugador in jugadores}
-        orden_actual = [
-            int(jugador_id)
-            for jugador_id in self.lista_jugadores_orden_turno()
-            if int(jugador_id) in jugadores_por_id
-        ]
-        # La lista histórica conserva identidades, pero no representa el orden
-        # de la ronda vigente después de la primera rotación. Los jugadores que
-        # aún no tengan turno (por ejemplo, una reconexión) quedan al final.
-        ids_ordenados = orden_actual + [
-            jugador_id
-            for jugador_id in jugadores_por_id
-            if jugador_id not in orden_actual
-        ]
-        jugadores_list = [jugadores_por_id[jugador_id] for jugador_id in ids_ordenados]
-        if len(jugadores_list) > 1:
-            return jugadores_list[1:] + jugadores_list[:1]
-        return jugadores_list
-
     def reintegrar_jugador(self, jugador_id: int) -> bool:
         """Agrega un jugador reconectado al final de la ronda vigente.
 
