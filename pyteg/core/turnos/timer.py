@@ -6,6 +6,7 @@ import threading
 import time
 from typing import Any, Protocol
 
+from pyteg.config import DEFAULT_TURN_SECONDS
 from pyteg.logger import get_logger
 
 LOGGER = get_logger(__name__)
@@ -75,12 +76,14 @@ class TurnoTimer(threading.Thread):
     decide si aún corresponde aplicarlo.
     """
 
-    def __init__(self, server: Any, segundos_por_turno: int = 120) -> None:
+    def __init__(
+        self, server: Any, segundos_por_turno: int = DEFAULT_TURN_SECONDS
+    ) -> None:
         """Inicializa el temporizador de turnos.
 
         Args:
             server: Instancia del servidor.
-            segundos_por_turno: Duración de cada turno en segundos (por defecto 120).
+            segundos_por_turno: Duración de cada turno en segundos (por defecto 20).
 
         """
         super().__init__(daemon=True)
