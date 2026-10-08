@@ -1,5 +1,5 @@
-# Grafo conservador de #225: 134 aristas del consenso auxiliar.
-# Las discrepancias GranBretana-Francia e Irak-Ucrania quedan fuera.
+# Grafo auditado para Pyteg en #225: 134 aristas bidireccionales.
+# Decisiones y fuentes: docs/revancha-map-audit.md y su fixture estructural.
 
 [Adyacencias]
 California = ['Florida', 'LasVegas', 'Mexico', 'Tonga']

@@ -16,5 +16,8 @@ silueta. Se pueden regenerar con
 puentes confirmados; no habilitan movimientos. Al seleccionar un país, el mapa
 resalta todos sus vecinos jugables y dibuja rutas temporales entre ellos. Esto
 permite descubrir también las conexiones que no comparten una frontera en la
-composición aproximada. Gran Bretaña–Francia e Irak–Ucrania siguen fuera del
-grafo hasta resolver las discrepancias pendientes.
+composición aproximada. La auditoría de #225 fija Gran Bretaña–Portugal e
+Irán–Ucrania; excluye Gran Bretaña–Francia e Irak–Ucrania. El puente atlántico
+adoptado para este tema es Uruguay–Nigeria. El fixture registra los motivos y
+las fuentes de estas decisiones, y las pruebas comparan todos los países,
+continentes y vecinos del tema contra él.

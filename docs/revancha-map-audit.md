@@ -1,8 +1,8 @@
 # Auditoría del mapa Revancha de Pyteg
 
-Este documento fija el inventario que debe usar el tema `revancha` y separa los
-datos confirmados de las decisiones que todavía necesitan cotejo directo con un
-tablero legible. El fixture estructural asociado es
+Este documento fija el inventario y el grafo que debe usar el tema `revancha`
+de Pyteg, junto con las decisiones tomadas al comparar las fuentes de #225.
+El fixture estructural asociado es
 [`tests/fixtures/revancha_map_audit.toml`](../tests/fixtures/revancha_map_audit.toml).
 
 ## Datos de referencia
@@ -12,7 +12,31 @@ dirigidas. Los datos ejecutables se mantienen en `themes/revancha/paises.toml`
 y `themes/revancha/adyacencias.toml`. Los IDs normalizan acentos y variantes
 de nombres para que cliente, servidor y simulador usen el mismo inventario.
 El mapa dispone de tarjetas de países y continentes, objetivos, situaciones
-y misiles. Las dos discrepancias pendientes permanecen fuera del grafo.
+y misiles. La revisión del 8 de octubre de 2026 resuelve las dos aristas que
+estaban pendientes sin agregarlas: el grafo conserva sus 134 conexiones.
+
+### Procedencia y criterio de decisión
+
+- **Tablero de referencia:** fotografía de colores de 800×600 aportada por el
+  usuario, identificada como
+  `codex-clipboard-ed8184cc-a250-49f8-aad3-aa452154cde3.png`. Es la misma referencia
+  elegida para los contornos de #227. Se usa para distinguir países, fronteras y
+  extremos de los puentes, no para inferir vecindad por geografía real.
+- **Reglamento consultado:** documento de 40 páginas; SHA-256
+  `e6b3f6b021f86e577bc1c1c50f84ad39c99385cf4bfff737678c3715269a8047`.
+  La página 5 fija 72 países y siete continentes; la 12 define adyacencia por
+  frontera común o puente sobre agua; las páginas 19, 30 y 33 aportan ejemplos.
+  No incluye una matriz completa de adyacencias.
+- **Matrices auxiliares:** aportaron la transcripción inicial de 134 aristas.
+  Su coincidencia sirve como contraste, pero una reconstrucción visual o una
+  implementación auxiliar no basta para agregar una conexión ausente del
+  tablero elegido.
+
+La fotografía y el PDF se consultan como referencias externas y no se
+distribuyen con el tema. El fixture registra su procedencia sin incorporar
+logotipos ni assets comerciales. Cuando un ejemplo textual discrepa del
+tablero elegido, la decisión se registra como parte del mapa de Pyteg; no se
+atribuye a todas las ediciones de otros productos.
 
 ## Inventario canónico
 
@@ -32,16 +56,17 @@ mostrar los nombres con tildes; no se deben crear aliases paralelos.
 El total es `12 + 6 + 8 + 16 + 8 + 16 + 6 = 72`. Cada país aparece una sola
 vez y pertenece a un único continente.
 
-## Grafo conservador
+## Grafo auditado para Pyteg
 
 El fixture contiene las 134 aristas aceptadas para este mapa.
-Es una base conservadora para validar la estructura, no una autorización para
-rellenar las dos discrepancias pendientes. Cada arista aceptada se almacena en
-las dos direcciones y la prueba
-`test_consensus_graph_is_complete_and_symmetric` rechaza nombres desconocidos,
-lazos, asimetrías o cambios de conteo.
+Cada arista aceptada se almacena en las dos direcciones. La prueba
+`test_audited_graph_is_complete_and_symmetric` rechaza nombres desconocidos,
+lazos, duplicados, asimetrías o cambios de conteo. Otras pruebas comparan el
+tema cargado en modo estricto contra el fixture: los 72 IDs, la pertenencia a
+los siete continentes y los vecinos de cada país deben coincidir exactamente.
 
-Los puentes intercontinentales que están en el consenso incluyen:
+Los puentes largos registrados en `Puentes.consenso`, tanto entre continentes
+como dentro de Oceanía, son:
 
 - Alaska–Chukchi y Alaska–Kamchatka.
 - Groenlandia–Islandia.
@@ -53,6 +78,12 @@ Los puentes intercontinentales que están en el consenso incluyen:
 
 Las conexiones de agua se dibujan como rutas visuales;
 no se deben inferir desde la proximidad de dos sprites.
+Además, `FronterasIntercontinentales.pares` enumera las 20 aristas entre
+continentes, incluidas las terrestres. Una prueba exige que la lista coincida
+con la pertenencia continental y el grafo del fixture. Las rutas más cortas y
+las separaciones de la geometría se declaran en `ConexionesVisuales` del tema;
+la prueba de cobertura verifica que toda arista jugable tenga una frontera
+visible o una ruta.
 
 ## Geometría y apariencia
 
@@ -85,20 +116,34 @@ Las pruebas verifican inventario, sitios de clic en los 72 marcadores, ausencia
 de solapamientos y cobertura visual de todas las aristas. CI genera capturas
 de los dos mapas en 1024×600, 1280×800 y 1920×1080.
 
-## Discrepancias pendientes
+## Discrepancias resueltas
 
-Hay dos decisiones que no se deben resolver por intuición geográfica:
+Las decisiones siguientes están en `Discrepancias.resueltas` del fixture.
+`Meta.aristas_pendientes` y `Discrepancias.pendientes` quedan vacíos.
 
-- Una reconstrucción visual pública muestra `Gran Bretaña–Francia`, mientras
-  que el consenso de las dos implementaciones auxiliares declara
-  `Gran Bretaña–Portugal` y no declara Francia.
-- Las reconstrucciones comparadas difieren sobre `Irak–Ucrania`.
+- **Gran Bretaña–Francia: excluida.** El puente al sudoeste de Gran Bretaña
+  termina en Portugal en la fotografía de referencia. Se conserva
+  `GranBretana–Portugal`; la conexión a Francia de una reconstrucción auxiliar
+  no se adopta. Los vecinos completos de Gran Bretaña quedan fijados en
+  Alemania, Irlanda y Portugal. El mapa clásico tiene su conexión propia con
+  España.
+- **Irak–Ucrania: excluida.** En la referencia, la zona de Albania e Irán
+  separa ambos países y no aparece un puente directo entre ellos. Se conserva
+  `Iran–Ucrania`, coherente con los ejemplos de las páginas 30 y 33 del
+  reglamento. Esos ejemplos corroboran Irán–Ucrania; por sí solos no demostrarían
+  la ausencia de Irak–Ucrania. Los vecinos completos de Ucrania son Albania,
+  Bielorrusia, Irán, Polonia y Rusia.
+- **Uruguay–Mauritania: excluida para este tema.** El ejemplo de la página 12
+  del reglamento nombra Mauritania–Uruguay. El puente de la fotografía de
+  colores termina en Nigeria, y las dos matrices auxiliares coinciden con
+  Uruguay–Nigeria. Pyteg adopta esa conexión de su tablero de referencia.
+  Se documenta la diferencia sin agregar ambos destinos ni afirmar que el texto
+  sea una errata confirmada.
 
-Ninguna de esas dos aristas cuenta con confirmación suficiente. Por eso no se
-agregan al grafo ejecutable: quedan en `Meta.aristas_pendientes` y
-`Discrepancias.pendientes` del fixture. El tema no puede habilitarlas hasta
-resolver y documentar esas decisiones.
+Estas exclusiones se comprueban en ambas direcciones, junto con las conexiones
+aceptadas que explican cada decisión. Cambiar el mapa exige actualizar su
+auditoría, el fixture y los datos ejecutables en el mismo cambio.
 
-La resolución de estas discrepancias forma parte de #225. #226 debe consumir el
-fixture, mantener los IDs y fallar si se intenta construir el tema con un país,
-continente o frontera fuera de este inventario auditado.
+La auditoría de #225 queda definida para el mapa de Pyteg. La legibilidad de
+etiquetas y marcadores y la revisión de colores de #227 siguen siendo tareas
+de presentación independientes.

@@ -1,16 +1,31 @@
 # Auditoría estructural del mapa Revancha de Pyteg.
 #
 # Este fixture conserva las 134 aristas aceptadas para el mapa, con nombres
-# normalizados y decisiones pendientes registradas por separado.
-# No contiene assets ni pretende ser todavía un tema cargable por el juego.
+# normalizados y las decisiones de #225 registradas por separado.
+# Es una referencia independiente de los datos ejecutables del tema.
 
 [Meta]
-schema_version = 1
+schema_version = 2
 total_paises = 72
 total_continentes = 7
 aristas_no_dirigidas = 134
-estado_grafo = "consenso_auxiliar_conservador"
-aristas_pendientes = ["GranBretana-Francia", "Irak-Ucrania"]
+estado_grafo = "auditado_para_pyteg"
+fecha_revision = "2026-10-08"
+aristas_pendientes = []
+
+[Fuentes.tablero]
+tipo = "fotografia_aportada_por_usuario"
+referencia = "codex-clipboard-ed8184cc-a250-49f8-aad3-aa452154cde3.png"
+ancho = 800
+alto = 600
+alcance = "Inventario, fronteras y puentes del tablero de colores elegido para Pyteg."
+
+[Fuentes.reglamento]
+tipo = "reglamento_consultado"
+paginas = 40
+sha256 = "e6b3f6b021f86e577bc1c1c50f84ad39c99385cf4bfff737678c3715269a8047"
+paginas_relevantes = [5, 12, 19, 30, 33]
+alcance = "72 países, siete continentes, definición de adyacencia y ejemplos de conexiones."
 
 [Continentes.AmericaDelNorte]
 nombre = "América del Norte"
@@ -124,6 +139,47 @@ NuevaZelandia = ["Tasmania"]
 [Puentes]
 consenso = [["Alaska", "Chukchi"], ["Alaska", "Kamchatka"], ["Groenlandia", "Islandia"], ["California", "Tonga"], ["Brasil", "Sahara"], ["Uruguay", "Nigeria"], ["Espana", "Sahara"], ["Polonia", "Egipto"], ["Chile", "Australia"], ["India", "Sumatra"], ["Filipinas", "Australia"]]
 
+[FronterasIntercontinentales]
+pares = [
+    ["Alaska", "Chukchi"],
+    ["Alaska", "Kamchatka"],
+    ["Albania", "Irak"],
+    ["Albania", "Iran"],
+    ["Australia", "Chile"],
+    ["Brasil", "Sahara"],
+    ["California", "Mexico"],
+    ["California", "Tonga"],
+    ["Colombia", "Nicaragua"],
+    ["Cuba", "Florida"],
+    ["Egipto", "Irak"],
+    ["Egipto", "Israel"],
+    ["Egipto", "Polonia"],
+    ["Espana", "Sahara"],
+    ["Filipinas", "Vietnam"],
+    ["Groenlandia", "Islandia"],
+    ["India", "Sumatra"],
+    ["Iran", "Ucrania"],
+    ["Nigeria", "Uruguay"],
+    ["Rusia", "Ucrania"],
+]
+
 [Discrepancias]
-pendientes = ["GranBretana-Francia", "Irak-Ucrania"]
-motivo = "Las reconstrucciones comparadas difieren sobre Gran Bretaña-Francia e Irak-Ucrania. Ninguna de las dos aristas cuenta con confirmación suficiente."
+pendientes = []
+
+[[Discrepancias.resueltas]]
+arista = ["GranBretana", "Francia"]
+incluida = false
+fuentes = ["tablero", "reglamento"]
+motivo = "La ruta de la referencia une Gran Bretaña con Portugal. No se incorpora la conexión a Francia de una reconstrucción auxiliar."
+
+[[Discrepancias.resueltas]]
+arista = ["Irak", "Ucrania"]
+incluida = false
+fuentes = ["tablero", "reglamento"]
+motivo = "La referencia separa Irak de Ucrania; la conexión que se conserva es Irán-Ucrania, también usada en los ejemplos del reglamento."
+
+[[Discrepancias.resueltas]]
+arista = ["Uruguay", "Mauritania"]
+incluida = false
+fuentes = ["tablero", "reglamento"]
+motivo = "El ejemplo textual del reglamento nombra Mauritania, pero el tema adopta el puente Uruguay-Nigeria del tablero de colores de referencia."
