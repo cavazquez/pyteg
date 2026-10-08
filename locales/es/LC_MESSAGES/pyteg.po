@@ -650,6 +650,45 @@ msgstr "Mi jugador:"
 msgid "Conectado"
 msgstr "Conectado"
 
+msgid "Crear o unirse a una partida"
+msgstr "Crear o unirse a una partida"
+
+msgid "Unirme a una partida"
+msgstr "Unirme a una partida"
+
+msgid "Crear partida"
+msgstr "Crear partida"
+
+msgid "Acción:"
+msgstr "Acción:"
+
+msgid "Tu computadora alojará la partida mientras jugás."
+msgstr "Tu computadora alojará la partida mientras jugás."
+
+msgid "Los demás jugadores se conectan a tu dirección y puerto en la red local."
+msgstr "Los demás jugadores se conectan a tu dirección y puerto en la red local."
+
+msgid "Anfitrión"
+msgstr "Anfitrión"
+
+msgid "Partida recuperada"
+msgstr "Partida recuperada"
+
+msgid "Recuperando partida…"
+msgstr "Recuperando partida…"
+
+msgid "No hay un anfitrión disponible"
+msgstr "No hay un anfitrión disponible"
+
+msgid "Direcciones para unirse: {}"
+msgstr "Direcciones para unirse: {}"
+
+msgid "Mapa:"
+msgstr "Mapa:"
+
+msgid "Anfitrión y destino de la conexión de la partida"
+msgstr "Anfitrión y destino de la conexión de la partida"
+
 msgid "Esperando Jugadores"
 msgstr "Esperando Jugadores"
 

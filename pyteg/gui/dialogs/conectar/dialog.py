@@ -20,6 +20,7 @@ from PySide6.QtWidgets import (
 
 from pyteg.client.conexion.connection import ConnectionClient
 from pyteg.client.conexion.transmisor import ClientTransmisor
+from pyteg.client.hosting import local_game_addresses
 from pyteg.config import DEFAULT_MAP_THEME
 from pyteg.exceptions import ImagenNoEncontradaError
 from pyteg.gui.dialogs.conectar import styles
@@ -31,6 +32,7 @@ from pyteg.gui.dialogs.conectar.validation import (
 )
 from pyteg.i18n import translate as _
 from pyteg.logger import get_logger
+from pyteg.server.hosting.runtime import HostRuntime
 from pyteg.toml_reader import TomlReaderError
 
 _LOG = get_logger("gui.conectar")
@@ -101,13 +103,14 @@ class VentanaConectar(QDialog):
         self._apply_general_style()
 
         self.setLayout(main_layout)
+        self._update_mode()
 
         self._connect_to_language_selector()
 
     def _setup_window(self) -> None:
         """Configura las propiedades básicas de la ventana."""
-        self.setWindowTitle(_("Conectar al servidor"))
-        self.setFixedSize(QSize(400, 345))
+        self.setWindowTitle(_("Crear o unirse a una partida"))
+        self.setFixedSize(QSize(440, 440))
         self.setWindowFlags(
             Qt.WindowType.Dialog
             | Qt.WindowType.CustomizeWindowHint
@@ -117,13 +120,16 @@ class VentanaConectar(QDialog):
 
     def _setup_header(self, parent_layout: QVBoxLayout) -> None:
         """Configura el título y la descripción."""
-        title_label = QLabel(_("Conectar a Partida"))
+        title_label = QLabel(_("Unirme a una partida"))
+        self.title_label = title_label
         title_label.setStyleSheet(styles.TITLE_LABEL_STYLE)
         parent_layout.addWidget(title_label)
 
         desc_label = QLabel(
             _("Ingresa los datos para conectarte a una partida existente")
         )
+        self.description_label = desc_label
+        desc_label.setWordWrap(True)
         desc_label.setStyleSheet(styles.DESC_LABEL_STYLE)
         parent_layout.addWidget(desc_label)
 
@@ -137,6 +143,15 @@ class VentanaConectar(QDialog):
         form_layout.setFormAlignment(Qt.AlignmentFlag.AlignLeft)
 
         self._create_input_fields()
+
+        self.mode_selector = QComboBox()
+        self.mode_selector.addItem(_("Unirme a una partida"), "join")
+        self.mode_selector.addItem(_("Crear partida"), "host")
+        self.mode_selector.setStyleSheet(styles.INPUT_STYLE)
+        self.mode_selector.currentIndexChanged.connect(self._update_mode)
+        self.mode_label = QLabel(_("Acción:"))
+        self.mode_label.setStyleSheet(styles.FORM_LABEL_STYLE)
+        form_layout.addRow(self.mode_label, self.mode_selector)
 
         addr_label = QLabel(_("Dirección:"))
         addr_label.setStyleSheet(styles.FORM_LABEL_STYLE)
@@ -152,20 +167,40 @@ class VentanaConectar(QDialog):
 
         form_layout.addRow(addr_label, self.addr)
 
-        spacer1 = QLabel()
-        spacer1.setFixedHeight(10)
-        form_layout.addRow("", spacer1)
-
         form_layout.addRow(port_label, self.port)
-
-        spacer2 = QLabel()
-        spacer2.setFixedHeight(10)
-        form_layout.addRow("", spacer2)
 
         form_layout.addRow(user_label, self.username)
         form_layout.addRow(self.theme_label, self.theme_selector)
 
         parent_layout.addLayout(form_layout)
+        self.host_hint = QLabel(
+            _(
+                "Los demás jugadores se conectan a tu dirección y puerto "
+                "en la red local."
+            )
+        )
+        self.host_hint.setWordWrap(True)
+        self.host_hint.setStyleSheet(styles.DESC_LABEL_STYLE)
+        parent_layout.addWidget(self.host_hint)
+
+    def _update_mode(self) -> None:
+        hosting = self.mode_selector.currentData() == "host"
+        if hosting and not self.addr.isReadOnly():
+            self._join_address = self.addr.text()
+            self.addr.setText(", ".join(local_game_addresses()))
+        elif not hosting and self.addr.isReadOnly():
+            self.addr.setText(self._join_address)
+        self.addr.setReadOnly(hosting)
+        self.host_hint.setVisible(hosting)
+        self.title_label.setText(
+            _("Crear partida") if hosting else _("Unirme a una partida")
+        )
+        self.description_label.setText(
+            _("Tu computadora alojará la partida mientras jugás.")
+            if hosting
+            else _("Ingresa los datos para conectarte a una partida existente")
+        )
+        self.connect_button.setText(_("Crear partida") if hosting else _("Conectar"))
 
     def _create_input_fields(self) -> None:
         """Crea y estiliza los campos de entrada."""
@@ -205,7 +240,8 @@ class VentanaConectar(QDialog):
         button_cancelar.clicked.connect(self.reject)
         button_cancelar.setStyleSheet(styles.CANCEL_BUTTON_STYLE)
 
-        button_conectar = QPushButton(_("Conectar"))
+        button_conectar = QPushButton(_("Continuar"))
+        self.connect_button = button_conectar
         button_conectar.setDefault(True)
         button_conectar.clicked.connect(self.connect_to_server)
         button_conectar.setStyleSheet(styles.CONNECT_BUTTON_STYLE)
@@ -235,7 +271,12 @@ class VentanaConectar(QDialog):
             )
             return
 
-        result = validate(self.addr.text(), self.port.text(), self.username.text())
+        hosting = self.mode_selector.currentData() == "host"
+        result = validate(
+            "127.0.0.1" if hosting else self.addr.text(),
+            self.port.text(),
+            self.username.text(),
+        )
         if isinstance(result, ValidationError):
             self._show_error(result.message)
             if result.field == "addr":
@@ -255,6 +296,10 @@ class VentanaConectar(QDialog):
             return
 
         try:
+            if isinstance(conexion_actual, ConnectionClient):
+                conexion_actual.desconectar()
+            if hosting:
+                port = self._create_host(selected_theme, port)
             self._conexion = ConnectionClient(self._main_window, addr, port, username)
             self._main_window.conexion = self._conexion
             self._conexion.conectar()
@@ -264,6 +309,30 @@ class VentanaConectar(QDialog):
 
         except (ConnectionError, OSError, ValueError) as e:
             self._show_error(_("Error al conectar: {}").format(str(e)))
+
+    def _create_host(self, theme: str, port: int) -> int:
+        """Crea el anfitrión y conserva sus recursos sólo si pudo reservar el puerto.
+
+        Returns:
+            Puerto de la sala creada.
+
+        Raises:
+            OSError: Si no se puede escuchar en el puerto solicitado.
+            ValueError: Si el mapa o la sala no son válidos.
+
+        """
+        previous = getattr(self._main_window, "host_runtime", None)
+        if isinstance(previous, HostRuntime):
+            previous.close()
+        runtime = HostRuntime()
+        try:
+            port = runtime.create_game(theme, port)
+        except OSError, ValueError:
+            runtime.close()
+            raise
+        self._main_window.host_runtime = runtime
+        self._main_window.reset_session_state()
+        return port
 
     def _show_error(self, message: str) -> None:
         """Muestra un mensaje de error con estilo mejorado."""
@@ -295,7 +364,7 @@ class VentanaConectar(QDialog):
 
     def update_language(self) -> None:
         """Actualiza todos los textos de la interfaz al cambiar el idioma."""
-        self.setWindowTitle(_("Conectar al servidor"))
+        self.setWindowTitle(_("Crear o unirse a una partida"))
         _retranslate_widget_texts(self.findChildren(QLabel), _CONNECT_TEXT_TO_MSGID)
         _retranslate_widget_texts(
             self.findChildren(QPushButton), _CONNECT_TEXT_TO_MSGID
@@ -310,3 +379,13 @@ class VentanaConectar(QDialog):
         self.theme_label.setText(_("Mapa:"))
         self.theme_selector.setItemText(0, _("Clásico"))
         self.theme_selector.setItemText(1, _("Revancha"))
+        self.mode_selector.setItemText(0, _("Unirme a una partida"))
+        self.mode_selector.setItemText(1, _("Crear partida"))
+        self.mode_label.setText(_("Acción:"))
+        self.host_hint.setText(
+            _(
+                "Los demás jugadores se conectan a tu dirección y puerto "
+                "en la red local."
+            )
+        )
+        self._update_mode()

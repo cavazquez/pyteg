@@ -7,6 +7,44 @@ Pyteg implementa el juego Pyteg en un modelo cliente-servidor:
 - Servidor: valida reglas del juego, procesa acciones (agregar unidades, atacar, mover, finalizar turno), mantiene el estado y difunde actualizaciones.
 - Cliente: UI con PySide6, conecta al servidor, envía acciones y procesa mensajes para reflejar el estado (mapa, chat, barra de estado, diálogos).
 
+### Anfitrión integrado y recuperación en LAN
+
+**Crear partida** inicia el mismo `Server` autoritativo dentro del proceso del
+cliente. `PlayerListener` reserva el puerto antes de conectar la GUI local;
+el entry point `pyteg-server` continúa usando ese listener de manera independiente.
+La propiedad de anfitrión y el rol de administrador se gestionan por separado.
+
+- `server/hosting/runtime.py`: ciclo de vida del motor, listener de jugadores y
+  puerto de control autenticado por el token de reconexión del participante.
+- `server/hosting/replication.py`: sala, época de autoridad y candidatos ordenados
+  por `userid`. Sólo las conexiones que negocian `host_migration` y registran
+  su puerto reciben copias privadas.
+- `server/hosting/checkpoint.py` y `data.py`: Memento de campos explícitos,
+  codificado en JSON, sin pickle ni importación de clases desde el mensaje.
+  Conserva mapa, reglas, mazos, objetivos, pactos, situaciones, generadores
+  aleatorios, turnos, reloj e idempotencia de comandos; reconstruye dependencias
+  y conexiones fuera de la copia.
+- `server/hosting/sessions.py`: autentica y reemplaza sockets sin alterar la
+  identidad ni el orden de turnos. Transcurridos ocho segundos, desconecta a
+  quienes no regresaron y retoma el reloj.
+- `client/hosting.py`: reintenta el destino actual, consulta candidatos y conecta
+  la GUI a la nueva autoridad, reiniciando la revisión de su réplica pública.
+
+Las altas, bajas, acciones y copias se serializan en `GameCommandExecutor`.
+Después de cada transición se publica una copia completa; el reloj también
+solicita una copia cada segundo. Al perder la conexión, un candidato consulta
+a los demás antes de promoverse, para conservar el anfitrión que todavía ven.
+Una promoción aumenta la época y es idempotente para solicitudes concurrentes
+en esa instancia. Durante la recuperación se bloquean las acciones del juego.
+
+Las copias completas permanecen en memoria y contienen los datos privados de
+todos los jugadores, incluidos tokens, cartas y objetivos. No se envían al
+modelo público del mapa ni se escriben en logs. Esta modalidad requiere
+participantes de confianza y conectividad directa entre sus equipos. No hay
+consenso ante particiones de red ni persistencia si salen todos los clientes;
+se recupera la última transición completa recibida por el sucesor. La versión
+asíncrona sin servidor aún no está implementada.
+
 ### Identidad del jugador (dominio vs presentación)
 - **Dominio (servidor / core)**: el jugador se identifica de forma canónica con **`userid: int`** (dueño de país en el mapa, orden de turnos, canjes, validadores, combate, objetivos secretos, victoria).
 - **Presentación**: el **`username`** es texto para UI/chat; no debe usarse como clave de reglas cuando exista `userid`.

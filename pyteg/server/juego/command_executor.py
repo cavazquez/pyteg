@@ -12,6 +12,8 @@ from pyteg.logger import get_logger
 from pyteg.server.tasks.manager import ServerTaskManager
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from pyteg.protocols import IClientProtocol
 
 
@@ -76,11 +78,34 @@ class _ReopenEmptyLobby:
 
 
 _STOP = object()
+
+
+@dataclass
+class _SerializedCall:
+    """Operación de ciclo de vida que comparte la cola de las acciones."""
+
+    callback: Callable[[], Any]
+    completed: threading.Event
+    result: Any = None
+    error: Exception | None = None
+
+    def accept(self, _executor: GameCommandExecutor) -> None:
+        """Aplica la operación y devuelve su resultado al hilo solicitante."""
+        try:
+            self.result = self.callback()
+        except Exception as error:
+            self.error = error
+            LOGGER.exception("Falló una operación de ciclo de vida del servidor")
+        finally:
+            self.completed.set()
+
+
 _NON_MUTATING_COMMANDS = frozenset({
     "chat",
     "hello",
     "solicitar_snapshot",
     "solicitar_tarjetas",
+    "host_candidate",
 })
 
 
@@ -116,6 +141,36 @@ class GameCommandExecutor:
         """Arranca el único consumidor de comandos."""
         self._refresh_turn_snapshot()
         self._thread.start()
+
+    def call_serialized(self, callback: Callable[[], Any]) -> Any:
+        """Aplica una operación en la cola y propaga su resultado o excepción.
+
+        Returns:
+            Resultado de la operación, o None cuando el ejecutor está detenido.
+
+        Raises:
+            TimeoutError: Si el ejecutor no completa la operación dentro del plazo.
+
+        """
+        if threading.current_thread() is self._thread:
+            return callback()
+        item = _SerializedCall(callback, threading.Event())
+        with self._state_lock:
+            if not self._accepting:
+                return None
+            self._queue.put(item)
+        if not item.completed.wait(timeout=5.0):
+            msg = "El ejecutor no respondió a la operación de ciclo de vida"
+            raise TimeoutError(msg)
+        if item.error is not None:
+            raise item.error
+        return item.result
+
+    def enqueue_callback(self, callback: Callable[[], Any]) -> None:
+        """Programa una operación interna sin bloquear el temporizador."""
+        with self._state_lock:
+            if self._accepting:
+                self._queue.put(_SerializedCall(callback, threading.Event()))
 
     def enqueue_command(self, client: IClientProtocol, payload: dict[str, Any]) -> None:
         """Encola un comando TCP ya validado, sin ejecutarlo en el lector."""
@@ -191,11 +246,28 @@ class GameCommandExecutor:
                 LOGGER.exception("Error al ejecutar transición de juego")
             finally:
                 self._refresh_turn_snapshot()
+                replication = getattr(self._server, "host_replication", None)
+                if replication is not None and item is not _STOP:
+                    try:
+                        replication.publish()
+                    except Exception:
+                        LOGGER.exception("No se pudo replicar el anfitrión")
                 self._queue.task_done()
 
     def _execute_client_command(self, command: _ClientCommand) -> None:
         """Construye y ejecuta una tarea del servidor dentro del serializador."""
         command_name = command.payload.get("mensaje")
+        if getattr(
+            self._server, "host_migrating", False
+        ) and command_name not in _NON_MUTATING_COMMANDS | {"reconectar"}:
+            command.client.transmisor.enviar_error_chat(
+                "La partida se está recuperando. "
+                "Esperá a que vuelvan a conectarse los jugadores."
+            )
+            self._send_command_result(
+                command, accepted=False, error_code="host_recovering"
+            )
+            return
         command_id = command.payload.get("command_id")
         if self._requires_command_id(command_name, command_id):
             self._reject_missing_command_id(command.client)

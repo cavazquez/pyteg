@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, cast
 
 from PySide6.QtCore import QEvent, QSize
 from PySide6.QtGui import QStatusTipEvent
-from PySide6.QtWidgets import QMainWindow, QWidget
+from PySide6.QtWidgets import QLabel, QMainWindow, QWidget
 
 from pyteg.client.colores.paleta import Colores
 from pyteg.client.conexion.transmisor import ClientNullTransmisor
@@ -28,11 +28,10 @@ from pyteg.i18n import translate as _
 from pyteg.sound_manager import SoundManager
 
 if TYPE_CHECKING:
-    from PySide6.QtGui import QResizeEvent
+    from PySide6.QtGui import QCloseEvent, QResizeEvent
     from PySide6.QtWidgets import (
         QFrame,
         QHBoxLayout,
-        QLabel,
         QScrollArea,
         QSplitter,
         QStatusBar,
@@ -41,6 +40,7 @@ if TYPE_CHECKING:
 
     from pyteg.client.app import Client
     from pyteg.client.conexion.connection import ConnectionClient
+    from pyteg.client.state_model import ClientStateModel
     from pyteg.client.tasks.protocols import LobbyWindowProtocol
     from pyteg.client.tasks.types import TarjetaItem
     from pyteg.gui.dialogs.conectar import VentanaConectar
@@ -52,6 +52,7 @@ if TYPE_CHECKING:
     from pyteg.gui.widgets.situation import SituationBanner
     from pyteg.gui.widgets.sound_control import SoundControlWidget
     from pyteg.gui.widgets.view import QCustomGraphicsView
+    from pyteg.server.hosting.runtime import HostRuntime
 
 
 class Gui(QMainWindow, MainWindowDelegatesMixin):
@@ -108,6 +109,11 @@ class Gui(QMainWindow, MainWindowDelegatesMixin):
         self._gui_init_turn_tracking()
         self.layout_manager.setup_graphics_view()
         build_status_bar(self)
+        self.network_status_label = QLabel(_("Desconectado"), self)
+        self.network_status_label.setToolTip(
+            _("Anfitrión y destino de la conexión de la partida")
+        )
+        self.status_bar.addPermanentWidget(self.network_status_label)
         self.show()
 
     def _gui_init_core_state(self, client: Client, map_theme: str) -> None:
@@ -118,7 +124,9 @@ class Gui(QMainWindow, MainWindowDelegatesMixin):
         self.client_by_id: dict[int, Client] = {}
         self.transmisor = ClientNullTransmisor()
         self.conexion: ConnectionClient | None = None
-        self.client_state_model = None
+        self.host_runtime: HostRuntime | None = None
+        self.network_status = "Desconectado"
+        self.client_state_model: ClientStateModel | None = None
         self.w: LobbyWindowProtocol | None = None
         self.ventana_conectar: VentanaConectar | None = None
         self.scene: QCustomGraphicsScene | None = None
@@ -138,6 +146,17 @@ class Gui(QMainWindow, MainWindowDelegatesMixin):
         self.last_units: dict[str, object] = {}
         self.players_title_label: object = None
         self.units_section_title_label: object = None
+
+    def closeEvent(self, event: QCloseEvent) -> None:  # noqa: N802
+        """Detiene el anfitrión y la recuperación al cerrar esta ventana."""
+        self._vivo = False
+        if self.conexion is not None:
+            self.conexion.desconectar()
+        elif self.host_runtime is not None:
+            self.host_runtime.close()
+            self.host_runtime = None
+        self.sound_manager.cleanup()
+        event.accept()
 
     def _gui_init_window_and_managers(self) -> None:
         self.setWindowTitle(self.map_window_title())
@@ -239,21 +258,7 @@ class Gui(QMainWindow, MainWindowDelegatesMixin):
         self.layout_manager.rebuild_units_panel()
         self.setWindowTitle(self.map_window_title())
         if theme != old_theme:
-            self.client.reset_session()
-            self.client_by_id.clear()
-            self.tarjetas_jugador.clear()
-            self.config_manager.set_objetivo_secreto(None, None)
-            self.client_state_model = None
-            self.client_public_revision = -1
-            self.client_command_results.clear()
-            self.misiles_habilitados = False
-            self.partida_finalizada = False
-            self._gui_init_turn_tracking()
-            self.players_manager.current_player_name = None
-            self.players_manager.update_player_list([])
-            self.status_manager.update_timer_display("")
-            self.update_game_state("Desconectado")
-            self.status_manager.update_mi_jugador_info()
+            self.reset_session_state()
         new_scene.selection_manager.refresh_labels()
         if old_scene is not None:
             old_scene.deleteLater()
@@ -266,3 +271,21 @@ class Gui(QMainWindow, MainWindowDelegatesMixin):
 
         """
         return self._vivo
+
+    def reset_session_state(self) -> None:
+        """Limpia la identidad y los datos visuales antes de entrar a otra sala."""
+        self.client.reset_session()
+        self.client_by_id.clear()
+        self.tarjetas_jugador.clear()
+        self.config_manager.set_objetivo_secreto(None, None)
+        self.client_state_model = None
+        self.client_public_revision = -1
+        self.client_command_results.clear()
+        self.misiles_habilitados = False
+        self.partida_finalizada = False
+        self._gui_init_turn_tracking()
+        self.players_manager.current_player_name = None
+        self.players_manager.update_player_list([])
+        self.status_manager.update_timer_display("")
+        self.update_game_state("Desconectado")
+        self.status_manager.update_mi_jugador_info()

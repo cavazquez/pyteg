@@ -36,6 +36,7 @@ gráfica en Python.
 - **Efectos visuales inmersivos**: Atacante ve animación completa, espectadores ven titilación de países y pérdidas flotantes
 - **Sistema de sonidos**: Efectos de audio para batallas, movimientos, turnos y eventos del juego con controles de volumen
 - Modo multijugador con servidor 🔌 TCP y validación de estados (sin cifrado; pensado para redes de confianza, p. ej. LAN). Detalle del modelo de amenaza: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#seguridad-y-modelo-de-amenaza) y [ADR-009](docs/DECISIONS.md#adr-009-tcp-sin-cifrado-y-red-de-confianza).
+- Crear una partida desde el cliente y recuperar automáticamente el anfitrión en otro jugador si se cae.
 - Restricción de ataques en los dos primeros turnos
 - Elección de cantidad de unidades para atacar (1 a 3)
 - Validación de nombres de usuario duplicados (con desconexión)
@@ -46,7 +47,7 @@ gráfica en Python.
 - **Ventana de configuración**: Muestra duración de turno, objetivo de países y objetivos secretos
 - **Verificación automática de condición de victoria al final de cada ronda**
 - **Soporte multiidioma 🌍 (i18n)**: Español e inglés con selector en la interfaz
-- Suite 🧪 `unittest` (~175 casos con `python -m unittest discover`), 🪶 Ruff, 📐 mypy estricto y 📊 cobertura en CI y en `./run_tests.sh`
+- Suite 🧪 `unittest`, 🪶 Ruff, 📐 mypy estricto y 📊 cobertura en CI y en `./run_tests.sh`
 
 ## Requisitos
 - 🐍 Python 3.14 (se aceptan actualizaciones de parche dentro de la serie 3.14)
@@ -63,7 +64,35 @@ cd pyteg
 uv sync
 ```
 
-## Ejecutar (servidor y clientes)
+## Jugar en red local desde el cliente
+
+1. Ejecutá `uv run pyteg-client` y abrí **Conectar**.
+2. Elegí **Crear partida**, tu nombre, mapa y puerto. La ventana muestra las
+   direcciones locales que podés compartir.
+3. Los demás jugadores abren su cliente, eligen **Unirme a una partida** e
+   ingresan la dirección y el puerto del anfitrión, con el mismo mapa.
+4. El administrador configura las reglas y comienza la partida. El mapa y el
+   perfil de reglas siguen siendo elecciones independientes.
+
+Si se cierra o cae el anfitrión, los clientes intentan reconectarse y luego
+recuperan el motor en otro participante por orden de ingreso. La partida se
+pausa durante las reconexiones y reserva ocho segundos para que vuelvan los
+jugadores. Se conservan países, unidades, misiles, cartas, objetivos, turnos y
+el tiempo pendiente del jugador que sigue en turno. La barra de estado indica
+**Anfitrión**, **Conectado** o **Recuperando partida…**; su tooltip muestra el
+destino actual y las direcciones para unirse.
+
+Cada cliente habilitado conserva en memoria una copia completa y privada del
+motor. Usá esta modalidad con participantes y red de confianza. Los equipos
+deben poder conectarse entre sí a los puertos TCP del juego y de recuperación;
+este último se asigna automáticamente. La recuperación usa la última copia
+completa recibida: una acción que todavía no se replicó puede perderse. No
+resuelve particiones de red ni permite recuperar una sala si se cerraron todos
+los clientes. El juego asíncrono sin servidor queda para una etapa posterior.
+
+## Ejecutar con servidor independiente
+
+También se conserva la modalidad de servidor separado:
 - Con entry points instalados (recomendado):
   ```bash
   # Instala el paquete y scripts
@@ -87,7 +116,8 @@ uv run pyteg-client
 ```
 
 Consejos:
-- Primero inicia el servidor. Luego abre uno o más clientes.
+- Para esta modalidad, primero inicia el servidor. Luego abre uno o más clientes
+  y elegí **Unirme a una partida**.
 - Si el juego ya está en curso, el servidor rechazará nuevas conexiones.
 
 ### Elegir Clásico o Revancha

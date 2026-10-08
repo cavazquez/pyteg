@@ -987,3 +987,42 @@ msgid ""
 "No hay una carta aplicable en esta ronda. Se mantienen las reglas de la "
 "partida."
 msgstr "No card applies this round. The game rules remain in effect."
+
+msgid "Crear o unirse a una partida"
+msgstr "Create or join a game"
+
+msgid "Unirme a una partida"
+msgstr "Join a game"
+
+msgid "Crear partida"
+msgstr "Create game"
+
+msgid "Acción:"
+msgstr "Action:"
+
+msgid "Tu computadora alojará la partida mientras jugás."
+msgstr "Your computer will host the game while you play."
+
+msgid "Los demás jugadores se conectan a tu dirección y puerto en la red local."
+msgstr "Other players connect to your address and port on the local network."
+
+msgid "Anfitrión"
+msgstr "Host"
+
+msgid "Partida recuperada"
+msgstr "Game recovered"
+
+msgid "Recuperando partida…"
+msgstr "Recovering game…"
+
+msgid "No hay un anfitrión disponible"
+msgstr "No host is available"
+
+msgid "Direcciones para unirse: {}"
+msgstr "Addresses to join: {}"
+
+msgid "Mapa:"
+msgstr "Map:"
+
+msgid "Anfitrión y destino de la conexión de la partida"
+msgstr "Host and current game connection"

@@ -51,6 +51,7 @@ class Client:
         self._reconnect_token = reconnect_token or secrets.token_urlsafe(32)
         self._pending_reconnect = False
         self._handshake_status: bool | None = None
+        self._migration_enabled = False
         self._color: IColor | None = None
         self.transmisor = ServerTransmisor(self._conn)
         self._logger = get_logger(f"server.client.{user_id}")
@@ -136,6 +137,19 @@ class Client:
         setter = getattr(self._conn, "set_receive_timeout", None)
         if callable(setter):
             setter(timeout)
+
+    def configurar_migracion(self, *, enabled: bool) -> None:
+        """Guarda si el cliente negoció la recepción de copias de recuperación."""
+        self._migration_enabled = enabled
+
+    def permite_migracion(self) -> bool:
+        """Indica si esta conexión negoció la capacidad de anfitrión.
+
+        Returns:
+            True si puede recibir copias privadas de recuperación.
+
+        """
+        return self._migration_enabled
 
     def _heartbeat_on_timeout(self) -> bool:
         """Envía un ping o informa que el peer no respondió a tiempo.
@@ -314,6 +328,15 @@ class Client:
         """
         return self._user_id
 
+    def peer_host(self) -> str:
+        """Devuelve la dirección de la conexión para registrar un anfitrión.
+
+        Returns:
+            Dirección IP observada en el socket.
+
+        """
+        return str(self._conn.peer_host())
+
     def username(self) -> str:
         """Obtiene el nombre de usuario del cliente.
 
@@ -323,7 +346,7 @@ class Client:
         """
         return self._username
 
-    def enviar(self, data: bytes) -> None:
+    def enviar(self, data: str) -> None:
         """Envía datos al cliente.
 
         :param data: Datos a enviar
@@ -389,6 +412,11 @@ class Client:
                 map_hash,
                 capabilities=[
                     "snapshots",
+                    *(
+                        ["host_migration"]
+                        if getattr(self.server, "host_replication", None) is not None
+                        else []
+                    ),
                     "command_results",
                     "reconnect",
                     "heartbeat",

@@ -11,6 +11,7 @@ from PySide6.QtWidgets import QMessageBox, QWidget
 
 from pyteg.client.conexion.transmisor import ClientNullTransmisor, ClientTransmisor
 from pyteg.client.event_processor import ClientEventProcessor
+from pyteg.client.hosting import HostSession
 from pyteg.client.state_adapter import QtClientStateAdapter
 from pyteg.client.state_model import ClientStateModel
 from pyteg.client.tasks.manager import ClientTaskManager
@@ -58,6 +59,7 @@ class ConnectionClient(QWidget):
         self._socket.errorOccurred.connect(self.display_error)
         self._socket.stateChanged.connect(self.on_state_changed)
         self._socket.connected.connect(self.on_connected)
+        self.hosting = HostSession(self, main_window)
 
     def conectar(self) -> None:
         """Establece la conexión con el servidor."""
@@ -68,6 +70,7 @@ class ConnectionClient(QWidget):
         """Maneja el evento de conexión exitosa al servidor."""
         _LOG.info("Conectado a %s:%s", self._host, self._port)
         self._codec = NulDelimitedUtf8Codec()
+        self.hosting.connected()
         # Reproducir sonido de conexión
         if hasattr(self._main_window, "sound_manager"):
             self._main_window.sound_manager.play_connect()
@@ -99,6 +102,7 @@ class ConnectionClient(QWidget):
                 "command_results",
                 "reconnect",
                 "heartbeat",
+                "host_migration",
             ],
             rules=["validated_phases", "one_card_per_turn"],
         )
@@ -117,6 +121,28 @@ class ConnectionClient(QWidget):
         connected = self._socket.state() == QAbstractSocket.SocketState.ConnectedState
         _LOG.debug("Socket state=%s connected=%s", self._socket.state(), connected)
         return connected
+
+    def endpoint(self) -> tuple[str, int]:
+        """Devuelve el destino activo de esta conexión.
+
+        Returns:
+            Dirección y puerto del anfitrión actual.
+
+        """
+        return self._host, self._port
+
+    def reconnect_to(self, host: str, port: int) -> None:
+        """Reutiliza el socket Qt para recuperar la sesión en otro destino."""
+        self._host, self._port = host, port
+        self.conectar()
+
+    def abort_for_recovery(self) -> None:
+        """Interrumpe el intento actual sin marcar una salida voluntaria."""
+        self._socket.abort()
+
+    def reset_replica_revision(self) -> None:
+        """Acepta la revisión restaurada de una nueva autoridad de la sala."""
+        self.state_model.revision = -1
 
     def esta_ocupada(self) -> bool:
         """Indica si este objeto ya tiene una conexión abierta o en curso.
@@ -192,6 +218,8 @@ class ConnectionClient(QWidget):
                     continue
 
                 _LOG.debug("JSON recibido: %s", validated_data["mensaje"])
+                if self.hosting.process(validated_data):
+                    continue
                 if self._respond_to_ping(validated_data):
                     continue
                 applied = self.event_processor.process(validated_data)
@@ -243,7 +271,8 @@ class ConnectionClient(QWidget):
             _LOG.info("Socket en estado conectado")
             self._main_window.conexion = self
             self._main_window.transmisor = ClientTransmisor(self)
-            self._main_window.ventana_conectar.close()
+            if self._main_window.ventana_conectar is not None:
+                self._main_window.ventana_conectar.close()
             # Actualizar estado de botones en la toolbar
             if hasattr(self._main_window, "toolbar"):
                 self._main_window.toolbar.actualizar_estado_conexion(conectado=True)
@@ -258,11 +287,15 @@ class ConnectionClient(QWidget):
             # Actualizar estado de botones en la toolbar
             if hasattr(self._main_window, "toolbar"):
                 self._main_window.toolbar.actualizar_estado_conexion(conectado=False)
+            if self.hosting.disconnected():
+                self._main_window.conexion = self
+                self._main_window.update_game_state("Recuperando partida")
         else:
             _LOG.debug("Estado de socket: %s", state)
 
     def desconectar(self) -> None:
         """Desconecta el cliente del servidor."""
+        self.hosting.stop()
         if self._socket.state() == QAbstractSocket.SocketState.ConnectedState:
             self._socket.disconnectFromHost()
             _LOG.info("Solicitando desconexión del servidor")
@@ -276,7 +309,7 @@ class ConnectionClient(QWidget):
         err = self._socket.errorString()
         if hasattr(self._main_window, "sound_manager"):
             self._main_window.sound_manager.play_error()
-        if err == "Connection refused":
+        if err == "Connection refused" and not self.hosting.enabled:
             QMessageBox.warning(
                 self,
                 _("Advertencia"),

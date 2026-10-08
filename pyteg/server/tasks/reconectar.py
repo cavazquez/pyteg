@@ -18,7 +18,9 @@ class ServerTaskReconectar(IServerTask[ReconectarTaskData]):
     def __init__(self, data: ReconectarTaskData) -> None:
         """Inicializa la tarea con identidad y token recibidos."""
         super().__init__(data)
-        self._action_name = "reconectar"
+        # La autenticación también puede recuperar un lobby o una partida
+        # finalizada después de una migración. El servidor valida la sesión.
+        self._action_name = None
 
     def _execute(
         self,

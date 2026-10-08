@@ -21,6 +21,7 @@ from pyteg.server.tasks.game_actions import (
     ServerTaskMoverUnidad,
 )
 from pyteg.server.tasks.handshake import ServerTaskHello
+from pyteg.server.tasks.hosting import ServerTaskHostCandidate
 from pyteg.server.tasks.lobby import (
     ServerTaskChat,
     ServerTaskEmpezar,
@@ -44,6 +45,7 @@ from pyteg.server.tasks.types import BaseTaskData
 TaskFactory = Callable[[Any], IServerTask[Any]]
 
 dict_task: dict[str, TaskFactory] = {
+    "host_candidate": ServerTaskHostCandidate,
     "chat": ServerTaskChat,
     "empezar": ServerTaskEmpezar,
     "empezar_partida": ServerTaskEmpezarPartida,

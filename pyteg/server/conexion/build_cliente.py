@@ -34,9 +34,9 @@ class ServerLike(Protocol):
 class ServerBuildClient:
     """Construye instancias de clientes para el servidor."""
 
-    def __init__(self) -> None:
+    def __init__(self, first_user_id: int = 1) -> None:
         """Inicializa el constructor de clientes con un contador de user_id."""
-        self._user_id = 1
+        self._user_id = first_user_id
         debug_logger.log(
             f"ServerBuildClient: Nueva instancia creada, "
             f"_user_id inicial: {self._user_id}"

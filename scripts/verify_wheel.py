@@ -8,6 +8,12 @@ from pathlib import Path
 from zipfile import ZipFile
 
 REQUIRED_FILES = (
+    "pyteg/client/hosting.py",
+    "pyteg/server/hosting/runtime.py",
+    "pyteg/server/hosting/checkpoint.py",
+    "pyteg/server/hosting/replication.py",
+    "pyteg/server/hosting/sessions.py",
+    "pyteg/server/hosting/data.py",
     "themes/classic/paises.toml",
     "themes/classic/cartas.toml",
     "themes/classic/adyacencias.toml",

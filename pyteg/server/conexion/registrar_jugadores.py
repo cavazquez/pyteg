@@ -73,7 +73,9 @@ def _iniciar_cliente(
     client: Client | None = None
     try:
         user_id, client = builder.build(connection, server)
-        if server.estado.es_jugando():
+        if server.estado.es_jugando() or bool(
+            getattr(server, "migration_sessions", {})
+        ):
             accepted = server.registrar_reconexion_pendiente(user_id, client)
             error_type = "game_in_progress"
             error_message = (
@@ -104,60 +106,94 @@ def _iniciar_cliente(
         raise
 
 
-def registrar_jugadores(
-    server: ServerLike, host: str = "127.0.0.1", port: int = 65432
-) -> None:
-    """Inicia el servidor para aceptar conexiones de jugadores."""
-    logger = get_logger("server.registrar_jugadores")
-    logger.info("Iniciando servidor de jugadores en %s:%s", host, port)
+class PlayerListener:
+    """Socket de jugadores con arranque y cierre explícitos para el anfitrión."""
 
-    server_build_client = ServerBuildClient()
-    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    def __init__(
+        self,
+        server: ServerLike,
+        host: str = "127.0.0.1",
+        port: int = 65432,
+        *,
+        first_user_id: int = 1,
+    ) -> None:
+        """Reserva el puerto antes de anunciar que el anfitrión está disponible.
 
-    try:
-        server_socket.bind((host, port))
-        server_socket.listen()
+        Raises:
+            OSError: Si no se puede reservar o utilizar el puerto TCP.
 
-        while True:
+        """
+        self.server = server
+        self._builder = ServerBuildClient(first_user_id)
+        self._stop = threading.Event()
+        self._thread: threading.Thread | None = None
+        self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self._socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        try:
+            self._socket.bind((host, port))
+            self._socket.listen()
+            self._socket.settimeout(0.2)
+        except OSError:
+            self._socket.close()
+            raise
+        self.port = int(self._socket.getsockname()[1])
+
+    def start(self) -> None:
+        """Acepta conexiones en un hilo propio sin bloquear la interfaz Qt."""
+        self._thread = threading.Thread(
+            target=self.run, name="pyteg-player-listener", daemon=True
+        )
+        self._thread.start()
+
+    def run(self) -> None:
+        """Mantiene el registro TCP existente y admite sesiones migradas."""
+        logger = get_logger("server.registrar_jugadores")
+        while not self._stop.is_set():
             try:
-                logger.debug("Esperando conexiones en %s:%s...", host, port)
-                conn, addr = server_socket.accept()
-            except KeyboardInterrupt:
-                logger.info("Deteniendo el servidor por interrupción del usuario")
-                break
-            except Exception:
-                logger.exception("Error al aceptar una conexión")
+                conn, addr = self._socket.accept()
+            except TimeoutError:
                 continue
-
-            logger.info("Nueva conexión aceptada desde %s", addr)
+            except OSError:
+                if not self._stop.is_set():
+                    logger.exception("Error al aceptar una conexión")
+                break
             try:
                 if (
-                    server.estado.es_finalizado()
-                    and not server.reabrir_lobby_si_vacio()
+                    self.server.estado.es_finalizado()
+                    and not getattr(self.server, "migration_sessions", {})
+                    and not self.server.reabrir_lobby_si_vacio()
                 ):
-                    estado_actual = server.estado.estado_actual()
-                    logger.warning(
-                        "Rechazando conexión de %s: "
-                        "El juego ya está en progreso (estado: %s)",
-                        addr,
-                        estado_actual,
-                    )
                     _rechazar_conexion(
-                        conn,
-                        "game_in_progress",
-                        "El juego ya está en progreso y ya finalizó.",
-                        logger,
+                        conn, "game_in_progress", "El juego ya finalizó.", logger
                     )
                     continue
-                _iniciar_cliente(server, server_build_client, conn, addr, logger)
+                _iniciar_cliente(self.server, self._builder, conn, addr, logger)
             except Exception:
                 logger.exception("Error al manejar la conexión")
                 with suppress(OSError):
                     conn.close()
 
-    except (OSError, RuntimeError) as exc:
-        logger.critical("Error crítico en el servidor: %s", exc, exc_info=True)
+    def close(self) -> None:
+        """Libera el puerto y espera el hilo de aceptación."""
+        self._stop.set()
+        self._socket.close()
+        if self._thread is not None and self._thread is not threading.current_thread():
+            self._thread.join(timeout=1.0)
+
+
+def registrar_jugadores(
+    server: ServerLike, host: str = "127.0.0.1", port: int = 65432
+) -> None:
+    """Mantiene la entrada del servidor independiente con el mismo listener."""
+    logger = get_logger("server.registrar_jugadores")
+    listener: PlayerListener | None = None
+    try:
+        listener = PlayerListener(server, host, port)
+        listener.run()
+    except KeyboardInterrupt:
+        logger.info("Deteniendo el servidor por interrupción del usuario")
+    except OSError, RuntimeError:
+        logger.exception("Error crítico en el servidor")
     finally:
-        logger.info("Cerrando el servidor...")
-        server_socket.close()
+        if listener is not None:
+            listener.close()

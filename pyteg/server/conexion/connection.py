@@ -64,6 +64,15 @@ class ConnectionServer:
         except (OSError, ValueError) as error:
             LOGGER.warning("No se pudo configurar timeout de recepción: %s", error)
 
+    def peer_host(self) -> str:
+        """Devuelve la dirección observada, sin confiar en un host del payload.
+
+        Returns:
+            Dirección IP observada en el socket.
+
+        """
+        return self._addr[0]
+
     def consume_receive_timeout(self) -> bool:
         """Consume la señal de que una lectura venció sin datos.
 
@@ -143,8 +152,8 @@ class ConnectionServer:
             data: Datos a enviar.
 
         """
-        LOGGER.debug("Enviando %s", data)
         encode_data = NulDelimitedUtf8Codec.encode_frame(data)
+        LOGGER.debug("Encolando trama de %s bytes", len(encode_data))
         queue_full = False
         with self._close_lock:
             if self._closed:

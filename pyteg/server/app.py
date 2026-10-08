@@ -44,6 +44,7 @@ if TYPE_CHECKING:
     from random import Random
 
     from pyteg.server.conexion.cliente import Client
+    from pyteg.server.hosting.replication import HostReplication
     from pyteg.server.juego.game import Game
     from pyteg.server.msg.types import BattleResultPayload, MissileResultPayload
 
@@ -111,6 +112,10 @@ class Server:
             raise ValueError(msg)
         self.situation_ruleset = normalized_situation_ruleset
         self._state_revision = 0
+        self.host_replication: HostReplication | None = None
+        self.migration_sessions: dict[int, Client] = {}
+        self.host_migrating = False
+        self.host_resume_seconds: int | None = None
         self._client_registry = ServerClientRegistry()
         # La autoridad de sala se mantiene separada del orden del registro.
         # Durante una partida la sucesión queda pendiente hasta FINALIZADO.
@@ -230,7 +235,20 @@ class Server:
                     for jugador, unidades in ocupantes(pais).items()
                 ]
             countries[pais] = country
-        historicos = game.jugadores() if game is not None else self.dame_clientes()
+        historicos = (
+            game.jugadores()
+            if game is not None
+            else list(
+                {
+                    **self.migration_sessions,
+                    **{
+                        client.userid(): client
+                        for client in self.dame_clientes()
+                        if not client.es_reconexion_pendiente()
+                    },
+                }.values()
+            )
+        )
         conectados = {int(client.userid()) for client in self.dame_clientes()}
         players: list[dict[str, Any]] = []
         for client in historicos:
@@ -331,6 +349,9 @@ class Server:
         client.configurar_heartbeat(
             enabled=isinstance(capabilities, list) and "heartbeat" in capabilities
         )
+        client.configurar_migracion(
+            enabled=isinstance(capabilities, list) and "host_migration" in capabilities
+        )
         client.transmisor.enviar_hello_ack()
         return True
 
@@ -351,6 +372,15 @@ class Server:
     def encolar_vencimiento_turno(self, generation: int) -> None:
         """Encola un vencimiento asociado al turno que lo originó."""
         self._command_executor.enqueue_turn_expired(generation)
+
+    def replicar_anfitrion(self) -> None:
+        """Programa la copia del reloj dentro de la cola autoritativa."""
+        if self.host_replication is not None:
+            self._command_executor.enqueue_callback(lambda: None)
+
+    def schedule_host_recovery(self, callback: Callable[[], Any]) -> None:
+        """Programa el cierre del período de recuperación en el ejecutor."""
+        self._command_executor.enqueue_callback(callback)
 
     def encolar_desconexion_jugador(self, user_id: int) -> None:
         """Encola la baja de un jugador para actualizar sus turnos."""
@@ -526,6 +556,14 @@ class Server:
         return self._client_registry.cantidad()
 
     def quitarme(self, user_id: int, expected_client: Client | None = None) -> None:
+        """Serializa la baja de un socket con las acciones y las copias."""
+        self._command_executor.call_serialized(
+            lambda: self._quitar_cliente(user_id, expected_client)
+        )
+
+    def _quitar_cliente(
+        self, user_id: int, expected_client: Client | None = None
+    ) -> None:
         """Retira una conexión y libera su color cuando corresponde.
 
         Args:
@@ -537,6 +575,8 @@ class Server:
         client = self._client_registry.desconectar_cliente(user_id, expected_client)
         if client is None:
             return
+        if self.host_replication is not None:
+            self.host_replication.remove(user_id)
 
         LOGGER.info("Quitando cliente %s", user_id)
         admin_changed = self._registrar_sucesion_administrador(user_id)
@@ -563,6 +603,19 @@ class Server:
             self._command_executor.enqueue_reopen_empty_lobby()
 
     def registrar_cliente(self, user_id: int, client: Client) -> bool:
+        """Serializa el alta para que una copia no observe un registro parcial.
+
+        Returns:
+            True si se registró al participante y se reservó su color.
+
+        """
+        return bool(
+            self._command_executor.call_serialized(
+                lambda: self._registrar_cliente(user_id, client)
+            )
+        )
+
+    def _registrar_cliente(self, user_id: int, client: Client) -> bool:
         """Registra un nuevo cliente en el servidor.
 
         Args:
@@ -730,6 +783,7 @@ class Server:
         jugador que se desconectó y no volvió antes del final libera su color;
         su siguiente conexión será una identidad nueva en el lobby.
         """
+        self.migration_sessions.clear()
         ids_conectados = {int(cliente.userid()) for cliente in self.dame_clientes()}
         for jugador in jugadores:
             if int(jugador.userid()) in ids_conectados:
@@ -764,7 +818,9 @@ class Server:
 
         """
         game = self.game
-        if not self.estado.es_jugando() or game is None or not game.empezo():
+        if not self.migration_sessions and (
+            not self.estado.es_jugando() or game is None or not game.empezo()
+        ):
             return False
         if self.cant_clients() >= len(self.color.colores()):
             return False
@@ -784,6 +840,12 @@ class Server:
             token o la identidad no son válidos.
 
         """
+        if int(user_id) in self.migration_sessions and client.es_reconexion_pendiente():
+            from pyteg.server.hosting.sessions import (  # noqa: PLC0415
+                reconnect_migrated,
+            )
+
+            return reconnect_migrated(self, client, int(user_id), token)
         game = self.game
         if game is None or not client.es_reconexion_pendiente():
             return False

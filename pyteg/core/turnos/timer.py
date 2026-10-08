@@ -77,18 +77,28 @@ class TurnoTimer(threading.Thread):
     """
 
     def __init__(
-        self, server: Any, segundos_por_turno: int = DEFAULT_TURN_SECONDS
+        self,
+        server: Any,
+        segundos_por_turno: int = DEFAULT_TURN_SECONDS,
+        *,
+        resume_seconds: int | None = None,
     ) -> None:
         """Inicializa el temporizador de turnos.
 
         Args:
             server: Instancia del servidor.
             segundos_por_turno: Duración de cada turno en segundos (por defecto 20).
+            resume_seconds: Cuenta inicial recuperada; luego se usa la duración.
 
         """
         super().__init__(daemon=True)
         self._server: Any = server
         self._segundos_por_turno = segundos_por_turno
+        self._resume_seconds = resume_seconds
+        self._remaining = (
+            segundos_por_turno if resume_seconds is None else resume_seconds
+        )
+        self._countdown_snapshot: tuple[int, int] | None = None
         self._stop_event = threading.Event()
 
     # ---------------------------------------------------------------------
@@ -97,6 +107,21 @@ class TurnoTimer(threading.Thread):
     def detener(self) -> None:
         """Detiene el hilo de forma segura."""
         self._stop_event.set()
+
+    def remaining_seconds(self) -> int:
+        """Devuelve la última cuenta publicada para una copia de recuperación.
+
+        Returns:
+            Últimos segundos restantes publicados por el temporizador.
+
+        """
+        if self._resume_seconds is not None:
+            return self._resume_seconds
+        return (
+            self._remaining
+            if self._server.turno_snapshot() == self._countdown_snapshot
+            else self._segundos_por_turno
+        )
 
     # ------------------------------------------------------------------
     # Internals
@@ -126,9 +151,17 @@ class TurnoTimer(threading.Thread):
                 continue
 
             userid_turno, generation = snapshot
+            self._countdown_snapshot = snapshot
+
+            duration = (
+                self._segundos_por_turno
+                if self._resume_seconds is None
+                else self._resume_seconds
+            )
+            self._resume_seconds = None
 
             # Cuenta regresiva
-            for remaining in range(self._segundos_por_turno, 0, -1):
+            for remaining in range(duration, 0, -1):
                 if self._stop_event.is_set():
                     return
 
@@ -136,7 +169,11 @@ class TurnoTimer(threading.Thread):
                     break
 
                 # Enviar tiempo restante
+                self._remaining = remaining
                 self._broadcast_tiempo(userid_turno, remaining)
+                replicate = getattr(self._server, "replicar_anfitrion", None)
+                if callable(replicate):
+                    replicate()
 
                 # Esperar un segundo
                 time.sleep(1)

@@ -55,7 +55,11 @@ class ClientTransmisor(IClientTransmisor):
 
         """
         if hasattr(self._conn, "esta_conectado"):
-            return bool(self._conn.esta_conectado())
+            hosting = getattr(self._conn, "hosting", None)
+            return (
+                bool(self._conn.esta_conectado())
+                and getattr(hosting, "paused", False) is not True
+            )
         return True
 
     def enviar_chat(self, msg: str) -> None:

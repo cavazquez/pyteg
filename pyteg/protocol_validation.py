@@ -274,8 +274,34 @@ def _is_snapshot_configuration(value: object) -> bool:
 _POSITIVE_INTEGER = _integer_in_range(1)
 _NONNEGATIVE_INTEGER = _integer_in_range(0)
 _DICE_COUNT = _integer_in_range(1, 3)
+_MAX_HOST_CANDIDATES = 8
+
+
+def _is_host_peers(value: object) -> bool:
+    if not isinstance(value, list) or len(value) > _MAX_HOST_CANDIDATES:
+        return False
+    return all(
+        isinstance(peer, dict)
+        and _POSITIVE_INTEGER(peer.get("userid"))
+        and _is_nonempty_string(peer.get("host"))
+        and _integer_in_range(1, 65535)(peer.get("port"))
+        for peer in value
+    )
+
+
+def _is_host_checkpoint(value: object) -> bool:
+    return (
+        isinstance(value, dict)
+        and value.get("version") == 1
+        and _is_nonempty_string(value.get("theme"))
+        and isinstance(value.get("players"), list)
+        and isinstance(value.get("countries"), dict)
+        and isinstance(value.get("server"), dict)
+    )
+
 
 _SERVER_COMMAND_SCHEMAS: dict[str, _MessageSchema] = {
+    "host_candidate": _MessageSchema({"port": _integer_in_range(1, 65535)}, {}),
     "solicitar_snapshot": _MessageSchema({}, {}),
     "hello": _MessageSchema(
         {
@@ -368,6 +394,17 @@ _SERVER_COMMAND_SCHEMAS: dict[str, _MessageSchema] = {
 }
 
 _CLIENT_EVENT_SCHEMAS: dict[str, _MessageSchema] = {
+    "host_checkpoint": _MessageSchema(
+        {
+            "session_id": _is_nonempty_string,
+            "epoch": _NONNEGATIVE_INTEGER,
+            "owner_id": _POSITIVE_INTEGER,
+            "sequence": _POSITIVE_INTEGER,
+            "peers": _is_host_peers,
+            "checkpoint": _is_host_checkpoint,
+        },
+        {"recovering": _is_boolean},
+    ),
     "snapshot": _MessageSchema(
         {
             "snapshot_version": _POSITIVE_INTEGER,
