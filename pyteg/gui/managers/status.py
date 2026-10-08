@@ -155,6 +155,9 @@ class StatusManager:
 
         """
         self.main_window.estado_actual = estado
+        banner = getattr(self.main_window, "situation_banner", None)
+        if estado != "JUGANDO" and banner is not None:
+            banner.clear()
         if estado == "JUGANDO":
             self.main_window.partida_finalizada = False
         elif estado in {"FINALIZADO", "Finalizado"}:

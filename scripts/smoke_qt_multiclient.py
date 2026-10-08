@@ -42,7 +42,10 @@ def _parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--clients", type=int, default=DEFAULT_CLIENTS)
     parser.add_argument("--timeout", type=float, default=DEFAULT_TIMEOUT)
-    parser.add_argument("--theme", choices=("classic", "test"), default="classic")
+    parser.add_argument(
+        "--theme", choices=("classic", "revancha", "test"), default="classic"
+    )
+    parser.add_argument("--rules-profile", choices=("classic", "revancha"))
     args = parser.parse_args()
     if args.clients < MIN_CLIENTS:
         parser.error("--clients debe ser al menos 2")
@@ -84,9 +87,8 @@ def _wait_for(
 
 
 def _connect_window(client: Client, port: int, theme: str, username: str) -> Gui:
-    window = Gui(client)
+    window = Gui(client, map_theme=theme)
     window.hide()
-    window.map_theme = theme
     dialog = VentanaConectar(window)
     window.ventana_conectar = dialog
     dialog.addr.setText("127.0.0.1")
@@ -97,8 +99,9 @@ def _connect_window(client: Client, port: int, theme: str, username: str) -> Gui
 
 
 def _start_server(
-    port: int, theme: str, environment: dict[str, str]
+    port: int, theme: str, environment: dict[str, str], profile: str | None
 ) -> subprocess.Popen[str]:
+    profile_args = ["--rules-profile", profile] if profile is not None else []
     return subprocess.Popen(  # noqa: S603 -- argumentos estáticos del smoke
         [
             sys.executable,
@@ -110,6 +113,7 @@ def _start_server(
             str(port),
             "--theme",
             theme,
+            *profile_args,
             "--quiet",
         ],
         cwd=ROOT,
@@ -170,10 +174,11 @@ def main() -> int:
 
     """
     args = _parse_args()
+    os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
     environment = os.environ.copy()
     environment.setdefault("QT_QPA_PLATFORM", "offscreen")
     port = _free_port()
-    server = _start_server(port, args.theme, environment)
+    server = _start_server(port, args.theme, environment, args.rules_profile)
     app = QApplication([])
     windows: list[Gui] = []
     clients: list[Client] = []

@@ -108,6 +108,28 @@ las 50 imágenes del tablero para que la prueba no dependa del backend gráfico;
 `smoke_qt_multiclient` sigue cubriendo la construcción y conexión visual del
 mapa.
 
+El recorrido acepta `--theme classic|revancha` y `--rules-profile classic|revancha`
+por separado; CI ejecuta las cuatro combinaciones. La configuración selecciona
+una carta Crisis para comprobar su explicación, sus jugadores afectados y
+los dados públicos después de reconectar. La meta de países se calcula para
+exigir al menos una conquista con la cantidad de jugadores elegida.
+
+Para probar cuatro jugadores con ventanas visibles en una sesión Wayland:
+
+```bash
+env QT_QPA_PLATFORM=wayland uv run python scripts/smoke_qt_game.py \
+  --theme classic --rules-profile revancha --clients 4 --visible \
+  --timeout 90 --output-dir logs/qt-visual
+```
+
+En una sesión X11 se puede usar `QT_QPA_PLATFORM=xcb`. Para que un agente
+acceda al escritorio, su proceso necesita acceso al socket del compositor;
+el sandbox puede bloquear esa conexión aunque las variables del display
+estén presentes. En un backend gráfico el recorrido renderiza los cambios
+del mapa; `--render-map` permite hacerlo también en `offscreen`. Las capturas
+se guardan por mapa, perfil y cliente al verificar la situación de la ronda.
+El smoke multicliente también acepta `--theme revancha` y `--rules-profile`.
+
 Durante una reconexión Qt se espera primero el snapshot que marca la baja en el
 servidor. El cliente recuperado envía `reconectar` antes de cualquier comando
 de lobby; así no se rechaza un `set_username` mientras la sesión todavía está

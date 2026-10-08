@@ -105,6 +105,9 @@ class QtClientStateAdapter:
         self._sync_countries(state)
         self._sync_turn(state)
         self._sync_phase(state)
+        banner = getattr(self._main_window, "situation_banner", None)
+        if banner is not None:
+            banner.update_snapshot(state, self._model.local_userid)
 
     def _sync_game_state(self, state: dict[str, Any]) -> None:
         estado = state.get("estado")

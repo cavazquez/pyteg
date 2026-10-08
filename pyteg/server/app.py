@@ -249,7 +249,7 @@ class Server:
         fase: str | None = None
         turno_data: dict[str, int | None] | None = None
         refuerzos_pendientes = 0
-        situacion: dict[str, str | int | None] = {
+        situacion: dict[str, Any] = {
             "id": "none",
             "nombre": "Sin situación",
             "efecto": "none",

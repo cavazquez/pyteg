@@ -19,6 +19,7 @@ from pyteg.core.situaciones.model import (
     NoSituationCard,
     SituationCard,
     SituationContext,
+    SituationSnapshot,
     SituationState,
 )
 
@@ -161,14 +162,22 @@ class SituationRuntime:
         """
         return self._active_effect
 
-    def public_snapshot(self) -> dict[str, str | int | None]:
+    def public_snapshot(self) -> SituationSnapshot:
         """Serializa sólo el estado público de la carta.
 
         Returns:
             Payload de carta y ronda para snapshots.
 
         """
-        return self._active_card.to_public_dict(self._round_number)
+        snapshot = self._active_card.to_public_dict(self._round_number)
+        snapshot["jugadores_afectados"] = list(
+            self._active_effect.affected_players(self._context, self._state)
+        )
+        snapshot["tiradas_crisis"] = {
+            str(player_id): result
+            for player_id, result in sorted(self._state.crisis_rolls.items())
+        }
+        return snapshot
 
     def attack_dice(self, base: int) -> int:
         """Aplica la modificación de dados del atacante.

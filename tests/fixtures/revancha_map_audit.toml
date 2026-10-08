@@ -1,7 +1,7 @@
-# Auditoría estructural del mapa Revancha.
+# Auditoría estructural del mapa Revancha de Pyteg.
 #
-# Este fixture conserva únicamente las 134 aristas que coinciden entre
-# Kamchatka/mapa.json y la implementación auxiliar/paises.json después de normalizar nombres.
+# Este fixture conserva las 134 aristas aceptadas para el mapa, con nombres
+# normalizados y decisiones pendientes registradas por separado.
 # No contiene assets ni pretende ser todavía un tema cargable por el juego.
 
 [Meta]
@@ -126,4 +126,4 @@ consenso = [["Alaska", "Chukchi"], ["Alaska", "Kamchatka"], ["Groenlandia", "Isl
 
 [Discrepancias]
 pendientes = ["GranBretana-Francia", "Irak-Ucrania"]
-motivo = "Una reconstrucción visual pública muestra Gran Bretaña-Francia; la implementación auxiliar declara Irak-Ucrania y Kamchatka no. El reglas configuradas no enumera ninguna de las dos aristas."
+motivo = "Las reconstrucciones comparadas difieren sobre Gran Bretaña-Francia e Irak-Ucrania. Ninguna de las dos aristas cuenta con confirmación suficiente."

@@ -62,6 +62,32 @@ class SituationTests(unittest.TestCase):
         self.assertTrue(runtime.can_claim_country_card(1))
         runtime.validate_attack("A", "B")
         runtime.validate_action(1, "atacar", "#ff0000")
+        self.assertEqual(runtime.public_snapshot()["jugadores_afectados"], [])
+
+    def test_crisis_snapshot_reports_tied_players_and_original_rolls(self) -> None:
+        """Reconectar publica los mismos dados y todos los empates en el mínimo."""
+        runtime = SituationRuntime(
+            self.mapa,
+            SituationDeck([SituationCard("crisis_1", "Crisis", "crisis")]),
+            dice_source=_Dice([2, 5, 2]),
+        )
+        runtime.begin_round(2, (1, 2, 3), {})
+        snapshot = runtime.public_snapshot()
+        self.assertEqual(snapshot["jugadores_afectados"], [1, 3])
+        self.assertEqual(snapshot["tiradas_crisis"], {"1": 2, "2": 5, "3": 2})
+        runtime.begin_round(2, (1, 2, 3), {})
+        self.assertEqual(runtime.public_snapshot(), snapshot)
+        runtime.reset()
+        self.assertEqual(runtime.public_snapshot()["tiradas_crisis"], {})
+
+    def test_rest_snapshot_reports_only_the_matching_color(self) -> None:
+        """Descanso muestra los participantes afectados sin depender del mapa."""
+        runtime = SituationRuntime(
+            self.mapa,
+            SituationDeck([SituationCard("rest_1", "Descanso", "rest", "#ff0000")]),
+        )
+        runtime.begin_round(2, (1, 2), {1: "#FF0000", 2: "#00ff00"})
+        self.assertEqual(runtime.public_snapshot()["jugadores_afectados"], [1])
 
     def test_effects_are_map_agnostic(self) -> None:
         """Los efectos de dados y refuerzos no usan nombres fijos de países."""

@@ -1,9 +1,9 @@
 """Juega una partida corta con ventanas Qt y transporte TCP real.
 
-El smoke usa el mapa clásico, tres instancias reales de ``Gui`` y el mismo
+El smoke acepta ambos mapas y perfiles, varias instancias reales de ``Gui`` y el mismo
 modelo Qt que usa el cliente distribuido. Configura e inicia la partida,
 coloca refuerzos, conquista un país, reconecta una ventana durante la partida
-y observa la victoria desde todos los clientes. El render de las 50 imágenes
+y observa la victoria desde todos los clientes. El render de las imágenes
 del tablero se desacopla en el backend ``offscreen`` para mantener el recorrido
 acotado; el smoke visual de conexión cubre la construcción del mapa. Los dados
 se fijan sólo en el proceso servidor para que CI tenga un recorrido repetible.
@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import os
 import socket
 import subprocess  # noqa: S404 -- sólo inicia el servidor local del smoke
@@ -24,6 +25,7 @@ import sys
 import time
 import tomllib
 import uuid
+from contextlib import ExitStack
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, NoReturn, cast
 from unittest.mock import patch
@@ -40,6 +42,7 @@ from pyteg.gui import Gui
 from pyteg.gui.dialogs.conectar import VentanaConectar
 from pyteg.gui.dialogs.dice_animation import BattleResultDialog
 from pyteg.gui.managers.window import WindowManager
+from pyteg.toml_reader import TomlReader
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -48,10 +51,10 @@ ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_TIMEOUT = 45.0
 DEFAULT_SEED = 7
 MIN_COMBAT_ROUND = 3
-RECONNECT_AFTER_TURNS = 2
-THEME = "classic"
+RECONNECT_ROUND = 2
 CLIENT_COUNT = 3
-VICTORY_TARGET = 18
+MIN_CLIENTS = 3
+MAX_CLIENTS = 8
 DEBUG = bool(os.environ.get("PYTEG_QT_SMOKE_DEBUG"))
 
 
@@ -75,22 +78,26 @@ def _server_listening(port: int) -> bool:
         return False
 
 
-def _connect_window(client: Client, port: int, theme: str, username: str) -> Gui:
+def _connect_window(
+    client: Client, port: int, theme: str, username: str, *, visible: bool = False
+) -> Gui:
     """Crea una ventana Qt de juego y la conecta al servidor local.
 
     Returns:
         Ventana Qt conectada al servidor.
 
     """
-    window = Gui(client)
+    window = Gui(client, map_theme=theme)
     window.hide()
-    window.map_theme = theme
     dialog = VentanaConectar(window)
     window.ventana_conectar = dialog
     dialog.addr.setText("127.0.0.1")
     dialog.port.setText(str(port))
     dialog.username.setText(username)
     dialog.connect_to_server()
+    if visible:
+        window.resize(1024, 720)
+        window.show()
     return window
 
 
@@ -134,13 +141,28 @@ def _parse_args() -> argparse.Namespace:
 
     """
     parser = argparse.ArgumentParser(
-        description="Partida completa Qt con reconexión sobre el mapa de prueba.",
+        description="Partida Qt con ambos mapas, perfiles, situaciones y reconexión.",
     )
     parser.add_argument("--timeout", type=float, default=DEFAULT_TIMEOUT)
     parser.add_argument("--seed", type=int, default=DEFAULT_SEED)
+    parser.add_argument("--theme", choices=("classic", "revancha"), default="classic")
+    parser.add_argument("--rules-profile", choices=("classic", "revancha"))
+    parser.add_argument("--clients", type=int, default=CLIENT_COUNT)
+    parser.add_argument("--visible", action="store_true", help="Muestra las ventanas.")
+    parser.add_argument(
+        "--render-map",
+        action="store_true",
+        help="Renderiza cada cambio del mapa incluso en offscreen.",
+    )
+    parser.add_argument(
+        "--output-dir", type=Path, help="Guarda capturas de la carta y el mapa."
+    )
     args = parser.parse_args()
     if args.timeout <= 0:
         parser.error("--timeout debe ser positivo")
+    if not MIN_CLIENTS <= args.clients <= MAX_CLIENTS:
+        parser.error("--clients debe estar entre 3 y 8")
+    args.rules_profile = args.rules_profile or args.theme
     return args
 
 
@@ -312,7 +334,16 @@ def _wait_convergence(app: QApplication, windows: list[Gui], timeout: float) -> 
             for window in windows
             if window.conexion is not None
         ]
-        return len(boards) == len(windows) and len(set(boards)) == 1
+        cards = [
+            json.dumps(_snapshot(window).get("situacion"), sort_keys=True)
+            for window in windows
+            if window.conexion is not None
+        ]
+        return (
+            len(boards) == len(windows)
+            and len(set(boards)) == 1
+            and len(set(cards)) == 1
+        )
 
     _wait_for(app, converged, timeout, "convergencia del tablero Qt")
 
@@ -347,7 +378,7 @@ def _skip_country_render(
     _state: dict[str, Any],
     _names: set[str] | None = None,
 ) -> None:
-    """Evita el coste del render de 50 imágenes en el backend offscreen."""
+    """Evita el coste del render del tablero en el backend offscreen."""
 
 
 def _report_client_error(task: ClientTaskError, _window: Any) -> None:
@@ -403,9 +434,12 @@ def _reconnect_client(  # noqa: PLR0913, PLR0917
         timeout,
         "confirmación de desconexión en el servidor Qt",
     )
+    visible = current_window.isVisible()
     current_window.close()
 
-    replacement = _connect_window(client, port, THEME, "QtGame2-Reconnected")
+    replacement = _connect_window(
+        client, port, current_window.map_theme, "QtGame2-Reconnected", visible=visible
+    )
     all_windows.append(replacement)
     _wait_for(
         app,
@@ -422,23 +456,62 @@ def _reconnect_client(  # noqa: PLR0913, PLR0917
     return replacement
 
 
+def _verify_situation(windows: list[Gui]) -> None:
+    """Comprueba la carta real y sus dados después de una reconexión."""
+    for window in windows:
+        state = _snapshot(window)
+        card = state.get("situacion") or {}
+        rolls = card.get("tiradas_crisis") or {}
+        banner = window.situation_banner
+        if card.get("id") != "crisis_1" or not rolls:
+            _fail("No se recibió la carta Crisis con sus tiradas públicas")
+        lowest = min(rolls.values())
+        affected = sorted(
+            int(userid) for userid, value in rolls.items() if value == lowest
+        )
+        if sorted(card.get("jugadores_afectados", [])) != affected:
+            _fail("La carta Qt no identifica todos los mínimos de Crisis")
+        if (
+            banner is None
+            or banner.isHidden()
+            or "Crisis" not in banner.title_label.text()
+        ):
+            _fail("La carta recibida no aparece en la ventana Qt")
+        if not banner.details_label.text():
+            _fail("La carta Qt no explica los jugadores afectados")
+
+
+def _capture_windows(
+    windows: list[Gui], output_dir: Path, theme: str, profile: str
+) -> None:
+    """Guarda evidencia visual de la situación y el tablero completo."""
+    output_dir.mkdir(parents=True, exist_ok=True)
+    for index, window in enumerate(windows, start=1):
+        path = output_dir / f"{theme}-{profile}-client-{index}.png"
+        if not window.grab().save(str(path)):
+            _fail(f"No se pudo guardar la captura Qt: {path}")
+
+
 def _play_game(  # noqa: C901, PLR0912, PLR0914, PLR0915
     app: QApplication,
     port: int,
-    timeout: float,
+    args: argparse.Namespace,
 ) -> dict[str, Any]:
-    """Configura, juega y valida la partida con tres ventanas Qt.
+    """Configura, juega y valida la partida con las ventanas solicitadas.
 
     Returns:
         Evidencia serializable de victoria, turnos y reconexión.
 
     """
     _trace("creating clients")
-    clients = [Client() for _ in range(CLIENT_COUNT)]
+    timeout = args.timeout
+    clients = [Client() for _ in range(args.clients)]
     all_windows: list[Gui] = []
     windows: list[Gui] = []
     for index, client in enumerate(clients, start=1):
-        window = _connect_window(client, port, THEME, f"QtGame{index}")
+        window = _connect_window(
+            client, port, args.theme, f"QtGame{index}", visible=args.visible
+        )
         all_windows.append(window)
         windows.append(window)
 
@@ -454,15 +527,20 @@ def _play_game(  # noqa: C901, PLR0912, PLR0914, PLR0915
         )
         _trace("handshake done")
         admin = windows[0]
+        reader = TomlReader.from_theme(args.theme)
+        victory_target = math.ceil(len(reader.todos_los_paises()) / args.clients) + 1
         _send_command(
             app,
             admin,
             {
                 "mensaje": "empezar",
                 "segundos": 60,
-                "paises_para_victoria": VICTORY_TARGET,
+                "paises_para_victoria": victory_target,
                 "objetivos_secretos": False,
                 "misiles_habilitados": False,
+                "rules_profile": args.rules_profile,
+                "situations_enabled": True,
+                "situation_card_ids": ["crisis_1"],
             },
             timeout,
         )
@@ -476,12 +554,23 @@ def _play_game(  # noqa: C901, PLR0912, PLR0914, PLR0915
             "inicio de partida Qt",
         )
         _trace("game started")
+        for window in windows:
+            state = _snapshot(window)
+            if (
+                state.get("theme") != args.theme
+                or state.get("configuracion", {}).get("rules_profile")
+                != args.rules_profile
+                or window.scene is None
+                or window.scene.map_theme != args.theme
+            ):
+                _fail("La ventana Qt no conserva la combinación de mapa y reglas")
         country_names = tuple(_country_state(windows[0]))
-        adjacency = _load_adjacency(THEME)
+        adjacency = _load_adjacency(args.theme)
 
         turns = 0
         conquests = 0
         reconnected = False
+        situation_verified = False
         deadline = time.monotonic() + timeout
         while time.monotonic() < deadline:
             app.processEvents()
@@ -509,14 +598,41 @@ def _play_game(  # noqa: C901, PLR0912, PLR0914, PLR0915
                 if not owned:
                     _fail("El jugador activo no recibió un país Qt")
                 before = pending
+                units = _connection(active).state_model.private_units
+                options = [
+                    name
+                    for name in owned
+                    if units.get("infanteria", 0)
+                    + units.get(reader.continente(name) or "", 0)
+                    > 0
+                ]
+                if not options:
+                    app.processEvents()
+                    time.sleep(0.01)
+                    continue
+                country = max(
+                    options,
+                    key=lambda name: (
+                        sum(
+                            neighbor not in owned
+                            for neighbor in adjacency.get(name, ())
+                        ),
+                        int(countries[name].get("unidades", 0)),
+                    ),
+                )
+                amount = min(
+                    pending,
+                    units.get("infanteria", 0)
+                    + units.get(reader.continente(country) or "", 0),
+                )
                 _send_command(
                     app,
                     active,
                     {
                         "mensaje": "agregar_unidad",
-                        "pais": owned[0],
+                        "pais": country,
                         "tipo_unidad": "infanteria",
-                        "cantidad": 1,
+                        "cantidad": amount,
                     },
                     timeout,
                 )
@@ -606,7 +722,11 @@ def _play_game(  # noqa: C901, PLR0912, PLR0914, PLR0915
             turns += 1
             _trace(f"turn {turns} finished")
             _wait_convergence(app, windows, timeout)
-            if turns >= RECONNECT_AFTER_TURNS and not reconnected:
+            next_turn = _snapshot(windows[0]).get("turno") or {}
+            if (
+                int(next_turn.get("num_ronda", 1)) >= RECONNECT_ROUND
+                and not reconnected
+            ):
                 replacement = _reconnect_client(
                     app,
                     port,
@@ -618,6 +738,13 @@ def _play_game(  # noqa: C901, PLR0912, PLR0914, PLR0915
                 windows[1] = replacement
                 reconnected = True
                 _trace("reconnected client 2")
+                _wait_convergence(app, windows, timeout)
+                _verify_situation(windows)
+                situation_verified = True
+                if args.output_dir is not None:
+                    _capture_windows(
+                        windows, args.output_dir, args.theme, args.rules_profile
+                    )
 
         _wait_for(
             app,
@@ -629,9 +756,16 @@ def _play_game(  # noqa: C901, PLR0912, PLR0914, PLR0915
         )
         winner = _snapshot(windows[0]).get("turno")
         _trace("final state observed")
+        if conquests < 1 or not reconnected or not situation_verified:
+            _fail("La partida debe verificar conquista, reconexión y carta visible")
         return {
             "status": "passed",
             "clients": len(windows),
+            "theme": args.theme,
+            "rules_profile": args.rules_profile,
+            "situation_verified": situation_verified,
+            "platform": app.platformName(),
+            "map_rendered": args.render_map,
             "turns_played": turns,
             "conquests": conquests,
             "reconnected": reconnected,
@@ -650,12 +784,15 @@ def main() -> int:
 
     """
     args = _parse_args()
+    if not args.visible:
+        os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
     environment = os.environ.copy()
     environment.setdefault("QT_QPA_PLATFORM", "offscreen")
     port = _free_port()
-    server = _start_server(port, args.seed, THEME, environment)
+    server = _start_server(port, args.seed, args.theme, environment)
     _trace(f"server started on {port}")
     app = QApplication([])
+    args.render_map = args.render_map or app.platformName() != "offscreen"
     try:
         _wait_for(
             app,
@@ -666,15 +803,27 @@ def main() -> int:
         if server.poll() is not None:
             output = server.stdout.read() if server.stdout is not None else ""
             _fail("El servidor terminó antes de escuchar:\n" + output)
-        with (
-            patch.object(
-                WindowManager, "show_battle_result_dialog", _show_battle_non_blocking
-            ),
-            patch.object(QtClientStateAdapter, "_sync_countries", _skip_country_render),
-            patch.object(ClientTaskError, "run", _report_client_error),
-            patch.object(ClientTaskVictoria, "run", _report_victory),
-        ):
-            result = _play_game(app, port, args.timeout)
+        with ExitStack() as stack:
+            stack.enter_context(
+                patch.object(
+                    WindowManager,
+                    "show_battle_result_dialog",
+                    _show_battle_non_blocking,
+                )
+            )
+            if not args.render_map:
+                stack.enter_context(
+                    patch.object(
+                        QtClientStateAdapter, "_sync_countries", _skip_country_render
+                    )
+                )
+            stack.enter_context(
+                patch.object(ClientTaskError, "run", _report_client_error)
+            )
+            stack.enter_context(
+                patch.object(ClientTaskVictoria, "run", _report_victory)
+            )
+            result = _play_game(app, port, args)
     except (OSError, RuntimeError, TypeError, ValueError) as error:
         result = {"status": "failed", "failure": str(error)}
     finally:

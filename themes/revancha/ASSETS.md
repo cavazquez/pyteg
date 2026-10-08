@@ -3,8 +3,8 @@
 Los SVG de `countries/`, `cards/` y `geometry/` se generan para este
 repositorio y se distribuyen bajo GPL-3.0-or-later (`LICENSE`). La composición
 vectorial del mapa usa como guía la foto frontal del tablero compartida para
-#227. Sus masas continentales y fronteras son aproximaciones originales; no se
-copiaron ilustraciones del tablero ni assets de el editor del juego de mesa.
+#227. Sus masas continentales y fronteras son aproximaciones vectoriales
+realizadas para este repositorio.
 
 `geometry/generate_revancha_map.py` contiene los contornos y centros de
 referencia y regenera los SVG, las posiciones de `paises.toml` y las rutas

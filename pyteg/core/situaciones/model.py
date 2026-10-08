@@ -9,10 +9,22 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, NotRequired, TypedDict
 
 if TYPE_CHECKING:
     from pyteg.protocols.mapa import IMapProtocol
+
+
+class SituationSnapshot(TypedDict):
+    """Carta y resultados públicos que los clientes pueden mostrar."""
+
+    id: str
+    nombre: str
+    efecto: str
+    parametro: str | None
+    ronda: int
+    jugadores_afectados: NotRequired[list[int]]
+    tiradas_crisis: NotRequired[dict[str, int]]
 
 
 @dataclass(frozen=True, slots=True)
@@ -28,7 +40,7 @@ class SituationCard:
     effect_id: str
     parameter: str | None = None
 
-    def to_public_dict(self, round_number: int) -> dict[str, str | int | None]:
+    def to_public_dict(self, round_number: int) -> SituationSnapshot:
         """Serializa la carta activa sin exponer estado privado.
 
         Returns:

@@ -91,7 +91,7 @@ class LanguageManager:
             # Compatibilidad con hosts mínimos que no montan StatusManager.
             self.main_window.mi_jugador_text.setText(_("Mi jugador:"))
 
-        for name in ("language_selector", "sound_control"):
+        for name in ("language_selector", "sound_control", "situation_banner"):
             widget = getattr(self.main_window, name, None)
             update_language = getattr(widget, "update_language", None)
             if callable(update_language):

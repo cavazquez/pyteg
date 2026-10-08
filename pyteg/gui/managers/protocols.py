@@ -37,6 +37,7 @@ if TYPE_CHECKING:
     from pyteg.gui.managers.units import UnitsManager
     from pyteg.gui.managers.window import WindowManager
     from pyteg.gui.toolbar import ToolBar
+    from pyteg.gui.widgets.situation import SituationBanner
     from pyteg.gui.widgets.view import QCustomGraphicsView
 
 
@@ -82,6 +83,7 @@ class MainWindowProtocol(GameWindowProtocol, Protocol):
     vertical_splitter: QSplitter
     horizontal_splitter: QSplitter
     main_widget: QWidget
+    situation_banner: SituationBanner | None
 
     theme_manager: ThemeManager
     players_manager: PlayersManager

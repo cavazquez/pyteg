@@ -452,8 +452,12 @@ msgstr "Duración del turno en segundos"
 msgid "Objetivo específico de países"
 msgstr "Objetivo específico de países"
 
-msgid "Activar para usar un objetivo específico de países en lugar de controlar todos"
-msgstr "Activar para usar un objetivo específico de países en lugar de controlar todos"
+msgid ""
+"Activar para usar un objetivo específico de países en lugar de controlar "
+"todos"
+msgstr ""
+"Activar para usar un objetivo específico de países en lugar de controlar "
+"todos"
 
 msgid "p. ej., 30, 50, 42"
 msgstr "p. ej., 30, 50, 42"
@@ -464,8 +468,12 @@ msgstr "Cantidad de países necesarios para ganar"
 msgid "Objetivos secretos"
 msgstr "Objetivos secretos"
 
-msgid "Activar para usar objetivos secretos del mapa clásico en lugar de solo conquistar países"
-msgstr "Activar para usar objetivos secretos del mapa clásico en lugar de solo conquistar países"
+msgid ""
+"Activar para usar objetivos secretos del mapa clásico en lugar de solo "
+"conquistar países"
+msgstr ""
+"Activar para usar objetivos secretos del mapa clásico en lugar de solo "
+"conquistar países"
 
 msgid "Habilitar Misiles"
 msgstr "Habilitar Misiles"
@@ -608,8 +616,12 @@ msgstr "Misil: {} → {} (-{} unidades)"
 msgid "{} ahora tiene {} {}"
 msgstr "{} ahora tiene {} {}"
 
-msgid "🚀 {} lanzó un misil desde {} hacia {} (distancia: {}). Daño: {} unidades. Unidades restantes: {}"
-msgstr "🚀 {} lanzó un misil desde {} hacia {} (distancia: {}). Daño: {} unidades. Unidades restantes: {}"
+msgid ""
+"🚀 {} lanzó un misil desde {} hacia {} (distancia: {}). Daño: {} unidades. "
+"Unidades restantes: {}"
+msgstr ""
+"🚀 {} lanzó un misil desde {} hacia {} (distancia: {}). Daño: {} unidades. "
+"Unidades restantes: {}"
 
 msgid " · Situación: {}"
 msgstr " · Situación: {}"
@@ -723,3 +735,100 @@ msgid "misil"
 msgid_plural "misiles"
 msgstr[0] "misil"
 msgstr[1] "misiles"
+
+msgid "Se mantienen las reglas de combate de esta partida."
+msgstr "Se mantienen las reglas de combate de esta partida."
+
+msgid "El defensor suma un dado, hasta un máximo de cuatro."
+msgstr "El defensor suma un dado, hasta un máximo de cuatro."
+
+msgid "El atacante suma un dado, hasta un máximo de cuatro."
+msgstr "El atacante suma un dado, hasta un máximo de cuatro."
+
+msgid ""
+"Los jugadores con la menor tirada no pueden reclamar tarjeta de país durante"
+" esta ronda. Los empates también quedan afectados."
+msgstr ""
+"Los jugadores con la menor tirada no pueden reclamar tarjeta de país durante"
+" esta ronda. Los empates también quedan afectados."
+
+msgid ""
+"Cada jugador recibe refuerzos extra equivalentes a la mitad de sus países, "
+"redondeada hacia abajo."
+msgstr ""
+"Cada jugador recibe refuerzos extra equivalentes a la mitad de sus países, "
+"redondeada hacia abajo."
+
+msgid "Solo se puede atacar entre continentes diferentes."
+msgstr "Solo se puede atacar entre continentes diferentes."
+
+msgid "Solo se puede atacar dentro del mismo continente."
+msgstr "Solo se puede atacar dentro del mismo continente."
+
+msgid ""
+"Los jugadores indicados no pueden atacar ni mover unidades durante esta "
+"ronda. Pueden colocar refuerzos."
+msgstr ""
+"Los jugadores indicados no pueden atacar ni mover unidades durante esta "
+"ronda. Pueden colocar refuerzos."
+
+msgid "Combate clásico"
+msgstr "Combate clásico"
+
+msgid "Nieve"
+msgstr "Nieve"
+
+msgid "Viento a favor"
+msgstr "Viento a favor"
+
+msgid "Crisis"
+msgstr "Crisis"
+
+msgid "Refuerzos extras"
+msgstr "Refuerzos extras"
+
+msgid "Fronteras abiertas"
+msgstr "Fronteras abiertas"
+
+msgid "Fronteras cerradas"
+msgstr "Fronteras cerradas"
+
+msgid "Descanso"
+msgstr "Descanso"
+
+msgid "Jugador %(id)s"
+msgstr "Jugador %(id)s"
+
+msgid "%(name)s (vos)"
+msgstr "%(name)s (vos)"
+
+msgid "Sin jugadores afectados."
+msgstr "Sin jugadores afectados."
+
+msgid "Afecta a: %(players)s."
+msgstr "Afecta a: %(players)s."
+
+msgid "Sin carta de situación"
+msgstr "Sin carta de situación"
+
+msgid "Se revela una carta al comenzar cada ronda desde la segunda."
+msgstr "Se revela una carta al comenzar cada ronda desde la segunda."
+
+msgid "Situación"
+msgstr "Situación"
+
+msgid "Dados: %(rolls)s."
+msgstr "Dados: %(rolls)s."
+
+msgid "%(card)s · Ronda %(round)s"
+msgstr "%(card)s · Ronda %(round)s"
+
+msgid "Esta carta modifica las reglas durante la ronda actual."
+msgstr "Esta carta modifica las reglas durante la ronda actual."
+
+msgid ""
+"No hay una carta aplicable en esta ronda. Se mantienen las reglas de la "
+"partida."
+msgstr ""
+"No hay una carta aplicable en esta ronda. Se mantienen las reglas de la "
+"partida."

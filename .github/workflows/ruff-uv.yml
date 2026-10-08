@@ -76,9 +76,15 @@ jobs:
               tests.test_protocol_features \
               tests.test_tcp_framing
         - name: Qt multiclient and reconnection smoke
-          run: uv run python scripts/smoke_qt_multiclient.py --clients 3
+          run: |
+            uv run python scripts/smoke_qt_multiclient.py --clients 3
+            uv run python scripts/smoke_qt_multiclient.py --theme revancha --rules-profile classic --clients 4
         - name: Qt complete game and reconnection smoke
-          run: uv run python scripts/smoke_qt_game.py --timeout 60
+          run: |
+            uv run python scripts/smoke_qt_game.py --theme classic --rules-profile classic --timeout 60
+            uv run python scripts/smoke_qt_game.py --theme classic --rules-profile revancha --timeout 60
+            uv run python scripts/smoke_qt_game.py --theme revancha --rules-profile classic --timeout 60
+            uv run python scripts/smoke_qt_game.py --theme revancha --rules-profile revancha --timeout 60
         - name: Slow client queue stress
           run: uv run python scripts/stress_slow_clients.py
         - name: Dead-code audit
@@ -104,7 +110,7 @@ jobs:
               --fail-on-cross-continent \
               --allow-cross Groenlandia:Islandia,Aral:Rusia,California:Colombia,Mexico:Colombia
         - name: Visual map regression smoke
-          run: uv run python scripts/smoke_visual_map.py --output-dir artifacts/map-visual
+          run: uv run python scripts/smoke_visual_map.py --themes classic test revancha --output-dir artifacts/map-visual
         - name: Upload visual map evidence
           if: always()
           uses: actions/upload-artifact@v7
