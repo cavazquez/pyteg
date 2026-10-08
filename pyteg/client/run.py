@@ -22,7 +22,9 @@ def parse_arguments() -> tuple[argparse.Namespace, list[str]]:
         Par (argumentos PyTeg, argumentos restantes para ``QApplication``).
 
     """
-    parser = argparse.ArgumentParser(description="Cliente del juego de estrategia Pyteg.")
+    parser = argparse.ArgumentParser(
+        description="Cliente del juego de estrategia Pyteg."
+    )
     parser.add_argument(
         "--theme",
         choices=("classic", "revancha"),
