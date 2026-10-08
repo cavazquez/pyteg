@@ -61,8 +61,39 @@ Los puentes intercontinentales que están en el consenso incluyen:
 - India–Sumatra y Filipinas–Australia.
 
 El reglamento usa además `Alaska–Chukchi` y `Chile–Australia` como ejemplos de
-fronteras abiertas. Las conexiones de agua se dibujarán como rutas visuales en
-#227; no se deben inferir desde la proximidad de dos sprites.
+fronteras abiertas. Las conexiones de agua se dibujan como rutas visuales;
+no se deben inferir desde la proximidad de dos sprites.
+
+## Geometría y apariencia
+
+`themes/revancha/geometry/board-layout.toml` contiene los 72 contornos trazados
+sobre la foto frontal del tablero de colores compartida durante el desarrollo,
+en coordenadas de referencia de 800×600. También fija la posición y orientación
+de cada etiqueta y la posición deseada del marcador. Los contornos reemplazan
+la aproximación anterior basada en áreas alrededor de centros: reproducen las
+franjas de Norteamérica, el extremo alargado de Sudamérica, las penínsulas y las
+islas de la referencia. Son trazados vectoriales interpretados desde una foto,
+no un escaneo exacto.
+
+Para regenerar los SVG y las posiciones:
+
+```bash
+uv run python themes/revancha/geometry/generate_revancha_map.py
+```
+
+El generador crea una partición común sin rellenos superpuestos, ubica los
+marcadores dentro de cada país y agrega una ruta dorada para toda arista del
+grafo cuyos contornos quedan separados. Así las islas y las separaciones no
+ocultan conexiones. El grafo `[Adyacencias]` conserva sus 134 aristas y los IDs
+existentes; el mapa clásico usa sus propios recursos.
+
+La escena carga el mar, el marco y el título como decoración pasiva, y las
+etiquetas y los bordes como una segunda capa. La selección y los efectos de
+batalla siguen actuando sobre los SVG individuales de los países.
+
+Las pruebas verifican inventario, sitios de clic en los 72 marcadores, ausencia
+de solapamientos y cobertura visual de todas las aristas. CI genera capturas
+de los dos mapas en 1024×600, 1280×800 y 1920×1080.
 
 ## Discrepancias pendientes
 

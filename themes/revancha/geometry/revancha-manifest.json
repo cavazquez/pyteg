@@ -4,8 +4,10 @@
     0.0
   ],
   "size": [
-    1416,
-    1062
+    1000,
+    750
   ],
-  "description": "Composición original aproximada desde la foto frontal del tablero de Revancha."
+  "background": "#abc7cf",
+  "source": "board-layout.toml",
+  "description": "Contornos trazados sobre el tablero de colores del mapa Revancha."
 }

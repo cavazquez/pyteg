@@ -27,6 +27,8 @@ if TYPE_CHECKING:
     import random
     from collections.abc import Iterable
 
+    from pyteg.core.situaciones.model import SituationSnapshot
+
 DEFAULT_SITUATION_RULESET = "none"
 
 _EFFECTS = {
@@ -237,7 +239,7 @@ def card_is_applicable(card: SituationCard, context: SituationContext) -> bool:
     return create_effect(card).is_applicable(context)
 
 
-def no_situation_card(round_number: int) -> dict[str, str | int | None]:
+def no_situation_card(round_number: int) -> SituationSnapshot:
     """Construye el payload público de la ausencia de mazo.
 
     Returns:

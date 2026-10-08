@@ -37,8 +37,21 @@ server = Server(theme="classic", situation_ruleset="revancha")
   inyectar `random.Random(seed)` para reproducibilidad.
 
 El snapshot público incluye `situacion` con `id`, `nombre`, `efecto`,
-`parametro` y `ronda`. No se agregan manos privadas ni datos de objetivos al
+`parametro` y `ronda`, junto a `jugadores_afectados` y `tiradas_crisis`.
+Las tiradas están indexadas por el ID del jugador como texto; todos los
+empatados en el mínimo figuran como afectados. Descanso informa únicamente
+los jugadores del color indicado. Estos datos se conservan al reconectar,
+sin volver a tirar los dados. No se agregan manos privadas ni datos de objetivos al
 snapshot.
+
+La interfaz muestra una franja sobre el mapa con la carta de la ronda,
+su explicación y los jugadores afectados. Crisis muestra además todos los
+dados. El jugador local se identifica con «vos», y una restricción propia de
+Crisis o Descanso destaca el borde de la franja. Los textos se actualizan al
+cambiar entre español e inglés y el contraste acompaña al tema claro u oscuro.
+La franja desaparece al desconectar, finalizar o volver al lobby; con las
+situaciones desactivadas no ocupa espacio. Durante la primera ronda explica
+cuándo se revelará la primera carta.
 
 ## Reglas disponibles
 

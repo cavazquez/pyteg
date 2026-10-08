@@ -612,7 +612,9 @@ msgstr "Turn duration in seconds"
 msgid "Objetivo específico de países"
 msgstr "Specific country objective"
 
-msgid "Activar para usar un objetivo específico de países en lugar de controlar todos"
+msgid ""
+"Activar para usar un objetivo específico de países en lugar de controlar "
+"todos"
 msgstr "Enable to use a specific country count instead of controlling all"
 
 msgid "p. ej., 30, 50, 42"
@@ -624,7 +626,9 @@ msgstr "Number of countries required to win"
 msgid "Objetivos secretos"
 msgstr "Secret objectives"
 
-msgid "Activar para usar objetivos secretos del mapa clásico en lugar de solo conquistar países"
+msgid ""
+"Activar para usar objetivos secretos del mapa clásico en lugar de solo "
+"conquistar países"
 msgstr "Enable classic map secret objectives instead of country conquest only"
 
 msgid "Habilitar Misiles"
@@ -768,8 +772,12 @@ msgstr "Missile: {} → {} (-{} units)"
 msgid "{} ahora tiene {} {}"
 msgstr "{} now has {} {}"
 
-msgid "🚀 {} lanzó un misil desde {} hacia {} (distancia: {}). Daño: {} unidades. Unidades restantes: {}"
-msgstr "🚀 {} launched a missile from {} to {} (distance: {}). Damage: {} units. Units remaining: {}"
+msgid ""
+"🚀 {} lanzó un misil desde {} hacia {} (distancia: {}). Daño: {} unidades. "
+"Unidades restantes: {}"
+msgstr ""
+"🚀 {} launched a missile from {} to {} (distance: {}). Damage: {} units. "
+"Units remaining: {}"
 
 msgid " · Situación: {}"
 msgstr " · Situation: {}"
@@ -883,3 +891,99 @@ msgid "misil"
 msgid_plural "misiles"
 msgstr[0] "missile"
 msgstr[1] "missiles"
+
+msgid "Se mantienen las reglas de combate de esta partida."
+msgstr "The combat rules configured for this game remain in effect."
+
+msgid "El defensor suma un dado, hasta un máximo de cuatro."
+msgstr "The defender gets one extra die, up to four."
+
+msgid "El atacante suma un dado, hasta un máximo de cuatro."
+msgstr "The attacker gets one extra die, up to four."
+
+msgid ""
+"Los jugadores con la menor tirada no pueden reclamar tarjeta de país durante"
+" esta ronda. Los empates también quedan afectados."
+msgstr ""
+"Players with the lowest roll cannot claim a country card this round. Ties "
+"are also affected."
+
+msgid ""
+"Cada jugador recibe refuerzos extra equivalentes a la mitad de sus países, "
+"redondeada hacia abajo."
+msgstr ""
+"Each player gets extra reinforcements equal to half their countries, rounded"
+" down."
+
+msgid "Solo se puede atacar entre continentes diferentes."
+msgstr "Attacks are only allowed between different continents."
+
+msgid "Solo se puede atacar dentro del mismo continente."
+msgstr "Attacks are only allowed within the same continent."
+
+msgid ""
+"Los jugadores indicados no pueden atacar ni mover unidades durante esta "
+"ronda. Pueden colocar refuerzos."
+msgstr ""
+"The listed players cannot attack or move units this round. They can place "
+"reinforcements."
+
+msgid "Combate clásico"
+msgstr "Classic combat"
+
+msgid "Nieve"
+msgstr "Snow"
+
+msgid "Viento a favor"
+msgstr "Tailwind"
+
+msgid "Crisis"
+msgstr "Crisis"
+
+msgid "Refuerzos extras"
+msgstr "Extra reinforcements"
+
+msgid "Fronteras abiertas"
+msgstr "Open borders"
+
+msgid "Fronteras cerradas"
+msgstr "Closed borders"
+
+msgid "Descanso"
+msgstr "Rest"
+
+msgid "Jugador %(id)s"
+msgstr "Player %(id)s"
+
+msgid "%(name)s (vos)"
+msgstr "%(name)s (you)"
+
+msgid "Sin jugadores afectados."
+msgstr "No players are affected."
+
+msgid "Afecta a: %(players)s."
+msgstr "Affects: %(players)s."
+
+msgid "Sin carta de situación"
+msgstr "No situation card"
+
+msgid "Se revela una carta al comenzar cada ronda desde la segunda."
+msgstr ""
+"A card is revealed at the start of each round from the second round onward."
+
+msgid "Situación"
+msgstr "Situation"
+
+msgid "Dados: %(rolls)s."
+msgstr "Dice: %(rolls)s."
+
+msgid "%(card)s · Ronda %(round)s"
+msgstr "%(card)s · Round %(round)s"
+
+msgid "Esta carta modifica las reglas durante la ronda actual."
+msgstr "This card changes the rules for the current round."
+
+msgid ""
+"No hay una carta aplicable en esta ronda. Se mantienen las reglas de la "
+"partida."
+msgstr "No card applies this round. The game rules remain in effect."

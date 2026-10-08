@@ -5,6 +5,18 @@ Todas las fechas en formato YYYY-MM-DD.
 ## [Unreleased]
 
 ### Changed
+- **Mapa Revancha redibujado**: los 72 contornos se trazan desde la referencia
+  del tablero de colores, con proporciones, islas, etiquetas orientadas, bordes
+  suaves, mar y rutas doradas. La fuente editable reemplaza la partición por
+  cercanía; cada frontera del grafo conserva un borde o una ruta visible.
+- **Situación visible de la ronda**: una franja sobre el mapa explica la carta,
+  los jugadores afectados y las tiradas públicas de Crisis; conserva el estado
+  al reconectar, traduce sus textos y acompaña los temas claro y oscuro.
+- **Validación Qt de ambos mapas y perfiles**: el recorrido completo admite
+  las cuatro combinaciones, cuatro o más clientes, render gráfico y capturas.
+  Verifica una conquista, la carta vigente y la reconexión antes de la victoria.
+- **Pruebas Qt sin escritorio**: `run_tests.sh` usa `offscreen` por defecto y
+  permite sobrescribir el backend desde el entorno.
 - **Diagnóstico estricto de fronteras**: el chequeo de mapas distingue el
   interior sólido de los bordes antialiasados, detecta países que se cubren y
   verifica que las fronteras terrestres declaradas se toquen; las rutas

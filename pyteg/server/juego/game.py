@@ -30,6 +30,7 @@ if TYPE_CHECKING:
 
     from pyteg.core.cartas.mazo import Mazo
     from pyteg.core.cartas.tarjeta_de_pais import TarjetaDePais
+    from pyteg.core.situaciones.model import SituationSnapshot
     from pyteg.protocols import IClientProtocol
     from pyteg.server.app import Server
     from pyteg.server.juego.mapa import Mapa
@@ -243,7 +244,7 @@ class Game:
         """
         return self._rules if self._rules is not None else ThemeRules.defaults()
 
-    def situacion_actual(self) -> dict[str, str | int | None]:
+    def situacion_actual(self) -> SituationSnapshot:
         """Devuelve la carta de situación activa para snapshots públicos.
 
         Returns:

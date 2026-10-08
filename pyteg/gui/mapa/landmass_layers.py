@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QBrush, QColor
 from PySide6.QtSvgWidgets import QGraphicsSvgItem
 from PySide6.QtWidgets import QGraphicsItem
 
@@ -47,6 +48,9 @@ def add_landmass_layers(
         )
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
         origin_x, origin_y = manifest["origin"]
+        background = manifest.get("background")
+        if isinstance(background, str):
+            scene.setBackgroundBrush(QBrush(QColor(background)))
         border_path = shell_path.with_name(
             shell_path.name.replace("-shell.svg", "-borders.svg")
         )

@@ -33,7 +33,7 @@ class ThemeManager:
         # Aplicar tema global a toda la app (fondos, textos, menús, etc.)
         self._apply_global_theme()
         self._apply_statusbar_theme()
-        for name in ("language_selector", "sound_control"):
+        for name in ("language_selector", "sound_control", "situation_banner"):
             widget = getattr(self.main_window, name, None)
             if widget is not None:
                 widget.apply_theme(theme)

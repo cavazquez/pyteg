@@ -80,56 +80,256 @@ NuevaZelandia = ['Tasmania']
 [[ConexionesVisuales]]
 origen = "Alaska"
 destino = "Chukchi"
-puntos = [[539.85, 136.29], [784.11, 138.06]]
+puntos = [[271.25, 61.25], [421.25, 37.5], [591.25, 37.5], [667.5, 98.75]]
 
 [[ConexionesVisuales]]
 origen = "Alaska"
 destino = "Kamchatka"
-puntos = [[493.83, 277.89], [764.64, 297.36], [939.87, 284.97]]
+puntos = [[242.5, 50], [418.75, 27.5], [586.25, 27.5], [936.25, 61.25], [935, 167.5]]
 
 [[ConexionesVisuales]]
 origen = "Groenlandia"
 destino = "Islandia"
-puntos = [[577.02, 226.56]]
+puntos = [[400, 160]]
 
 [[ConexionesVisuales]]
 origen = "California"
 destino = "Tonga"
 envolver = "horizontal"
-puntos = [[0, 520.38], [1416, 746.94]]
+puntos = [[0, 313.75], [1000, 495]]
 
 [[ConexionesVisuales]]
 origen = "Brasil"
 destino = "Sahara"
-puntos = [[596.49, 759.33]]
+puntos = [[386.25, 541.25]]
 
 [[ConexionesVisuales]]
 origen = "Uruguay"
 destino = "Nigeria"
-puntos = [[548.7, 888.54]]
+puntos = [[407.5, 595]]
 
 [[ConexionesVisuales]]
 origen = "Espana"
 destino = "Sahara"
-puntos = [[667.29, 614.19]]
+puntos = [[471.25, 420]]
 
 [[ConexionesVisuales]]
 origen = "Polonia"
 destino = "Egipto"
-puntos = [[885, 497.37], [867.3, 601.8]]
+puntos = [[631.25, 365], [615, 430]]
 
 [[ConexionesVisuales]]
 origen = "Chile"
 destino = "Australia"
 envolver = "horizontal"
-puntos = [[0, 920.4], [1416, 874.38]]
+puntos = [[0, 617.5], [1000, 600]]
 
 [[ConexionesVisuales]]
 origen = "India"
 destino = "Sumatra"
-puntos = [[1111.56, 647.82]]
+puntos = [[800, 468.75]]
 
 [[ConexionesVisuales]]
 origen = "Filipinas"
 destino = "Australia"
-puntos = [[1246.08, 762.87]]
+puntos = [[893.75, 546.25]]
+
+[[ConexionesVisuales]]
+origen = "Albania"
+destino = "Irak"
+puntos = []
+
+[[ConexionesVisuales]]
+origen = "Albania"
+destino = "Iran"
+puntos = []
+
+[[ConexionesVisuales]]
+origen = "Alemania"
+destino = "Croacia"
+puntos = []
+
+[[ConexionesVisuales]]
+origen = "Alemania"
+destino = "GranBretana"
+puntos = []
+
+[[ConexionesVisuales]]
+origen = "Alemania"
+destino = "Serbia"
+puntos = []
+
+[[ConexionesVisuales]]
+origen = "Argentina"
+destino = "Bolivia"
+puntos = []
+
+[[ConexionesVisuales]]
+origen = "Australia"
+destino = "Sumatra"
+puntos = []
+
+[[ConexionesVisuales]]
+origen = "Australia"
+destino = "Tasmania"
+puntos = []
+
+[[ConexionesVisuales]]
+origen = "Australia"
+destino = "Tonga"
+puntos = []
+
+[[ConexionesVisuales]]
+origen = "Bielorrusia"
+destino = "Polonia"
+puntos = []
+
+[[ConexionesVisuales]]
+origen = "Brasil"
+destino = "Chile"
+puntos = []
+
+[[ConexionesVisuales]]
+origen = "Canada"
+destino = "IslaVictoria"
+puntos = []
+
+[[ConexionesVisuales]]
+origen = "Chechenia"
+destino = "Rusia"
+puntos = []
+
+[[ConexionesVisuales]]
+origen = "China"
+destino = "Siberia"
+puntos = []
+
+[[ConexionesVisuales]]
+origen = "Chukchi"
+destino = "Kamchatka"
+puntos = []
+
+[[ConexionesVisuales]]
+origen = "Colombia"
+destino = "Nicaragua"
+puntos = []
+
+[[ConexionesVisuales]]
+origen = "Corea"
+destino = "Japon"
+puntos = []
+
+[[ConexionesVisuales]]
+origen = "Croacia"
+destino = "Polonia"
+puntos = []
+
+[[ConexionesVisuales]]
+origen = "Cuba"
+destino = "Florida"
+puntos = []
+
+[[ConexionesVisuales]]
+origen = "Cuba"
+destino = "Honduras"
+puntos = []
+
+[[ConexionesVisuales]]
+origen = "Cuba"
+destino = "Jamaica"
+puntos = []
+
+[[ConexionesVisuales]]
+origen = "Cuba"
+destino = "Mexico"
+puntos = []
+
+[[ConexionesVisuales]]
+origen = "Egipto"
+destino = "Irak"
+puntos = []
+
+[[ConexionesVisuales]]
+origen = "Egipto"
+destino = "Israel"
+puntos = []
+
+[[ConexionesVisuales]]
+origen = "Filipinas"
+destino = "Tonga"
+puntos = []
+
+[[ConexionesVisuales]]
+origen = "Filipinas"
+destino = "Vietnam"
+puntos = []
+
+[[ConexionesVisuales]]
+origen = "GranBretana"
+destino = "Irlanda"
+puntos = []
+
+[[ConexionesVisuales]]
+origen = "GranBretana"
+destino = "Portugal"
+puntos = []
+
+[[ConexionesVisuales]]
+origen = "Groenlandia"
+destino = "IslaVictoria"
+puntos = []
+
+[[ConexionesVisuales]]
+origen = "Groenlandia"
+destino = "Labrador"
+puntos = []
+
+[[ConexionesVisuales]]
+origen = "Groenlandia"
+destino = "NuevaYork"
+puntos = []
+
+[[ConexionesVisuales]]
+origen = "Iran"
+destino = "Ucrania"
+puntos = []
+
+[[ConexionesVisuales]]
+origen = "Irlanda"
+destino = "Islandia"
+puntos = []
+
+[[ConexionesVisuales]]
+origen = "Islandia"
+destino = "Noruega"
+puntos = []
+
+[[ConexionesVisuales]]
+origen = "Jamaica"
+destino = "Nicaragua"
+puntos = []
+
+[[ConexionesVisuales]]
+origen = "Japon"
+destino = "Kamchatka"
+puntos = []
+
+[[ConexionesVisuales]]
+origen = "Madagascar"
+destino = "Mauritania"
+puntos = []
+
+[[ConexionesVisuales]]
+origen = "Madagascar"
+destino = "Sudafrica"
+puntos = []
+
+[[ConexionesVisuales]]
+origen = "NuevaZelandia"
+destino = "Tasmania"
+puntos = []
+
+[[ConexionesVisuales]]
+origen = "Rusia"
+destino = "Turquia"
+puntos = []

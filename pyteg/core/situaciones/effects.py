@@ -28,6 +28,17 @@ class SituationEffect:
 
     effect_id = "none"
 
+    def affected_players(
+        self, context: SituationContext, _state: SituationState
+    ) -> tuple[int, ...]:
+        """Devuelve los jugadores alcanzados por el efecto general.
+
+        Returns:
+            Participantes de la ronda.
+
+        """
+        return context.player_ids
+
     def is_applicable(self, _context: SituationContext) -> bool:
         """Indica si la carta puede usarse con los jugadores actuales.
 
@@ -113,8 +124,19 @@ class NoSituationEffect(SituationEffect):
 
     effect_id = "none"
 
+    def affected_players(
+        self, _context: SituationContext, _state: SituationState
+    ) -> tuple[int, ...]:
+        """Devuelve los jugadores afectados por la carta nula.
 
-class ClassicCombatEffect(NoSituationEffect):
+        Returns:
+            Tupla vacía.
+
+        """
+        return ()
+
+
+class ClassicCombatEffect(SituationEffect):
     """Carta visible que conserva el combate clásico."""
 
     effect_id = "classic_combat"
@@ -154,6 +176,17 @@ class CrisisEffect(SituationEffect):
     """El resultado mínimo de dados pierde el reclamo de tarjeta de país."""
 
     effect_id = "crisis"
+
+    def affected_players(
+        self, _context: SituationContext, state: SituationState
+    ) -> tuple[int, ...]:
+        """Publica los jugadores que perdieron el reclamo de tarjeta.
+
+        Returns:
+            IDs ordenados, incluyendo todos los empates en el mínimo.
+
+        """
+        return tuple(sorted(state.blocked_card_claims))
 
     def begin_round(
         self,
@@ -246,6 +279,21 @@ class RestEffect(SituationEffect):
     def __init__(self, color_key: str) -> None:
         """Crea una carta de descanso para un color RGB hexadecimal."""
         self.color_key = color_key.lower()
+
+    def affected_players(
+        self, context: SituationContext, _state: SituationState
+    ) -> tuple[int, ...]:
+        """Publica los jugadores cuyo color coincide con Descanso.
+
+        Returns:
+            IDs afectados presentes en la ronda.
+
+        """
+        return tuple(
+            player_id
+            for player_id in context.player_ids
+            if (context.player_colors.get(player_id) or "").lower() == self.color_key
+        )
 
     def is_applicable(self, context: SituationContext) -> bool:
         """Indica si el color está presente entre los jugadores.

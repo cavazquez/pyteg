@@ -23,6 +23,7 @@ from pyteg.gui.managers.units_panel import setup_continent_values as _build_unit
 from pyteg.gui.mapa.scene import QCustomGraphicsScene
 from pyteg.gui.toolbar import ToolBar
 from pyteg.gui.widgets.chat import Chat
+from pyteg.gui.widgets.situation import SituationBanner
 from pyteg.gui.widgets.view import QCustomGraphicsView
 from pyteg.i18n import translate as _
 
@@ -244,7 +245,12 @@ class LayoutManager:
         self.main_window.main_widget = QWidget(cast("QWidget", self.main_window))
         main_layout = QGridLayout()
         main_layout.setContentsMargins(0, 0, 0, 0)
-        main_layout.addWidget(horizontal_splitter, 0, 0)
+        self.main_window.situation_banner = SituationBanner(
+            self.main_window.main_widget
+        )
+        main_layout.addWidget(self.main_window.situation_banner, 0, 0)
+        main_layout.addWidget(horizontal_splitter, 1, 0)
+        main_layout.setRowStretch(1, 1)
         self.main_window.main_widget.setLayout(main_layout)
         self.main_window.setCentralWidget(self.main_window.main_widget)
 

@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, cast
 
 from PySide6.QtCore import QEvent, QSize
+from PySide6.QtGui import QStatusTipEvent
 from PySide6.QtWidgets import QMainWindow, QWidget
 
 from pyteg.client.colores.paleta import Colores
@@ -27,7 +28,7 @@ from pyteg.i18n import translate as _
 from pyteg.sound_manager import SoundManager
 
 if TYPE_CHECKING:
-    from PySide6.QtGui import QResizeEvent, QStatusTipEvent
+    from PySide6.QtGui import QResizeEvent
     from PySide6.QtWidgets import (
         QFrame,
         QHBoxLayout,
@@ -48,6 +49,7 @@ if TYPE_CHECKING:
     from pyteg.gui.toolbar import ToolBar
     from pyteg.gui.widgets.chat import Chat
     from pyteg.gui.widgets.language_selector import LanguageSelector
+    from pyteg.gui.widgets.situation import SituationBanner
     from pyteg.gui.widgets.sound_control import SoundControlWidget
     from pyteg.gui.widgets.view import QCustomGraphicsView
 
@@ -76,6 +78,7 @@ class Gui(QMainWindow, MainWindowDelegatesMixin):
     right_column_scroll: QScrollArea
     vertical_splitter: QSplitter
     horizontal_splitter: QSplitter
+    situation_banner: SituationBanner | None
 
     layout_manager: LayoutManager
     theme_manager: ThemeManager
@@ -122,6 +125,7 @@ class Gui(QMainWindow, MainWindowDelegatesMixin):
         self.view: QCustomGraphicsView | None = None
         self.chat: Chat | None = None
         self.toolbar: ToolBar | None = None
+        self.situation_banner = None
         self.tarjetas_jugador: list[TarjetaItem] = []
         self.misiles_habilitados: bool = False
         self.partida_finalizada: bool = False
@@ -169,10 +173,12 @@ class Gui(QMainWindow, MainWindowDelegatesMixin):
             ``True`` si se procesó la ayuda; si no, el resultado de Qt.
 
         """
-        if event.type() == QEvent.Type.StatusTip and hasattr(
-            self, "status_message_label"
+        if (
+            event.type() == QEvent.Type.StatusTip
+            and isinstance(event, QStatusTipEvent)
+            and hasattr(self, "status_message_label")
         ):
-            self.status_manager.update_status_tip(cast("QStatusTipEvent", event).tip())
+            self.status_manager.update_status_tip(event.tip())
             return True
         return super().event(event)
 
