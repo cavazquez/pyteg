@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import sys
 from dataclasses import asdict, dataclass
 from pathlib import Path
@@ -16,12 +17,13 @@ from types import SimpleNamespace
 from typing import cast
 
 from PySide6.QtCore import QSize, Qt
-from PySide6.QtGui import QImage, QPainter
+from PySide6.QtGui import QColor, QImage, QPainter
 from PySide6.QtWidgets import QApplication
 
 from pyteg.config import DEFAULT_MAP_THEME
 from pyteg.gui.mapa.scene import QCustomGraphicsScene
 from pyteg.gui.widgets.view import QCustomGraphicsView
+from scripts.color_vision import COLOR_VISION_MODES, simulate_image
 
 DEFAULT_SIZES = ((1024, 600), (1280, 800), (1920, 1080))
 _MIN_CAPTURE_WIDTH = 640
@@ -42,6 +44,8 @@ class CaptureRecord:
     scene_width: float
     scene_height: float
     output: str
+    zoom: float
+    color_vision: str
 
 
 def _parse_size(value: str) -> tuple[int, int]:
@@ -73,6 +77,20 @@ def _parse_args() -> argparse.Namespace:
         help="Tamaños ANCHOxALTO (default: 1024x600 1280x800 1920x1080)",
     )
     parser.add_argument(
+        "--zooms",
+        nargs="+",
+        type=float,
+        default=[1.0],
+        help="Factores de zoom respecto del ajuste inicial (default: 1)",
+    )
+    parser.add_argument(
+        "--color-vision",
+        nargs="+",
+        choices=COLOR_VISION_MODES,
+        default=["normal"],
+        help="Simulaciones a capturar (default: normal)",
+    )
+    parser.add_argument(
         "--output-dir",
         type=Path,
         default=Path("artifacts/map-visual"),
@@ -81,11 +99,14 @@ def _parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def render_capture(
+def render_capture(  # noqa: PLR0913
     app: QApplication,
     theme: str,
     size: tuple[int, int],
     output_dir: Path,
+    *,
+    zoom: float = 1.0,
+    color_vision: str = "normal",
 ) -> CaptureRecord:
     """Renderiza un tema a una imagen y valida sus bounds básicos.
 
@@ -95,8 +116,12 @@ def render_capture(
     Raises:
         OSError: Si la imagen no se puede guardar.
         RuntimeError: Si el tema no tiene contenido o queda fuera de bounds.
+        ValueError: Si el zoom no es un número finito positivo.
 
     """
+    if not math.isfinite(zoom) or zoom <= 0:
+        message = "el zoom debe ser finito y mayor que cero"
+        raise ValueError(message)
     width, height = size
     host = SimpleNamespace(
         scene=None,
@@ -104,20 +129,30 @@ def render_capture(
         clear_status_bar=lambda: None,
     )
     scene = QCustomGraphicsScene(host, theme=theme)
+    colors = ("#d32f2f", "#1976d2", "#fbc02d", "#388e3c")
+    quantities = (1, 8, 12, 123)
+    for index, country in enumerate(scene.paises.values()):
+        country.set_color(QColor(colors[index % len(colors)]))
+        country.set_unidades(quantities[index % len(quantities)])
     host.scene = scene
     view = QCustomGraphicsView(scene, host)
     view.resize(QSize(width, height))
     view.show()
     app.processEvents()
+    view.scale(zoom, zoom)
 
     image = QImage(width, height, QImage.Format.Format_ARGB32_Premultiplied)
     image.fill(Qt.GlobalColor.transparent)
     painter = QPainter(image)
     view.render(painter)
     painter.end()
+    if color_vision != "normal":
+        image = simulate_image(image, color_vision)
 
     output_dir.mkdir(parents=True, exist_ok=True)
-    output = output_dir / f"{theme}-{width}x{height}.png"
+    suffix = f"-zoom-{zoom:g}" if not math.isclose(zoom, 1.0) else ""
+    suffix += f"-{color_vision}" if color_vision != "normal" else ""
+    output = output_dir / f"{theme}-{width}x{height}{suffix}.png"
     if not image.save(str(output), "PNG"):  # type: ignore[call-overload]
         message = f"no se pudo guardar la captura {output}"
         raise OSError(message)
@@ -152,6 +187,8 @@ def render_capture(
         scene_width=scene_rect.width(),
         scene_height=scene_rect.height(),
         output=str(output),
+        zoom=zoom,
+        color_vision=color_vision,
     )
 
 
@@ -165,9 +202,11 @@ def main() -> int:
     args = _parse_args()
     app = cast("QApplication", QApplication.instance() or QApplication(sys.argv))
     records = [
-        render_capture(app, theme, size, args.output_dir)
+        render_capture(app, theme, size, args.output_dir, zoom=zoom, color_vision=mode)
         for theme in args.themes
         for size in args.sizes
+        for zoom in args.zooms
+        for mode in args.color_vision
     ]
     manifest = args.output_dir / "manifest.json"
     manifest.write_text(

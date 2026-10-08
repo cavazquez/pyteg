@@ -16,3 +16,9 @@ separada del grafo ejecutable: las rutas y los resaltados solo representan
 aristas auditadas y no habilitan movimientos. Las decisiones sobre las fuentes
 del tablero están registradas en `docs/revancha-map-audit.md` y en el fixture;
 no se incluyen fotografías, logotipos ni documentos comerciales como assets.
+
+Las etiquetas de países se convierten a trazos vectoriales al generar el mapa
+con DejaVu Sans DemiBold de 12 px. No se distribuye un archivo de fuente ni se
+requiere esa fuente en el cliente. Para regenerar el mapa se necesita DejaVu
+Sans instalada (en Debian/Ubuntu: `fonts-dejavu-core`). La atribución y el permiso
+de la tipografía están en `geometry/FONT-LICENSE.txt`.

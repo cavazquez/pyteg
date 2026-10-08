@@ -18,8 +18,18 @@ import tomllib
 from collections import defaultdict
 from pathlib import Path
 
-from PySide6.QtCore import QByteArray
-from PySide6.QtGui import QImage, QPainter
+from PySide6.QtCore import QByteArray, QRect, QRectF, Qt
+from PySide6.QtGui import (
+    QFont,
+    QFontDatabase,
+    QFontMetricsF,
+    QGuiApplication,
+    QImage,
+    QPainter,
+    QPainterPath,
+    QRegion,
+    QTransform,
+)
 from PySide6.QtSvg import QSvgRenderer
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -42,6 +52,7 @@ CONTINENTS = {
     "Oceania": {"fill": "#83bcb0", "edge": "#56998b"},
 }
 DISPLAY_NAMES = {
+    "LasVegas": "LAS VEGAS",
     "NuevaYork": "NUEVA YORK",
     "IslaVictoria": "ISLA VICTORIA",
     "GranBretana": "GRAN BRETAÑA",
@@ -73,6 +84,93 @@ CONNECTIONS = [
 ]
 continent_for: dict[str, str] = {}
 marker_positions: dict[str, tuple[int, int]] = {}
+LABEL_FONT = "DejaVu Sans"
+LABEL_INK = "#282a30"
+LABEL_HALO = "#fff8ea"
+label_reservations: list[int] = []
+
+
+def label_geometry(name: str) -> tuple[QPainterPath, str, float, float, float, float]:
+    """Reserve the rotated text box, including its halo and clearance."""
+    layout = BOARD[name]
+    x, y = scene_point(layout["etiqueta"])
+    angle = layout.get("angulo", 0)
+    text = DISPLAY_NAMES.get(name, name).title()
+    size = layout.get("tamano", 12)
+    font = QFont(LABEL_FONT)
+    font.setPixelSize(size)
+    font.setWeight(QFont.Weight.DemiBold)
+    metrics = QFontMetricsF(font)
+    glyphs = QPainterPath()
+    glyphs.addText(-metrics.horizontalAdvance(text) / 2, 0, font, text)
+    rect = glyphs.boundingRect()
+    path = QPainterPath()
+    path.addRect(rect.adjusted(-2, -2, 2, 2))
+    transform = QTransform().translate(x, y).rotate(angle)
+    return transform.map(path), text, x, y, angle, size
+
+
+def label_glyphs(name: str) -> QPainterPath:
+    """Bake glyphs into vector paths so installed fonts cannot alter the layout."""
+    _reservation, text, x, y, angle, size = label_geometry(name)
+    font = QFont(LABEL_FONT)
+    font.setPixelSize(int(size))
+    font.setWeight(QFont.Weight.DemiBold)
+    path = QPainterPath()
+    path.addText(-QFontMetricsF(font).horizontalAdvance(text) / 2, 0, font, text)
+    return QTransform().translate(x, y).rotate(angle).map(path)
+
+
+def painter_svg_path(path: QPainterPath) -> str:
+    commands = []
+    index = 0
+    while index < path.elementCount():
+        element = path.elementAt(index)
+        if element.isMoveTo():
+            commands.append(f"M {fmt(element.x)} {fmt(element.y)}")
+        elif element.isLineTo():
+            commands.append(f"L {fmt(element.x)} {fmt(element.y)}")
+        else:
+            control = path.elementAt(index + 1)
+            end = path.elementAt(index + 2)
+            commands.append(
+                f"C {fmt(element.x)} {fmt(element.y)} {fmt(control.x)} {fmt(control.y)} {fmt(end.x)} {fmt(end.y)}"
+            )
+            index += 2
+        index += 1
+    return " ".join(commands)
+
+
+def _reserve_labels() -> None:
+    image = QImage(WIDTH, HEIGHT, QImage.Format.Format_RGBA8888)
+    image.fill(0)
+    painter = QPainter(image)
+    for name in BOARD:
+        painter.fillPath(label_geometry(name)[0], Qt.GlobalColor.white)
+    painter.end()
+    pixels = image.constBits()
+    stride = WIDTH + 1
+    label_reservations.clear()
+    label_reservations.extend([0] * (stride * (HEIGHT + 1)))
+    for y in range(HEIGHT):
+        running = 0
+        for x in range(WIDTH):
+            running += pixels[(y * WIDTH + x) * 4 + 3] > 0
+            label_reservations[(y + 1) * stride + x + 1] = (
+                label_reservations[y * stride + x + 1] + running
+            )
+
+
+def _reserved_pixels(x: int, y: int) -> int:
+    stride = WIDTH + 1
+    x0, y0 = max(0, x - 1), max(0, y - 1)
+    x1, y1 = min(WIDTH, x + 17), min(HEIGHT, y + 17)
+    return (
+        label_reservations[y1 * stride + x1]
+        - label_reservations[y0 * stride + x1]
+        - label_reservations[y1 * stride + x0]
+        + label_reservations[y0 * stride + x0]
+    )
 
 
 def scene_point(point: tuple[float, float]) -> tuple[float, float]:
@@ -334,7 +432,7 @@ def _outline_path(  # noqa: C901, PLR0912, PLR0914
     return " ".join(paths)
 
 
-def _marker_position(  # noqa: PLR0914
+def _marker_position(  # noqa: C901, PLR0914
     owners: bytearray, label: int, bounds: tuple[int, int, int, int], name: str
 ) -> tuple[int, int]:
     """Find the best 16-pixel marker site inside its own country."""
@@ -342,8 +440,10 @@ def _marker_position(  # noqa: PLR0914
     stride = width + 1
     sums = [0] * (stride * (height + 1))
     candidates: list[tuple[int, int]] = []
+    region = QRegion()
     for y in range(height):
         running = 0
+        run_start = None
         for x in range(width):
             scene_x, scene_y = left + x, top + y
             is_own = owners[scene_y * WIDTH + scene_x] == label
@@ -351,10 +451,34 @@ def _marker_position(  # noqa: PLR0914
             sums[(y + 1) * stride + x + 1] = sums[y * stride + x + 1] + running
             if is_own:
                 candidates.append((scene_x, scene_y))
+                if run_start is None:
+                    run_start = scene_x
+            elif run_start is not None:
+                region |= QRegion(QRect(run_start, scene_y, scene_x - run_start, 1))
+                run_start = None
+        if run_start is not None:
+            region |= QRegion(QRect(run_start, top + y, left + width - run_start, 1))
 
     target_x, target_y = scene_point(CENTERS[name])
-    best_score = (-1, float("-inf"))
-    best = candidates[0]
+    country_shape = QPainterPath()
+    country_shape.addRegion(region)
+    country_shape = country_shape.simplified()
+    candidates.sort(
+        key=lambda point: (point[0] - target_x) ** 2 + (point[1] - target_y) ** 2
+    )
+    reservations = [
+        label_geometry(country)[0]
+        for country in BOARD
+        if label_geometry(country)[0]
+        .boundingRect()
+        .intersects(QRectF(left, top, width, height))
+    ]
+    circle_pixels = [
+        (dx, dy)
+        for dy in range(-8, 8)
+        for dx in range(-8, 8)
+        if (dx + 0.5) ** 2 + (dy + 0.5) ** 2 <= 8.5**2
+    ]
     for center_x, center_y in candidates:
         marker_x = max(left, min(center_x - 8, left + width - 16))
         marker_y = max(top, min(center_y - 8, top + height - 16))
@@ -366,18 +490,35 @@ def _marker_position(  # noqa: PLR0914
             - sums[y1 * stride + x0]
             + sums[y0 * stride + x0]
         )
-        distance = (center_x - target_x) ** 2 + (center_y - target_y) ** 2
-        score = (coverage, -distance)
-        if score > best_score:
-            best_score = score
-            best = (marker_x, marker_y)
-    return best[0] - left, best[1] - top
+        if coverage < len(circle_pixels):
+            continue
+        circle_coverage = sum(
+            owners[(marker_y + 8 + dy) * WIDTH + marker_x + 8 + dx] == label
+            for dx, dy in circle_pixels
+        )
+        if circle_coverage != len(circle_pixels):
+            continue
+        circle = QPainterPath()
+        circle.addEllipse(QRectF(marker_x - 0.5, marker_y - 0.5, 17, 17))
+        if not country_shape.contains(circle):
+            continue
+        clear = _reserved_pixels(marker_x, marker_y) == 0
+        if not clear:
+            clear = not any(circle.intersects(path) for path in reservations)
+        if clear:
+            return marker_x - left, marker_y - top
+    raise ValueError(f"No hay espacio para la ficha y el nombre de {name}")
 
 
 def _write_country_assets(
     owners: bytearray, names: list[str]
 ) -> tuple[dict[str, tuple[int, int, int, int]], list[tuple[str, int, int, str]]]:
     bounds = _country_bounds(owners, len(names))
+    placements = {
+        name: _marker_position(owners, label, bounds[label - 1], name)
+        for label, name in enumerate(names, start=1)
+    }
+    marker_positions.update(placements)
     layouts = {}
     outlines = []
     for label, name in enumerate(names, start=1):
@@ -393,9 +534,6 @@ def _write_country_assets(
         (THEME / "countries" / f"{name}.svg").write_text(svg, encoding="utf-8")
         layouts[name] = (left, top, width, height)
         outlines.append((continent, left, top, path))
-        marker_positions[name] = _marker_position(
-            owners, label, bounds[label - 1], name
-        )
     return layouts, outlines
 
 
@@ -474,16 +612,17 @@ def write_connections(owners: bytearray, names: list[str]) -> None:
 
 
 def label_svg(name: str) -> str:
-    layout = BOARD[name]
-    x, y = scene_point(layout["etiqueta"])
-    angle = layout.get("angulo", 0)
-    text = DISPLAY_NAMES.get(name, name.upper())
-    size = 10.0 if len(text) > 11 else 11.0
-    if name in {"Honduras", "Jamaica", "ElSalvador", "Croacia", "Serbia"}:
-        size = 9.0
-    transform = f'transform="rotate({angle} {fmt(x)} {fmt(y)})"' if angle else ""
-    attrs = f'x="{fmt(x)}" y="{fmt(y)}" text-anchor="middle" font-family="Noto Serif,serif" font-size="{fmt(size)}" font-weight="400" {transform}'
-    return f'<text {attrs} fill="none" stroke="#f7edde" stroke-width="1.6" stroke-linejoin="round">{text}</text>\n<text {attrs} fill="#403233">{text}</text>'
+    reservation, text, _x, _y, _angle, _size = label_geometry(name)
+    path = painter_svg_path(label_glyphs(name))
+    leader = ""
+    anchor = BOARD[name].get("anclaje_etiqueta")
+    if anchor:
+        ax, ay = scene_point(anchor)
+        rect = reservation.boundingRect()
+        tx = max(rect.left(), min(ax, rect.right()))
+        ty = max(rect.top(), min(ay, rect.bottom()))
+        leader = f'<path d="M {fmt(ax)} {fmt(ay)} L {fmt(tx)} {fmt(ty)}" fill="none" stroke="{LABEL_INK}" stroke-width="1"/>'
+    return f'{leader}<g id="country-label-{name}" aria-label="{text}"><path d="{path}" fill="{LABEL_HALO}" stroke="{LABEL_HALO}" stroke-width="2" stroke-linejoin="round"/><path d="{path}" fill="{LABEL_INK}"/></g>'
 
 
 def write_landmass_layers(outlines: list[tuple[str, int, int, str]]) -> None:
@@ -554,6 +693,20 @@ def write_landmass_layers(outlines: list[tuple[str, int, int, str]]) -> None:
                 "background": "#abc7cf",
                 "source": "board-layout.toml",
                 "description": "Contornos vectoriales del mapa Revancha de Pyteg.",
+                "label_ink": LABEL_INK,
+                "label_halo": LABEL_HALO,
+                "labels": {
+                    name: {
+                        "text": label_geometry(name)[1],
+                        "font_family": LABEL_FONT,
+                        "font_size": label_geometry(name)[5],
+                        "reserved_polygon": [
+                            [point.x(), point.y()]
+                            for point in label_geometry(name)[0].toFillPolygon()
+                        ],
+                    }
+                    for name in BOARD
+                },
             },
             indent=2,
             ensure_ascii=False,
@@ -564,6 +717,12 @@ def write_landmass_layers(outlines: list[tuple[str, int, int, str]]) -> None:
 
 
 def main() -> None:
+    _app = QGuiApplication.instance() or QGuiApplication([])
+    if LABEL_FONT not in QFontDatabase.families():
+        raise ValueError(
+            f"Instalá {LABEL_FONT} para regenerar las etiquetas vectoriales"
+        )
+    _reserve_labels()
     countries_file = tomllib.loads((THEME / "paises.toml").read_text(encoding="utf-8"))
     for continent, countries in countries_file.items():
         if continent == "Distribucion":

@@ -33,6 +33,7 @@ class Circulo(QGraphicsEllipseItem):
 
         self._center_text = Unidades(circulo_rect)
         self._center_text.setParentItem(self)
+        self._center_text.set_background_colors([self.brush().color()])
 
     def set_color(self, color: QColor | str | None) -> None:
         """Establece el color del círculo.
@@ -45,12 +46,14 @@ class Circulo(QGraphicsEllipseItem):
             return
         if isinstance(color, QColor):
             self.setBrush(QBrush(color))
+            self._center_text.set_background_colors([color])
             return
 
         try:
             qcolor = QColor(color)
             if qcolor.isValid():
                 self.setBrush(QBrush(qcolor))
+                self._center_text.set_background_colors([qcolor])
             else:
                 _LOG.warning("Color no válido: %s", color)
         except (ValueError, TypeError) as exc:
@@ -72,6 +75,7 @@ class Circulo(QGraphicsEllipseItem):
             gradient.setColorAt((indice + 1) * paso - 0.001, color)
         gradient.setColorAt(1, validos[0])
         self.setBrush(QBrush(gradient))
+        self._center_text.set_background_colors(validos)
 
     def set_unidades(self, cant: int | str) -> None:
         """Establece la cantidad de unidades a mostrar.

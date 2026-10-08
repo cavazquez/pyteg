@@ -111,6 +111,12 @@ jobs:
               --allow-cross Groenlandia:Islandia,Aral:Rusia,California:Colombia,Mexico:Colombia
         - name: Visual map regression smoke
           run: uv run python scripts/smoke_visual_map.py --themes classic test revancha --output-dir artifacts/map-visual
+        - name: Revancha zoom and color vision evidence
+          run: |
+            uv run python scripts/smoke_visual_map.py --themes revancha \
+              --sizes 1024x600 --zooms 0.8 1 1.5 \
+              --color-vision normal protanopia deuteranopia tritanopia grayscale \
+              --output-dir artifacts/map-visual/color-vision
         - name: Upload visual map evidence
           if: always()
           uses: actions/upload-artifact@v7

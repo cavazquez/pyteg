@@ -103,7 +103,8 @@ uv run python themes/revancha/geometry/generate_revancha_map.py
 ```
 
 El generador crea una partición común sin rellenos superpuestos, ubica los
-marcadores dentro de cada país y agrega una ruta dorada para toda arista del
+marcadores completos dentro de cada país, sin tapar nombres, y agrega una ruta
+azul oscuro para toda arista del
 grafo cuyos contornos quedan separados. Así las islas y las separaciones no
 ocultan conexiones. El grafo `[Adyacencias]` conserva sus 134 aristas y los IDs
 existentes; el mapa clásico usa sus propios recursos.
@@ -113,8 +114,11 @@ etiquetas y los bordes como una segunda capa. La selección y los efectos de
 batalla siguen actuando sobre los SVG individuales de los países.
 
 Las pruebas verifican inventario, sitios de clic en los 72 marcadores, ausencia
-de solapamientos y cobertura visual de todas las aristas. CI genera capturas
-de los dos mapas en 1024×600, 1280×800 y 1920×1080.
+de solapamientos y cobertura visual de todas las aristas. Las etiquetas son
+trazos vectoriales con halo claro. CI genera capturas de los dos mapas en
+1024×600, 1280×800 y 1920×1080, y capturas de Revancha con tres niveles de zoom,
+protanopia, deuteranopia, aproximación tritan y escala de grises. Las comprobaciones
+geométricas y de contraste están en `tests/test_revancha_visual_layout.py`.
 
 ## Discrepancias resueltas
 
