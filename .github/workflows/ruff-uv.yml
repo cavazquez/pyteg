@@ -10,6 +10,7 @@ jobs:
       LANG: es_ES.UTF-8
       LC_ALL: es_ES.UTF-8
       QT_QPA_PLATFORM: offscreen
+      PYTHONFAULTHANDLER: "1"
     steps:
         - uses: actions/checkout@v7
         - name: Install the latest version of uv and set the python version
@@ -107,7 +108,7 @@ jobs:
             uv run python scripts/smoke_wheel.py dist/*.whl
         - name: Coverage
           run: |
-            uv run coverage run --branch -m unittest discover
+            uv run coverage run --branch -m unittest discover -v
             uv run coverage report -m
         - name: Map layout overlaps
           run: |

@@ -92,7 +92,6 @@ class HostSession(QObject):
         self._watchdog = QTimer(self)
         self._watchdog.setInterval(1000)
         self._watchdog.timeout.connect(self._check_silence)
-        self._watchdog.start()
 
     def runtime(self) -> HostRuntime:
         """Obtiene el servicio compartido con la ventana de creación de partida.
@@ -124,6 +123,7 @@ class HostSession(QObject):
         if kind == "hello" and "host_migration" in event.get("capabilities", []):
             self.enabled = True
             self.runtime()
+            self._watchdog.start()
         if self.enabled and kind == "hello_ack" and event.get("accepted"):
             self.connection.send_data(
                 json.dumps({

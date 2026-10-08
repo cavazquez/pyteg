@@ -73,6 +73,14 @@ class ClientHostingTests(unittest.TestCase):
         self.assertFalse(self.session.disconnected())
         self.assertEqual(self.window.network_status_label.text(), "Desconectado")
 
+    def test_watchdog_starts_only_after_host_migration_is_negotiated(self) -> None:
+        """Una conexión normal no deja callbacks de recuperación activos."""
+        self.assertFalse(self.session._watchdog.isActive())
+        self.session.process({"mensaje": "hello", "capabilities": ["snapshots"]})
+        self.assertFalse(self.session._watchdog.isActive())
+        self.session.process({"mensaje": "hello", "capabilities": ["host_migration"]})
+        self.assertTrue(self.session._watchdog.isActive())
+
     def test_finishing_recovery_reenables_gameplay_actions(self) -> None:
         """El final de la pausa refresca botones aunque el snapshot llegó antes."""
         self.session.enabled = True
