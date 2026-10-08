@@ -108,9 +108,9 @@ def _run_server(root: Path, cwd: Path, theme: str) -> None:
         _stop(process)
 
 
-def _run_client(root: Path, cwd: Path) -> None:
-    process = subprocess.Popen(
-        [sys.executable, "-m", "pyteg.client.run", "--quiet"],
+def _run_client(root: Path, cwd: Path, theme: str) -> None:
+    process = subprocess.Popen(  # noqa: S603 -- main fija los dos temas permitidos
+        [sys.executable, "-m", "pyteg.client.run", "--quiet", "--theme", theme],
         cwd=cwd,
         env=_environment(root),
         stdout=subprocess.PIPE,
@@ -121,9 +121,9 @@ def _run_client(root: Path, cwd: Path) -> None:
         time.sleep(_CLIENT_RUNTIME)
         if process.poll() is not None:
             output = _process_output(process)
-            message = f"El cliente terminó al iniciar:\n{output}"
+            message = f"El cliente terminó al cargar {theme}:\n{output}"
             raise RuntimeError(message)
-        print("Cliente Qt offscreen del wheel inició correctamente")
+        print(f"Cliente Qt offscreen del wheel inició correctamente con tema {theme}")
     finally:
         _stop(process)
 
@@ -149,7 +149,7 @@ def main() -> int:
             archive.extractall(root)
         for theme in ("classic", "revancha"):
             _run_server(root, cwd, theme)
-        _run_client(root, cwd)
+            _run_client(root, cwd, theme)
     return 0
 
 

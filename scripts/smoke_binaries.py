@@ -58,9 +58,9 @@ def _run_server(server: Path, theme: str, cwd: Path, env: dict[str, str]) -> Non
             process.wait(timeout=5)
 
 
-def _run_client(client: Path, cwd: Path, env: dict[str, str]) -> None:
+def _run_client(client: Path, theme: str, cwd: Path, env: dict[str, str]) -> None:
     process = subprocess.Popen(  # noqa: S603 -- ruta validada por el workflow
-        [str(client), "--quiet"],
+        [str(client), "--quiet", "--theme", theme],
         cwd=cwd,
         env=env,
         stdout=subprocess.PIPE,
@@ -71,7 +71,7 @@ def _run_client(client: Path, cwd: Path, env: dict[str, str]) -> None:
         time.sleep(_STARTUP_SECONDS)
         if process.poll() is not None:
             output = process.stdout.read() if process.stdout is not None else ""
-            message = f"El cliente Nuitka terminó al iniciar: {output}"
+            message = f"El cliente Nuitka terminó al cargar {theme}: {output}"
             raise RuntimeError(message)
     finally:
         process.terminate()
@@ -106,7 +106,7 @@ def main() -> int:
         clean_cwd = Path(temp_dir)
         for theme in ("classic", "revancha"):
             _run_server(server, theme, clean_cwd, clean_env)
-        _run_client(client, clean_cwd, clean_env)
+            _run_client(client, theme, clean_cwd, clean_env)
     print("Binarios Nuitka verificados para classic y revancha")
     return 0
 

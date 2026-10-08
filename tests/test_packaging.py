@@ -3,9 +3,13 @@
 from __future__ import annotations
 
 import unittest
+from argparse import Namespace
 from pathlib import Path
+from tempfile import TemporaryDirectory
 from unittest.mock import patch
+from zipfile import ZipFile
 
+from scripts import smoke_binaries, smoke_wheel
 from scripts.build_binaries import RESOURCE_DIRS, _nuitka_command  # noqa: PLC2701
 from scripts.verify_sdist import REQUIRED_FILES as SDIST_REQUIRED_FILES
 from scripts.verify_wheel import REQUIRED_FILES as WHEEL_REQUIRED_FILES
@@ -65,6 +69,44 @@ class PackagingResourceTests(unittest.TestCase):
         )
         self.assertNotIn("--windows-console-mode=disable", command)
         self.assertNotIn("--disable-console", command)
+
+    def test_binary_smoke_opens_client_with_each_map(self) -> None:
+        """El cliente compilado prueba ambos mapas explícitamente."""
+        with TemporaryDirectory() as directory:
+            server, client = (Path(directory) / name for name in ("server", "client"))
+            server.touch()
+            client.touch()
+            args = Namespace(server=server, client=client)
+            with (
+                patch("scripts.smoke_binaries.parse_args", return_value=args),
+                patch("scripts.smoke_binaries._run_server"),
+                patch("scripts.smoke_binaries._run_client") as launch,
+            ):
+                self.assertEqual(smoke_binaries.main(), 0)
+            self.assertEqual(
+                [call.args[1] for call in launch.call_args_list],
+                ["classic", "revancha"],
+            )
+
+    def test_wheel_smoke_opens_client_with_each_map(self) -> None:
+        """El wheel prueba ambos mapas también en el cliente Qt."""
+        with TemporaryDirectory() as directory:
+            wheel = Path(directory) / "empty.whl"
+            with ZipFile(wheel, "w"):
+                pass
+            with (
+                patch(
+                    "scripts.smoke_wheel.parse_args",
+                    return_value=Namespace(wheel=wheel),
+                ),
+                patch("scripts.smoke_wheel._run_server"),
+                patch("scripts.smoke_wheel._run_client") as launch,
+            ):
+                self.assertEqual(smoke_wheel.main(), 0)
+            self.assertEqual(
+                [call.args[2] for call in launch.call_args_list],
+                ["classic", "revancha"],
+            )
 
 
 if __name__ == "__main__":
