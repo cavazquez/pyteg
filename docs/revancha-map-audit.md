@@ -1,27 +1,18 @@
-# Auditoría del mapa del mapa Revancha
+# Auditoría del mapa Revancha de Pyteg
 
 Este documento fija el inventario que debe usar el tema `revancha` y separa los
 datos confirmados de las decisiones que todavía necesitan cotejo directo con un
 tablero legible. El fixture estructural asociado es
 [`tests/fixtures/revancha_map_audit.toml`](../tests/fixtures/revancha_map_audit.toml).
 
-## Fuentes y nivel de confianza
+## Datos de referencia
 
-   confirma que el tablero tiene 72 países en siete continentes. También da
-   ejemplos de conexiones y puentes: Alaska–Chukchi, Chile–Australia,
-   Argentina–Brasil y España–Portugal.
-   confirma el conjunto de componentes de esta edición (72 tarjetas de países,
-   siete tarjetas de continente, objetivos, situaciones y misiles).
-3. El inventario completo de nombres y su distribución se cotejó con la lista
-   fuente auxiliar, no una especificación de el editor del juego de mesa.
-4. Para las adyacencias se compararon dos implementaciones públicas auxiliares:
-   [Kamchatka `mapa.json`](https://github.com/ericbrandwein/kamchatka/blob/master/core/assets/mapa.json)
-   Tras normalizar acentos y variantes (`Kamtchatka`/`Kamchatka`,
-   `Nueva Zelanda`/`Nueva Zelandia`) coinciden en 134 aristas no dirigidas.
-
-No se copiaron países ni fronteras del mapa clásico para completar huecos. La
-declara 43 aristas adicionales que no aparecen en ese consenso auxiliar; se
-conserva como referencia de discrepancias y no como fuente normativa.
+El fixture estructural fija 72 países en siete continentes y 134 aristas no
+dirigidas. Los datos ejecutables se mantienen en `themes/revancha/paises.toml`
+y `themes/revancha/adyacencias.toml`. Los IDs normalizan acentos y variantes
+de nombres para que cliente, servidor y simulador usen el mismo inventario.
+El mapa dispone de tarjetas de países y continentes, objetivos, situaciones
+y misiles. Las dos discrepancias pendientes permanecen fuera del grafo.
 
 ## Inventario canónico
 
@@ -43,7 +34,7 @@ vez y pertenece a un único continente.
 
 ## Grafo conservador
 
-El fixture contiene las 134 aristas que aparecen en ambas fuentes auxiliares.
+El fixture contiene las 134 aristas aceptadas para este mapa.
 Es una base conservadora para validar la estructura, no una autorización para
 rellenar las dos discrepancias pendientes. Cada arista aceptada se almacena en
 las dos direcciones y la prueba
@@ -60,8 +51,7 @@ Los puentes intercontinentales que están en el consenso incluyen:
 - Chile–Australia.
 - India–Sumatra y Filipinas–Australia.
 
-El reglamento usa además `Alaska–Chukchi` y `Chile–Australia` como ejemplos de
-fronteras abiertas. Las conexiones de agua se dibujan como rutas visuales;
+Las conexiones de agua se dibujan como rutas visuales;
 no se deben inferir desde la proximidad de dos sprites.
 
 ## Geometría y apariencia
@@ -87,7 +77,7 @@ grafo cuyos contornos quedan separados. Así las islas y las separaciones no
 ocultan conexiones. El grafo `[Adyacencias]` conserva sus 134 aristas y los IDs
 existentes; el mapa clásico usa sus propios recursos.
 
-La escena carga el mar, el marco y el título como decoración pasiva, y las
+La escena carga el mar y el marco como decoración pasiva, y las
 etiquetas y los bordes como una segunda capa. La selección y los efectos de
 batalla siguen actuando sobre los SVG individuales de los países.
 
@@ -97,18 +87,17 @@ de los dos mapas en 1024×600, 1280×800 y 1920×1080.
 
 ## Discrepancias pendientes
 
-Hay dos decisiones que no se deben resolver por intuición geográfica. La
-primera proviene de una reconstrucción fotográfica pública del tablero, como
+Hay dos decisiones que no se deben resolver por intuición geográfica:
 
 - Una reconstrucción visual pública muestra `Gran Bretaña–Francia`, mientras
   que el consenso de las dos implementaciones auxiliares declara
   `Gran Bretaña–Portugal` y no declara Francia.
-- la implementación auxiliar declara `Irak–Ucrania`; Kamchatka no la declara.
+- Las reconstrucciones comparadas difieren sobre `Irak–Ucrania`.
 
-El reglas configuradas no enumera ninguna de esas dos aristas. Por eso no se
+Ninguna de esas dos aristas cuenta con confirmación suficiente. Por eso no se
 agregan al grafo ejecutable: quedan en `Meta.aristas_pendientes` y
 `Discrepancias.pendientes` del fixture. El tema no puede habilitarlas hasta
-cotejar una imagen legible del tablero original o una fuente normativa de el editor del juego de mesa.
+resolver y documentar esas decisiones.
 
 La resolución de estas discrepancias forma parte de #225. #226 debe consumir el
 fixture, mantener los IDs y fallar si se intenta construir el tema con un país,

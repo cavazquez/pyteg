@@ -3,7 +3,7 @@
 [Referencia]
 ancho = 800
 alto = 600
-descripcion = "Tablero de colores del mapa Revancha; referencia frontal compartida por el usuario."
+descripcion = "Contornos vectoriales del mapa Revancha de Pyteg."
 
 [Paises.Alaska]
 contorno = [[70, 96], [87, 94], [104, 85], [120, 88], [132, 96], [139, 101], [138, 113], [126, 120], [104, 120], [84, 124], [78, 132], [68, 127], [65, 112]]

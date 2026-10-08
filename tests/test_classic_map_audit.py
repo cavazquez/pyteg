@@ -1,4 +1,4 @@
-"""Regresiones del grafo configurado del mapa clásico de Pyteg."""
+"""Regresiones del grafo del mapa clásico de Pyteg."""
 
 from __future__ import annotations
 

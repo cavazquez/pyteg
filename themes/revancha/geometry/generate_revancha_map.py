@@ -553,7 +553,7 @@ def write_landmass_layers(outlines: list[tuple[str, int, int, str]]) -> None:
                 "size": [WIDTH, HEIGHT],
                 "background": "#abc7cf",
                 "source": "board-layout.toml",
-                "description": "Contornos trazados sobre el tablero de colores del mapa Revancha.",
+                "description": "Contornos vectoriales del mapa Revancha de Pyteg.",
             },
             indent=2,
             ensure_ascii=False,

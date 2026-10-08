@@ -1,14 +1,15 @@
-# Auditoría del grafo clásico del Pyteg
+# Auditoría del grafo clásico de Pyteg
 
 Fecha de la auditoría: 2026-09-24.
 
-## Referencias
+## Datos de referencia
 
-
-El contraste con la implementación auxiliar verifica el total de países y confirma la frontera
-Irán–India. No certifica que las coordenadas y siluetas SVG reproduzcan el arte
-original: los vectores actuales se generan desde las máscaras mantenidas en
-este repositorio y no son un calco de los recursos gráficos de la implementación auxiliar.
+La estructura del mapa se mantiene en `themes/classic/paises.toml` y
+`themes/classic/adyacencias.toml`. Las regresiones de
+`tests/test_classic_map_audit.py` fijan sus 50 países y 89 aristas, incluida
+la frontera Irán–India. Los vectores actuales se generan desde las máscaras
+mantenidas en este repositorio. Los créditos de los recursos heredados se
+conservan en `themes/classic/ASSETS.md` y `themes/classic/legacy_theme.xml`.
 
 ## Resultado
 
@@ -24,7 +25,8 @@ El tema clásico queda definido por:
 
 La fuente anterior tenía relaciones de otro mapa en varios continentes. Entre las correcciones relevantes están `Chile–Australia`, `Brasil–Sahara`, `Polonia–Egipto`, `Polonia–Turquía`, `Rusia–Turquía`, `India–Sumatra` y `Malasia–Borneo`; también se eliminaron relaciones como `Italia–Egipto`, `Polonia–Tartaria`, `Java–Sumatra` y `Borneo–Sumatra`.
 
-La decisión de usar esta matriz como baseline es de compatibilidad del software: pyteg busca interoperar con el mapa clásico de la implementación libre de referencia y contrastar las reglas de red de la implementación auxiliar. No se presenta a el editor del juego de mesa como fuente de los datos de esta auditoría.
+Esta matriz define el mapa clásico de Pyteg. Servidor, cliente y simulador
+consumen las mismas adyacencias.
 
 ## Puentes visuales
 
