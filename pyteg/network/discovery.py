@@ -146,6 +146,9 @@ class DiscoveryService:
         )
         try:
             self._socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            if hasattr(socket, "SO_REUSEPORT"):
+                # macOS exige ambos flags para compartir el puerto multicast.
+                self._socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
             self._socket.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
             self._socket.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 1)
             self._socket.bind(("", port))

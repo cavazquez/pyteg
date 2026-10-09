@@ -64,10 +64,13 @@ class RecentGames:
             self.directory.glob("*.pyteg")
         )
         existing = []
+        seen: set[Path] = set()
         for path in paths:
             try:
-                if path.is_file():
-                    existing.append((path.stat().st_mtime, path))
+                resolved = path.resolve()
+                if resolved not in seen and resolved.is_file():
+                    existing.append((resolved.stat().st_mtime, resolved))
+                    seen.add(resolved)
             except OSError:
                 continue
         return [

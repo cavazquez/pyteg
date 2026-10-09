@@ -8,9 +8,11 @@ import threading
 import time
 import unittest
 from typing import Any
+from unittest.mock import patch
 
 from pyteg.network.discovery import (
     ROOM_EXPIRY_SECONDS,
+    DiscoveryService,
     Room,
     RoomAnnouncer,
     RoomBrowser,
@@ -88,8 +90,8 @@ class RoomCatalogTests(unittest.TestCase):
             reservation.bind(("", 0))
             port = int(reservation.getsockname()[1])
         browser = RoomBrowser(port=port)
-        announcer = RoomAnnouncer(lambda: dict(self.data), port=port)
         self.addCleanup(browser.close)
+        announcer = RoomAnnouncer(lambda: dict(self.data), port=port)
         self.addCleanup(announcer.close)
         browser.start()
         announcer.start()
@@ -107,3 +109,21 @@ class RoomCatalogTests(unittest.TestCase):
         while browser.catalog.rooms()[0].epoch != 1 and time.monotonic() < deadline:
             threading.Event().wait(0.02)
         self.assertEqual(browser.catalog.rooms()[0].port, 40000)
+
+    def test_shared_multicast_port_options_are_set_before_bind(self) -> None:
+        """También macOS puede tener el navegador y el anfitrión en el mismo proceso."""
+        with (
+            patch("pyteg.network.discovery.socket.socket") as factory,
+            patch("pyteg.network.discovery.socket.SO_REUSEPORT", 12345, create=True),
+        ):
+            service = DiscoveryService(port=45471)
+            self.addCleanup(service.close)
+            calls = factory.return_value.method_calls
+        reusable = [
+            index
+            for index, call in enumerate(calls)
+            if call[0] == "setsockopt" and call.args == (socket.SOL_SOCKET, 12345, 1)
+        ]
+        bind = next(index for index, call in enumerate(calls) if call[0] == "bind")
+        self.assertEqual(len(reusable), 1)
+        self.assertLess(reusable[0], bind)

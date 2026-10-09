@@ -4,6 +4,18 @@ Todas las fechas en formato YYYY-MM-DD.
 
 ## [Unreleased]
 
+## [0.2.2] - 2026-10-09
+
+### Fixed
+- **Traducciones portables**: el comando de compilación usa `polib` en todas
+  las plataformas; faltar `msgfmt` ya no reemplaza catálogos por archivos vacíos.
+- **Descubrimiento LAN en macOS**: navegador y anfitrión pueden compartir
+  el puerto multicast en el mismo equipo.
+- **Archivos recientes**: las rutas equivalentes y los autoguardados se
+  normalizan antes de eliminar duplicados.
+- **Pruebas de distribución**: los recorridos Qt usan dados y colores
+  reproducibles y las comprobaciones de rutas respetan cada plataforma.
+
 ## [0.2.1] - 2026-10-09
 
 ### Fixed

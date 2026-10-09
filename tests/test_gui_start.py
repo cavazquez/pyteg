@@ -251,9 +251,7 @@ class StartScreenTests(unittest.TestCase):
             self.window.files_manager, "open_path", return_value=True
         ) as opened:
             self.window.dropEvent(drop)
-            opened.assert_called_once_with(
-                str(self.directory / "turn.pyturn"), preview=True
-            )
+            opened.assert_called_once_with(data.urls()[0].toLocalFile(), preview=True)
         self.assertTrue(drop.isAccepted())
 
     def test_export_copies_exact_path_and_offers_folder(self) -> None:
@@ -265,7 +263,9 @@ class StartScreenTests(unittest.TestCase):
             "pyteg.gui.dialogs.exported_file.QDesktopServices.openUrl"
         ) as opened:
             dialog._folder()
-            opened.assert_called_once_with(QUrl.fromLocalFile(str(self.directory)))
+            opened.assert_called_once_with(
+                QUrl.fromLocalFile(str(self.directory.resolve()))
+            )
 
     def test_preview_lists_author_and_recipient_without_secrets(self) -> None:
         dialog = TurnPreviewDialog(TurnPreview.from_archive(self._turn()), self.window)

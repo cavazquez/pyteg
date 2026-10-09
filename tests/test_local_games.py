@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import json
 import unittest
 from copy import deepcopy
 from pathlib import Path
@@ -326,11 +327,23 @@ class FileConvenienceTests(unittest.TestCase):
             write_archive(autosave, make_archive("game", {}))
             recent.remember(manual)
             recent.remember(manual)
-            self.assertCountEqual(recent.paths(), [manual, autosave])
+            self.assertCountEqual(
+                recent.paths(), [manual.resolve(), autosave.resolve()]
+            )
             manual.unlink()
-            self.assertEqual(recent.paths(), [autosave])
+            self.assertEqual(recent.paths(), [autosave.resolve()])
             recent.path.write_text("corrupt", encoding="utf-8")
-            self.assertEqual(recent.paths(), [autosave])
+            self.assertEqual(recent.paths(), [autosave.resolve()])
+
+    def test_recent_autosave_aliases_are_one_canonical_path(self) -> None:
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            recent = RecentGames(root / "autosaves")
+            autosave = recent.directory / "auto.pyteg"
+            write_archive(autosave, make_archive("game", {}))
+            alias = recent.directory / ".." / "autosaves" / "auto.pyteg"
+            recent.path.write_text(json.dumps([str(alias)]), encoding="utf-8")
+            self.assertEqual(recent.paths(), [autosave.resolve()])
 
     def test_preview_contains_public_changes_and_identity(self) -> None:
         session = AsyncGame.create("classic", ["Uno", "Dos"])

@@ -49,9 +49,10 @@ class PackagingResourceTests(unittest.TestCase):
         """Sólo Windows recibe el flag de consola vigente de Nuitka."""
         output = Path("build/pyteg-client.exe")
         output_dir = Path("build")
+        entry = Path("pyteg/client/run.py")
         with patch("scripts.build_binaries.os.name", "nt"):
             command = _nuitka_command(
-                Path("pyteg/client/run.py"),
+                entry,
                 output,
                 disable_console=True,
                 output_dir=output_dir,
@@ -62,12 +63,13 @@ class PackagingResourceTests(unittest.TestCase):
 
     def test_nuitka_does_not_add_windows_console_options_on_linux(self) -> None:
         """Linux y macOS mantienen su comportamiento de consola predeterminado."""
-        command = _nuitka_command(
-            Path("pyteg/client/run.py"),
-            Path("build/pyteg-client"),
-            disable_console=True,
-            output_dir=Path("build"),
-        )
+        entry = Path("pyteg/client/run.py")
+        output = Path("build/pyteg-client")
+        output_dir = Path("build")
+        with patch("scripts.build_binaries.os.name", "posix"):
+            command = _nuitka_command(
+                entry, output, disable_console=True, output_dir=output_dir
+            )
         self.assertNotIn("--windows-console-mode=disable", command)
         self.assertNotIn("--disable-console", command)
 

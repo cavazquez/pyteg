@@ -39,57 +39,18 @@ def compile_translations() -> None:
         mo_file = lang_dir / "LC_MESSAGES" / f"{DOMAIN}.mo"
 
         if po_file.exists():
-            try:
-                # Usar polib si está disponible
-                po = polib.pofile(str(po_file))
-                po.save_as_mofile(str(mo_file))
-                print(f"✓ Compilado: {po_file} -> {mo_file}")
-            except ImportError:
-                # Fallback: usar msgfmt si está disponible
-                try:
-                    # Usar msgfmt para compilar archivos .po
-                    cmd = ["msgfmt", str(po_file), "-o", str(mo_file)]
-                    subprocess.run(cmd, check=True, timeout=30)  # noqa: S603
-                    print(f"✓ Compilado con msgfmt: {po_file} -> {mo_file}")
-                except subprocess.CalledProcessError, FileNotFoundError:
-                    print(
-                        f"⚠️  No se pudo compilar {po_file}. Instala 'polib' o 'gettext'"
-                    )
-
-
-def _parse_po_file(po_file: Path) -> dict[str, str]:
-    """Parsea un archivo .po y retorna un diccionario de traducciones.
-
-    Returns:
-        Diccionario con las traducciones (msgid -> msgstr).
-
-    """
-    translations: dict[str, str] = {}
-    current_msgid: str | None = None
-    current_msgstr: str | None = None
-
-    with po_file.open(encoding="utf-8") as f:
-        for original_line in f:
-            line = original_line.strip()
-            if line.startswith('msgid "'):
-                current_msgid = line[7:-1]  # Remover 'msgid "' y '"'
-            elif line.startswith('msgstr "'):
-                current_msgstr = line[8:-1]  # Remover 'msgstr "' y '"'
-                if current_msgid and current_msgstr:
-                    translations[current_msgid] = current_msgstr
-
-    return translations
-
-
-def _create_basic_mo_file(mo_file: Path) -> None:
-    """Crea un archivo .mo básico."""
-    mo_file.parent.mkdir(parents=True, exist_ok=True)
-    # Por ahora, solo crear un archivo vacío para que no falle la carga
-    mo_file.write_bytes(b"")
+            po = polib.pofile(str(po_file))
+            po.save_as_mofile(str(mo_file))
+            print(f"✓ Compilado: {po_file} -> {mo_file}")
 
 
 def compile_translations_manual() -> None:
-    """Compilación manual usando msgfmt."""
+    """Compila con msgfmt si el script se ejecuta sin polib.
+
+    Raises:
+        RuntimeError: Si no hay compilador o un catálogo no se puede compilar.
+
+    """
     for lang_dir in LOCALES_DIR.iterdir():
         if not lang_dir.is_dir():
             continue
@@ -105,17 +66,9 @@ def compile_translations_manual() -> None:
             cmd = ["msgfmt", str(po_file), "-o", str(mo_file)]
             subprocess.run(cmd, check=True, timeout=30)  # noqa: S603
             print(f"✓ Compilado con msgfmt: {po_file} -> {mo_file}")
-        except subprocess.CalledProcessError as e:
-            print(f"❌ Error compilando {po_file} con msgfmt: {e}")
-        except FileNotFoundError:
-            print("❌ msgfmt no encontrado. Instala gettext-tools")
-            # Fallback: crear archivo .mo básico
-            try:
-                _translations = _parse_po_file(po_file)
-                _create_basic_mo_file(mo_file)
-                print(f"✓ Archivo .mo creado (básico): {mo_file}")
-            except (OSError, UnicodeDecodeError, ValueError) as e:
-                print(f"❌ Error compilando {po_file}: {e}")
+        except (subprocess.CalledProcessError, FileNotFoundError) as error:
+            msg = f"No se pudo compilar {po_file}; instala 'polib' o 'gettext'"
+            raise RuntimeError(msg) from error
 
 
 def extract_strings() -> set[str]:
@@ -252,7 +205,7 @@ def main() -> None:
     command = sys.argv[1]
 
     if command == "compile":
-        compile_translations_manual()
+        compile_translations()
     elif command == "extract":
         extract_strings()
     elif command == "validate":
@@ -262,7 +215,7 @@ def main() -> None:
     elif command == "all":
         extract_strings()
         validate_translations()
-        compile_translations_manual()
+        compile_translations()
         create_language_selector()
     else:
         print(f"Comando desconocido: {command}")

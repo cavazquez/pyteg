@@ -90,6 +90,8 @@ def play(  # noqa: PLR0915 -- recorrido gráfico completo.
             if time.monotonic() >= next_report:
                 print(
                     json.dumps({
+                        "theme": theme,
+                        "rules_profile": profile,
                         "progress": game.server.public_snapshot()["turno"],
                         "phase": connection.state_model.last_phase,
                         "commands": steps,
@@ -98,7 +100,10 @@ def play(  # noqa: PLR0915 -- recorrido gráfico completo.
                 )
                 next_report = time.monotonic() + 10
         if connection.state_model.victory is None:
-            msg = "Los bots locales no terminaron la partida dentro del límite"
+            msg = (
+                f"Los bots locales no terminaron {theme}/{profile} dentro del límite; "
+                f"turno={game.server.public_snapshot()['turno']}, comandos={steps}"
+            )
             raise RuntimeError(msg)
         snapshot = game.server.public_snapshot()
         if connection.state_model.snapshot["countries"] != snapshot["countries"]:
@@ -151,13 +156,19 @@ def main() -> int:
     ):
         for theme in ("classic", "revancha"):
             for profile in ("classic", "revancha"):
-                report = play(
-                    cast("QApplication", app),
-                    theme,
-                    profile,
-                    args.output_dir,
-                    args.timeout,
-                )
+                # El motor productivo usa secrets para dados y colores.
+                # La prueba conserva esas reglas y fija sólo la aleatoriedad.
+                with (
+                    patch("secrets.randbelow", random.Random(7).randrange),
+                    patch("secrets.choice", random.Random(7).choice),
+                ):
+                    report = play(
+                        cast("QApplication", app),
+                        theme,
+                        profile,
+                        args.output_dir,
+                        args.timeout,
+                    )
                 print(json.dumps(report, ensure_ascii=False), flush=True)
     return 0
 
