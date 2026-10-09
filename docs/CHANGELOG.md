@@ -4,6 +4,19 @@ Todas las fechas en formato YYYY-MM-DD.
 
 ## [Unreleased]
 
+### Added
+- **Dificultad de bots**: Fácil, Normal y Difícil desde el inicio local, con
+  estrategias intercambiables, nivel persistido y recuperación de guardados
+  anteriores. Normal cuida fronteras y defensa; Difícil prioriza su objetivo y
+  estima el riesgo de hasta dos conquistas encadenadas usando reglas públicas.
+- **Orden público vigente**: el snapshot incluye `turn_order` para que los
+  bots interpreten objetivos de izquierda/derecha después de rotaciones.
+
+### Fixed
+- **Bloqueos y fase de colocación**: desactivar pactos también desactiva los
+  bloqueos. Los refuerzos sin destinos permitidos por bloqueos se descartan al
+  comenzar el turno, evitando exigir colocaciones imposibles para poder avanzar.
+
 ## [0.2.4] - 2026-10-09
 
 ### Fixed

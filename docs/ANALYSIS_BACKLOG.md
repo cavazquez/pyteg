@@ -106,9 +106,9 @@ un nuevo puerto si aparece otro transporte con requisitos distintos.
 Están implementadas las conexiones visuales, legibilidad de cartas, objetivo
 predeterminado, fuentes SVG de los mapas, cartas de situaciones, guardados,
 descubrimiento LAN, migración del anfitrión, turnos por archivos, repeticiones,
-bots básicos y pantalla de inicio común.
+bots con niveles Fácil/Normal/Difícil y pantalla de inicio común.
 
-Quedan para nuevas tandas: dificultad y personalidad de los bots, mejoras de
+Quedan para nuevas tandas: calibración y personalidad de los bots, mejoras de
 accesibilidad a partir de uso real, revisión humana de traducciones y eventual
 incorporación de otros idiomas. UPX sigue diferido hasta contar con medidas
 comparables de distribución y arranque por plataforma. La limpieza de

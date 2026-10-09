@@ -10,6 +10,7 @@ from PySide6.QtCore import QStandardPaths, QUrl
 from PySide6.QtGui import QAction, QDesktopServices, QKeySequence
 from PySide6.QtWidgets import QDialog, QFileDialog, QMessageBox
 
+from pyteg.client.bot_strategies import DEFAULT_BOT_DIFFICULTY
 from pyteg.client.conexion.connection import ConnectionClient
 from pyteg.client.conexion.transmisor import ClientTransmisor
 from pyteg.client.offline import OfflineConnection
@@ -342,7 +343,13 @@ class GameFilesManager:
         network.conectar()
 
     def start_offline(
-        self, theme: str, profile: str, players: str | list[str], bots: int = 0
+        self,
+        theme: str,
+        profile: str,
+        players: str | list[str],
+        bots: int = 0,
+        *,
+        difficulty: str = DEFAULT_BOT_DIFFICULTY,
     ) -> None:
         """Crea un lobby local o por archivos con mapa y perfil independientes.
 
@@ -359,7 +366,12 @@ class GameFilesManager:
         try:
             if isinstance(players, str):
                 offline.create_local(
-                    theme, players, bots, repository, rules_profile=profile
+                    theme,
+                    players,
+                    bots,
+                    repository,
+                    rules_profile=profile,
+                    difficulty=difficulty,
                 )
             else:
                 offline.create(theme, players, repository, rules_profile=profile)

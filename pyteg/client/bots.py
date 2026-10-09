@@ -6,7 +6,6 @@ import json
 from collections import deque
 from dataclasses import dataclass, field
 from itertools import combinations
-from operator import itemgetter
 from typing import TYPE_CHECKING, Any
 
 from pyteg.core.cartas.canje import seleccion_valida
@@ -21,6 +20,102 @@ if TYPE_CHECKING:
 _DEFAULT_EXCHANGE_SIZE = 3
 _MAX_ACTIONS = 256
 _TURN_KEY_SIZE = 2
+
+
+@dataclass(frozen=True)
+class BotAttack:
+    """Ataque candidato construido desde la información del jugador."""
+
+    origin: str
+    target: str
+    units: int
+    defenders: int
+    dice: int
+
+    def command(self) -> dict[str, Any]:
+        """Construye el comando habitual del protocolo.
+
+        Returns:
+            Ataque sin información privada adicional.
+
+        """
+        return {
+            "mensaje": "atacar",
+            "origen": self.origin,
+            "destino": self.target,
+            "cantidad_unidades": self.dice,
+        }
+
+
+@dataclass(frozen=True)
+class BotMissile:
+    """Lanzamiento posible, con daño y distancia públicos."""
+
+    origin: str
+    target: str
+    damage: int
+    distance: int
+
+    def command(self) -> dict[str, Any]:
+        """Construye el comando de lanzamiento.
+
+        Returns:
+            Países de origen y destino del misil.
+
+        """
+        return {
+            "mensaje": "lanzar_misil",
+            "pais_origen": self.origin,
+            "pais_destino": self.target,
+        }
+
+
+@dataclass(frozen=True)
+class BotMove:
+    """Traslado propio que acerca tropas interiores a la frontera."""
+
+    origin: str
+    target: str
+    amount: int
+    distance: int
+
+    def command(self) -> dict[str, Any]:
+        """Construye un movimiento habitual del protocolo.
+
+        Returns:
+            Movimiento de unidades propias entre países adyacentes.
+
+        """
+        return {
+            "mensaje": "mover_unidad",
+            "origen": self.origin,
+            "destino": self.target,
+            "cantidad": self.amount,
+        }
+
+
+def frontier_distances(
+    adjacency: dict[str, list[str]], owned: set[str]
+) -> dict[str, int]:
+    """Calcula caminos a la frontera atravesando sólo países propios.
+
+    Returns:
+        Distancias decrecientes que evitan movimientos de ida y vuelta.
+
+    """
+    distances = {
+        country: 0
+        for country in sorted(owned)
+        if any(neighbor not in owned for neighbor in adjacency[country])
+    }
+    queue = deque(distances)
+    while queue:
+        country = queue.popleft()
+        for neighbor in adjacency[country]:
+            if neighbor in owned and neighbor not in distances:
+                distances[neighbor] = distances[country] + 1
+                queue.append(neighbor)
+    return distances
 
 
 def choose_exchange(
@@ -133,7 +228,12 @@ class BasicBotStrategy:
             if self._fresh(command):
                 return command
         if self.actions < _MAX_ACTIONS:
-            for choose in (self._launch_missile, self._attack, self._exchange_missile):
+            for choose in (
+                self._launch_missile,
+                self._attack,
+                self._reposition,
+                self._exchange_missile,
+            ):
                 candidate = choose(model)
                 if candidate is not None and self._fresh(candidate):
                     return candidate
@@ -169,27 +269,43 @@ class BasicBotStrategy:
                 for block in blocks
             )
         ]
+        options = [
+            country
+            for country in options
+            if self._fresh(self._placement_command(model, country))
+        ]
         if options:
-            owners = {name: data.get("userid") for name, data in countries.items()}
-            country = max(
-                sorted(options),
-                key=lambda name: (
-                    is_frontier(
-                        self.reader.adyacencias,
-                        owners,
-                        int(model.local_userid or 0),
-                        name,
-                    ),
-                    self._own_units(model, name),
-                ),
-            )
-            return {
-                "mensaje": "agregar_unidad",
-                "pais": country,
-                "tipo_unidad": "infanteria",
-                "cantidad": self._available(model, country),
-            }
+            country = self._select_placement(model, sorted(options))
+            return self._placement_command(model, country)
         return {"mensaje": "finalizar_turno"}
+
+    def _placement_command(
+        self, model: ClientStateModel, country: str
+    ) -> dict[str, Any]:
+        return {
+            "mensaje": "agregar_unidad",
+            "pais": country,
+            "tipo_unidad": "infanteria",
+            "cantidad": self._placement_amount(model, country),
+        }
+
+    def _select_placement(self, model: ClientStateModel, options: list[str]) -> str:
+        owners = {
+            name: data.get("userid")
+            for name, data in model.snapshot["countries"].items()
+        }
+        return max(
+            options,
+            key=lambda name: (
+                is_frontier(
+                    self.reader.adyacencias, owners, int(model.local_userid or 0), name
+                ),
+                self._own_units(model, name),
+            ),
+        )
+
+    def _placement_amount(self, model: ClientStateModel, country: str) -> int:
+        return self._available(model, country)
 
     def _available(self, model: ClientStateModel, country: str) -> int:
         return model.private_units.get("infanteria", 0) + model.private_units.get(
@@ -225,15 +341,35 @@ class BasicBotStrategy:
         return False
 
     def _attack(self, model: ClientStateModel) -> dict[str, Any] | None:
+        options = self._attack_options(model)
+        selected = self._select_attack(model, options) if options else None
+        return selected.command() if selected is not None else None
+
+    def _select_attack(
+        self, _model: ClientStateModel, options: list[BotAttack]
+    ) -> BotAttack | None:
+        return max(
+            options,
+            key=lambda option: (
+                option.units - option.defenders,
+                -option.defenders,
+                option.origin,
+                option.target,
+            ),
+        )
+
+    def _attack_viable(self, units: int, defenders: int) -> bool:
+        return units > defenders
+
+    def _attack_options(self, model: ClientStateModel) -> list[BotAttack]:
         rules = model.rules or {}
         turn = model.snapshot["turno"]
         first_rounds = int(rules.get("first_turns_no_attack", 2))
         if rules.get("duel_enabled") and len(model.snapshot.get("players", [])) == 2:  # noqa: PLR2004
             first_rounds = 1
         if turn["num_ronda"] <= first_rounds or self._resting(model):
-            return None
+            return []
         countries = model.snapshot["countries"]
-        effect = model.snapshot.get("situacion", {}).get("efecto")
         options = []
         for origin in countries:
             units = self._own_units(model, origin)
@@ -241,36 +377,63 @@ class BasicBotStrategy:
                 continue
             for target in self.reader.adyacencias[origin]:
                 data = countries[target]
-                same_continent = self.reader.continente(
-                    origin
-                ) == self.reader.continente(target)
-                blocked_border = (effect == "open_borders" and same_continent) or (
-                    effect == "closed_borders" and not same_continent
-                )
                 if (
                     self._own_units(model, target)
                     or data.get("compartido")
-                    or units <= data["unidades"]
-                    or blocked_border
+                    or not self._attack_viable(units, data["unidades"])
+                    or self._border_blocked(model, origin, target)
                 ):
                     continue
-                command = {
-                    "mensaje": "atacar",
-                    "origen": origin,
-                    "destino": target,
-                    "cantidad_unidades": min(
-                        int(rules.get("attack_dice_max", 3)), units - 1
-                    ),
-                }
-                if self._fresh(command):
-                    options.append((
-                        units - data["unidades"],
-                        -data["unidades"],
-                        origin,
-                        target,
-                        command,
-                    ))
-        return max(options, key=itemgetter(slice(4)))[-1] if options else None
+                candidate = BotAttack(
+                    origin,
+                    target,
+                    units,
+                    data["unidades"],
+                    min(int(rules.get("attack_dice_max", 3)), units - 1),
+                )
+                if self._fresh(candidate.command()):
+                    options.append(candidate)
+        return options
+
+    def _border_blocked(
+        self, model: ClientStateModel, origin: str, target: str
+    ) -> bool:
+        effect = model.snapshot.get("situacion", {}).get("efecto")
+        same_continent = self.reader.continente(origin) == self.reader.continente(
+            target
+        )
+        return (effect == "open_borders" and same_continent) or (
+            effect == "closed_borders" and not same_continent
+        )
+
+    def _reposition(self, model: ClientStateModel) -> dict[str, Any] | None:
+        owned = {
+            name for name in model.snapshot["countries"] if self._own_units(model, name)
+        }
+        distances = frontier_distances(self.reader.adyacencias, owned)
+        options = []
+        for origin, distance in distances.items():
+            amount = self._reposition_amount(model, origin)
+            if distance <= 0 or amount <= 0:
+                continue
+            for target in self.reader.adyacencias[origin]:
+                if distances.get(target) != distance - 1:
+                    continue
+                candidate = BotMove(origin, target, amount, distance)
+                if self._fresh(candidate.command()):
+                    options.append(candidate)
+        return self._select_reposition(model, options).command() if options else None
+
+    def _reposition_amount(self, model: ClientStateModel, country: str) -> int:
+        return self._own_units(model, country) - 1
+
+    def _select_reposition(
+        self, _model: ClientStateModel, options: list[BotMove]
+    ) -> BotMove:
+        return max(
+            options,
+            key=lambda move: (move.amount, -move.distance, move.origin, move.target),
+        )
 
     def _exchange_missile(self, model: ClientStateModel) -> dict[str, Any] | None:
         config = model.snapshot.get("configuracion", {})
@@ -289,12 +452,34 @@ class BasicBotStrategy:
         ]
         if not options:
             return None
-        country = max(sorted(options), key=lambda name: self._own_units(model, name))
-        return {"mensaje": "canjear_misil", "pais": country}
+        country = self._select_missile_exchange(model, sorted(options))
+        return {"mensaje": "canjear_misil", "pais": country} if country else None
+
+    def _select_missile_exchange(
+        self, model: ClientStateModel, options: list[str]
+    ) -> str | None:
+        return max(options, key=lambda name: self._own_units(model, name))
 
     def _launch_missile(self, model: ClientStateModel) -> dict[str, Any] | None:
+        options = self._missile_options(model)
+        return self._select_missile(model, options).command() if options else None
+
+    def _select_missile(
+        self, _model: ClientStateModel, options: list[BotMissile]
+    ) -> BotMissile:
+        return max(
+            options,
+            key=lambda option: (
+                option.damage,
+                -option.distance,
+                option.origin,
+                option.target,
+            ),
+        )
+
+    def _missile_options(self, model: ClientStateModel) -> list[BotMissile]:
         if not model.snapshot.get("configuracion", {}).get("misiles_habilitados"):
-            return None
+            return []
         rules = model.rules or {}
         countries = model.snapshot["countries"]
         damage = rules.get("missile_damage_by_distance", [])
@@ -323,20 +508,18 @@ class BasicBotStrategy:
                         or enemy.get("misiles", 0) >= data["misiles"]
                     ):
                         continue
-                    command = {
-                        "mensaje": "lanzar_misil",
-                        "pais_origen": origin,
-                        "pais_destino": target,
-                    }
-                    if self._fresh(command):
-                        options.append((
-                            min(enemy["unidades"], damage[distance - 1]),
-                            -distance,
-                            origin,
-                            target,
-                            command,
-                        ))
-        return max(options, key=itemgetter(slice(4)))[-1] if options else None
+                    candidate = BotMissile(
+                        origin,
+                        target,
+                        min(enemy["unidades"], damage[distance - 1]),
+                        distance,
+                    )
+                    if self._fresh(candidate.command()):
+                        options.append(candidate)
+        return options
+
+    def _conquest_move(self, model: ClientStateModel, origin: str, _target: str) -> int:
+        return self._own_units(model, origin) - 1
 
     def _fresh(self, command: dict[str, Any]) -> bool:
         return json.dumps(command, sort_keys=True) not in self.attempted
@@ -358,7 +541,7 @@ class BasicBotStrategy:
             target = command["destino"]
             if not self._own_units(before, target) and self._own_units(after, target):
                 origin = command["origen"]
-                amount = self._own_units(after, origin) - 1
+                amount = self._conquest_move(after, origin, target)
                 if amount > 0:
                     self.pending.append({
                         "mensaje": "mover_unidad",

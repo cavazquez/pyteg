@@ -9,6 +9,8 @@ from zipfile import ZipFile
 
 REQUIRED_FILES = (
     "pyteg/client/bots.py",
+    "pyteg/client/bot_strategies.py",
+    "pyteg/client/bot_planning.py",
     "pyteg/client/hosting.py",
     "pyteg/client/offline.py",
     "pyteg/network/discovery.py",

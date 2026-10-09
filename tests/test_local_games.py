@@ -11,6 +11,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any
 
+from pyteg.client.bot_strategies import BOT_DIFFICULTIES, DEFAULT_BOT_DIFFICULTY
 from pyteg.client.bots import BasicBotStrategy, choose_exchange, shortest_distance
 from pyteg.client.state_model import ClientStateModel
 from pyteg.persistence.archive import make_archive, write_archive
@@ -193,7 +194,10 @@ class LocalGameTests(unittest.TestCase):
     """El modo local conserva las mismas validaciones del servidor."""
 
     def _started(
-        self, theme: str = "classic", profile: str = "classic"
+        self,
+        theme: str = "classic",
+        profile: str = "classic",
+        difficulty: str = DEFAULT_BOT_DIFFICULTY,
     ) -> tuple[LocalGame, ClientStateModel]:
         model = ClientStateModel(local_userid=1)
 
@@ -204,6 +208,7 @@ class LocalGameTests(unittest.TestCase):
             theme,
             "Humano",
             3,
+            difficulty=difficulty,
             rules_profile=profile,
             receive=receive,
         )
@@ -233,35 +238,61 @@ class LocalGameTests(unittest.TestCase):
     def test_four_players_return_to_human_on_all_maps_and_profiles(self) -> None:
         for theme in ("classic", "revancha"):
             for profile in ("classic", "revancha"):
-                with self.subTest(theme=theme, profile=profile):
-                    session, model = self._started(theme, profile)
-                    self._finish_human(session, model)
-                    steps = 0
-                    while (
-                        session.holder() != session.user_id and steps < _MAX_TEST_STEPS
+                for difficulty in BOT_DIFFICULTIES:
+                    with self.subTest(
+                        theme=theme, profile=profile, difficulty=difficulty
                     ):
-                        self.assertTrue(session.bot_step())
-                        steps += 1
-                    self.assertGreater(steps, 0)
-                    self.assertEqual(session.holder(), session.user_id)
-                    self.assertEqual(len(session.server.dame_clientes()), 4)
-                    session.close()
+                        session, model = self._started(theme, profile, difficulty)
+                        self._finish_human(session, model)
+                        steps = 0
+                        while (
+                            session.holder() != session.user_id
+                            and steps < _MAX_TEST_STEPS
+                        ):
+                            self.assertTrue(session.bot_step())
+                            steps += 1
+                        self.assertGreater(steps, 0)
+                        self.assertEqual(session.holder(), session.user_id)
+                        self.assertEqual(len(session.server.dame_clientes()), 4)
+                        game = session.server.game
+                        self.assertIsNotNone(game)
+                        if game:
+                            self.assertEqual(
+                                session.server.public_snapshot()["turn_order"],
+                                game.lista_jugadores_orden_turno(),
+                            )
+                        session.close()
 
     def test_save_during_bot_turn_and_resume(self) -> None:
-        session, model = self._started()
-        self._finish_human(session, model)
-        self.assertTrue(session.bot_step())
-        snapshot = session.server.public_snapshot()
-        saved = session.draft()
-        session.close()
-        restored = LocalGame.open(saved)
-        self.addCleanup(restored.close)
-        restored.sync_local()
-        self.assertEqual(restored.bot_ids, [2, 3, 4])
-        self.assertEqual(
-            restored.server.public_snapshot()["countries"], snapshot["countries"]
-        )
-        self.assertTrue(restored.bot_step())
+        for difficulty in BOT_DIFFICULTIES:
+            with self.subTest(difficulty=difficulty):
+                session, model = self._started(difficulty=difficulty)
+                self._finish_human(session, model)
+                self.assertTrue(session.bot_step())
+                snapshot = session.server.public_snapshot()
+                saved = session.draft()
+                holder = session.holder()
+                expected = deepcopy(session._strategies[holder]).next_command(
+                    session._models[holder]
+                )
+                session.close()
+                restored = LocalGame.open(saved)
+                self.addCleanup(restored.close)
+                restored.sync_local()
+                self.assertEqual(restored.bot_ids, [2, 3, 4])
+                self.assertEqual(restored.difficulty, difficulty)
+                self.assertEqual(
+                    restored.server.public_snapshot()["countries"],
+                    snapshot["countries"],
+                )
+                self.assertEqual(
+                    deepcopy(restored._strategies[holder]).next_command(
+                        restored._models[holder]
+                    ),
+                    expected,
+                )
+                self.assertTrue(restored.bot_step())
+                restored.close()
 
     def test_bot_exchanges_full_continent_through_normal_protocol(self) -> None:
         session, model = self._started("revancha", "revancha")

@@ -106,7 +106,7 @@ bloquea esos anuncios, se puede usar la dirección manual.
 Al abrir el cliente aparece **Jugar Pyteg**. También podés volver con
 **Partida → Nueva partida…** (`Ctrl+N`) o con el botón **Jugar**.
 
-- **Local**: elegí tu nombre y entre 0 y 7 bots de dificultad básica. El valor
+- **Local**: elegí tu nombre, entre 0 y 7 bots y su dificultad. El valor
   inicial es un humano contra tres bots; cero bots permite jugar solo.
 - **LAN**: continuá para crear una sala o unirte a una descubierta en tu red.
 - **Por archivos**: escribí los nombres de los participantes; cada uno juega
@@ -118,10 +118,21 @@ mecánicas, objetivos y cartas individuales desde la configuración existente.
 En modo local, la duración predeterminada sigue siendo 20 segundos; el
 administrador puede cambiarla antes de empezar.
 
-Los bots colocan refuerzos, usan cartas y misiles y atacan con ventaja usando
-sus propios eventos del protocolo. Juegan desde la interfaz a un ritmo visible.
+Los bots colocan refuerzos, usan cartas y misiles mediante sus propios eventos
+del protocolo. Juegan desde la interfaz a un ritmo visible. El selector ofrece:
+
+- **Fácil**: elige entre jugadas inmediatas con decisiones variadas.
+- **Normal** (predeterminado): evalúa continentes, refuerza fronteras débiles
+  y conserva defensa al avanzar.
+- **Difícil**: prioriza su propio objetivo, estima riesgos de combate y evalúa
+  hasta dos conquistas encadenadas. La búsqueda es acotada; los ejércitos
+  grandes se escalan para mantener la interfaz fluida.
+
+Todos usan las mismas reglas, el mapa público y únicamente sus propias cartas
+y objetivo. La dificultad elegida se aplica a todos los bots de esa partida.
 Los guardados conservan los bots y sus decisiones pendientes para retomar una
-partida interrumpida. La dificultad disponible es básica.
+partida interrumpida. Los guardados anteriores con dificultad básica se abren
+como **Normal**. Con cero bots se oculta el selector de dificultad.
 
 La pantalla de inicio ofrece **partidas y archivos recientes**, incluidos los
 autoguardados. Para abrir un documento también podés arrastrar un `.pyteg`,

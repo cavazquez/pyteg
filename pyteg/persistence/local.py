@@ -5,7 +5,7 @@ from __future__ import annotations
 from copy import deepcopy
 from typing import TYPE_CHECKING, Any, cast
 
-from pyteg.client.bots import BasicBotStrategy
+from pyteg.client.bot_strategies import DEFAULT_BOT_DIFFICULTY, BotStrategyFactory
 from pyteg.client.event_processor import ClientEventProcessor
 from pyteg.client.state_model import ClientStateModel
 from pyteg.persistence.archive import make_archive, validate_archive
@@ -17,6 +17,7 @@ from pyteg.toml_reader import TomlReader
 if TYPE_CHECKING:
     from collections.abc import Callable
 
+    from pyteg.client.bot_strategies import BotStrategy
     from pyteg.persistence.archive import ArchiveRepository
     from pyteg.server.app import Server
 
@@ -32,6 +33,7 @@ class LocalGame(InProcessGame):
         server: Server,
         user_id: int,
         *,
+        difficulty: str = DEFAULT_BOT_DIFFICULTY,
         receive: Callable[[int, dict[str, Any]], None] | None = None,
         repository: ArchiveRepository | None = None,
     ) -> None:
@@ -40,7 +42,9 @@ class LocalGame(InProcessGame):
         self.bot_ids: list[int] = []
         self._models: dict[int, ClientStateModel] = {}
         self._processors: dict[int, ClientEventProcessor] = {}
-        self._strategies: dict[int, BasicBotStrategy] = {}
+        self.difficulty = BotStrategyFactory.normalize(difficulty)
+        self._strategy_factory = BotStrategyFactory()
+        self._strategies: dict[int, BotStrategy] = {}
         self._remaining: int | None = None
         self.server.asynchronous = False
 
@@ -51,6 +55,7 @@ class LocalGame(InProcessGame):
         name: str,
         bots: int = 3,
         *,
+        difficulty: str = DEFAULT_BOT_DIFFICULTY,
         rules_profile: str | None = None,
         receive: Callable[[int, dict[str, Any]], None] | None = None,
         repository: ArchiveRepository | None = None,
@@ -72,9 +77,11 @@ class LocalGame(InProcessGame):
         ):
             msg = "Elegí un nombre y entre cero y siete bots"
             raise ValueError(msg)
+        difficulty = BotStrategyFactory.normalize(difficulty)
         session = cls(
             ServerEngine().create(theme, rules_profile),
             1,
+            difficulty=difficulty,
             receive=receive,
             repository=repository,
         )
@@ -124,13 +131,12 @@ class LocalGame(InProcessGame):
         ):
             msg = "Guardado local inválido"
             raise ValueError(msg)
-        if (
-            not isinstance(payload.get("checkpoint"), dict)
-            or not isinstance(metadata.get("strategies", {}), dict)
-            or metadata.get("difficulty", "basic") != "basic"
+        if not isinstance(payload.get("checkpoint"), dict) or not isinstance(
+            metadata.get("strategies", {}), dict
         ):
             msg = "Configuración local incompatible"
-            raise ValueError(msg)
+            raise ValueError(msg)  # noqa: TRY004 -- archivo inválido.
+        difficulty = BotStrategyFactory.normalize(metadata.get("difficulty", "basic"))
         bot_ids = metadata["bots"]
         if (
             len(bot_ids) > _MAX_BOTS
@@ -143,6 +149,7 @@ class LocalGame(InProcessGame):
         session = cls(
             ServerEngine().restore(payload["checkpoint"]),
             metadata["userid"],
+            difficulty=difficulty,
             receive=receive,
             repository=repository,
         )
@@ -185,7 +192,9 @@ class LocalGame(InProcessGame):
             model = ClientStateModel(local_userid=user_id)
             self._models[user_id] = model
             self._processors[user_id] = ClientEventProcessor(model)
-            self._strategies[user_id] = BasicBotStrategy(reader)
+            self._strategies[user_id] = self._strategy_factory.create(
+                self.difficulty, reader
+            )
 
     def _on_event(self, user_id: int, event: dict[str, Any]) -> None:
         super()._on_event(user_id, event)
@@ -254,7 +263,7 @@ class LocalGame(InProcessGame):
                 "local": {
                     "userid": self.user_id,
                     "bots": self.bot_ids,
-                    "difficulty": "basic",
+                    "difficulty": self.difficulty,
                     "strategies": {
                         str(user_id): strategy.saved_state()
                         for user_id, strategy in self._strategies.items()

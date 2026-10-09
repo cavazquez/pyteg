@@ -34,3 +34,28 @@ def consumir_unidad_reparto(turno: Any, continente_mapa: str) -> None:
         turno.usar_unidad_por_continente(continente_mapa)
         return
     turno.usar_unidad()
+
+
+def descartar_refuerzos_bloqueados(mapa: Any, turno: Any, pactos: Any) -> None:
+    """Descarta sólo los refuerzos sin ningún destino permitido esta vuelta.
+
+    Las unidades generales requieren algún país propio no bloqueado; una
+    bonificación continental requiere un destino en su continente. Esto evita
+    exigir colocaciones imposibles antes de pasar a las acciones.
+    """
+    jugador = int(turno.jugador_actual())
+    destinos = {
+        mapa.continente(pais)
+        for pais in mapa.paises()
+        if mapa.jugador_posee_pais(jugador, pais)
+        and not pactos.esta_bloqueado(pais, jugador)
+    }
+    for tipo, cantidad in turno.unidades_por_tipo().items():
+        disponible = bool(destinos) if tipo == "infanteria" else tipo in destinos
+        if disponible:
+            continue
+        for _ in range(max(0, int(cantidad))):
+            if tipo == "infanteria":
+                turno.usar_unidad()
+            else:
+                turno.usar_unidad_por_continente(tipo)

@@ -90,7 +90,16 @@ Cancelar una vista previa conserva la sesión abierta.
 `LocalGame` añade un humano y hasta siete bots sobre `InProcessGame`. Cada bot
 recibe sus propios `ClientStateModel` y `ClientEventProcessor`: su estrategia
 consulta el mapa público y su mano, sin recorrer datos privados del motor.
-`BasicBotStrategy.next_command` elige una acción normal del protocolo;
+`BotStrategy` define `next_command`, `acknowledge`, `saved_state` y
+`restore_state`. `BotStrategyFactory` construye `EasyBotStrategy`,
+`NormalBotStrategy` o `HardBotStrategy` desde el nivel elegido. Las tres
+reutilizan en `BasicBotStrategy` la ejecución, las restricciones, los canjes,
+las confirmaciones y las acciones pendientes; los hooks seleccionan refuerzos,
+ataques, misiles y movimiento tras una conquista.
+También calcula distancias a la frontera por países propios para trasladar
+tropas interiores; cada movimiento reduce la distancia y conserva una guarnición.
+
+`next_command` elige una acción normal del protocolo;
 `LocalGame.bot_step` la envía como ese jugador, espera el resultado del
 ejecutor y conserva las decisiones pendientes. `OfflineConnection` programa
 una acción por tick de un timer Qt, para permitir interacción entre acciones.
@@ -100,7 +109,26 @@ El diálogo de cartas, el bot y el servidor usan `seleccion_valida` para las
 equivalencias de país, continente, comodín y supertarjeta. El motor valida
 propiedad, fase, turno y reglas activas. Los guardados locales conservan
 identidades, estrategias y reloj; la duración inicial es 20 segundos y el
-administrador puede modificarla. La dificultad disponible es básica.
+administrador puede modificarla. Los guardados incluyen el nivel; el valor
+antiguo `basic` y su ausencia se recuperan como `normal`.
+
+Fácil varía entre candidatos con una elección derivada de su identidad, turno
+y contador de acciones, por lo que reabrir conserva la siguiente decisión.
+Normal puntúa fronteras y continentes y reserva unidades en el origen.
+Difícil añade `BotObjective`, formado sólo desde sus IDs privados y las
+definiciones públicas del mapa, y una búsqueda de dos conquistas con hasta
+cuatro continuaciones. El snapshot publica `turn_order` para resolver los
+objetivos relativos con el orden vigente, incluidas rotaciones y eliminaciones.
+`estimate_conquest` reutiliza el comparador `Batalla.ataquen` para probabilidades,
+respeta los límites públicos de dados y los efectos Nieve/Viento a favor,
+memoiza resultados y escala ejércitos de más de 40 unidades. Es una estimación
+acotada, no acceso a los dados futuros ni al estado privado de otros jugadores.
+
+`PactManager` descarta al iniciar el turno los refuerzos que no tienen ningún
+destino no bloqueado, evitando trabar la fase de colocación. `NoPactManager`
+es el Null Object elegido al desactivar esta mecánica: no anuncia bloqueos,
+permite hostilidades y conserva los refuerzos. La elección sigue el perfil de
+reglas y sus módulos, independientemente del mapa.
 
 ### Identidad del jugador (dominio vs presentación)
 - **Dominio (servidor / core)**: el jugador se identifica de forma canónica con **`userid: int`** (dueño de país en el mapa, orden de turnos, canjes, validadores, combate, objetivos secretos, victoria).

@@ -13,7 +13,7 @@ from pyteg.config import (
 from pyteg.core.combate.batalla import Batalla
 from pyteg.core.partida.card_manager import CardManager
 from pyteg.core.partida.objetivos_secretos import NO_SECRET_OBJECTIVES
-from pyteg.core.partida.pactos import PactManager
+from pyteg.core.partida.pactos import NoPactManager, PactManager
 from pyteg.core.partida.reglas import ThemeRules
 from pyteg.core.partida.turn_manager import TurnManager
 from pyteg.core.partida.turn_order_rotator import TurnOrderRotator
@@ -90,7 +90,9 @@ class Game:
         self._paises_para_victoria = paises_para_victoria
         self._rules = rules
         self._dice_rng = dice_rng
-        self._pact_manager = PactManager(mapa)
+        self._pact_manager = (
+            PactManager(mapa) if self.reglas().pacts_enabled else NoPactManager(mapa)
+        )
         self._fase = FASE_COLOCACION
         self._situation_runtime = (
             situation_runtime
@@ -284,6 +286,7 @@ class Game:
 
     def _actualizar_fase(self) -> None:
         """Sincroniza la fase con los refuerzos del turno actual."""
+        self._pact_manager.prepare_reinforcements(self._turn_manager.turno_actual())
         self._fase = (
             FASE_COLOCACION if self.refuerzos_pendientes() > 0 else FASE_ACCIONES
         )

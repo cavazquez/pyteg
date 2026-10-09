@@ -20,6 +20,7 @@ from PySide6.QtTest import QTest
 from PySide6.QtWidgets import QApplication
 
 from pyteg.client.app import Client
+from pyteg.client.bot_strategies import BOT_DIFFICULTIES, DEFAULT_BOT_DIFFICULTY
 from pyteg.client.bots import BasicBotStrategy
 from pyteg.gui.main_window import Gui
 from pyteg.gui.managers.window import WindowManager
@@ -32,8 +33,14 @@ if TYPE_CHECKING:
     from pyteg.persistence.local import LocalGame
 
 
-def play(  # noqa: PLR0915 -- recorrido gráfico completo.
-    app: QApplication, theme: str, profile: str, output: Path, timeout: float
+def play(  # noqa: PLR0913, PLR0915 -- recorrido gráfico completo.
+    app: QApplication,
+    theme: str,
+    profile: str,
+    output: Path,
+    timeout: float,
+    *,
+    difficulty: str = DEFAULT_BOT_DIFFICULTY,
 ) -> dict[str, object]:
     """Usa widgets, eventos privados y el transmisor Qt real en modo local.
 
@@ -51,7 +58,8 @@ def play(  # noqa: PLR0915 -- recorrido gráfico completo.
         app.processEvents()
         start = window.files_manager.start_dialog
         if start:
-            start.grab().save(str(output / f"start-{theme}-{profile}.png"))
+            start.difficulty.setCurrentIndex(start.difficulty.findData(difficulty))
+            start.grab().save(str(output / f"start-{theme}-{profile}-{difficulty}.png"))
             start.close()
         random.seed(7)
         engine = ServerEngine(
@@ -60,7 +68,9 @@ def play(  # noqa: PLR0915 -- recorrido gráfico completo.
             )
         )
         with patch("pyteg.persistence.local.ServerEngine", return_value=engine):
-            window.files_manager.start_offline(theme, profile, "Humano", 3)
+            window.files_manager.start_offline(
+                theme, profile, "Humano", 3, difficulty=difficulty
+            )
         app.processEvents()
         connection = cast("OfflineConnection", window.conexion)
         game = cast("LocalGame", connection.game)
@@ -92,6 +102,7 @@ def play(  # noqa: PLR0915 -- recorrido gráfico completo.
                     json.dumps({
                         "theme": theme,
                         "rules_profile": profile,
+                        "difficulty": difficulty,
                         "progress": game.server.public_snapshot()["turno"],
                         "phase": connection.state_model.last_phase,
                         "commands": steps,
@@ -110,11 +121,12 @@ def play(  # noqa: PLR0915 -- recorrido gráfico completo.
             msg = "La interfaz y el motor local no coinciden"
             raise RuntimeError(msg)
         QTest.qWait(30)
-        window.grab().save(str(output / f"local-{theme}-{profile}.png"))
+        window.grab().save(str(output / f"local-{theme}-{profile}-{difficulty}.png"))
         return {
             "status": "passed",
             "theme": theme,
             "rules_profile": profile,
+            "difficulty": difficulty,
             "players": 4,
             "human_commands": steps,
             "victory": connection.state_model.victory,
@@ -138,6 +150,9 @@ def main() -> int:
         "--output-dir", type=Path, default=Path("artifacts/local-games")
     )
     parser.add_argument("--timeout", type=float, default=180)
+    parser.add_argument(
+        "--difficulty", choices=BOT_DIFFICULTIES, default=DEFAULT_BOT_DIFFICULTY
+    )
     args = parser.parse_args()
     args.output_dir.mkdir(parents=True, exist_ok=True)
     app = QApplication.instance() or QApplication([])
@@ -168,6 +183,7 @@ def main() -> int:
                         profile,
                         args.output_dir,
                         args.timeout,
+                        difficulty=args.difficulty,
                     )
                 print(json.dumps(report, ensure_ascii=False), flush=True)
     return 0

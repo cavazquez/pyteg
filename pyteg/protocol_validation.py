@@ -180,6 +180,14 @@ def _is_integer_list(value: object) -> bool:
     return isinstance(value, list) and all(type(item) is int for item in value)
 
 
+def _is_turn_order(value: object) -> bool:
+    return (
+        isinstance(value, list)
+        and all(type(item) is int and item > 0 for item in value)
+        and len(set(value)) == len(value)
+    )
+
+
 def _is_string_list(value: object) -> bool:
     return isinstance(value, list) and all(_is_nonempty_string(item) for item in value)
 
@@ -434,7 +442,7 @@ _CLIENT_EVENT_SCHEMAS: dict[str, _MessageSchema] = {
             "turno": _nullable(_is_snapshot_turn),
             "refuerzos_pendientes": _NONNEGATIVE_INTEGER,
         },
-        {"resync": _is_boolean},
+        {"resync": _is_boolean, "turn_order": _is_turn_order},
         allow_unknown=True,
     ),
     "command_result": _MessageSchema(

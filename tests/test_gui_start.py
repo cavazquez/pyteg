@@ -17,6 +17,7 @@ from PySide6.QtWidgets import QApplication, QDialog
 from shiboken6.Shiboken import isValid
 
 from pyteg.client.app import Client
+from pyteg.client.bot_strategies import BOT_DIFFICULTIES, difficulty_labels
 from pyteg.client.bots import BasicBotStrategy
 from pyteg.client.offline import OfflineConnection
 from pyteg.gui.dialogs.exported_file import ExportedFileDialog
@@ -100,6 +101,51 @@ class StartScreenTests(unittest.TestCase):
         self.assertIsInstance(connection.game, AsyncGame)
         if connection.game:
             self.assertEqual(len(connection.game.server.dame_clientes()), 1)
+
+    def test_start_passes_each_difficulty_to_local_bots(self) -> None:
+        for difficulty in BOT_DIFFICULTIES:
+            with self.subTest(difficulty=difficulty):
+                dialog = StartDialog(self.window)
+                self.assertEqual(dialog.difficulty.currentData(), "normal")
+                dialog.difficulty.setCurrentIndex(
+                    dialog.difficulty.findData(difficulty)
+                )
+                dialog._start()
+                self.app.processEvents()
+                connection = cast("OfflineConnection", self.window.conexion)
+                game = cast("LocalGame", connection.game)
+                self.assertEqual(game.difficulty, difficulty)
+                self.assertIn(
+                    difficulty_labels()[difficulty],
+                    self.window.network_status_label.text(),
+                )
+                connection.desconectar()
+
+    def test_difficulty_is_visible_only_when_local_bots_exist(self) -> None:
+        dialog = StartDialog(self.window)
+        self.assertTrue(dialog._form.isRowVisible(dialog.difficulty))
+        dialog.bots.setValue(0)
+        self.assertFalse(dialog._form.isRowVisible(dialog.difficulty))
+        dialog.bots.setValue(3)
+        self.assertTrue(dialog._form.isRowVisible(dialog.difficulty))
+        for mode in ("lan", "async"):
+            dialog.mode.setCurrentIndex(dialog.mode.findData(mode))
+            self.assertFalse(dialog._form.isRowVisible(dialog.difficulty))
+        dialog.mode.setCurrentIndex(dialog.mode.findData("local"))
+        self.assertTrue(dialog._form.isRowVisible(dialog.difficulty))
+
+    def test_reopened_local_save_keeps_difficulty(self) -> None:
+        self.window.files_manager.start_offline(
+            "classic", "classic", "Humano", 3, difficulty="hard"
+        )
+        connection = cast("OfflineConnection", self.window.conexion)
+        game = cast("LocalGame", connection.game)
+        path = self.directory / "hard.pyteg"
+        write_archive(path, game.draft())
+        connection.desconectar()
+        self.assertTrue(self.window.files_manager.open_path(str(path)))
+        resumed = cast("OfflineConnection", self.window.conexion)
+        self.assertEqual(cast("LocalGame", resumed.game).difficulty, "hard")
 
     def test_start_lan_preserves_map_rules_and_username(self) -> None:
         dialog = StartDialog(self.window)

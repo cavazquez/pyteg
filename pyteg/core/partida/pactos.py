@@ -4,16 +4,16 @@
 
 El reglamento deja los pactos a la vista de toda la mesa.  Este módulo guarda
 ese estado en el servidor para que las tareas de red no tengan que interpretar
-reglas distintas entre sí.  El objeto también sirve como *null object*: en
-Classic el gestor existe, pero no hay pactos y todas las consultas son
-permisivas.
+reglas distintas entre sí. ``NoPactManager`` ofrece consultas permisivas cuando
+estas mecánicas están desactivadas, independientemente del mapa elegido.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass, replace
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Any, Literal, override
 
+from pyteg.core.turnos.unit_pool import descartar_refuerzos_bloqueados
 from pyteg.exceptions import InvalidActionError
 
 if TYPE_CHECKING:
@@ -336,3 +336,37 @@ class PactManager:
             "pactos": [pacto.public_dict() for pacto in self.pactos()],
             "bloqueos": self.bloqueos_publicos(),
         }
+
+    def prepare_reinforcements(self, turno: Any) -> None:
+        """Quita refuerzos que no pueden colocarse por los bloqueos actuales."""
+        descartar_refuerzos_bloqueados(self._mapa, turno, self)
+
+
+class NoPactManager(PactManager):
+    """Null Object cuando pactos y bloqueos están desactivados."""
+
+    @override
+    def esta_bloqueado(self, pais: str, jugador: int) -> bool:
+        """Permite reforzar cualquier país propio."""
+        return False
+
+    @override
+    def puede_atacar(
+        self,
+        atacante: int,
+        defensor: int | None,
+        origen: str,
+        destino: str,
+        ronda: int,
+    ) -> bool:
+        """No impone restricciones de pactos a las hostilidades."""
+        return True
+
+    @override
+    def public_snapshot(self) -> dict[str, object]:
+        """Publica listas vacías para las mecánicas desactivadas."""
+        return {"pactos": [], "bloqueos": []}
+
+    @override
+    def prepare_reinforcements(self, turno: Any) -> None:
+        """Conserva todos los refuerzos cuando no se usan bloqueos."""

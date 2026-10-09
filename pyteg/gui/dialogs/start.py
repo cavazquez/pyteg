@@ -19,6 +19,11 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
 )
 
+from pyteg.client.bot_strategies import (
+    BOT_DIFFICULTIES,
+    DEFAULT_BOT_DIFFICULTY,
+    difficulty_labels,
+)
 from pyteg.i18n import translate as _
 
 if TYPE_CHECKING:
@@ -54,6 +59,12 @@ class StartDialog(QDialog):
         self.bots = QSpinBox()
         self.bots.setRange(0, 7)
         self.bots.setValue(3)
+        self.difficulty = QComboBox()
+        for difficulty, label in difficulty_labels().items():
+            self.difficulty.addItem(label, difficulty)
+        self.difficulty.setCurrentIndex(
+            self.difficulty.findData(DEFAULT_BOT_DIFFICULTY)
+        )
         self.names = QLineEdit(
             ", ".join(_("Jugador {}").format(index) for index in range(1, 5))
         )
@@ -63,7 +74,8 @@ class StartDialog(QDialog):
             ("Mapa:", self.theme_selector),
             ("Perfil de reglas:", self.rules_selector),
             ("Tu nombre:", self.name),
-            ("Bots (dificultad básica):", self.bots),
+            ("Bots:", self.bots),
+            ("Dificultad:", self.difficulty),
             ("Jugadores:", self.names),
         ]
         for text, field in self._rows:
@@ -91,6 +103,8 @@ class StartDialog(QDialog):
         self.recent_list.itemActivated.connect(self._open_recent)
         layout.addWidget(self.recent_list, stretch=1)
         self.mode.currentIndexChanged.connect(self._update_mode)
+        self.bots.valueChanged.connect(self._update_mode)
+        self.difficulty.currentIndexChanged.connect(self._update_mode)
         self._update_mode()
         self.refresh_recent()
 
@@ -98,11 +112,14 @@ class StartDialog(QDialog):
         mode = self.mode.currentData()
         self._form.setRowVisible(self.name, mode != "async")
         self._form.setRowVisible(self.bots, mode == "local")
+        self._form.setRowVisible(
+            self.difficulty, mode == "local" and self.bots.value() > 0
+        )
         self._form.setRowVisible(self.names, mode == "async")
         self.hint.setText(
             {
                 "local": _(
-                    "Un humano y hasta siete bots básicos. Podés jugar solo con cero "
+                    "Un humano y hasta siete bots. Podés jugar solo con cero "
                     "bots. Después elegís objetivos, situaciones "
                     "y el resto de las reglas."
                 ),
@@ -116,6 +133,18 @@ class StartDialog(QDialog):
                 ),
             }[str(mode)]
         )
+        if mode == "local" and self.bots.value() > 0:
+            detail = {
+                "easy": _("Fácil: jugadas simples y elección variada de ataques."),
+                "normal": _(
+                    "Normal: refuerza fronteras y cuida la defensa al avanzar."
+                ),
+                "hard": _(
+                    "Difícil: prioriza su objetivo y evalúa riesgos "
+                    "y ataques siguientes."
+                ),
+            }[str(self.difficulty.currentData())]
+            self.hint.setText(self.hint.text() + "\n\n" + detail)
         self.error_label.clear()
 
     def refresh_recent(self) -> None:
@@ -136,7 +165,13 @@ class StartDialog(QDialog):
             )
             mode = self.mode.currentData()
             if mode == "local":
-                files.start_offline(theme, profile, self.name.text(), self.bots.value())
+                files.start_offline(
+                    theme,
+                    profile,
+                    self.name.text(),
+                    self.bots.value(),
+                    difficulty=str(self.difficulty.currentData()),
+                )
             elif mode == "async":
                 files.start_offline(theme, profile, self.names.text().split(","))
             else:
@@ -177,6 +212,11 @@ class StartDialog(QDialog):
         for selector in (self.theme_selector, self.rules_selector):
             selector.setItemText(0, _("Clásico"))
             selector.setItemText(1, _("Revancha"))
+        labels = difficulty_labels()
+        for difficulty in BOT_DIFFICULTIES:
+            self.difficulty.setItemText(
+                self.difficulty.findData(difficulty), labels[difficulty]
+            )
         for text, field in self._rows:
             label = self._form.labelForField(field)
             if isinstance(label, QLabel):

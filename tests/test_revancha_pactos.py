@@ -5,8 +5,9 @@
 from __future__ import annotations
 
 import unittest
+from dataclasses import dataclass, field
 
-from pyteg.core.partida.pactos import PactManager
+from pyteg.core.partida.pactos import NoPactManager, PactManager
 from pyteg.protocol_validation import MessageValidationError, validate_server_command
 from pyteg.server.juego.mapa import Mapa
 
@@ -20,6 +21,31 @@ def build_map() -> dict[str, list[object]]:
         "Flanco2": [2, "A", 3, ["Objetivo"]],
         "Reserva": [1, "A", 2, []],
     }
+
+
+@dataclass
+class ReinforcementPool:
+    """Pool mínimo que usa el mismo contrato de consumo de los turnos."""
+
+    units: dict[str, int] = field(
+        default_factory=lambda: {"infanteria": 3, "A": 4, "B": 2}
+    )
+
+    def jugador_actual(self) -> int:
+        """Devuelve el jugador que recibe refuerzos."""
+        return 2
+
+    def unidades_por_tipo(self) -> dict[str, int]:
+        """Entrega una copia de sus unidades disponibles."""
+        return dict(self.units)
+
+    def usar_unidad(self) -> None:
+        """Consume una unidad general."""
+        self.units["infanteria"] -= 1
+
+    def usar_unidad_por_continente(self, continent: str) -> None:
+        """Consume una unidad del continente indicado."""
+        self.units[continent] -= 1
 
 
 class RevanchaPactTests(unittest.TestCase):
@@ -58,6 +84,53 @@ class RevanchaPactTests(unittest.TestCase):
         self.assertTrue(self.pactos.esta_bloqueado("Objetivo", 2))
         self.mapa.set_unidades("Flanco1", 1)
         self.assertFalse(self.pactos.esta_bloqueado("Objetivo", 2))
+
+    def test_disabled_pacts_never_block_countries_or_discard_units(self) -> None:
+        """El Null Object respeta desactivar la mecánica completa."""
+        self.mapa.asignar_pais(3, "Origen")
+        self.assertTrue(self.pactos.esta_bloqueado("Objetivo", 2))
+        disabled = NoPactManager(self.mapa)
+        self.assertFalse(disabled.esta_bloqueado(pais="Objetivo", jugador=2))
+        self.assertTrue(
+            disabled.puede_atacar(
+                atacante=1, defensor=2, origen="Origen", destino="Objetivo", ronda=3
+            )
+        )
+        self.assertEqual(disabled.public_snapshot(), {"pactos": [], "bloqueos": []})
+        pool = ReinforcementPool()
+        disabled.prepare_reinforcements(turno=pool)
+        self.assertEqual(pool.units, {"infanteria": 3, "A": 4, "B": 2})
+
+    def test_all_destinations_blocked_discards_unplaceable_reinforcements(self) -> None:
+        """Todos los refuerzos imposibles se consumen una sola vez."""
+        data = build_map()
+        data["Origen"][2] = 3
+        data["Reserva"][3] = ["Flanco1"]
+        manager = PactManager(Mapa(lambda: data))
+        pool = ReinforcementPool()
+        manager.prepare_reinforcements(pool)
+        self.assertEqual(pool.units, {"infanteria": 0, "A": 0, "B": 0})
+        manager.prepare_reinforcements(pool)
+        self.assertEqual(pool.units, {"infanteria": 0, "A": 0, "B": 0})
+
+    def test_free_continent_preserves_general_and_eligible_bonus_units(self) -> None:
+        """Bloquear un continente conserva refuerzos que sí tienen destino."""
+        data = build_map()
+        data["Origen"][2] = 3
+        data["Reserva"][3] = ["Flanco1"]
+        data["Libre"] = [1, "B", 2, []]
+        pool = ReinforcementPool()
+        PactManager(Mapa(lambda: data)).prepare_reinforcements(pool)
+        self.assertEqual(pool.units, {"infanteria": 3, "A": 0, "B": 2})
+
+    def test_last_country_exception_keeps_available_reinforcements(self) -> None:
+        """La excepción del último país conserva refuerzos para sobrevivir."""
+        data = build_map()
+        data["Origen"][2] = 3
+        data["Reserva"][2] = 3
+        pool = ReinforcementPool()
+        PactManager(Mapa(lambda: data)).prepare_reinforcements(pool)
+        self.assertEqual(pool.units, {"infanteria": 3, "A": 4, "B": 0})
 
     def test_pacto_requiere_aceptacion_y_bloquea_hasta_la_ruptura(self) -> None:
         """Sólo el invitado acepta y la ruptura conserva el bloqueo una ronda."""

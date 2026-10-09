@@ -22,6 +22,7 @@ Todos los mensajes siguen un formato JSON con un campo `mensaje` que identifica 
    - [chat](#chat-1)
 
 3. [Estado del Juego](#estado-del-juego)
+   - [snapshot](#snapshot)
    - [estado](#estado)
    - [tiempo](#tiempo)
    - [turno](#turno)
@@ -171,6 +172,15 @@ Envía un mensaje de chat a los jugadores.
 ---
 
 ## Estado del Juego
+
+### snapshot
+
+Envía la revisión pública completa del mapa, fase, turno, configuración y
+jugadores. El campo opcional `turn_order` contiene los `userid` activos en su
+orden vigente; se actualiza al rotar o eliminar jugadores. Permite interpretar
+objetivos relativos de izquierda/derecha. En el lobby la lista está vacía.
+Los clientes siguen aceptando snapshots anteriores sin este campo. Las cartas,
+objetivos asignados y credenciales se envían por separado de forma privada.
 
 ### estado
 Informa sobre el estado actual del juego.

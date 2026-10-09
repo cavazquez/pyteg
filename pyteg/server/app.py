@@ -357,6 +357,9 @@ class Server:
             "reglas": self._reglas.to_public_dict(),
             "configuracion": self._game_coordinator.configuracion_partida(),
             "players": players,
+            "turn_order": game.lista_jugadores_orden_turno()
+            if game is not None
+            else [],
             "countries": countries,
             "fase": fase,
             "turno": turno_data,

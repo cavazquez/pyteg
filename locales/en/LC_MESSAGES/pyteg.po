@@ -1339,3 +1339,44 @@ msgstr ""
 
 msgid "Unidades"
 msgstr "Units"
+
+msgid "Fácil"
+msgstr "Easy"
+
+msgid "Normal"
+msgstr "Normal"
+
+msgid "Difícil"
+msgstr "Hard"
+
+msgid "Bots:"
+msgstr "Bots:"
+
+msgid "Dificultad:"
+msgstr "Difficulty:"
+
+msgid "Partida local · bots: {}"
+msgstr "Local game · bots: {}"
+
+msgid "Dificultad de bot inválida"
+msgstr "Invalid bot difficulty"
+
+msgid "Dificultad de bot desconocida"
+msgstr "Unknown bot difficulty"
+
+msgid ""
+"Un humano y hasta siete bots. Podés jugar solo con cero bots. Después elegís"
+" objetivos, situaciones y el resto de las reglas."
+msgstr ""
+"One human and up to seven bots. You can play alone with zero bots. Then "
+"choose objectives, situations and the remaining rules."
+
+msgid "Fácil: jugadas simples y elección variada de ataques."
+msgstr "Easy: simple moves and varied attack choices."
+
+msgid "Normal: refuerza fronteras y cuida la defensa al avanzar."
+msgstr "Normal: reinforces borders and preserves defense while advancing."
+
+msgid "Difícil: prioriza su objetivo y evalúa riesgos y ataques siguientes."
+msgstr ""
+"Hard: prioritizes its objective and evaluates risks and follow-up attacks."

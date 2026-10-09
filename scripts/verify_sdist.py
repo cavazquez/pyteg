@@ -10,6 +10,8 @@ from pathlib import Path
 REQUIRED_FILES = (
     "pyproject.toml",
     "pyteg/client/bots.py",
+    "pyteg/client/bot_strategies.py",
+    "pyteg/client/bot_planning.py",
     "pyteg/persistence/in_process.py",
     "pyteg/persistence/local.py",
     "pyteg/persistence/recent.py",

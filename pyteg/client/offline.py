@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Any, cast
 
 from PySide6.QtCore import QObject, QTimer, Signal
 
+from pyteg.client.bot_strategies import DEFAULT_BOT_DIFFICULTY, difficulty_labels
 from pyteg.client.conexion.transmisor import ClientNullTransmisor, ClientTransmisor
 from pyteg.client.event_processor import ClientEventProcessor
 from pyteg.client.state_adapter import QtClientStateAdapter
@@ -71,13 +72,14 @@ class OfflineConnection(QObject):
             rules_profile=rules_profile,
         )
 
-    def create_local(
+    def create_local(  # noqa: PLR0913 -- opciones de la partida local.
         self,
         theme: str,
         name: str,
         bots: int,
         repository: ArchiveRepository,
         *,
+        difficulty: str = DEFAULT_BOT_DIFFICULTY,
         rules_profile: str | None = None,
     ) -> None:
         """Crea una partida humana con jugadores automáticos."""
@@ -85,6 +87,7 @@ class OfflineConnection(QObject):
             theme,
             name,
             bots,
+            difficulty=difficulty,
             receive=self._receive,
             repository=repository,
             rules_profile=rules_profile,
@@ -112,7 +115,7 @@ class OfflineConnection(QObject):
         self.state_model.local_userid = game.user_id
         self.window.client.asignar_admin(enabled=False)
         self.window.network_status_label.setText(
-            _("Partida local · bots básicos")
+            _("Partida local · bots: {}").format(difficulty_labels()[game.difficulty])
             if isinstance(game, LocalGame)
             else _("Partida por archivos")
         )
