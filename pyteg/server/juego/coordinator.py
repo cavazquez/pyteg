@@ -454,10 +454,7 @@ class ServerGameCoordinator:
 
         # Iniciar el temporizador de turnos
         LOGGER.info("Iniciando temporizador de turnos...")
-        self._turno_timer = TurnoTimer(
-            server, segundos_por_turno=self._segundos_por_turno
-        )
-        self._turno_timer.start()
+        self.resume_clock(server)
 
         return self._game
 
@@ -567,3 +564,18 @@ class ServerGameCoordinator:
         self._turno_timer.detener()
         if self._turno_timer.is_alive():
             self._turno_timer.join(timeout=2.0)
+
+    def resume_clock(self, server: Any, remaining: int | None = None) -> None:
+        """Selecciona un reloj real o inerte según el modo de la partida."""
+        self.detener()
+        if (
+            getattr(server, "asynchronous", False) is True
+            or getattr(server, "host_waiting_quorum", False) is True
+            or not self._estado.es_jugando()
+        ):
+            self._turno_timer = NullTurnTimer()
+            return
+        self._turno_timer = TurnoTimer(
+            server, self._segundos_por_turno, resume_seconds=remaining
+        )
+        self._turno_timer.start()

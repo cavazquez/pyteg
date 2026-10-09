@@ -4,11 +4,12 @@ from __future__ import annotations
 
 from typing import Any
 
-from PySide6.QtCore import QSize, Qt
+from PySide6.QtCore import QSize, Qt, QTimer
 from PySide6.QtGui import QIntValidator
 from PySide6.QtWidgets import (
     QComboBox,
     QDialog,
+    QFileDialog,
     QFormLayout,
     QHBoxLayout,
     QLabel,
@@ -32,6 +33,8 @@ from pyteg.gui.dialogs.conectar.validation import (
 )
 from pyteg.i18n import translate as _
 from pyteg.logger import get_logger
+from pyteg.network.discovery import Room, RoomBrowser
+from pyteg.persistence.archive import read_archive
 from pyteg.server.hosting.runtime import HostRuntime
 from pyteg.toml_reader import TomlReaderError
 
@@ -89,6 +92,8 @@ class VentanaConectar(QDialog):
         self.username: QLineEdit
         self.theme_selector: QComboBox
         self._conexion: ConnectionClient | None = None
+        self._browser: RoomBrowser | None = None
+        self._saved_identity: tuple[int, str] | None = None
 
         self._setup_window()
 
@@ -106,11 +111,16 @@ class VentanaConectar(QDialog):
         self._update_mode()
 
         self._connect_to_language_selector()
+        self._discovery_timer = QTimer(self)
+        self._discovery_timer.setInterval(1000)
+        self._discovery_timer.timeout.connect(self._refresh_rooms)
+        self.finished.connect(self._close_discovery)
+        self._start_discovery()
 
     def _setup_window(self) -> None:
         """Configura las propiedades básicas de la ventana."""
         self.setWindowTitle(_("Crear o unirse a una partida"))
-        self.setFixedSize(QSize(440, 440))
+        self.setMinimumSize(QSize(480, 520))
         self.setWindowFlags(
             Qt.WindowType.Dialog
             | Qt.WindowType.CustomizeWindowHint
@@ -152,6 +162,13 @@ class VentanaConectar(QDialog):
         self.mode_label = QLabel(_("Acción:"))
         self.mode_label.setStyleSheet(styles.FORM_LABEL_STYLE)
         form_layout.addRow(self.mode_label, self.mode_selector)
+        self.room_selector = QComboBox()
+        self.room_selector.addItem(_("Ingresar dirección manualmente"), None)
+        self.room_selector.setStyleSheet(styles.INPUT_STYLE)
+        self.room_selector.currentIndexChanged.connect(self._select_room)
+        self.room_label = QLabel(_("Salas en la red:"))
+        self.room_label.setStyleSheet(styles.FORM_LABEL_STYLE)
+        form_layout.addRow(self.room_label, self.room_selector)
 
         addr_label = QLabel(_("Dirección:"))
         addr_label.setStyleSheet(styles.FORM_LABEL_STYLE)
@@ -182,9 +199,82 @@ class VentanaConectar(QDialog):
         self.host_hint.setWordWrap(True)
         self.host_hint.setStyleSheet(styles.DESC_LABEL_STYLE)
         parent_layout.addWidget(self.host_hint)
+        self.restore_identity_button = QPushButton(
+            _("Recuperar mi jugador desde un guardado…")
+        )
+        self.restore_identity_button.clicked.connect(self._restore_identity)
+        parent_layout.addWidget(self.restore_identity_button)
+
+    def _start_discovery(self) -> None:
+        try:
+            self._browser = RoomBrowser()
+            self._browser.start()
+            self._discovery_timer.start()
+        except OSError as error:
+            _LOG.debug("No se pudo buscar salas LAN: %s", error)
+
+    def _close_discovery(self) -> None:
+        self._discovery_timer.stop()
+        if self._browser is not None:
+            self._browser.close()
+            self._browser = None
+
+    def _refresh_rooms(self) -> None:
+        if self._browser is None:
+            return
+        selected = self.room_selector.currentData()
+        rooms = self._browser.catalog.rooms()
+        self.room_selector.blockSignals(True)  # noqa: FBT003 -- API Qt.
+        self.room_selector.clear()
+        self.room_selector.addItem(_("Ingresar dirección manualmente"), None)
+        for room in rooms:
+            theme = _("Clásico") if room.theme == "classic" else _("Revancha")
+            self.room_selector.addItem(
+                f"{room.name} · {theme} · {room.players} · {room.host}:{room.port}",
+                room,
+            )
+            if isinstance(selected, Room) and selected.session_id == room.session_id:
+                self.room_selector.setCurrentIndex(self.room_selector.count() - 1)
+        self.room_selector.blockSignals(False)  # noqa: FBT003 -- API Qt.
+        self._select_room()
+
+    def _select_room(self) -> None:
+        room = self.room_selector.currentData()
+        if isinstance(room, Room):
+            self.addr.setText(room.host)
+            self.port.setText(str(room.port))
+            self.theme_selector.setCurrentIndex(
+                self.theme_selector.findData(room.theme)
+            )
+
+    def _restore_identity(self) -> None:
+        path, _filter = QFileDialog.getOpenFileName(
+            self, _("Recuperar mi jugador"), "", "Pyteg (*.pyteg)"
+        )
+        if not path:
+            return
+        try:
+            payload = read_archive(path, kind="game")["payload"]
+            user_id = payload["userid"]
+            checkpoint = payload["envelope"]["checkpoint"]
+            player = next(
+                player
+                for player in checkpoint["players"]
+                if player["userid"] == user_id
+            )
+            self._saved_identity = user_id, player["token"]
+            self.username.setText(player["username"])
+            self.theme_selector.setCurrentIndex(
+                self.theme_selector.findData(checkpoint["theme"])
+            )
+        except (OSError, ValueError, KeyError, TypeError, StopIteration) as error:
+            self._show_error(str(error))
 
     def _update_mode(self) -> None:
         hosting = self.mode_selector.currentData() == "host"
+        self.room_selector.setVisible(not hosting)
+        self.room_label.setVisible(not hosting)
+        self.restore_identity_button.setVisible(not hosting)
         if hosting and not self.addr.isReadOnly():
             self._join_address = self.addr.text()
             self.addr.setText(", ".join(local_game_addresses()))
@@ -256,13 +346,10 @@ class VentanaConectar(QDialog):
         """Aplica estilos generales al diálogo."""
         self.setStyleSheet(styles.DIALOG_STYLE)
 
-    def connect_to_server(self) -> None:
+    def connect_to_server(self) -> None:  # noqa: C901 -- operación transaccional de UI.
         """Intenta conectarse al servidor con los datos proporcionados."""
         conexion_actual = getattr(self._main_window, "conexion", None)
-        if (
-            isinstance(conexion_actual, ConnectionClient)
-            and conexion_actual.esta_ocupada()
-        ):
+        if conexion_actual is not None and conexion_actual.esta_ocupada():
             self._show_error(
                 _(
                     "Ya existe una conexión activa o en curso en esta ventana. "
@@ -300,6 +387,9 @@ class VentanaConectar(QDialog):
                 conexion_actual.desconectar()
             if hosting:
                 port = self._create_host(selected_theme, port)
+            elif self._saved_identity is not None:
+                self._main_window.client.set_userid(self._saved_identity[0])
+                self._main_window.client.set_reconnect_token(self._saved_identity[1])
             self._conexion = ConnectionClient(self._main_window, addr, port, username)
             self._main_window.conexion = self._conexion
             self._conexion.conectar()
@@ -324,7 +414,9 @@ class VentanaConectar(QDialog):
         previous = getattr(self._main_window, "host_runtime", None)
         if isinstance(previous, HostRuntime):
             previous.close()
-        runtime = HostRuntime()
+        files = getattr(self._main_window, "files_manager", None)
+        repository = files.network_repository() if files is not None else None
+        runtime = HostRuntime(repository=repository)
         try:
             port = runtime.create_game(theme, port)
         except OSError, ValueError:
@@ -362,7 +454,7 @@ class VentanaConectar(QDialog):
         except (AttributeError, TypeError, RuntimeError) as e:
             _LOG.debug("Error conectando al selector de idioma: %s", e)
 
-    def update_language(self) -> None:
+    def update_language(self, _lang_code: str | None = None) -> None:
         """Actualiza todos los textos de la interfaz al cambiar el idioma."""
         self.setWindowTitle(_("Crear o unirse a una partida"))
         _retranslate_widget_texts(self.findChildren(QLabel), _CONNECT_TEXT_TO_MSGID)
@@ -382,6 +474,11 @@ class VentanaConectar(QDialog):
         self.mode_selector.setItemText(0, _("Unirme a una partida"))
         self.mode_selector.setItemText(1, _("Crear partida"))
         self.mode_label.setText(_("Acción:"))
+        self.room_label.setText(_("Salas en la red:"))
+        self.room_selector.setItemText(0, _("Ingresar dirección manualmente"))
+        self.restore_identity_button.setText(
+            _("Recuperar mi jugador desde un guardado…")
+        )
         self.host_hint.setText(
             _(
                 "Los demás jugadores se conectan a tu dirección y puerto "

@@ -24,6 +24,7 @@ if TYPE_CHECKING:
     from pyteg.client.colores.paleta import Colores
     from pyteg.client.conexion.connection import ConnectionClient
     from pyteg.client.conexion.transmisor.protocol import IClientTransmisor
+    from pyteg.client.offline import OfflineConnection
     from pyteg.client.tasks.types import TarjetaItem
     from pyteg.gui.mapa.scene import QCustomGraphicsScene
     from pyteg.gui.widgets.chat.widget import Chat
@@ -63,7 +64,7 @@ class GameWindowProtocol(Protocol):
     colores: Colores
     scene: QCustomGraphicsScene | None
     chat: Chat | None
-    conexion: ConnectionClient | None
+    conexion: ConnectionClient | OfflineConnection | None
     w: LobbyWindowProtocol | None
     transmisor: IClientTransmisor
     sound_manager: SoundManager

@@ -423,6 +423,15 @@ class Client:
                 ],
                 rules=["validated_phases", "one_card_per_turn"],
             )
+            replication = getattr(self.server, "host_replication", None)
+            if replication is not None:
+                self.enviar(
+                    json.dumps({
+                        "mensaje": "host_room",
+                        "session_id": replication.session_id,
+                        "epoch": replication.epoch,
+                    })
+                )
             if self.es_reconexion_pendiente():
                 # Una conexión pendiente no debe anunciar su ID temporal ni
                 # consumir colores antes de autenticarse.

@@ -245,6 +245,7 @@ class LayoutManager:
         self.main_window.main_widget = QWidget(cast("QWidget", self.main_window))
         main_layout = QGridLayout()
         main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setVerticalSpacing(0)
         self.main_window.situation_banner = SituationBanner(
             self.main_window.main_widget
         )

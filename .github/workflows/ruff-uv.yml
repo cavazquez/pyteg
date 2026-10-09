@@ -76,6 +76,15 @@ jobs:
               tests.test_client_state_adapter \
               tests.test_protocol_features \
               tests.test_tcp_framing
+        - name: Saved games, LAN discovery, durable elections and turn files
+          run: |
+            uv run python -m unittest \
+              tests.test_game_archives \
+              tests.test_checkpoint_wire \
+              tests.test_host_consensus \
+              tests.test_lan_discovery \
+              tests.test_gui_game_files \
+              tests.test_saved_network_game
         - name: Qt multiclient and reconnection smoke
           run: |
             uv run python scripts/smoke_qt_multiclient.py --clients 3

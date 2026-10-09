@@ -871,3 +871,183 @@ msgid ""
 msgstr ""
 "No hay una carta aplicable en esta ronda. Se mantienen las reglas de la "
 "partida."
+
+# Saved games, LAN discovery, turn files and replay
+
+msgid "Abrir partida o turno"
+msgstr "Abrir partida o turno"
+
+msgid "Abrir partida o turno…"
+msgstr "Abrir partida o turno…"
+
+msgid "Abrir repetición"
+msgstr "Abrir repetición"
+
+msgid "Abrir repetición…"
+msgstr "Abrir repetición…"
+
+msgid "Ataque"
+msgstr "Ataque"
+
+msgid "Canje de país"
+msgstr "Canje de país"
+
+msgid "Canje de tarjetas"
+msgstr "Canje de tarjetas"
+
+msgid "Continuar"
+msgstr "Continuar"
+
+msgid "Dados"
+msgstr "Dados"
+
+msgid "Desconectá la partida antes de abrir otra."
+msgstr "Desconectá la partida antes de abrir otra."
+
+msgid "Ese turno ya estaba abierto"
+msgstr "Ese turno ya estaba abierto"
+
+msgid "Esperando copias de seguridad…"
+msgstr "Esperando copias de seguridad…"
+
+msgid "Esperando una mayoría de jugadores…"
+msgstr "Esperando una mayoría de jugadores…"
+
+msgid "Estado de partida"
+msgstr "Estado de partida"
+
+msgid "Estado inicial"
+msgstr "Estado inicial"
+
+msgid "Exportar repetición"
+msgstr "Exportar repetición"
+
+msgid "Exportar repetición…"
+msgstr "Exportar repetición…"
+
+msgid "Exportar turno"
+msgstr "Exportar turno"
+
+msgid "Exportar turno…"
+msgstr "Exportar turno…"
+
+msgid "Fin de turno"
+msgstr "Fin de turno"
+
+msgid "Guardar partida"
+msgstr "Guardar partida"
+
+msgid "Guardar partida…"
+msgstr "Guardar partida…"
+
+msgid "Historial y repetición"
+msgstr "Historial y repetición"
+
+msgid "Historial y repetición…"
+msgstr "Historial y repetición…"
+
+msgid "Ingresar dirección manualmente"
+msgstr "Ingresar dirección manualmente"
+
+msgid ""
+"Ingresá de 1 a 8 nombres separados por comas. Después podrás elegir las "
+"reglas, los objetivos y las cartas de situaciones. Los turnos se comparten "
+"como archivos y no tienen reloj."
+msgstr ""
+"Ingresá de 1 a 8 nombres separados por comas. Después podrás elegir las "
+"reglas, los objetivos y las cartas de situaciones. Los turnos se comparten "
+"como archivos y no tienen reloj."
+
+msgid "Inicio de partida"
+msgstr "Inicio de partida"
+
+msgid "Jugador desconectado"
+msgstr "Jugador desconectado"
+
+msgid "Jugadores:"
+msgstr "Jugadores:"
+
+msgid "Misil lanzado"
+msgstr "Misil lanzado"
+
+msgid "Misil obtenido"
+msgstr "Misil obtenido"
+
+msgid "Movimiento"
+msgstr "Movimiento"
+
+msgid "No se pudo abrir o guardar la partida"
+msgstr "No se pudo abrir o guardar la partida"
+
+msgid "No se pudo cargar el mapa: {}"
+msgstr "No se pudo cargar el mapa: {}"
+
+msgid "Nueva partida por archivos"
+msgstr "Nueva partida por archivos"
+
+msgid "Nueva partida por archivos…"
+msgstr "Nueva partida por archivos…"
+
+msgid "Partida"
+msgstr "Partida"
+
+msgid "Partida guardada"
+msgstr "Partida guardada"
+
+msgid "Partida por archivos"
+msgstr "Partida por archivos"
+
+msgid "Pausar"
+msgstr "Pausar"
+
+msgid "Reanudar partida guardada"
+msgstr "Reanudar partida guardada"
+
+msgid "Recuperar mi jugador"
+msgstr "Recuperar mi jugador"
+
+msgid "Recuperar mi jugador desde un guardado…"
+msgstr "Recuperar mi jugador desde un guardado…"
+
+msgid "Refuerzos"
+msgstr "Refuerzos"
+
+msgid "Reproducir"
+msgstr "Reproducir"
+
+msgid "Salas en la red:"
+msgstr "Salas en la red:"
+
+msgid "Sin límite de tiempo"
+msgstr "Sin límite de tiempo"
+
+msgid "Tarjeta obtenida"
+msgstr "Tarjeta obtenida"
+
+msgid "Tiempo agotado"
+msgstr "Tiempo agotado"
+
+msgid "Todavía no hay historial de partida"
+msgstr "Todavía no hay historial de partida"
+
+msgid "Turno"
+msgstr "Turno"
+
+msgid "Turno anterior"
+msgstr "Turno anterior"
+
+msgid "Turno exportado para compartir"
+msgstr "Turno exportado para compartir"
+
+msgid "Turno siguiente"
+msgstr "Turno siguiente"
+
+msgid "Turno terminado. Exportalo desde Partida → Exportar turno."
+msgstr "Turno terminado. Exportalo desde Partida → Exportar turno."
+
+msgid ""
+"Ya existe una conexión activa o en curso en esta ventana. Desconéctala antes"
+" de conectar otra."
+msgstr ""
+"Ya existe una conexión activa o en curso en esta ventana. Desconéctala antes"
+" de conectar otra."

@@ -96,8 +96,6 @@ class _SerializedCall:
         except Exception as error:
             self.error = error
             LOGGER.exception("Falló una operación de ciclo de vida del servidor")
-        finally:
-            self.completed.set()
 
 
 _NON_MUTATING_COMMANDS = frozenset({
@@ -131,6 +129,7 @@ class GameCommandExecutor:
         self._turn_marker: tuple[int, int, int, int] | None = None
         self._turn_generation = 0
         self._turn_snapshot: tuple[int, int] | None = None
+        self._confirmations: dict[str, tuple[IClientProtocol, dict[str, Any]]] = {}
         self._thread = threading.Thread(
             target=self._run,
             name="pyteg-game-command-executor",
@@ -241,18 +240,45 @@ class GameCommandExecutor:
             try:
                 if item is _STOP:
                     return
-                cast("_QueuedEvent", item).accept(self)
-            except Exception:
+                history = getattr(self._server, "history", None)
+                before = self._server.public_snapshot() if history is not None else None
+                try:
+                    cast("_QueuedEvent", item).accept(self)
+                except Exception:
+                    LOGGER.exception("Error al ejecutar transición de juego")
+                self._finish_transition(item, before, history)
+            except Exception as error:
                 LOGGER.exception("Error al ejecutar transición de juego")
-            finally:
-                self._refresh_turn_snapshot()
+                if isinstance(item, _SerializedCall) and item.error is None:
+                    item.error = error
                 replication = getattr(self._server, "host_replication", None)
-                if replication is not None and item is not _STOP:
-                    try:
-                        replication.publish()
-                    except Exception:
-                        LOGGER.exception("No se pudo replicar el anfitrión")
+                if replication is not None:
+                    replication.unavailable()
+            finally:
                 self._queue.task_done()
+                if isinstance(item, _SerializedCall):
+                    item.completed.set()
+
+    def _finish_transition(
+        self, item: object, before: dict[str, Any] | None, history: Any
+    ) -> None:
+        self._refresh_turn_snapshot()
+        if history is not None:
+            after = self._server.public_snapshot()
+            if after != before:
+                history.record(
+                    after,
+                    action=str(item.payload.get("mensaje"))
+                    if isinstance(item, _ClientCommand)
+                    else type(item).__name__,
+                    user_id=item.client.userid()
+                    if isinstance(item, _ClientCommand)
+                    else None,
+                    payload=item.payload if isinstance(item, _ClientCommand) else None,
+                )
+        replication = getattr(self._server, "host_replication", None)
+        if replication is not None and replication.publish():
+            self._flush_confirmations()
 
     def _execute_client_command(self, command: _ClientCommand) -> None:
         """Construye y ejecuta una tarea del servidor dentro del serializador."""
@@ -275,6 +301,16 @@ class GameCommandExecutor:
         cached = self._cached_command_result(command)
         if cached is not None:
             self._replay_or_reject_conflict(command, cached)
+            return
+        if getattr(
+            self._server, "host_waiting_quorum", False
+        ) is True and command_name not in _NON_MUTATING_COMMANDS | {"reconectar"}:
+            self._send_command_result(
+                command,
+                accepted=False,
+                error_code="host_quorum_unavailable",
+                remember_result=False,
+            )
             return
         revision_getter = getattr(self._server, "state_revision", None)
         revision_before = revision_getter() if callable(revision_getter) else None
@@ -325,6 +361,7 @@ class GameCommandExecutor:
         *,
         accepted: bool,
         error_code: str | None,
+        remember_result: bool = True,
     ) -> None:
         """Cachea y transmite el resultado correlacionado de una mutación."""
         command_id = command.payload.get("command_id")
@@ -339,12 +376,29 @@ class GameCommandExecutor:
             result["error_code"] = error_code or "rejected"
         remember = getattr(command.client, "remember_command_result", None)
         command_name = command.payload.get("mensaje")
-        if callable(remember) and command_name not in _NON_MUTATING_COMMANDS:
+        if (
+            remember_result
+            and callable(remember)
+            and command_name not in _NON_MUTATING_COMMANDS
+        ):
             try:
                 remember(command_id, result, command.payload)
             except TypeError:
                 remember(command_id, result)
+        replication = getattr(self._server, "host_replication", None)
+        if (
+            accepted
+            and command_name not in _NON_MUTATING_COMMANDS
+            and replication is not None
+        ):
+            self._confirmations[command_id] = (command.client, result)
+            return
         command.client.transmisor.enviar_resultado_comando(**result)
+
+    def _flush_confirmations(self) -> None:
+        for command_id, (client, result) in list(self._confirmations.items()):
+            client.transmisor.enviar_resultado_comando(**result)
+            self._confirmations.pop(command_id, None)
 
     @staticmethod
     def _requires_command_id(command_name: object, command_id: object) -> bool:
@@ -410,7 +464,8 @@ class GameCommandExecutor:
             }
             command.client.transmisor.enviar_resultado_comando(**result)
             return
-        command.client.transmisor.enviar_resultado_comando(**cached)
+        if command_id not in self._confirmations:
+            command.client.transmisor.enviar_resultado_comando(**cached)
 
     def _publish_revision_if_needed(self, revision_before: int | None) -> None:
         """Publica una única revisión para una mutación aceptada.
@@ -432,6 +487,11 @@ class GameCommandExecutor:
 
     def _execute_turn_expired(self, expired: _TurnExpired) -> None:
         """Avanza una vez sólo si el timer corresponde al turno vigente."""
+        if (
+            getattr(self._server, "host_waiting_quorum", False) is True
+            or getattr(self._server, "host_migrating", False) is True
+        ):
+            return
         snapshot = self.turn_snapshot()
         if snapshot is None or snapshot[1] != expired.generation:
             LOGGER.debug(

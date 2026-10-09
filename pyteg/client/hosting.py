@@ -53,12 +53,12 @@ def _recovery_destination(
         or response.get("session_id") != envelope["session_id"]
     ):
         return None
-    if response.get("mensaje") == "host_ready" and epoch == envelope["epoch"] + 1:
+    if response.get("mensaje") == "host_ready" and epoch > envelope["epoch"]:
         host = response.get("host", target["host"])
         promoted = True
-    elif response.get("mensaje") == "host_alive" and epoch == envelope["epoch"]:
+    elif response.get("mensaje") == "host_alive" and epoch >= envelope["epoch"]:
         host = response.get("host")
-        promoted = False
+        promoted = epoch > envelope["epoch"]
     else:
         return None
     if not isinstance(host, str) or not host:
@@ -79,6 +79,7 @@ class HostSession(QObject):
         self.paused = False
         self._intentional = False
         self._last_received = time.monotonic()
+        self._quorum_since: float | None = None
         self._saved_id: int | None = None
         self._saved_token: str | None = None
         self._peers: list[dict[str, Any]] = []
@@ -102,7 +103,9 @@ class HostSession(QObject):
         """
         runtime = getattr(self.window, "host_runtime", None)
         if not isinstance(runtime, HostRuntime):
-            runtime = HostRuntime()
+            files = getattr(self.window, "files_manager", None)
+            repository = files.network_repository() if files is not None else None
+            runtime = HostRuntime(repository=repository)
             self.window.host_runtime = runtime
         return runtime
 
@@ -120,24 +123,8 @@ class HostSession(QObject):
         """
         self._last_received = time.monotonic()
         kind = event["mensaje"]
-        if kind == "hello" and "host_migration" in event.get("capabilities", []):
-            self.enabled = True
-            self.runtime()
-            self._watchdog.start()
-        if self.enabled and kind == "hello_ack" and event.get("accepted"):
-            self.connection.send_data(
-                json.dumps({
-                    "mensaje": "host_candidate",
-                    "port": self.runtime().control_port,
-                })
-            )
-        if kind == "reconexion" and self.recovering:
-            self.recovering = False
-            self._deadline.stop()
-            self.runtime().primary_connection(self.connection.endpoint())
-            self._show_status("Partida recuperada")
         if kind != "host_checkpoint":
-            return False
+            return self._process_control(event)
         if not self.enabled:
             return True
         user_id = self.window.client.userid()
@@ -148,11 +135,15 @@ class HostSession(QObject):
             <= (previous["epoch"], previous["sequence"])
         ):
             return True
-        self.runtime().store_checkpoint(event, user_id=user_id)
+        runtime = self.runtime()
+        runtime.store_checkpoint(event, user_id=user_id)
+        if not runtime.can_follow(event):
+            return True
         # El anfitrión ya guardó esta copia al publicarla. La proyección Qt
         # tiene su propia revisión y también necesita recibirla.
         if event["checkpoint"]["version"] == 1:
             self._envelope = event
+            self._quorum_since = None
             was_paused = self.paused
             self.paused = event.get("recovering") is True
             self.runtime().primary_connection(self.connection.endpoint())
@@ -167,6 +158,49 @@ class HostSession(QObject):
             if was_paused != self.paused:
                 self.window.refresh_gameplay_actions()
         return True
+
+    def _process_control(self, event: dict[str, Any]) -> bool:
+        kind = event["mensaje"]
+        if kind == "host_room":
+            self.runtime().join_room(event["session_id"])
+            return True
+        if kind == "hello" and "host_migration" in event.get("capabilities", []):
+            self.enabled = True
+            self.runtime()
+            self.runtime().primary_connection(self.connection.endpoint())
+            self._watchdog.start()
+        if self.enabled and kind == "hello_ack" and event.get("accepted"):
+            self.runtime().set_identity(self.window.client.userid())
+            self.connection.send_data(
+                json.dumps({
+                    "mensaje": "host_candidate",
+                    "port": self.runtime().control_port,
+                })
+            )
+        if kind == "reconexion" and self.recovering:
+            self.recovering = False
+            self._quorum_since = None
+            self._deadline.stop()
+            self.runtime().primary_connection(self.connection.endpoint())
+            self._show_status("Partida recuperada")
+        if self.enabled and kind == "reconexion":
+            self.runtime().set_identity(self.window.client.userid())
+            self.connection.send_data(
+                json.dumps({
+                    "mensaje": "host_candidate",
+                    "port": self.runtime().control_port,
+                })
+            )
+        if kind == "host_availability":
+            self.paused = event["paused"]
+            self._quorum_since = (
+                (self._quorum_since or time.monotonic()) if self.paused else None
+            )
+            if self.paused:
+                self._show_status(_("Esperando copias de seguridad…"))
+            self.window.refresh_gameplay_actions()
+            return True
+        return False
 
     def disconnected(self) -> bool:
         """Recupera sólo caídas inesperadas que ya tengan una copia completa.
@@ -215,6 +249,15 @@ class HostSession(QObject):
         self._close_probe()
         self.connection.abort_for_recovery()
         if not self._peers:
+            if self._envelope is not None and self._envelope.get("durable"):
+                self._peers = [
+                    peer
+                    for peer in self._envelope["peers"]
+                    if peer["userid"] != self._envelope["owner_id"]
+                ]
+                self._show_status(_("Esperando una mayoría de jugadores…"))
+                self._deadline.start(_PROBE_TIMEOUT_MS)
+                return
             self.recovering = False
             self.window.update_game_state("Desconectado")
             self._show_status("No hay un anfitrión disponible")
@@ -282,11 +325,16 @@ class HostSession(QObject):
             probe.deleteLater()
 
     def _check_silence(self) -> None:
+        now = time.monotonic()
+        quorum_stalled = (
+            self._quorum_since is not None
+            and now - self._quorum_since > _HOST_SILENCE_SECONDS
+        )
         if (
             self.enabled
             and not self.recovering
             and self.connection.esta_conectado()
-            and time.monotonic() - self._last_received > _HOST_SILENCE_SECONDS
+            and (now - self._last_received > _HOST_SILENCE_SECONDS or quorum_stalled)
         ):
             self.connection.abort_for_recovery()
 

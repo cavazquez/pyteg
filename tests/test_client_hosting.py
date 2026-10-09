@@ -119,3 +119,38 @@ class ClientHostingTests(unittest.TestCase):
         self.session._read_recovery_response()
         self.connection.reconnect_to.assert_called_once_with("192.168.1.3", 65433)
         self.connection.reset_replica_revision.assert_called_once_with()
+
+    def test_late_client_accepts_a_live_host_from_a_newer_epoch(self) -> None:
+        """Una copia Qt atrasada acepta el destino conocido por otro suplente."""
+        self.session._envelope = {"session_id": "test-room", "epoch": 0}
+        self.session._target = {"host": "192.168.1.2", "port": 12345}
+        self.session._probe = MagicMock()
+        self.session._probe.readAll.return_value = (
+            json.dumps({
+                "mensaje": "host_alive",
+                "session_id": "test-room",
+                "epoch": 3,
+                "host": "192.168.1.4",
+                "port": 65434,
+            }).encode()
+            + b"\0"
+        )
+        self.session._read_recovery_response()
+        self.connection.reconnect_to.assert_called_once_with("192.168.1.4", 65434)
+        self.connection.reset_replica_revision.assert_called_once_with()
+
+    def test_new_confirmed_copy_clears_quorum_watchdog(self) -> None:
+        """Una recuperación saludable no vuelve a abortarse por la pausa anterior."""
+        self.session.enabled = True
+        self.session.process({"mensaje": "host_availability", "paused": True})
+        self.assertIsNotNone(self.session._quorum_since)
+        self.session.process(self._copy(2, recovering=False))
+        self.assertIsNone(self.session._quorum_since)
+        self.assertFalse(self.session.paused)
+
+    def test_promised_newer_authority_cannot_be_overridden_by_gui_copy(self) -> None:
+        """La proyección Qt respeta el rechazo del participante que ya votó."""
+        self.session.enabled = True
+        self.runtime.can_follow.return_value = False
+        self.session.process(self._copy(2, recovering=False))
+        self.assertIsNone(self.session._envelope)

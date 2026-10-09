@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any
 from PySide6.QtGui import QColor
 
 from pyteg.gui.managers.players import PlayerStatus
+from pyteg.gui.mapa.projection import render_countries
 
 if TYPE_CHECKING:
     from pyteg.client.state_model import ApplyEventResult, ClientStateModel
@@ -185,35 +186,7 @@ class QtClientStateAdapter:
         self, state: dict[str, Any], names: set[str] | None = None
     ) -> None:
         scene = getattr(self._main_window, "scene", None)
-        countries = state.get("countries")
-        if scene is None or not isinstance(countries, dict):
-            return
-        colors = {
-            player.get("userid"): player.get("color")
-            for player in state.get("players", [])
-            if isinstance(player, dict)
-        }
-        names_by_userid = {
-            player.get("userid"): str(player.get("username") or player.get("userid"))
-            for player in state.get("players", [])
-            if isinstance(player, dict)
-        }
-        for name, raw_country in countries.items():
-            if names is not None and name not in names:
-                continue
-            if not isinstance(name, str) or not isinstance(raw_country, dict):
-                continue
-            country = getattr(scene, "paises", {}).get(name)
-            if country is None:
-                continue
-            units = raw_country.get("unidades")
-            if isinstance(units, int):
-                country.set_unidades(units)
-            self._sync_country_ownership(country, raw_country, colors, names_by_userid)
-            missiles = raw_country.get("misiles")
-            update_missiles = getattr(country, "actualizar_misiles", None)
-            if isinstance(missiles, int) and callable(update_missiles):
-                update_missiles(missiles)
+        render_countries(scene, state, names)
 
         # Propiedad y unidades también determinan qué acción puede ofrecerse
         # para el par seleccionado; un evento de país puede cambiarlo sin que
@@ -222,40 +195,6 @@ class QtClientStateAdapter:
         refresh_selection = getattr(selection, "refresh_labels", None)
         if callable(refresh_selection):
             refresh_selection()
-
-    def _sync_country_ownership(
-        self,
-        country: Any,
-        raw_country: dict[str, Any],
-        colors: dict[Any, Any],
-        names_by_userid: dict[Any, str],
-    ) -> None:
-        """Muestra propietario exclusivo o aportes de los ocupantes compartidos."""
-        update_occupants = getattr(country, "actualizar_ocupantes", None)
-        occupants = raw_country.get("ocupantes")
-        if raw_country.get("compartido") is True and isinstance(occupants, list):
-            shared = [
-                (
-                    names_by_userid.get(item["userid"], str(item["userid"])),
-                    item["unidades"],
-                    self._qcolor(colors.get(item["userid"])),
-                )
-                for item in occupants
-                if isinstance(item, dict)
-                and isinstance(item.get("userid"), int)
-                and isinstance(item.get("unidades"), int)
-                and item["unidades"] > 0
-            ]
-            if callable(update_occupants):
-                update_occupants(shared)
-            return
-
-        if callable(update_occupants):
-            update_occupants(None)
-        color = colors.get(raw_country.get("userid"))
-        country.set_color(
-            self._qcolor(color) if color is not None else QColor("#888888")
-        )
 
     def _sync_turn(self, state: dict[str, Any]) -> None:
         turn = state.get("turno")

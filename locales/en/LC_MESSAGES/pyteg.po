@@ -1026,3 +1026,183 @@ msgstr "Map:"
 
 msgid "Anfitrión y destino de la conexión de la partida"
 msgstr "Host and current game connection"
+
+# Saved games, LAN discovery, turn files and replay
+
+msgid "Abrir partida o turno"
+msgstr "Open game or turn"
+
+msgid "Abrir partida o turno…"
+msgstr "Open game or turn…"
+
+msgid "Abrir repetición"
+msgstr "Open replay"
+
+msgid "Abrir repetición…"
+msgstr "Open replay…"
+
+msgid "Ataque"
+msgstr "Attack"
+
+msgid "Canje de país"
+msgstr "Country exchange"
+
+msgid "Canje de tarjetas"
+msgstr "Card exchange"
+
+msgid "Continuar"
+msgstr "Continue"
+
+msgid "Dados"
+msgstr "Dice"
+
+msgid "Desconectá la partida antes de abrir otra."
+msgstr "Disconnect from the game before opening another one."
+
+msgid "Ese turno ya estaba abierto"
+msgstr "That turn was already open"
+
+msgid "Esperando copias de seguridad…"
+msgstr "Waiting for backups…"
+
+msgid "Esperando una mayoría de jugadores…"
+msgstr "Waiting for a majority of players…"
+
+msgid "Estado de partida"
+msgstr "Game state"
+
+msgid "Estado inicial"
+msgstr "Initial state"
+
+msgid "Exportar repetición"
+msgstr "Export replay"
+
+msgid "Exportar repetición…"
+msgstr "Export replay…"
+
+msgid "Exportar turno"
+msgstr "Export turn"
+
+msgid "Exportar turno…"
+msgstr "Export turn…"
+
+msgid "Fin de turno"
+msgstr "End of turn"
+
+msgid "Guardar partida"
+msgstr "Save game"
+
+msgid "Guardar partida…"
+msgstr "Save game…"
+
+msgid "Historial y repetición"
+msgstr "History and replay"
+
+msgid "Historial y repetición…"
+msgstr "History and replay…"
+
+msgid "Ingresar dirección manualmente"
+msgstr "Enter address manually"
+
+msgid ""
+"Ingresá de 1 a 8 nombres separados por comas. Después podrás elegir las "
+"reglas, los objetivos y las cartas de situaciones. Los turnos se comparten "
+"como archivos y no tienen reloj."
+msgstr ""
+"Enter 1 to 8 names separated by commas. You can then choose the rules, "
+"objectives and situation cards. Turns are shared as files and have no time "
+"limit."
+
+msgid "Inicio de partida"
+msgstr "Game start"
+
+msgid "Jugador desconectado"
+msgstr "Player disconnected"
+
+msgid "Jugadores:"
+msgstr "Players:"
+
+msgid "Misil lanzado"
+msgstr "Missile launched"
+
+msgid "Misil obtenido"
+msgstr "Missile obtained"
+
+msgid "Movimiento"
+msgstr "Movement"
+
+msgid "No se pudo abrir o guardar la partida"
+msgstr "Could not open or save the game"
+
+msgid "No se pudo cargar el mapa: {}"
+msgstr "Could not load the map: {}"
+
+msgid "Nueva partida por archivos"
+msgstr "New game using turn files"
+
+msgid "Nueva partida por archivos…"
+msgstr "New game using turn files…"
+
+msgid "Partida"
+msgstr "Game"
+
+msgid "Partida guardada"
+msgstr "Game saved"
+
+msgid "Partida por archivos"
+msgstr "Game using turn files"
+
+msgid "Pausar"
+msgstr "Pause"
+
+msgid "Reanudar partida guardada"
+msgstr "Resume saved game"
+
+msgid "Recuperar mi jugador"
+msgstr "Recover my player"
+
+msgid "Recuperar mi jugador desde un guardado…"
+msgstr "Recover my player from a saved game…"
+
+msgid "Refuerzos"
+msgstr "Reinforcements"
+
+msgid "Reproducir"
+msgstr "Play"
+
+msgid "Salas en la red:"
+msgstr "LAN rooms:"
+
+msgid "Sin límite de tiempo"
+msgstr "No time limit"
+
+msgid "Tarjeta obtenida"
+msgstr "Card obtained"
+
+msgid "Tiempo agotado"
+msgstr "Time expired"
+
+msgid "Todavía no hay historial de partida"
+msgstr "There is no game history yet"
+
+msgid "Turno"
+msgstr "Turn"
+
+msgid "Turno anterior"
+msgstr "Previous turn"
+
+msgid "Turno exportado para compartir"
+msgstr "Turn exported for sharing"
+
+msgid "Turno siguiente"
+msgstr "Next turn"
+
+msgid "Turno terminado. Exportalo desde Partida → Exportar turno."
+msgstr "Turn finished. Export it from Game → Export turn."
+
+msgid ""
+"Ya existe una conexión activa o en curso en esta ventana. Desconéctala antes"
+" de conectar otra."
+msgstr ""
+"This window already has an active or pending connection. Disconnect it "
+"before connecting again."

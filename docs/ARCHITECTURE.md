@@ -19,31 +19,62 @@ La propiedad de anfitrión y el rol de administrador se gestionan por separado.
 - `server/hosting/replication.py`: sala, época de autoridad y candidatos ordenados
   por `userid`. Sólo las conexiones que negocian `host_migration` y registran
   su puerto reciben copias privadas.
-- `server/hosting/checkpoint.py` y `data.py`: Memento de campos explícitos,
+- `server/juego/memento.py` y `persistence/values.py`: Memento de campos explícitos,
   codificado en JSON, sin pickle ni importación de clases desde el mensaje.
   Conserva mapa, reglas, mazos, objetivos, pactos, situaciones, generadores
   aleatorios, turnos, reloj e idempotencia de comandos; reconstruye dependencias
   y conexiones fuera de la copia.
-- `server/hosting/sessions.py`: autentica y reemplaza sockets sin alterar la
+- `server/juego/recovery.py`: autentica y reemplaza sockets sin alterar la
   identidad ni el orden de turnos. Transcurridos ocho segundos, desconecta a
   quienes no regresaron y retoma el reloj.
 - `client/hosting.py`: reintenta el destino actual, consulta candidatos y conecta
   la GUI a la nueva autoridad, reiniciando la revisión de su réplica pública.
 
 Las altas, bajas, acciones y copias se serializan en `GameCommandExecutor`.
-Después de cada transición se publica una copia completa; el reloj también
-solicita una copia cada segundo. Al perder la conexión, un candidato consulta
-a los demás antes de promoverse, para conservar el anfitrión que todavía ven.
-Una promoción aumenta la época y es idempotente para solicitudes concurrentes
-en esa instancia. Durante la recuperación se bloquean las acciones del juego.
+`HostReplication` prepara una copia, reúne confirmaciones de almacenamiento,
+confirma la copia y espera otra mayoría antes de emitir `accepted` al cliente.
+El resultado idempotente forma parte del memento. Las propuestas sin confirmar
+no son elegibles para recuperación. Si falla el disco o falta mayoría, se
+pausan las acciones y el reloj. La copia TCP usa JSON comprimido con expansión
+acotada; los archivos durables siguen siendo JSON legible.
 
-Las copias completas permanecen en memoria y contienen los datos privados de
-todos los jugadores, incluidos tokens, cartas y objetivos. No se envían al
-modelo público del mapa ni se escriben en logs. Esta modalidad requiere
-participantes de confianza y conectividad directa entre sus equipos. No hay
-consenso ante particiones de red ni persistencia si salen todos los clientes;
-se recupera la última transición completa recibida por el sucesor. La versión
-asíncrona sin servidor aún no está implementada.
+`ElectionState` conserva época, candidato y lease. Un voto se guarda antes de
+responder al candidato y no cambia dentro de la misma época. La elección espera
+el lease anterior y exige mayoría del grupo confirmado. Una incorporación o
+baja exige mayorías de los grupos anterior y nuevo. Antes de pedir votos, un
+candidato consulta la autoridad vigente y busca el checkpoint confirmado más
+reciente. Una autoridad que prometió una época superior deja de hospedar.
+Los certificados identifican participantes de confianza; no son firmas ni
+consenso tolerante a jugadores maliciosos.
+
+`FileRepository` usa escritura temporal, `fsync` y reemplazo atómico. En la GUI,
+el archivo se identifica por sala y jugador, de modo que otra ventana puede
+recuperar los votos anteriores. Abrir explícitamente un guardado crea otra sala;
+espera las identidades históricas antes de reanudar, o la acción del anfitrión.
+Los mementos contienen cartas, objetivos y tokens privados; se mantienen fuera
+del modelo público y del log. Requieren participantes y red de confianza.
+
+### Persistencia, descubrimiento y partidas por archivos
+
+- **Memento**: el originador `Server` expone `capture_state`, `restore_state`,
+  `finish_recovery` y `serialized`. La lectura de atributos privados queda dentro
+  del módulo de memento del motor. Los módulos antiguos de hosting conservan
+  reexportaciones para compatibilidad.
+- **Adapter**: `ServerEngine` implementa `RecoveryEngine`. El runtime crea y
+  restaura motores por ese puerto, sin construir ni recorrer sus campos privados.
+- **Strategy / Repository**: `ArchiveRepository` permite conservación en memoria
+  o disco con el mismo contrato. Los documentos `game`, `turn` y `replay` usan
+  versión y SHA-256; no ejecutan clases ni código procedente del archivo.
+- **Descubrimiento**: `RoomAnnouncer` publica metadatos públicos por UDP 45471;
+  `RoomBrowser` conserva salas compatibles con caducidad y deduplicación por
+  sala/época. La dirección procede del datagrama, y el mapa se valida por hash.
+- **Adapter local**: `OfflineConnection` y `AsyncGame` envían las mismas tareas
+  al mismo ejecutor que TCP. Usan puertos locales inertes y `NullTurnTimer`, sin
+  listener ni sockets. La entrega sella la copia del jugador y conserva una
+  cadena de hashes para rechazar duplicados y continuaciones incompatibles.
+- **Historial**: `GameHistory` registra diferencias del snapshot público y
+  resultados de combate. `Replay` reconstruye posiciones con caché acotada.
+  `ReplayWindow` usa una escena independiente sin selección ni acciones de juego.
 
 ### Identidad del jugador (dominio vs presentación)
 - **Dominio (servidor / core)**: el jugador se identifica de forma canónica con **`userid: int`** (dueño de país en el mapa, orden de turnos, canjes, validadores, combate, objetivos secretos, victoria).

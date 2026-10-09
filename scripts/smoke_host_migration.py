@@ -22,6 +22,7 @@ from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import QApplication
 
 from pyteg.client.app import Client
+from pyteg.client.conexion.connection import ConnectionClient
 from pyteg.gui import Gui
 from pyteg.gui.dialogs.conectar import VentanaConectar
 from scripts.smoke_qt_multiclient import (
@@ -32,7 +33,6 @@ from scripts.smoke_qt_multiclient import (
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from pyteg.client.conexion.connection import ConnectionClient
     from pyteg.client.state_model import ClientStateModel
     from pyteg.server.app import Server
 
@@ -135,9 +135,9 @@ def _worker(args: argparse.Namespace) -> int:
 
 
 def _connection(window: Gui) -> ConnectionClient:
-    if window.conexion is None:
+    if not isinstance(window.conexion, ConnectionClient):
         msg = "Se perdió la conexión Qt de la prueba"
-        raise RuntimeError(msg)
+        raise RuntimeError(msg)  # noqa: TRY004 -- falla de ciclo de vida.
     return window.conexion
 
 
@@ -249,13 +249,16 @@ def _run(args: argparse.Namespace) -> int:  # noqa: PLR0915 -- escenario de dos 
         command_id = "host-migration-first-unit"
         _send_unit(windows[0], country, command_id)
         wait(
-            lambda: all(
-                any(
-                    command_id in player["cache"]
-                    for player in _checkpoint(window)["checkpoint"]["players"]
-                    if player["userid"] == _SECOND_PLAYER
+            lambda: (
+                command_id in _model(windows[0]).command_results
+                and all(
+                    any(
+                        command_id in player["cache"]
+                        for player in _checkpoint(window)["checkpoint"]["players"]
+                        if player["userid"] == _SECOND_PLAYER
+                    )
+                    for window in windows
                 )
-                for window in windows
             ),
             "comando aplicado y replicado",
         )

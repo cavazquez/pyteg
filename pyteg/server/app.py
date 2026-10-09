@@ -5,7 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 from pyteg.config import DEFAULT_MAP_THEME
 from pyteg.core.cartas.mazo import Mazo
@@ -24,6 +24,7 @@ from pyteg.core.situaciones.catalog import (
 )
 from pyteg.log_cli import add_log_arguments
 from pyteg.logger import get_logger
+from pyteg.persistence.history import GameHistory
 from pyteg.protocol import PROTOCOL_VERSION, SNAPSHOT_VERSION, map_hash_for_theme
 from pyteg.server.conexion.broadcaster import ServerMessageBroadcaster
 from pyteg.server.conexion.registrar_jugadores import registrar_jugadores
@@ -34,6 +35,8 @@ from pyteg.server.juego.command_executor import GameCommandExecutor
 from pyteg.server.juego.coordinator import ServerGameCoordinator
 from pyteg.server.juego.estado import Estado
 from pyteg.server.juego.mapa import Mapa
+from pyteg.server.juego.memento import export_checkpoint, restore_checkpoint
+from pyteg.server.juego.recovery import finish_migration, reconnect_migrated
 from pyteg.server.logging_setup import configure_server_logging
 from pyteg.toml_reader import TomlReader
 from pyteg.utils import get_resource_path
@@ -115,7 +118,10 @@ class Server:
         self.host_replication: HostReplication | None = None
         self.migration_sessions: dict[int, Client] = {}
         self.host_migrating = False
+        self.host_waiting_quorum = False
         self.host_resume_seconds: int | None = None
+        self.asynchronous = False
+        self.history = GameHistory()
         self._client_registry = ServerClientRegistry()
         # La autoridad de sala se mantiene separada del orden del registro.
         # Durante una partida la sucesión queda pendiente hasta FINALIZADO.
@@ -168,7 +174,61 @@ class Server:
             rules=self._reglas,
         )
         self._command_executor = GameCommandExecutor(self)
+        self.history.record(self.public_snapshot())
         self._command_executor.start()
+
+    def capture_state(self) -> dict[str, Any]:
+        """Captura un memento en el hilo del motor.
+
+        Returns:
+            Estado completo sin objetos de conexión.
+
+        """
+        return cast(
+            "dict[str, Any]",
+            self._command_executor.call_serialized(lambda: export_checkpoint(self)),
+        )
+
+    def restore_state(self, state: dict[str, Any]) -> None:
+        """Restaura un motor nuevo; conserva identidades para reconectarlas."""
+        self.migration_sessions = restore_checkpoint(self, state)
+
+    def finish_recovery(self, remaining: int | None) -> None:
+        """Finaliza la recuperación dentro del serializador del motor."""
+        self.schedule_host_recovery(lambda: finish_migration(self, remaining))
+
+    def serialized(self, callback: Callable[[], Any]) -> Any:
+        """Expone el puerto de operaciones atómicas del motor.
+
+        Returns:
+            Resultado de la operación ejecutada.
+
+        """
+        return self._command_executor.call_serialized(callback)
+
+    def suspend_clock(self) -> None:
+        """Pausa el reloj sin detener la cola de comandos."""
+        self._game_coordinator.detener()
+
+    def resume_clock(self, remaining: int | None = None) -> None:
+        """Reanuda el reloj sólo en una partida activa y sin modo asíncrono."""
+        self._game_coordinator.resume_clock(self, remaining)
+
+    def clock_remaining(self) -> int | None:
+        """Obtiene el tiempo pendiente, incluido el de una partida pausada.
+
+        Returns:
+            Segundos conservados o None cuando la partida no usa reloj.
+
+        """
+        timer = self._game_coordinator.turno_timer()
+        if timer is not None:
+            return timer.remaining_seconds()
+        return (
+            self.host_resume_seconds
+            if self.host_migrating or self.host_waiting_quorum
+            else None
+        )
 
     def map_hash(self) -> str:
         """Identificador estable de la geografía y catálogos del mapa.
@@ -841,10 +901,6 @@ class Server:
 
         """
         if int(user_id) in self.migration_sessions and client.es_reconexion_pendiente():
-            from pyteg.server.hosting.sessions import (  # noqa: PLC0415
-                reconnect_migrated,
-            )
-
             return reconnect_migrated(self, client, int(user_id), token)
         game = self.game
         if game is None or not client.es_reconexion_pendiente():
@@ -1071,6 +1127,7 @@ class Server:
             resultado_data: Payload tipado del resultado de la batalla.
 
         """
+        self.history.observe("batalla_resultado", dict(resultado_data))
         self._broadcaster.enviar_resultado_batalla(resultado_data)
 
     def enviar_resultado_misil(self, resultado_data: MissileResultPayload) -> None:
@@ -1080,6 +1137,7 @@ class Server:
             resultado_data: Payload tipado del resultado del misil.
 
         """
+        self.history.observe("misil_resultado", dict(resultado_data))
         self._broadcaster.enviar_resultado_misil(resultado_data)
 
     def enviar_misil_agregado(self, pais: str, cantidad_misiles: int) -> None:

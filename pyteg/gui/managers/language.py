@@ -50,6 +50,9 @@ class LanguageManager:
 
         self._refresh_status_and_controls(lang_code)
         self._refresh_selection_and_toolbar(lang_code)
+        files_manager = getattr(self.main_window, "files_manager", None)
+        if files_manager is not None:
+            files_manager.update_language()
 
         players_title = getattr(self.main_window, "players_title_label", None)
         if players_title is not None:

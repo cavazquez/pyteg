@@ -53,6 +53,15 @@ class _FakeLobbyClient:
         """
         return f"Jugador_{self._user_id}"
 
+    def es_reconexion_pendiente(self) -> bool:
+        """Representa una identidad normal del lobby.
+
+        Returns:
+            False porque el doble no representa una reconexión temporal.
+
+        """
+        return False
+
 
 class TestClientCleanup(unittest.TestCase):
     """Asegura que el objeto Client libera recursos aun ante fallos."""

@@ -14,6 +14,7 @@ from pyteg.config import DEFAULT_MAP_THEME
 from pyteg.gui.facades.main_window_delegates import MainWindowDelegatesMixin
 from pyteg.gui.managers.cards import CardManager
 from pyteg.gui.managers.config import ConfigManager
+from pyteg.gui.managers.files import GameFilesManager
 from pyteg.gui.managers.game_actions import GameActionsManager
 from pyteg.gui.managers.language import LanguageManager
 from pyteg.gui.managers.layout import LayoutManager
@@ -40,6 +41,8 @@ if TYPE_CHECKING:
 
     from pyteg.client.app import Client
     from pyteg.client.conexion.connection import ConnectionClient
+    from pyteg.client.conexion.transmisor.protocol import IClientTransmisor
+    from pyteg.client.offline import OfflineConnection
     from pyteg.client.state_model import ClientStateModel
     from pyteg.client.tasks.protocols import LobbyWindowProtocol
     from pyteg.client.tasks.types import TarjetaItem
@@ -114,6 +117,7 @@ class Gui(QMainWindow, MainWindowDelegatesMixin):
             _("Anfitrión y destino de la conexión de la partida")
         )
         self.status_bar.addPermanentWidget(self.network_status_label)
+        self.files_manager = GameFilesManager(self)
         self.show()
 
     def _gui_init_core_state(self, client: Client, map_theme: str) -> None:
@@ -122,8 +126,8 @@ class Gui(QMainWindow, MainWindowDelegatesMixin):
         self.theme: str = "light"
         self.map_theme: str = map_theme
         self.client_by_id: dict[int, Client] = {}
-        self.transmisor = ClientNullTransmisor()
-        self.conexion: ConnectionClient | None = None
+        self.transmisor: IClientTransmisor = ClientNullTransmisor()
+        self.conexion: ConnectionClient | OfflineConnection | None = None
         self.host_runtime: HostRuntime | None = None
         self.network_status = "Desconectado"
         self.client_state_model: ClientStateModel | None = None
@@ -152,7 +156,7 @@ class Gui(QMainWindow, MainWindowDelegatesMixin):
         self._vivo = False
         if self.conexion is not None:
             self.conexion.desconectar()
-        elif self.host_runtime is not None:
+        if self.host_runtime is not None:
             self.host_runtime.close()
             self.host_runtime = None
         self.sound_manager.cleanup()

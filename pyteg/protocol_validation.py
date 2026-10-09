@@ -6,6 +6,8 @@ from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from typing import Any, cast
 
+from pyteg.persistence.wire import decode_envelope
+
 type FieldValidator = Callable[[object], bool]
 
 _ERROR_INVALID_PAYLOAD = "invalid_payload"
@@ -394,6 +396,10 @@ _SERVER_COMMAND_SCHEMAS: dict[str, _MessageSchema] = {
 }
 
 _CLIENT_EVENT_SCHEMAS: dict[str, _MessageSchema] = {
+    "host_room": _MessageSchema(
+        {"session_id": _is_nonempty_string, "epoch": _NONNEGATIVE_INTEGER}, {}
+    ),
+    "host_availability": _MessageSchema({"paused": _is_boolean}, {}),
     "host_checkpoint": _MessageSchema(
         {
             "session_id": _is_nonempty_string,
@@ -403,7 +409,16 @@ _CLIENT_EVENT_SCHEMAS: dict[str, _MessageSchema] = {
             "peers": _is_host_peers,
             "checkpoint": _is_host_checkpoint,
         },
-        {"recovering": _is_boolean},
+        {
+            "recovering": _is_boolean,
+            "durable": _is_boolean,
+            "phase": _is_nonempty_string,
+            "members": _is_integer_list,
+            "previous_members": _is_integer_list,
+            "election": _is_integer_list,
+            "certificate": _is_integer_list,
+            "digest": _is_nonempty_string,
+        },
     ),
     "snapshot": _MessageSchema(
         {
@@ -657,5 +672,13 @@ def validate_client_event(payload: object) -> dict[str, Any]:
     Returns:
         Evento validado listo para construir una tarea de cliente.
 
+    Raises:
+        MessageValidationError: Si el evento o su copia comprimida no son válidos.
+
     """
+    if isinstance(payload, dict) and payload.get("mensaje") == "host_checkpoint":
+        try:
+            payload = decode_envelope(payload)
+        except ValueError as error:
+            raise MessageValidationError(_ERROR_INVALID_PAYLOAD, str(error)) from error
     return _validate_message(payload, _CLIENT_EVENT_SCHEMAS, kind="evento")

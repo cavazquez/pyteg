@@ -37,6 +37,8 @@ gráfica en Python.
 - **Sistema de sonidos**: Efectos de audio para batallas, movimientos, turnos y eventos del juego con controles de volumen
 - Modo multijugador con servidor 🔌 TCP y validación de estados (sin cifrado; pensado para redes de confianza, p. ej. LAN). Detalle del modelo de amenaza: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#seguridad-y-modelo-de-amenaza) y [ADR-009](docs/DECISIONS.md#adr-009-tcp-sin-cifrado-y-red-de-confianza).
 - Crear una partida desde el cliente y recuperar automáticamente el anfitrión en otro jugador si se cae.
+- Descubrir salas en la LAN, guardar/reabrir partidas y revisar su historial.
+- Jugar sin conexión mediante archivos de turno compartidos por cualquier medio.
 - Restricción de ataques en los dos primeros turnos
 - Elección de cantidad de unidades para atacar (1 a 3)
 - Validación de nombres de usuario duplicados (con desconexión)
@@ -69,8 +71,9 @@ uv sync
 1. Ejecutá `uv run pyteg-client` y abrí **Conectar**.
 2. Elegí **Crear partida**, tu nombre, mapa y puerto. La ventana muestra las
    direcciones locales que podés compartir.
-3. Los demás jugadores abren su cliente, eligen **Unirme a una partida** e
-   ingresan la dirección y el puerto del anfitrión, con el mismo mapa.
+3. Los demás jugadores eligen **Unirme a una partida** y seleccionan la sala
+   en **Salas en la red**. El cliente completa dirección, puerto y mapa.
+   También se puede ingresar la dirección manualmente.
 4. El administrador configura las reglas y comienza la partida. El mapa y el
    perfil de reglas siguen siendo elecciones independientes.
 
@@ -82,13 +85,58 @@ el tiempo pendiente del jugador que sigue en turno. La barra de estado indica
 **Anfitrión**, **Conectado** o **Recuperando partida…**; su tooltip muestra el
 destino actual y las direcciones para unirse.
 
-Cada cliente habilitado conserva en memoria una copia completa y privada del
-motor. Usá esta modalidad con participantes y red de confianza. Los equipos
-deben poder conectarse entre sí a los puertos TCP del juego y de recuperación;
-este último se asigna automáticamente. La recuperación usa la última copia
-completa recibida: una acción que todavía no se replicó puede perderse. No
-resuelve particiones de red ni permite recuperar una sala si se cerraron todos
-los clientes. El juego asíncrono sin servidor queda para una etapa posterior.
+Las acciones se confirman después de guardar la transición en una mayoría de
+participantes. Si falta esa mayoría, se pausan acciones y reloj. La elección de
+un sucesor también requiere mayoría y conserva los votos en disco para evitar
+que un reinicio permita votar por dos candidatos en la misma época. Con cuatro
+participantes, perder dos al mismo tiempo deja la partida esperando; no crea dos
+partidas independientes. Los cambios de participantes requieren mayorías tanto
+del grupo anterior como del nuevo.
+
+Cada cliente habilitado conserva una copia completa y privada del motor en
+disco. Usá esta modalidad con participantes y red de confianza: esas copias
+incluyen cartas, objetivos y credenciales. Los equipos deben poder conectarse
+entre sí a los puertos TCP del juego y de recuperación (asignado automáticamente).
+El descubrimiento utiliza UDP 45471, multicast local y broadcast. Si la red
+bloquea esos anuncios, se puede usar la dirección manual.
+
+### Guardar y reabrir partidas
+
+- **Partida → Guardar partida…** (`Ctrl+S`) exporta un archivo `.pyteg`.
+- **Partida → Abrir partida o turno…** (`Ctrl+O`) abre un guardado, incluso
+  después de cerrar todos los clientes. El mapa y las reglas se recuperan del
+  archivo. La reapertura crea otra sala para poder retomar esa copia.
+- Los demás jugadores eligen la nueva sala y **Recuperar mi jugador desde un
+  guardado…**, usando su propio archivo. El reloj espera a que vuelvan todos;
+  el anfitrión puede usar **Reanudar partida guardada** para continuar antes.
+- Los autoguardados se conservan en el directorio de datos del usuario,
+  `pyteg/autosaves` (normalmente `~/.local/share/pyteg/autosaves` en Linux).
+  El diálogo de apertura comienza en ese directorio. Se conservan autoguardados
+  distintos por sala y jugador.
+
+### Jugar por archivos, sin servidor central
+
+1. Abrí **Partida → Nueva partida por archivos…** y elegí mapa y nombres
+   de 1 a 8 jugadores. El primer jugador administra la configuración de reglas,
+   objetivos y situaciones usando los mismos controles que en red.
+2. Iniciá la partida y jugá tu turno. Este modo no tiene límite de tiempo.
+3. Al finalizar, usá **Partida → Exportar turno…** y compartí el `.pyturn`
+   con el jugador al que le toca. El archivo incluye el destinatario.
+4. Ese jugador abre el archivo con `Ctrl+O`, juega y exporta la continuación.
+   Cuando vuelve a tocarte, abrí el nuevo archivo en tu copia anterior.
+
+El trabajo local se autoguarda. Exportar repetidamente produce la misma entrega;
+el cliente reconoce archivos duplicados, atrasados, dirigidos a otro jugador
+o pertenecientes a una rama distinta. Los archivos contienen estado privado:
+esta modalidad también está pensada para participantes de confianza.
+
+### Historial y repetición
+
+**Partida → Historial y repetición…** abre otro mapa de sólo lectura, con
+navegación por acción o turno y reproducción automática. No modifica la partida.
+**Exportar repetición…** genera un `.pyreplay` que se puede abrir desde el mismo
+menú. Incluye estados públicos y resultados de combate; omite credenciales,
+cartas privadas y objetivos secretos asignados.
 
 ## Ejecutar con servidor independiente
 
