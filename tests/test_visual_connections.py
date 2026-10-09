@@ -14,6 +14,7 @@ from PySide6.QtWidgets import QApplication, QGraphicsPathItem
 from pyteg.gui.mapa.overlap_check import load_pais_bounds, paises_en_punto
 from pyteg.gui.mapa.scene import QCustomGraphicsScene
 from pyteg.toml_reader import TomlReader, TomlReaderError
+from tests.qt_fixtures import dispose_object
 
 EXPECTED_CLASSIC_VISUAL_CONNECTIONS = {
     ("Alaska", "Kamchatka"),
@@ -213,6 +214,7 @@ class VisualConnectionSceneTests(unittest.TestCase):
 
     def test_escena_dibuja_linea_detras_de_los_paises(self) -> None:
         scene = QCustomGraphicsScene(SimpleNamespace(), theme="test")
+        self.addCleanup(dispose_object, scene)
 
         self.assertEqual(len(scene.visual_connections), 1)
         connection = scene.visual_connections[0]
@@ -226,6 +228,7 @@ class VisualConnectionSceneTests(unittest.TestCase):
     def test_conexiones_que_envuelven_no_cruzan_el_mapa(self) -> None:
         reader = TomlReader.from_theme("classic", strict=True)
         scene = QCustomGraphicsScene(SimpleNamespace(), theme="classic")
+        self.addCleanup(dispose_object, scene)
         routes = dict(
             zip(reader.get_conexiones_visuales(), scene.visual_connections, strict=True)
         )
@@ -263,6 +266,7 @@ class VisualConnectionSceneTests(unittest.TestCase):
     def test_rutas_empiezan_y_terminan_en_el_contorno_del_pais(self) -> None:
         reader = TomlReader.from_theme("classic", strict=True)
         scene = QCustomGraphicsScene(SimpleNamespace(), theme="classic")
+        self.addCleanup(dispose_object, scene)
 
         for config, route in zip(
             reader.get_conexiones_visuales(), scene.visual_connections, strict=True
@@ -288,6 +292,7 @@ class VisualConnectionSceneTests(unittest.TestCase):
     def test_descarta_waypoints_ocultos_dentro_del_pais_de_origen(self) -> None:
         reader = TomlReader.from_theme("classic", strict=True)
         scene = QCustomGraphicsScene(SimpleNamespace(), theme="classic")
+        self.addCleanup(dispose_object, scene)
         route_configs = reader.get_conexiones_visuales()
         index = next(
             i
@@ -316,6 +321,7 @@ class VisualConnectionSceneTests(unittest.TestCase):
             clear_status_bar=lambda: None,
         )
         scene = QCustomGraphicsScene(host, theme="classic")
+        self.addCleanup(dispose_object, scene)
         host.scene = scene
         reader = TomlReader.from_theme("classic", strict=True)
         bounds = load_pais_bounds("classic")

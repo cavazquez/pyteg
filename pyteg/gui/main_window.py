@@ -159,6 +159,10 @@ class Gui(QMainWindow, MainWindowDelegatesMixin):
         if self.host_runtime is not None:
             self.host_runtime.close()
             self.host_runtime = None
+        self.status_manager.clear_status_bar()
+        for widget in self.findChildren(QWidget):
+            if widget.isWindow():
+                widget.close()
         self.sound_manager.cleanup()
         event.accept()
 

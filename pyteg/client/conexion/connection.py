@@ -44,7 +44,7 @@ class ConnectionClient(QWidget):
             username: Nombre de usuario del cliente.
 
         """
-        super().__init__()
+        super().__init__(main_window if isinstance(main_window, QWidget) else None)
         self._host = host
         self._port = port
         self._username = username
@@ -53,7 +53,7 @@ class ConnectionClient(QWidget):
         self.event_processor = ClientEventProcessor(self.state_model)
         self.state_adapter = QtClientStateAdapter(main_window, self.state_model)
         main_window.client_state_model = self.state_model
-        self._socket = QTcpSocket()
+        self._socket = QTcpSocket(self)
         self._codec = NulDelimitedUtf8Codec()
         self._socket.readyRead.connect(self.read_data)
         self._socket.errorOccurred.connect(self.display_error)

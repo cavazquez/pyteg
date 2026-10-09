@@ -18,6 +18,7 @@ from pyteg.gui.mapa.pais import Pais
 from pyteg.gui.mapa.scene import QCustomGraphicsScene
 from pyteg.toml_reader import TomlReader
 from pyteg.utils import get_resource_path
+from tests.qt_fixtures import dispose_object
 
 if TYPE_CHECKING:
     from PySide6.QtWidgets import QApplication as QApplicationType
@@ -39,6 +40,7 @@ class MapSvgAssetsTests(unittest.TestCase):
             clear_status_bar=lambda: None,
         )
         scene = QCustomGraphicsScene(main_window, theme="classic")
+        self.addCleanup(dispose_object, scene)
         main_window.scene = scene
         return scene
 

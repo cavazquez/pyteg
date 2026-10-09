@@ -38,7 +38,10 @@ class VentanaAdmin(QWidget):
             main_window: Ventana principal de la aplicación.
 
         """
-        super().__init__()
+        super().__init__(
+            main_window if isinstance(main_window, QWidget) else None,
+            Qt.WindowType.Window,
+        )
         self.main_window = main_window
         self.setWindowTitle(_("Admin"))
         self.resize(720, 700)

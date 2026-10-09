@@ -114,8 +114,12 @@ class ReplayWindow(QDialog):
         self._timer.setInterval(750)
         self._timer.timeout.connect(self._advance)
         self.finished.connect(self._timer.stop)
+        self._fit_timer = QTimer(self)
+        self._fit_timer.setSingleShot(True)
+        self._fit_timer.timeout.connect(self._fit_map)
+        self.finished.connect(self._fit_timer.stop)
         self.seek(0)
-        QTimer.singleShot(0, self._fit_map)
+        self._fit_timer.start(0)
 
     def update_language(self, _lang_code: str | None = None) -> None:
         """Actualiza textos sin cambiar la posición de la repetición."""

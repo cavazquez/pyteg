@@ -11,6 +11,7 @@ from typing import cast
 from PySide6.QtWidgets import QApplication
 
 from pyteg.gui.mapa.scene import QCustomGraphicsScene
+from tests.qt_fixtures import dispose_object
 
 
 class CountryHoverTests(unittest.TestCase):
@@ -29,6 +30,7 @@ class CountryHoverTests(unittest.TestCase):
 
     def test_tooltip_identifica_pais_continente_y_unidades(self) -> None:
         scene = QCustomGraphicsScene(SimpleNamespace(), theme="test")
+        self.addCleanup(dispose_object, scene)
         pais = scene.obtener_pais("Rectangulo")
         self.assertIsNotNone(pais)
         if pais is None:

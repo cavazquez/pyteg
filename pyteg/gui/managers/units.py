@@ -181,4 +181,4 @@ class UnitsManager:
             original_style = widget.styleSheet()
             widget.setStyleSheet("background-color: #FFEB3B; border-radius: 4px;")
             # Restaurar estilo original después de 500ms
-            QTimer.singleShot(500, lambda: widget.setStyleSheet(original_style))
+            QTimer.singleShot(500, widget, lambda: widget.setStyleSheet(original_style))

@@ -45,6 +45,9 @@ class OfflineConnection(QObject):
         self.hosting = SimpleNamespace(paused=False)
         self.game: AsyncGame | None = None
         self._active = False
+        self._availability_timer = QTimer(self)
+        self._availability_timer.setSingleShot(True)
+        self._availability_timer.timeout.connect(self._update_availability)
         self.received.connect(self._process)
 
     def create(
@@ -104,7 +107,7 @@ class OfflineConnection(QObject):
         except (OSError, ValueError) as error:
             self.window.update_status_bar(str(error))
             return
-        QTimer.singleShot(0, self._update_availability)
+        self._availability_timer.start(0)
         if (
             result
             and result.get("accepted")
@@ -115,7 +118,7 @@ class OfflineConnection(QObject):
             )
 
     def _update_availability(self) -> None:
-        if self.game is not None:
+        if self._active and self.window.vivo() and self.game is not None:
             self.hosting.paused = (
                 self.game.handed_off or self.game.holder() != self.game.user_id
             )
@@ -142,6 +145,7 @@ class OfflineConnection(QObject):
     def desconectar(self) -> None:
         """Guarda el borrador y cierra la sesión local."""
         self._active = False
+        self._availability_timer.stop()
         if self.game is not None:
             try:
                 self.game.close()

@@ -230,7 +230,7 @@ class HostSession(QObject):
         ]
         self._show_status("Recuperando partida…")
         self._deadline.start(_PROBE_TIMEOUT_MS)
-        QTimer.singleShot(100, self._retry_primary)
+        QTimer.singleShot(100, self, self._retry_primary)
         return True
 
     def _retry_primary(self) -> None:
@@ -314,7 +314,9 @@ class HostSession(QObject):
     ) -> None:
         if self.recovering and probe is self._probe:
             QTimer.singleShot(
-                0, lambda: self._next_candidate() if probe is self._probe else None
+                0,
+                self,
+                lambda: self._next_candidate() if probe is self._probe else None,
             )
 
     def _close_probe(self) -> None:

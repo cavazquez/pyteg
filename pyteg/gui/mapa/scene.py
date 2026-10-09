@@ -5,7 +5,7 @@ from __future__ import annotations
 from operator import itemgetter
 from typing import TYPE_CHECKING, Any
 
-from PySide6.QtCore import QPoint, QPointF, Qt
+from PySide6.QtCore import QObject, QPoint, QPointF, Qt
 from PySide6.QtGui import (
     QBrush,
     QColor,
@@ -58,7 +58,10 @@ class QCustomGraphicsScene(QGraphicsScene):
             theme: Nombre del tema de mapa en themes/.
 
         """
-        super().__init__(parent)
+        owner: QObject | None = parent
+        if owner is None and isinstance(main_window, QObject):
+            owner = main_window
+        super().__init__(owner)
         self.main_window = main_window
         self.map_theme = theme
         self.paises: dict[str, Pais] = {}

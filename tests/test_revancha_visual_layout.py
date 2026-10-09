@@ -22,6 +22,7 @@ from pyteg.gui.widgets.circulo import Circulo
 from pyteg.toml_reader import TomlReader
 from pyteg.utils import get_resource_path
 from scripts.color_vision import COLOR_VISION_MODES, simulate_color, simulate_rgb
+from tests.qt_fixtures import dispose_object
 
 
 class RevanchaVisualLayoutTests(unittest.TestCase):
@@ -35,6 +36,7 @@ class RevanchaVisualLayoutTests(unittest.TestCase):
 
     def setUp(self) -> None:
         self.scene = QCustomGraphicsScene(SimpleNamespace(), theme="revancha")
+        self.addCleanup(dispose_object, self.scene)
         self.manifest = json.loads(
             get_resource_path(
                 "themes/revancha/geometry/revancha-manifest.json"

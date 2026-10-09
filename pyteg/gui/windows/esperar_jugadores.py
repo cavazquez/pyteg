@@ -32,7 +32,10 @@ class VentanaEsperarJugadores(QWidget):
             main_window: Ventana principal de la aplicación.
 
         """
-        super().__init__()
+        super().__init__(
+            main_window if isinstance(main_window, QWidget) else None,
+            Qt.WindowType.Window,
+        )
         self._main_window = main_window
         self._main_layout: QVBoxLayout | None = None
         self.radio_por_colores: dict[str, GuiRadioButtonColor] = {}

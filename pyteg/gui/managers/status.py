@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, cast
 
-from PySide6.QtCore import QTimer
+from PySide6.QtCore import QObject, QTimer
 
 from pyteg.debug_logger import debug_logger
 from pyteg.gui.status_bar.builder import update_status_bar_layout
@@ -62,7 +62,7 @@ class StatusManager:
         self._notice_text = ""
         self._notice_color: str | None = None
         self._notice_priority = 0
-        self._notice_timer = QTimer()
+        self._notice_timer = QTimer(cast("QObject", main_window))
         self._notice_timer.setSingleShot(True)
         self._notice_timer.timeout.connect(self._expire_notice)
         self._round_number: int | None = None

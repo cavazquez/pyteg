@@ -8,7 +8,7 @@ from tempfile import TemporaryDirectory
 from typing import cast
 from unittest.mock import patch
 
-from PySide6.QtWidgets import QApplication
+from PySide6.QtWidgets import QApplication, QWidget
 
 from pyteg.client.app import Client
 from pyteg.client.offline import OfflineConnection
@@ -21,6 +21,7 @@ from pyteg.persistence.archive import FileRepository, read_archive, write_archiv
 from pyteg.persistence.asynchronous import AsyncGame
 from pyteg.persistence.history import Replay
 from pyteg.protocol import map_hash_for_theme
+from tests.qt_fixtures import dispose_widget
 from tests.test_game_archives import complete_turn
 
 
@@ -44,7 +45,7 @@ class GuiGameFilesTests(unittest.TestCase):
             return_value=str(self.directory),
         ):
             self.window = Gui(Client())
-        self.addCleanup(self.window.close)
+        self.addCleanup(dispose_widget, self.window)
         self.repository = FileRepository(self.directory / "async.pyteg")
 
     def _offline(self) -> OfflineConnection:
@@ -87,11 +88,31 @@ class GuiGameFilesTests(unittest.TestCase):
             self.window.files_manager.create_async()
         self.app.processEvents()
         self.assertEqual(self.window.map_theme, "revancha")
+        self.assertIsNotNone(self.window.scene)
+        if self.window.scene is not None:
+            self.assertIs(self.window.scene.parent(), self.window)
+        self.assertIsInstance(self.window.w, QWidget)
+        if isinstance(self.window.w, QWidget):
+            self.assertIs(self.window.w.parent(), self.window)
         connection = self.window.conexion
         self.assertIsInstance(connection, OfflineConnection)
         if isinstance(connection, OfflineConnection) and connection.game:
             self.assertEqual(len(connection.game.server.dame_clientes()), 1)
         dialog.close()
+
+    def test_closing_cancels_pending_offline_and_notice_timers(self) -> None:
+        """Cerrar una partida no deja callbacks que actualicen la ventana."""
+        connection = self._offline()
+        connection.send_data('{"mensaje": "solicitar_snapshot"}')
+        self.window.update_status_bar("Aviso pendiente")
+        self.assertTrue(connection._availability_timer.isActive())  # noqa: SLF001
+        notice = self.window.status_manager._notice_timer  # noqa: SLF001
+        self.assertIs(notice.parent(), self.window)
+        self.assertTrue(notice.isActive())
+        self.window.close()
+        self.assertFalse(connection._availability_timer.isActive())  # noqa: SLF001
+        self.assertFalse(notice.isActive())
+        self.app.processEvents()
 
     def test_save_and_open_draft_restores_country_state(self) -> None:
         """El menú guarda y vuelve a abrir sin crear un socket."""
@@ -145,6 +166,8 @@ class GuiGameFilesTests(unittest.TestCase):
         history = game.server.serialized(game.server.history.export)
         replay = Replay(history)
         dialog = ReplayWindow(replay, self.window)
+        self.assertIs(dialog.scene.parent(), dialog)
+        dialog.show()
         dialog.seek(replay.count - 1)
         self.assertEqual(dialog.slider.value(), replay.count - 1)
         country = next(iter(dialog.scene.paises))
@@ -158,6 +181,8 @@ class GuiGameFilesTests(unittest.TestCase):
         self.assertEqual(game.server.public_snapshot(), before)
         self.assertIsNot(dialog.scene, self.window.scene)
         dialog.close()
+        self.assertFalse(dialog._fit_timer.isActive())  # noqa: SLF001
+        self.assertFalse(dialog._timer.isActive())  # noqa: SLF001
 
     def test_selecting_discovered_room_loads_address_and_map(self) -> None:
         """Elegir una sala evita escribir su IP, puerto o mapa."""

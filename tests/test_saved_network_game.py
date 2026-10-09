@@ -21,6 +21,7 @@ from scripts.smoke_qt_multiclient import (
     _free_port,  # noqa: PLC2701 -- helpers Qt compartidos.
     _wait_for,  # noqa: PLC2701 -- helpers Qt compartidos.
 )
+from tests.qt_fixtures import dispose_widget
 
 if TYPE_CHECKING:
     from pyteg.client.state_model import ClientStateModel
@@ -54,7 +55,7 @@ class SavedNetworkGameTests(unittest.TestCase):
             window = Gui(Client())
         window.hide()
         window.sound_manager.set_enabled(enabled=False)
-        self.addCleanup(window.close)
+        self.addCleanup(dispose_widget, window)
         return window
 
     def _connect(

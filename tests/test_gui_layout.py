@@ -20,6 +20,7 @@ from pyteg.gui.managers.layout import LayoutManager
 from pyteg.gui.toolbar.toolbar import ToolBar
 from pyteg.gui.toolbar.window_mixin import ToolBarWindowMixin
 from pyteg.gui.widgets.view import QCustomGraphicsView
+from tests.qt_fixtures import dispose_object, dispose_widget
 
 if TYPE_CHECKING:
     from pyteg.gui.managers.protocols import MainWindowProtocol
@@ -113,6 +114,7 @@ class GuiLayoutTests(unittest.TestCase):
         from PySide6.QtWidgets import QGraphicsScene
 
         scene = QGraphicsScene()
+        self.addCleanup(dispose_object, scene)
         scene.setSceneRect(0, 0, 1000, 600)
         view = QCustomGraphicsView(scene, MagicMock())
         view.resize(700, 400)
@@ -131,6 +133,7 @@ class GuiLayoutTests(unittest.TestCase):
         from PySide6.QtWidgets import QGraphicsScene
 
         scene = QGraphicsScene()
+        self.addCleanup(dispose_object, scene)
         scene.setSceneRect(0, 0, 1000, 600)
         view = QCustomGraphicsView(scene, MagicMock())
         view.resize(300, 200)
@@ -185,7 +188,7 @@ class GuiLayoutTests(unittest.TestCase):
                 self.assertGreaterEqual(window.right_column_scroll.width(), 220)
                 self.assertGreater(view.width(), window.right_column_scroll.width())
         finally:
-            window.close()
+            dispose_widget(window)
 
     def test_estado_global_y_contexto_de_turno_se_muestran_por_separado(self) -> None:
         window = Gui(Client())
@@ -201,7 +204,7 @@ class GuiLayoutTests(unittest.TestCase):
             self.assertIn("4", window.contexto_partida_label.text())
             self.assertTrue(window.contexto_partida_label.isVisible())
         finally:
-            window.close()
+            dispose_widget(window)
 
 
 if __name__ == "__main__":

@@ -5,7 +5,7 @@ from __future__ import annotations
 import unittest
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, cast
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 from pyteg.config import DEFAULT_MAP_THEME
 from pyteg.gui.managers.units import UnitsManager
@@ -38,6 +38,9 @@ class TestUnitsManager(unittest.TestCase):
             last_units={},
         )
         self.manager = UnitsManager(cast("MainWindowProtocol", self.main_window))
+        timer = patch("pyteg.gui.managers.units.QTimer.singleShot")
+        timer.start()
+        self.addCleanup(timer.stop)
 
     def test_update_infanteria_guarda_cantidad(self) -> None:
         """Las unidades generales actualizan etiqueta y `last_units`."""

@@ -15,6 +15,7 @@ from pyteg.client.state_model import ClientStateModel
 from pyteg.gui import Gui
 from pyteg.gui.widgets.situation import SituationBanner
 from pyteg.i18n import get_current_language, set_language
+from tests.qt_fixtures import dispose_widget
 
 if TYPE_CHECKING:
     from pyteg.gui.managers.protocols import MainWindowProtocol
@@ -143,7 +144,7 @@ class SituationBannerTests(unittest.TestCase):
     def test_active_card_wraps_and_leaves_map_space_in_small_windows(self) -> None:
         """La carta se puede leer y el mapa sigue accesible en tamaños pequeños."""
         window = Gui(Client())
-        self.addCleanup(window.close)
+        self.addCleanup(dispose_widget, window)
         banner = window.situation_banner
         if banner is None:
             self.fail("No se construyó la franja de situación")
