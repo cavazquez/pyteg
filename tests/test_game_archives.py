@@ -99,6 +99,19 @@ class ArchiveTests(unittest.TestCase):
             self.assertEqual(read_archive(path), original)
             self.assertEqual(list(Path(directory).iterdir()), [path])
 
+    def test_windows_flushes_file_without_opening_directory(self) -> None:
+        """El guardado Windows sincroniza el archivo y evita flags POSIX."""
+        with TemporaryDirectory() as directory:
+            path = Path(directory) / "partida.pyteg"
+            document = make_archive("game", {"dato": 1})
+            with (
+                patch("pyteg.persistence.archive.sys.platform", "win32"),
+                patch("pyteg.persistence.archive.os.fsync") as flush,
+            ):
+                write_archive(path, document)
+            flush.assert_called_once()
+            self.assertEqual(read_archive(path), document)
+
     def test_size_and_json_limits(self) -> None:
         """Las copias grandes, profundas o no JSON se rechazan."""
         with TemporaryDirectory() as directory:

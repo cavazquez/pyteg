@@ -4,6 +4,15 @@ Todas las fechas en formato YYYY-MM-DD.
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-10-09
+
+### Fixed
+- **Guardado portable en Windows**: la sincronización del directorio sólo se
+  realiza en plataformas que ofrecen los flags POSIX; el archivo sigue
+  sincronizándose antes del reemplazo atómico en las tres plataformas.
+- **Validación de distribución**: CI comprueba los tipos de Linux, Windows
+  y macOS antes de construir los paquetes.
+
 ## [0.2.0] - 2026-10-09
 
 ### Added

@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import sys
 import tempfile
 import uuid
 from copy import deepcopy
@@ -147,7 +148,7 @@ def write_archive(path: str | Path, archive: dict[str, Any]) -> None:
             stream.flush()
             os.fsync(stream.fileno())
         Path(temporary).replace(target)
-        if os.name == "posix":
+        if sys.platform != "win32":
             directory = os.open(target.parent, os.O_RDONLY | os.O_DIRECTORY)
             try:
                 os.fsync(directory)
