@@ -132,7 +132,12 @@ class RoomCatalog:
 class DiscoveryService:
     """Listener común con cierre explícito y multicast limitado a la LAN."""
 
-    def __init__(self, *, port: int = DISCOVERY_PORT) -> None:
+    def __init__(
+        self,
+        *,
+        port: int = DISCOVERY_PORT,
+        interface: str = "0.0.0.0",  # noqa: S104
+    ) -> None:
         """Reserva el puerto compartido de anuncios y consultas.
 
         Raises:
@@ -151,8 +156,15 @@ class DiscoveryService:
                 self._socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
             self._socket.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
             self._socket.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 1)
+            self._socket.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_LOOP, 1)
+            if interface != "0.0.0.0":  # noqa: S104
+                self._socket.setsockopt(
+                    socket.IPPROTO_IP,
+                    socket.IP_MULTICAST_IF,
+                    socket.inet_aton(interface),
+                )
             self._socket.bind(("", port))
-            membership = socket.inet_aton(DISCOVERY_GROUP) + socket.inet_aton("0.0.0.0")  # noqa: S104
+            membership = socket.inet_aton(DISCOVERY_GROUP) + socket.inet_aton(interface)
             self._socket.setsockopt(
                 socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, membership
             )
@@ -218,10 +230,14 @@ class RoomAnnouncer(DiscoveryService):
     """Anuncia la sala activa y contesta búsquedas explícitas."""
 
     def __init__(
-        self, describe: Callable[[], dict[str, Any]], *, port: int = DISCOVERY_PORT
+        self,
+        describe: Callable[[], dict[str, Any]],
+        *,
+        port: int = DISCOVERY_PORT,
+        interface: str = "0.0.0.0",  # noqa: S104
     ) -> None:
         """Asocia el anuncio con datos públicos del anfitrión."""
-        super().__init__(port=port)
+        super().__init__(port=port, interface=interface)
         self._describe = describe
 
     def tick(self) -> None:
@@ -247,9 +263,14 @@ class RoomAnnouncer(DiscoveryService):
 class RoomBrowser(DiscoveryService):
     """Busca salas sin bloquear el hilo gráfico."""
 
-    def __init__(self, *, port: int = DISCOVERY_PORT) -> None:
+    def __init__(
+        self,
+        *,
+        port: int = DISCOVERY_PORT,
+        interface: str = "0.0.0.0",  # noqa: S104
+    ) -> None:
         """Crea un catálogo vacío y una escucha UDP."""
-        super().__init__(port=port)
+        super().__init__(port=port, interface=interface)
         self.catalog = RoomCatalog()
 
     def tick(self) -> None:

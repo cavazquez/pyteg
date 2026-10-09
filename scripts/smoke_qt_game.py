@@ -88,6 +88,7 @@ def _connect_window(
 
     """
     window = Gui(client, map_theme=theme)
+    window.sound_manager.set_enabled(False)
     window.hide()
     dialog = VentanaConectar(window)
     window.ventana_conectar = dialog

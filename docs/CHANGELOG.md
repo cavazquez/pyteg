@@ -4,6 +4,19 @@ Todas las fechas en formato YYYY-MM-DD.
 
 ## [Unreleased]
 
+## [0.2.3] - 2026-10-09
+
+### Fixed
+- **Consolas Windows**: compilar traducciones funciona también con CP1252.
+- **Versión en ejecutables**: Nuitka incluye `pyproject.toml`, evitando inferir
+  paquetes Python desde los directorios de recursos de la distribución.
+- **Multicast reproducible**: el servicio permite elegir una interfaz; las
+  pruebas UDP usan loopback y no dependen de la red virtual del runner.
+- **Detección del anfitrión**: la consulta de estado admite respuestas de hasta
+  un segundo; una respuesta demorada no promueve otro servidor por error.
+- **Recorridos Qt en CI**: las pruebas gráficas no abren dispositivos de audio
+  en runners sin escritorio, evitando esperas al reproducir una batalla.
+
 ## [0.2.2] - 2026-10-09
 
 ### Fixed

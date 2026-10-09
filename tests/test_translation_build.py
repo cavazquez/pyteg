@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import gettext
+import io
 import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -39,10 +40,12 @@ class TranslationBuildTests(unittest.TestCase):
         po.save(str(self.catalog))
 
     def test_compile_command_uses_polib_and_preserves_plural_translations(self) -> None:
-        """El comando CLI funciona aun cuando gettext-tools no esté instalado."""
+        """El comando funciona sin msgfmt y con la codificación de consola Windows."""
         with (
+            io.TextIOWrapper(io.BytesIO(), encoding="cp1252") as console,
             patch.object(manage_translations, "LOCALES_DIR", self.locales),
             patch("scripts.manage_translations.sys.argv", ["translations", "compile"]),
+            patch("scripts.manage_translations.sys.stdout", console),
             patch("scripts.manage_translations.subprocess.run") as external,
         ):
             manage_translations.main()

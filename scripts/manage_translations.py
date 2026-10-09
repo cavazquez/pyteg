@@ -41,7 +41,7 @@ def compile_translations() -> None:
         if po_file.exists():
             po = polib.pofile(str(po_file))
             po.save_as_mofile(str(mo_file))
-            print(f"✓ Compilado: {po_file} -> {mo_file}")
+            print(f"Compilado: {po_file} -> {mo_file}")
 
 
 def compile_translations_manual() -> None:
@@ -65,7 +65,7 @@ def compile_translations_manual() -> None:
             # Usar msgfmt para compilar archivos .po
             cmd = ["msgfmt", str(po_file), "-o", str(mo_file)]
             subprocess.run(cmd, check=True, timeout=30)  # noqa: S603
-            print(f"✓ Compilado con msgfmt: {po_file} -> {mo_file}")
+            print(f"Compilado con msgfmt: {po_file} -> {mo_file}")
         except (subprocess.CalledProcessError, FileNotFoundError) as error:
             msg = f"No se pudo compilar {po_file}; instala 'polib' o 'gettext'"
             raise RuntimeError(msg) from error

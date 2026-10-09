@@ -89,9 +89,11 @@ class RoomCatalogTests(unittest.TestCase):
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as reservation:
             reservation.bind(("", 0))
             port = int(reservation.getsockname()[1])
-        browser = RoomBrowser(port=port)
+        browser = RoomBrowser(port=port, interface="127.0.0.1")
         self.addCleanup(browser.close)
-        announcer = RoomAnnouncer(lambda: dict(self.data), port=port)
+        announcer = RoomAnnouncer(
+            lambda: dict(self.data), port=port, interface="127.0.0.1"
+        )
         self.addCleanup(announcer.close)
         browser.start()
         announcer.start()

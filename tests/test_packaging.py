@@ -59,7 +59,7 @@ class PackagingResourceTests(unittest.TestCase):
             )
         self.assertIn("--windows-console-mode=disable", command)
         self.assertNotIn("--disable-console", command)
-        self.assertIn("--include-distribution-metadata=pyteg", command)
+        self.assertIn("--include-data-files=pyproject.toml=pyproject.toml", command)
 
     def test_nuitka_does_not_add_windows_console_options_on_linux(self) -> None:
         """Linux y macOS mantienen su comportamiento de consola predeterminado."""

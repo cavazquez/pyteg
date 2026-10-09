@@ -43,6 +43,7 @@ _TIMEOUT = 25.0
 
 def _window(theme: str, port: int, name: str, *, hosting: bool) -> Gui:
     window = Gui(Client(), map_theme=theme)
+    window.sound_manager.set_enabled(False)
     window.hide()
     window.sound_manager.set_enabled(enabled=False)
     dialog = VentanaConectar(window)

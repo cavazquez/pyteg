@@ -88,6 +88,7 @@ def _wait_for(
 
 def _connect_window(client: Client, port: int, theme: str, username: str) -> Gui:
     window = Gui(client, map_theme=theme)
+    window.sound_manager.set_enabled(False)
     window.hide()
     dialog = VentanaConectar(window)
     window.ventana_conectar = dialog

@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import json
 import random
+import threading
 import unittest
 from copy import deepcopy
 from typing import Any, cast
@@ -330,7 +331,14 @@ class HostRuntimeTests(_HostFixture):
         runtime.store_checkpoint(envelope, user_id=2)
         other.store_checkpoint(envelope, user_id=3)
         other.primary_connection(("127.0.0.1", 65432))
-        response = runtime.recover(request)
+        original_status = other.status
+
+        def delayed_status(data: dict[str, Any]) -> dict[str, Any]:
+            threading.Event().wait(0.3)
+            return original_status(data)
+
+        with patch.object(other, "status", side_effect=delayed_status):
+            response = runtime.recover(request)
         self.assertEqual(response["mensaje"], "host_alive")
         self.assertEqual(response["port"], 65432)
         self.assertIsNone(runtime.server)

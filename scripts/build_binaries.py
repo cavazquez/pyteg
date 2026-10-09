@@ -50,7 +50,7 @@ def _nuitka_command(
         f"--output-dir={output_dir}",
         "--assume-yes-for-downloads",
         "--enable-plugin=pyside6",
-        "--include-distribution-metadata=pyteg",
+        "--include-data-files=pyproject.toml=pyproject.toml",
     ]
     if disable_console and os.name == "nt":
         command.append("--windows-console-mode=disable")
