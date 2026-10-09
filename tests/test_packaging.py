@@ -6,7 +6,7 @@ import unittest
 from argparse import Namespace
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 from zipfile import ZipFile
 
 from scripts import smoke_binaries, smoke_wheel
@@ -86,10 +86,41 @@ class PackagingResourceTests(unittest.TestCase):
                 patch("scripts.smoke_binaries._run_client") as launch,
             ):
                 self.assertEqual(smoke_binaries.main(), 0)
-            self.assertEqual(
-                [call.args[1] for call in launch.call_args_list],
-                ["classic", "revancha"],
-            )
+        self.assertEqual(
+            [call.args[1] for call in launch.call_args_list],
+            ["classic", "revancha"],
+        )
+
+    def test_binary_smoke_closes_windows_children_before_waiting(self) -> None:
+        """El launcher onefile no deja al cliente bloqueando el log temporal."""
+        process = MagicMock()
+        process.pid = 12345
+        process.poll.return_value = None
+        with (
+            patch("scripts.smoke_binaries.os.name", "nt"),
+            patch("scripts.smoke_binaries.subprocess.run") as kill_tree,
+        ):
+            smoke_binaries._stop(process)  # noqa: SLF001 -- prueba del cierre.
+        self.assertEqual(
+            kill_tree.call_args.args[0],
+            ["taskkill", "/PID", "12345", "/T", "/F"],
+        )
+        process.wait.assert_called_once_with(timeout=5)
+        process.stdout.close.assert_called_once_with()
+
+    def test_binary_smoke_closes_posix_process_group(self) -> None:
+        """Linux y macOS tampoco dejan procesos hijos después del smoke."""
+        process = MagicMock()
+        process.pid = 12345
+        with (
+            patch("scripts.smoke_binaries.os.name", "posix"),
+            patch("scripts.smoke_binaries.os.killpg", create=True) as kill_group,
+            patch("scripts.smoke_binaries.signal.SIGKILL", 9, create=True),
+        ):
+            smoke_binaries._stop(process)  # noqa: SLF001 -- prueba del cierre.
+        kill_group.assert_called_once_with(12345, 9)
+        process.wait.assert_called_once_with(timeout=5)
+        process.stdout.close.assert_called_once_with()
 
     def test_wheel_smoke_opens_client_with_each_map(self) -> None:
         """El wheel prueba ambos mapas también en el cliente Qt."""

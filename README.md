@@ -230,7 +230,7 @@ uv sync --group dev
 Compilar binarios (modo onefile + standalone) para servidor y cliente:
 ```bash
 # ⚙️ Nuitka; las entradas y los recursos se validan antes de compilar
-uv run python scripts/build_binaries.py --version 0.2.3
+uv run python scripts/build_binaries.py --version 0.2.4
 ```
 
 Los ejecutables quedarán en `dist/`.
@@ -384,7 +384,7 @@ Los binarios compilados para múltiples plataformas están disponibles en la [p�
 
 Los binarios son standalone (no requieren Python instalado) e incluyen todos los assets necesarios.
 Los nombres usan la versión sin el prefijo `v` del tag, por ejemplo
-`pyteg-0.2.3-linux-x86_64.tar.gz` para `v0.2.3`.
+`pyteg-0.2.4-linux-x86_64.tar.gz` para `v0.2.4`.
 
 ### Crear un nuevo release
 Para crear un nuevo release con binarios compilados:
@@ -401,10 +401,10 @@ Para crear un nuevo release con binarios compilados:
    ```bash
    git add pyproject.toml uv.lock docs/CHANGELOG.md
    uv lock
-   git commit -m "release: 0.2.3"
-   git tag v0.2.3
+   git commit -m "release: 0.2.4"
+   git tag v0.2.4
    git push origin master
-   git push origin v0.2.3
+   git push origin v0.2.4
    ```
 
 4. **🔄 GitHub Actions automáticamente**:

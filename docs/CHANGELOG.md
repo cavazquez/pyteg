@@ -4,6 +4,14 @@ Todas las fechas en formato YYYY-MM-DD.
 
 ## [Unreleased]
 
+## [0.2.4] - 2026-10-09
+
+### Fixed
+- **Cierre de pruebas standalone**: Windows termina el launcher Nuitka y sus
+  hijos antes de limpiar los archivos temporales; Linux y macOS cierran el
+  grupo de procesos de cada prueba. Se verifica la versión incluida sin
+  sobrescribirla desde el entorno.
+
 ## [0.2.3] - 2026-10-09
 
 ### Fixed

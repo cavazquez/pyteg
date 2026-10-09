@@ -4,12 +4,35 @@ from __future__ import annotations
 
 import argparse
 import os
+import signal
 import subprocess  # noqa: S404 -- sólo ejecuta los binarios recién construidos
 import tempfile
 import time
+from contextlib import suppress
 from pathlib import Path
 
-_STARTUP_SECONDS = 1.5
+_STARTUP_SECONDS = 3.0
+
+
+def _stop(process: subprocess.Popen[str]) -> None:
+    """Cierra el launcher Nuitka y su proceso hijo antes de borrar los logs."""
+    if os.name == "nt":
+        if process.poll() is None:
+            subprocess.run(  # noqa: S603 -- PID del proceso creado por la prueba.
+                ["taskkill", "/PID", str(process.pid), "/T", "/F"],  # noqa: S607
+                check=False,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.STDOUT,
+                timeout=10,
+            )
+    elif hasattr(os, "killpg") and hasattr(signal, "SIGKILL"):
+        with suppress(ProcessLookupError):
+            os.killpg(process.pid, signal.SIGKILL)
+    try:
+        process.wait(timeout=5)
+    finally:
+        if process.stdout is not None:
+            process.stdout.close()
 
 
 def parse_args() -> argparse.Namespace:
@@ -42,6 +65,7 @@ def _run_server(server: Path, theme: str, cwd: Path, env: dict[str, str]) -> Non
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         text=True,
+        start_new_session=os.name != "nt",
     )
     try:
         time.sleep(_STARTUP_SECONDS)
@@ -50,12 +74,7 @@ def _run_server(server: Path, theme: str, cwd: Path, env: dict[str, str]) -> Non
             message = f"El servidor Nuitka terminó al cargar {theme}: {output}"
             raise RuntimeError(message)
     finally:
-        process.terminate()
-        try:
-            process.wait(timeout=5)
-        except subprocess.TimeoutExpired:
-            process.kill()
-            process.wait(timeout=5)
+        _stop(process)
 
 
 def _run_client(client: Path, theme: str, cwd: Path, env: dict[str, str]) -> None:
@@ -66,6 +85,7 @@ def _run_client(client: Path, theme: str, cwd: Path, env: dict[str, str]) -> Non
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         text=True,
+        start_new_session=os.name != "nt",
     )
     try:
         time.sleep(_STARTUP_SECONDS)
@@ -74,12 +94,7 @@ def _run_client(client: Path, theme: str, cwd: Path, env: dict[str, str]) -> Non
             message = f"El cliente Nuitka terminó al cargar {theme}: {output}"
             raise RuntimeError(message)
     finally:
-        process.terminate()
-        try:
-            process.wait(timeout=5)
-        except subprocess.TimeoutExpired:
-            process.kill()
-            process.wait(timeout=5)
+        _stop(process)
 
 
 def main() -> int:
@@ -98,7 +113,7 @@ def main() -> int:
     clean_env = os.environ.copy()
     clean_env.pop("PYTHONHOME", None)
     clean_env.pop("PYTHONPATH", None)
-    clean_env["PYTEG_VERSION"] = "smoke"
+    clean_env.pop("PYTEG_VERSION", None)
     clean_env["QT_QPA_PLATFORM"] = "offscreen"
     server = args.server.resolve()
     client = args.client.resolve()
