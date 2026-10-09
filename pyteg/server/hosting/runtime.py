@@ -588,6 +588,14 @@ class HostRuntime:
         """
         with self._lock:
             envelope = self._authenticate(request)
+            server = self._server
+            replication = server.host_replication if server is not None else None
+            if (
+                server is not None
+                and replication is not None
+                and replication.epoch < self._election.term
+            ):
+                self._retire_authority(server)
             if (
                 self._server is None
                 and self._primary is not None

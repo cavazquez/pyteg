@@ -29,7 +29,7 @@ from pyteg.i18n import translate as _
 from pyteg.sound_manager import SoundManager
 
 if TYPE_CHECKING:
-    from PySide6.QtGui import QCloseEvent, QResizeEvent
+    from PySide6.QtGui import QCloseEvent, QDragEnterEvent, QDropEvent, QResizeEvent
     from PySide6.QtWidgets import (
         QFrame,
         QHBoxLayout,
@@ -118,7 +118,36 @@ class Gui(QMainWindow, MainWindowDelegatesMixin):
         )
         self.status_bar.addPermanentWidget(self.network_status_label)
         self.files_manager = GameFilesManager(self)
+        if self.toolbar is not None:
+            self.toolbar.actualizar_estado_conexion(conectado=False)
+        self.setAcceptDrops(True)
         self.show()
+
+    def dragEnterEvent(self, event: QDragEnterEvent) -> None:  # noqa: N802
+        """Acepta un único archivo local de partida, turno o repetición."""
+        urls = event.mimeData().urls()
+        if (
+            len(urls) == 1
+            and urls[0].isLocalFile()
+            and urls[0]
+            .toLocalFile()
+            .lower()
+            .endswith((".pyteg", ".pyturn", ".pyreplay"))
+        ):
+            event.acceptProposedAction()
+
+    def dropEvent(self, event: QDropEvent) -> None:  # noqa: N802
+        """Abre el archivo soltado con las mismas comprobaciones que el menú."""
+        urls = event.mimeData().urls()
+        if len(urls) != 1 or not urls[0].isLocalFile():
+            return
+        try:
+            if self.files_manager.open_path(urls[0].toLocalFile(), preview=True):
+                event.acceptProposedAction()
+                if self.files_manager.start_dialog is not None:
+                    self.files_manager.start_dialog.close()
+        except (OSError, ValueError, KeyError, TypeError) as error:
+            self.update_status_bar(str(error))
 
     def _gui_init_core_state(self, client: Client, map_theme: str) -> None:
         self._vivo = True

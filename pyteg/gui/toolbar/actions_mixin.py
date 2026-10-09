@@ -246,10 +246,19 @@ class ToolBarActionsMixin:
             accion.setToolTip(_("Desconectar del servidor"))
             accion.setStatusTip(_("Salir de la conexión actual"))
         else:
-            accion.setText(_("Conectar"))
+            start = getattr(self.main_window, "files_manager", None) is not None
+            accion.setText(_("Jugar") if start else _("Conectar"))
             accion.setIcon(cargar_icono_toolbar("icons/conectar.png", "conectar"))
-            accion.setToolTip(_("Conectar al servidor"))
-            accion.setStatusTip(_("Abrir ventana de conexión"))
+            accion.setToolTip(
+                _("Nueva partida o abrir un archivo")
+                if start
+                else _("Conectar al servidor")
+            )
+            accion.setStatusTip(
+                _("Elegir partida local, LAN o por archivos")
+                if start
+                else _("Abrir ventana de conexión")
+            )
 
     def _actualizar_ayuda_tarjetas(self) -> None:
         """Explica por qué Tarjetas no está disponible sin conexión."""

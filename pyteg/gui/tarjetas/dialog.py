@@ -174,8 +174,13 @@ class TarjetasDialog(TarjetasExchangeMixin, TarjetasSelectionMixin, QDialog):
         """Actualiza las tarjetas mostradas en el diálogo."""
         self.tarjetas = nuevas_tarjetas[:4]
 
-        self.tarjetas_widget.setParent(None)
+        previous = self.tarjetas_widget
+        previous.setParent(None)
+        previous.deleteLater()
+        self.tarjetas_seleccionadas.clear()
         self.tarjetas_widget = self._create_tarjetas_area()
+        self._actualizar_info_seleccion()
+        self._actualizar_estado_botones()
 
         layout = self.layout()
         if layout is None:

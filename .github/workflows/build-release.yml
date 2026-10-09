@@ -25,11 +25,11 @@ jobs:
             platform: windows
             arch: x86_64
             executable_suffix: ".exe"
-          - os: macos-latest
+          - os: macos-15-intel
             platform: macos
             arch: x86_64
             executable_suffix: ""
-          - os: macos-14  # Apple Silicon
+          - os: macos-15  # Apple Silicon
             platform: macos
             arch: arm64
             executable_suffix: ""
@@ -94,6 +94,8 @@ jobs:
         run: |
           # Extract version from tag (remove 'v' prefix)
           VERSION="${GITHUB_REF_NAME#v}"
+          uv run python -c 'import platform, sys; assert platform.machine().lower() in ({"x86_64", "amd64"} if sys.argv[1] == "x86_64" else {"arm64", "aarch64"})' '${{ matrix.arch }}'
+          uv run python -c 'import sys; from pyteg.version import VERSION; assert VERSION == sys.argv[1]' "$VERSION"
           uv run python scripts/build_binaries.py \
             --version "$VERSION" \
             --output-dir dist
@@ -166,7 +168,18 @@ jobs:
           cat > release-notes.md <<EOF
           ## PyTeg ${GITHUB_REF_NAME}
 
-          Binarios compilados para múltiples plataformas del juego PyTeg.
+          Juego de estrategia con mapas Clásico y Revancha y reglas configurables.
+
+          ### Novedades
+          - Partidas locales de un humano contra hasta siete bots básicos.
+          - Inicio común: Local, LAN o turnos por archivos, con partidas recientes.
+          - Guardado automático y manual; descubrimiento de salas y migración del anfitrión.
+          - Archivos de turno con vista previa, arrastrar para abrir y acceso a la carpeta exportada.
+          - Historial público y repeticiones navegables.
+
+          Para jugar localmente, abrí el cliente y elegí **Local**; no hace falta
+          ejecutar el servidor por separado. Los modos LAN y por archivos están
+          pensados para jugadores de confianza.
 
           ### Descargas disponibles
           - **Linux x86_64**: \`pyteg-${VERSION}-linux-x86_64.tar.gz\`
@@ -183,7 +196,7 @@ jobs:
           3. Ejecuta \`pyteg-server-${VERSION}\` para iniciar el servidor o
              \`pyteg-client-${VERSION}\` para iniciar el cliente.
 
-          Para más información, consulta el [README](https://github.com/cavazquez/pyteg/blob/main/README.md).
+          Para más información, consulta el [README](https://github.com/cavazquez/pyteg/blob/master/README.md).
           EOF
 
       - name: Create Release

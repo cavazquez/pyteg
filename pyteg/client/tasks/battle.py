@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from PySide6.QtCore import QTimer
+from PySide6.QtCore import QObject, QTimer
 
 from pyteg.client.tasks.base import IClientTask
 from pyteg.client.tasks.logging_helper import CLIENT_TASKS_LOG
@@ -118,9 +118,16 @@ class ClientTaskResultadoBatalla(IClientTask[ResultadoBatallaTaskData]):
             main_window.update_status_bar(mensaje, "blue")
 
             # 3. Programar mostrar pérdidas flotantes después de 2.5 segundos
-            QTimer.singleShot(
-                2500, lambda: self._mostrar_perdidas_flotantes(main_window)
-            )
+            if isinstance(main_window, QObject):
+                QTimer.singleShot(
+                    2500,
+                    main_window,
+                    lambda: self._mostrar_perdidas_flotantes(main_window),
+                )
+            else:
+                QTimer.singleShot(
+                    2500, lambda: self._mostrar_perdidas_flotantes(main_window)
+                )
 
         except (AttributeError, RuntimeError) as e:
             CLIENT_TASKS_LOG.warning("Error mostrando efectos de batalla: %s", e)

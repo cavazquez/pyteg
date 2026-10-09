@@ -66,6 +66,31 @@ class TestServerCommandValidation(unittest.TestCase):
 
         self.assertEqual(validate_server_command(payload), payload)
 
+    def test_accepts_card_exchanges_of_one_to_three_cards(self) -> None:
+        """El motor decide las equivalencias especiales y la propiedad de las cartas."""
+        for count in range(1, 4):
+            payload = {
+                "mensaje": "canjear_tarjetas",
+                "tarjetas": [
+                    {"pais": str(index), "simbolo": "Avion"} for index in range(count)
+                ],
+            }
+            with self.subTest(count=count):
+                self.assertEqual(validate_server_command(payload), payload)
+
+    def test_rejects_empty_or_oversized_exchanges_and_private_fields(self) -> None:
+        """La selección no permite cartas vacías, cantidades excesivas ni metadata."""
+        for cards in (
+            [],
+            [{"pais": "a", "simbolo": "Avion"}] * 4,
+            [{"pais": "a", "simbolo": "Avion", "tipo": "pais"}],
+        ):
+            with self.subTest(cards=cards), self.assertRaises(MessageValidationError):
+                validate_server_command({
+                    "mensaje": "canjear_tarjetas",
+                    "tarjetas": cards,
+                })
+
     def test_rejects_every_invalid_move_amount(self) -> None:
         """El contrato TCP exige un entero positivo y no acepta bool como int."""
         invalid_amounts: tuple[object, ...] = (0, -1, True, 1.5, "1", None)

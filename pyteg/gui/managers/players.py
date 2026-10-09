@@ -50,6 +50,7 @@ class PlayersManager:
         self.player_labels: list[tuple[QLabel, QLabel, QFrame]] = []
         self.status_labels: dict[str, QLabel] = {}
         self.current_player_name: str | None = None
+        self._player_signature: tuple[tuple[str, str], ...] = ()
 
     def update_player_list(self, players: Sequence[tuple[str, QColor]]) -> None:
         """Actualiza la lista de jugadores en la columna derecha.
@@ -60,6 +61,10 @@ class PlayersManager:
             players: Lista de tuplas (nombre, color) donde color es un QColor.
 
         """
+        signature = tuple((name, color.name()) for name, color in players)
+        if signature == self._player_signature:
+            return
+        self._player_signature = signature
         # Limpiar widgets existentes
         self._clear_player_widgets()
 

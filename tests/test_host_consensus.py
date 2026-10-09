@@ -406,3 +406,39 @@ class RuntimeVoteTests(unittest.TestCase):
                 replication = runtime.server.host_replication
                 if replication is not None:
                     self.assertFalse(runtime.server.serialized(replication.publish))
+
+    def test_recovery_retires_stale_host_before_maintenance_tick(self) -> None:
+        """Un voto nuevo invalida al anfitrión aunque aún no haya publicado."""
+        with patch.object(HostRuntime, "_maintain"):
+            runtimes = self._cluster()
+        runtime = runtimes[2]
+        envelope = runtime.latest_checkpoint()
+        self.assertIsNotNone(envelope)
+        if envelope is None:
+            return
+        with patch.object(HostRuntime, "_announce"):
+            runtime._promote(envelope, term=1, votes=[2, 3, 4])
+        previous = runtime.server
+        self.assertIsNotNone(previous)
+        self.assertTrue(
+            runtime._grant_vote({
+                **self._request(),
+                "candidate": 3,
+                "term": 2,
+                "sequence": 1,
+            })["accepted"]
+        )
+        successor = {
+            "mensaje": "host_ready",
+            "session_id": "durable-room",
+            "epoch": 2,
+            "owner_id": 3,
+            "port": 12345,
+            "host": "127.0.0.1",
+        }
+        with patch.object(runtime, "_find_live_authority", return_value=successor):
+            result = runtime.recover(self._request())
+        self.assertEqual(result, successor)
+        self.assertIsNone(runtime.server)
+        if previous is not None:
+            self.assertIsNone(previous.host_replication)

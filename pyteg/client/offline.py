@@ -16,6 +16,7 @@ from pyteg.client.tasks.manager import ClientTaskManager
 from pyteg.i18n import translate as _
 from pyteg.logger import get_logger
 from pyteg.persistence.asynchronous import AsyncGame
+from pyteg.persistence.local import LocalGame
 from pyteg.protocol_validation import validate_client_event
 
 if TYPE_CHECKING:
@@ -43,26 +44,56 @@ class OfflineConnection(QObject):
             cast("MainWindowProtocol", window), self.state_model
         )
         self.hosting = SimpleNamespace(paused=False)
-        self.game: AsyncGame | None = None
+        self.game: AsyncGame | LocalGame | None = None
         self._active = False
         self._availability_timer = QTimer(self)
         self._availability_timer.setSingleShot(True)
         self._availability_timer.timeout.connect(self._update_availability)
+        self._bot_timer = QTimer(self)
+        self._bot_timer.setInterval(120)
+        self._bot_timer.timeout.connect(self._play_bot)
         self.received.connect(self._process)
 
     def create(
-        self, theme: str, names: list[str], repository: ArchiveRepository
+        self,
+        theme: str,
+        names: list[str],
+        repository: ArchiveRepository,
+        *,
+        rules_profile: str | None = None,
     ) -> None:
         """Crea un lobby offline y conserva el trabajo automáticamente."""
         self.game = AsyncGame.create(
-            theme, names, receive=self._receive, repository=repository
+            theme,
+            names,
+            receive=self._receive,
+            repository=repository,
+            rules_profile=rules_profile,
+        )
+
+    def create_local(
+        self,
+        theme: str,
+        name: str,
+        bots: int,
+        repository: ArchiveRepository,
+        *,
+        rules_profile: str | None = None,
+    ) -> None:
+        """Crea una partida humana con jugadores automáticos."""
+        self.game = LocalGame.create(
+            theme,
+            name,
+            bots,
+            receive=self._receive,
+            repository=repository,
+            rules_profile=rules_profile,
         )
 
     def open(self, archive: dict[str, Any], repository: ArchiveRepository) -> None:
         """Carga un turno validado antes de modificar la ventana."""
-        self.game = AsyncGame.open(
-            archive, receive=self._receive, repository=repository
-        )
+        factory = LocalGame if "local" in archive["payload"] else AsyncGame
+        self.game = factory.open(archive, receive=self._receive, repository=repository)
 
     def _receive(self, _user_id: int, event: dict[str, Any]) -> None:
         if self._active:
@@ -80,11 +111,18 @@ class OfflineConnection(QObject):
         self.window.client.set_userid(game.user_id)
         self.state_model.local_userid = game.user_id
         self.window.client.asignar_admin(enabled=False)
-        self.window.network_status_label.setText(_("Partida por archivos"))
-        self.window.timer_label.setText(_("Sin límite de tiempo"))
+        self.window.network_status_label.setText(
+            _("Partida local · bots básicos")
+            if isinstance(game, LocalGame)
+            else _("Partida por archivos")
+        )
+        if isinstance(game, AsyncGame):
+            self.window.timer_label.setText(_("Sin límite de tiempo"))
         if self.window.toolbar is not None:
             self.window.toolbar.actualizar_estado_conexion(conectado=True)
         game.sync_local()
+        if isinstance(game, LocalGame):
+            self._bot_timer.start()
         self._update_availability()
 
     def _process(self, event: dict[str, Any]) -> None:
@@ -109,7 +147,8 @@ class OfflineConnection(QObject):
             return
         self._availability_timer.start(0)
         if (
-            result
+            isinstance(game, AsyncGame)
+            and result
             and result.get("accepted")
             and json.loads(data).get("mensaje") == "finalizar_turno"
         ):
@@ -117,11 +156,25 @@ class OfflineConnection(QObject):
                 _("Turno terminado. Exportalo desde Partida → Exportar turno.")
             )
 
+    def _play_bot(self) -> None:
+        if (
+            not self._active
+            or not self.window.vivo()
+            or not isinstance(self.game, LocalGame)
+        ):
+            return
+        try:
+            self.game.bot_step()
+        except (OSError, ValueError) as error:
+            self._bot_timer.stop()
+            self.window.update_status_bar(str(error))
+        self._update_availability()
+
     def _update_availability(self) -> None:
         if self._active and self.window.vivo() and self.game is not None:
             self.hosting.paused = (
-                self.game.handed_off or self.game.holder() != self.game.user_id
-            )
+                isinstance(self.game, AsyncGame) and self.game.handed_off
+            ) or self.game.holder() != self.game.user_id
             self.window.refresh_gameplay_actions()
 
     def esta_conectado(self) -> bool:
@@ -146,6 +199,7 @@ class OfflineConnection(QObject):
         """Guarda el borrador y cierra la sesión local."""
         self._active = False
         self._availability_timer.stop()
+        self._bot_timer.stop()
         if self.game is not None:
             try:
                 self.game.close()

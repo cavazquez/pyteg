@@ -4,6 +4,36 @@ Todas las fechas en formato YYYY-MM-DD.
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-10-09
+
+### Added
+- **Bots locales desde Qt**: un humano y de cero a siete bots básicos, con
+  decisiones por comandos del protocolo y proyecciones privadas independientes.
+  Los guardados conservan identidades y acciones pendientes de los bots.
+- **Inicio común**: Local, LAN y partidas por archivos, mapa y perfil de reglas
+  independientes, acceso a archivos recientes y autoguardados recuperables.
+- **Vista previa de turnos**: autor, destinatario, ronda, países controlados y
+  cambios públicos antes de importar; cancelar conserva la copia anterior.
+- **Arrastrar para abrir**: partidas, entregas y repeticiones; opción CLI
+  `--open`, copiar ruta exportada y abrir su carpeta desde la interfaz.
+- **Persistencia y repeticiones**: guardados `.pyteg`, turnos `.pyturn` con
+  cadena de entregas, historial público y `.pyreplay` de sólo lectura.
+- **Salas LAN y migración**: descubrimiento automático, réplicas durables,
+  elección por mayoría, arrendamientos y recuperación de partidas guardadas.
+
+### Fixed
+- **Elección concurrente del anfitrión**: recuperar una sala descarta de
+  inmediato una autoridad de una época anterior a los votos persistidos,
+  sin esperar al siguiente ciclo de mantenimiento.
+- **Canjes de bots y cartas especiales**: los comandos identifican las cartas
+  sin reenviar metadata privada; el diálogo, los bots y el simulador comparten
+  la validación del motor para continentes, comodines y supertarjetas.
+- **Ciclo de vida Qt**: escenas, diálogos y timers tienen propietario Qt y
+  se liberan en el hilo gráfico; cerrar una sesión cancela los callbacks.
+- **Arquitectura de los binarios macOS**: runner Intel explícito y validación
+  de arquitectura antes de compilar cada archivo de distribución.
+- **Versión en Nuitka**: los binarios incluyen la metadata de distribución.
+
 ### Changed
 - **Mapa Revancha redibujado**: los 72 contornos se trazan desde la referencia
   del tablero de colores, con proporciones, islas, etiquetas orientadas, bordes

@@ -101,6 +101,15 @@ jobs:
             uv run python scripts/smoke_host_migration.py --theme classic --rules-profile revancha
             uv run python scripts/smoke_host_migration.py --theme revancha --rules-profile classic
             uv run python scripts/smoke_host_migration.py --theme revancha --rules-profile revancha
+        - name: Local Qt games with three bots on both maps and profiles
+          run: uv run python scripts/smoke_local_game.py
+        - name: Upload local game screenshots
+          if: always()
+          uses: actions/upload-artifact@v7
+          with:
+            name: pyteg-local-games
+            path: artifacts/local-games
+            if-no-files-found: warn
         - name: Slow client queue stress
           run: uv run python scripts/stress_slow_clients.py
         - name: Dead-code audit

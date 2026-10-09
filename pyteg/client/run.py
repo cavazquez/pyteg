@@ -26,6 +26,12 @@ def parse_arguments() -> tuple[argparse.Namespace, list[str]]:
         description="Cliente del juego de estrategia Pyteg."
     )
     parser.add_argument(
+        "--open",
+        dest="open_file",
+        metavar="ARCHIVO",
+        help="Abrir una partida, un turno o una repetición al iniciar",
+    )
+    parser.add_argument(
         "--theme",
         choices=("classic", "revancha"),
         default=DEFAULT_MAP_THEME,
@@ -54,6 +60,14 @@ def main() -> None:
     gui = Gui(client, map_theme=args.theme)
 
     gui.show()
+    if args.open_file:
+        try:
+            gui.files_manager.open_path(args.open_file, preview=True)
+        except (OSError, ValueError, KeyError, TypeError) as error:
+            gui.update_status_bar(str(error))
+            gui.files_manager.show_start()
+    else:
+        gui.files_manager.show_start()
     sys.exit(app.exec())
 
 

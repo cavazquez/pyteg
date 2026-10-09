@@ -9,6 +9,15 @@ from pathlib import Path
 
 REQUIRED_FILES = (
     "pyproject.toml",
+    "pyteg/client/bots.py",
+    "pyteg/persistence/in_process.py",
+    "pyteg/persistence/local.py",
+    "pyteg/persistence/recent.py",
+    "pyteg/persistence/turn_preview.py",
+    "pyteg/gui/dialogs/start.py",
+    "pyteg/gui/dialogs/turn_preview.py",
+    "pyteg/gui/dialogs/exported_file.py",
+    "scripts/smoke_local_game.py",
     "themes/classic/paises.toml",
     "themes/classic/cartas.toml",
     "themes/classic/adyacencias.toml",

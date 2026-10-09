@@ -48,8 +48,12 @@ class MainWindowDelegatesMixin:
         self.players_manager.update_player_statuses(statuses)
 
     def abrir_ventana_conectar(self) -> None:
-        """Abre la ventana de conexión al servidor."""
-        self.window_manager.abrir_ventana_conectar()
+        """Abre el inicio común cuando la ventana dispone de modos locales."""
+        files = getattr(self, "files_manager", None)
+        if files is not None:
+            files.show_start()
+        else:
+            self.window_manager.abrir_ventana_conectar()
 
     def ventana_admin(self) -> None:
         """Abre la ventana de administración."""

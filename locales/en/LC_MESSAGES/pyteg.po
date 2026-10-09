@@ -1003,7 +1003,8 @@ msgstr "Action:"
 msgid "Tu computadora alojará la partida mientras jugás."
 msgstr "Your computer will host the game while you play."
 
-msgid "Los demás jugadores se conectan a tu dirección y puerto en la red local."
+msgid ""
+"Los demás jugadores se conectan a tu dirección y puerto en la red local."
 msgstr "Other players connect to your address and port on the local network."
 
 msgid "Anfitrión"
@@ -1028,7 +1029,6 @@ msgid "Anfitrión y destino de la conexión de la partida"
 msgstr "Host and current game connection"
 
 # Saved games, LAN discovery, turn files and replay
-
 msgid "Abrir partida o turno"
 msgstr "Open game or turn"
 
@@ -1206,3 +1206,136 @@ msgid ""
 msgstr ""
 "This window already has an active or pending connection. Disconnect it "
 "before connecting again."
+
+msgid "Abrir archivo…"
+msgstr "Open file…"
+
+msgid "Abrir carpeta"
+msgstr "Open folder"
+
+msgid "Abrir carpeta de exportaciones"
+msgstr "Open exports folder"
+
+msgid ""
+"Al importar se reemplaza la copia local por esta continuación. Conservá el "
+"archivo recibido para compartirlo o volver a consultarlo."
+msgstr ""
+"Importing replaces the local copy with this continuation. Keep the received "
+"file to share it or view it again."
+
+msgid "Archivo exportado"
+msgstr "File exported"
+
+msgid "Bots (dificultad básica):"
+msgstr "Bots (basic difficulty):"
+
+msgid "Cambios desde tu copia: {} países"
+msgstr "Changes since your copy: {} countries"
+
+msgid ""
+"Continuá para crear una sala o buscar una partida en tu red. Quien la crea "
+"puede personalizar todas las reglas."
+msgstr ""
+"Continue to host a room or find a game on your network. The host can "
+"customize all rules."
+
+msgid "Copiar ruta"
+msgstr "Copy path"
+
+msgid "El archivo está listo para compartir:"
+msgstr "The file is ready to share:"
+
+msgid "Elegir partida local, LAN o por archivos"
+msgstr "Choose a local, LAN or file-based game"
+
+msgid ""
+"Entrega {} · {} → {}\n"
+"Mapa: {} · Ronda {}\n"
+"Fecha: {}"
+msgstr ""
+"Handoff {} · {} → {}\n"
+"Map: {} · Round {}\n"
+"Date: {}"
+
+msgid "Importar turno"
+msgstr "Import turn"
+
+msgid ""
+"Ingresá de 1 a 8 nombres separados por comas. Cada jugador recibe y entrega "
+"su turno como un archivo, sin límite de tiempo."
+msgstr ""
+"Enter 1 to 8 names separated by commas. Each player receives and hands off "
+"their turn as a file, without a time limit."
+
+msgid "Jugador"
+msgstr "Player"
+
+msgid "Jugador 1"
+msgstr "Player 1"
+
+msgid "Jugar"
+msgstr "Play"
+
+msgid "Jugar Pyteg"
+msgstr "Play Pyteg"
+
+msgid "LAN"
+msgstr "LAN"
+
+msgid "LAN · crear o unirse"
+msgstr "LAN · host or join"
+
+msgid "Local"
+msgstr "Local"
+
+msgid "Local · humano contra bots"
+msgstr "Local · human versus bots"
+
+msgid "Modo:"
+msgstr "Mode:"
+
+msgid "No se pudo actualizar el índice de recientes: %s"
+msgstr "Could not update recent files: %s"
+
+msgid "Nueva partida"
+msgstr "New game"
+
+msgid "Nueva partida o abrir un archivo"
+msgstr "Start a game or open a file"
+
+msgid "Nueva partida…"
+msgstr "New game…"
+
+msgid "Partida local · bots básicos"
+msgstr "Local game · basic bots"
+
+msgid "Partidas y archivos recientes"
+msgstr "Recent games and files"
+
+msgid "País"
+msgstr "Country"
+
+msgid "Países controlados:"
+msgstr "Controlled countries:"
+
+msgid "Por archivos"
+msgstr "By files"
+
+msgid "Por archivos · turnos asíncronos"
+msgstr "By files · asynchronous turns"
+
+msgid "Repetición"
+msgstr "Replay"
+
+msgid "Tu nombre:"
+msgstr "Your name:"
+
+msgid ""
+"Un humano y hasta siete bots básicos. Podés jugar solo con cero bots. "
+"Después elegís objetivos, situaciones y el resto de las reglas."
+msgstr ""
+"One human and up to seven basic bots. You can play solo with zero bots. Then"
+" choose objectives, situations and the remaining rules."
+
+msgid "Unidades"
+msgstr "Units"

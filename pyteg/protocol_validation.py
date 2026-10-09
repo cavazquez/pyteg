@@ -113,7 +113,7 @@ def _is_card(value: object) -> bool:
 def _is_card_list(value: object) -> bool:
     return (
         isinstance(value, list)
-        and len(value) == _CARDS_PER_EXCHANGE
+        and 1 <= len(value) <= _CARDS_PER_EXCHANGE
         and all(_is_card(card) for card in value)
     )
 

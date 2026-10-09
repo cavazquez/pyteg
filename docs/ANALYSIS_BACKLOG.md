@@ -1,6 +1,6 @@
 # Decisiones de los análisis de producto
 
-Fecha de revisión: 21 de septiembre de 2026.
+Fecha de revisión: 9 de octubre de 2026.
 
 Este documento cierra los análisis de la lista visual y de distribución con
 evidencia del código actual. Las reglas del servidor y el protocolo quedan
@@ -36,15 +36,14 @@ comprueba el pixmap cargado y la geometría en Qt offscreen.
 
 ## #200 — migración de imágenes a SVG
 
-**Veredicto: diferido.**
+**Veredicto: implementado para los mapas.**
 
-El inventario tiene 73 PNG y 2 SVG. El tema de prueba ya demuestra que
-`QPixmap` y el lector aceptan SVG; el clásico usa PNG para siluetas de países,
-cartas, dados, tablero e iconos. Convertir automáticamente las siluetas no
-aporta un SVG de calidad sin redibujado manual, y no hay una medición de
-memoria, carga o calidad HiDPI que justifique cambiar los assets existentes.
-Los nuevos iconos geométricos pueden nacer en SVG y una migración futura debe
-medir arranque, wheel y Nuitka por plataforma antes de sustituir recursos.
+Los países y el tablero de Clásico y Revancha utilizan fuentes SVG editables.
+La escena conserva siluetas, etiquetas, rutas, selección y marcadores de
+misiles al cambiar el zoom. `smoke_visual_map.py` verifica carga y capturas
+con varios tamaños y simulaciones de visión de color; wheel y Nuitka incluyen
+estos recursos. Los PNG que siguen en cartas y dados no requieren
+una conversión adicional para el funcionamiento actual.
 
 ## #201 — compresión UPX
 
@@ -62,15 +61,11 @@ distribución sin una mejora demostrada.
 
 **Veredicto: diferido; primero cobertura de traducción.**
 
-`get_available_languages()` sólo ofrece `es` y `en`. Hay dos catálogos PO:
-el inglés contiene 186 `msgid` y el español 134, mientras que el extractor
-actual sólo encuentra llamadas simples a `_()` y todavía existen textos
-directos en widgets (por ejemplo, valores de campos y botones de sonido).
-No hay datos de usuarios o distribución en el repositorio para justificar un
-orden de diez idiomas ni revisores humanos para aceptar traducciones. Antes de
-añadir idiomas hace falta medir cobertura, extraer cadenas dinámicas y definir
-responsables de revisión; los códigos de mensajes de red deben permanecer
-independientes del texto traducido.
+`get_available_languages()` ofrece `es` y `en`. Los dos catálogos incorporan
+los controles de los modos local, LAN y por archivos, las situaciones y los
+nuevos diálogos. Cada release recompila los `.mo` desde los `.po` versionados.
+Los idiomas adicionales siguen pendientes de prioridad de usuarios y revisión
+humana; no se toma el inventario antiguo de cadenas como una medición vigente.
 
 ## #203 — objetivo general de 30 países
 
@@ -85,17 +80,14 @@ opción explícita de prueba, no como cambio del default del servidor.
 
 ## #205 — cartas de situaciones
 
-**Veredicto: diferido por especificación incompleta.**
+**Veredicto: implementado.**
 
-Los temas sólo definen cartas de país (`Galeon`, `Globo`, `Canon` y
-`Comodin`); el juego ya tiene canjes normales/especiales, misiles y objetivos
-secretos. No existe una definición de cuándo se roba una carta de situación,
-si es pública o privada, su efecto, una respuesta posible o su interacción con
-snapshot, reconexión y revancha. Implementarla ahora duplicaría mecánicas sin
-una variante escrita. Sólo debe abrirse una implementación cuando exista una
-especificación cerrada y tests de privacidad/protocolo. El contrato previo y la
-descomposición atómica están documentados en
-[`SITUATION_CARDS.md`](SITUATION_CARDS.md).
+El catálogo y el runtime de situaciones definen los efectos y la selección
+individual de cartas. El administrador puede habilitarlas o deshabilitarlas en
+cualquiera de los dos mapas. La franja Qt muestra la carta, los afectados y las
+tiradas públicas; los guardados, snapshots, turnos y repeticiones conservan ese
+estado. Los smokes Qt y TCP cubren ambas combinaciones de mapa y reglas.
+El contrato se mantiene en [`SITUATION_CARDS.md`](SITUATION_CARDS.md).
 
 ## #207 — `Client_Receptor`
 
@@ -109,10 +101,16 @@ sin Qt lo usa el simulador y las pruebas. Recuperar el nombre agregaría una
 capa duplicada y volvería a acoplar recepción con widgets; sólo tendría sentido
 un nuevo puerto si aparece otro transporte con requisitos distintos.
 
-## Resultado
+## Resultado vigente
 
-El trabajo de código de esta tanda incluye la legibilidad de cartas, la
-unificación del objetivo predeterminado y el trazado visual opcional de
-conexiones marítimas. SVG, UPX, idiomas adicionales y cartas de situaciones
-quedan documentados como decisiones diferidas con condiciones concretas para
-retomarlos.
+Están implementadas las conexiones visuales, legibilidad de cartas, objetivo
+predeterminado, fuentes SVG de los mapas, cartas de situaciones, guardados,
+descubrimiento LAN, migración del anfitrión, turnos por archivos, repeticiones,
+bots básicos y pantalla de inicio común.
+
+Quedan para nuevas tandas: dificultad y personalidad de los bots, mejoras de
+accesibilidad a partir de uso real, revisión humana de traducciones y eventual
+incorporación de otros idiomas. UPX sigue diferido hasta contar con medidas
+comparables de distribución y arranque por plataforma. La limpieza de
+revisiones antiguas de issues y comentarios en GitHub sigue pendiente por
+pedido del usuario; este release no la reabre.

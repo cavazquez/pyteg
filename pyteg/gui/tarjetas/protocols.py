@@ -38,6 +38,10 @@ class TarjetasSelectionHost(Protocol):
 
     def _puede_realizar_canje_especial(self) -> bool: ...
 
+    def _seleccion_valida(self) -> bool: ...
+
+    def parent(self) -> QObject | None: ...
+
 
 class TarjetasExchangeHost(Protocol):
     """Contrato mínimo para `TarjetasExchangeMixin`."""
@@ -45,6 +49,8 @@ class TarjetasExchangeHost(Protocol):
     tarjetas_seleccionadas: list[TarjetaWidget]
 
     def _puede_realizar_canje(self) -> bool: ...
+
+    def _seleccion_valida(self) -> bool: ...
 
     def deseleccionar_todas(self) -> None: ...
 

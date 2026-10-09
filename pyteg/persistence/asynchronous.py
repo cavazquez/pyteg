@@ -2,27 +2,23 @@
 
 from __future__ import annotations
 
-import json
 import uuid
 from copy import deepcopy
-from functools import partial
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any
 
 from pyteg.persistence.archive import (
     ArchiveRepository,
-    MemoryRepository,
     make_archive,
     validate_archive,
 )
+from pyteg.persistence.in_process import InProcessGame
 from pyteg.protocol_validation import validate_server_command
-from pyteg.server.conexion.cliente import Client
 from pyteg.server.hosting.engine import ServerEngine
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
     from pyteg.server.app import Server
-    from pyteg.server.conexion.connection import ConnectionServer
 
 _READ_ONLY = frozenset({"chat", "solicitar_snapshot", "solicitar_tarjetas"})
 _MAX_PLAYERS = 8
@@ -31,24 +27,7 @@ _MAX_TURN_CHAIN = 4096
 _HASH_LENGTH = 64
 
 
-class _LocalPort:
-    """Adaptador de salida del motor hacia un consumidor local."""
-
-    def __init__(
-        self, user_id: int, receive: Callable[[int, dict[str, Any]], None]
-    ) -> None:
-        self.user_id = user_id
-        self.receive = receive
-        self.owner: Client | None = None
-
-    def send(self, data: str) -> None:
-        self.receive(
-            self.owner.userid() if self.owner is not None else self.user_id,
-            json.loads(data),
-        )
-
-
-class AsyncGame:
+class AsyncGame(InProcessGame):
     """Una copia editable únicamente por el destinatario del turno actual."""
 
     def __init__(
@@ -60,18 +39,13 @@ class AsyncGame:
         repository: ArchiveRepository | None = None,
     ) -> None:
         """Asocia el motor offline con la identidad local y su almacenamiento."""
-        self.server = server
-        self.user_id = user_id
+        super().__init__(server, user_id, receive=receive, repository=repository)
         self.session_id = uuid.uuid4().hex
         self.step = 0
         self.base_id: str | None = None
         self.ancestors: list[str] = []
         self.handed_off = False
         self._last_packet: dict[str, Any] | None = None
-        self._receive = receive or (lambda _user, _event: None)
-        self._repository = repository or MemoryRepository()
-        self._events: dict[str, dict[str, Any]] = {}
-        self._closed = False
         server.asynchronous = True
         server.suspend_clock()
 
@@ -163,23 +137,7 @@ class AsyncGame:
             session.ancestors = list(metadata["ancestors"])
             session.handed_off = metadata["handed_off"]
             session._last_packet = metadata.get("last_packet")
-            historical = dict(server.migration_sessions)
-            for user_id, previous in historical.items():
-                player = session._player(max(historical) + user_id, previous.username())
-                server.registrar_reconexion_pendiente(player.userid(), player)
-                if not server.serialized(
-                    partial(
-                        server.reconectar_cliente,
-                        player,
-                        user_id,
-                        previous.reconnect_token(),
-                    )
-                ):
-                    msg = "No se pudo recuperar una identidad offline"
-                    raise ValueError(msg)  # noqa: TRY301 -- restaura de forma transaccional.
-            if session.user_id not in historical:
-                msg = "El destinatario no pertenece a esta partida"
-                raise ValueError(msg)  # noqa: TRY301 -- restaura de forma transaccional.
+            session._restore_players()
             if archive["kind"] == "turn" and session.holder() != session.user_id:
                 msg = "El archivo no corresponde al jugador del turno"
                 raise ValueError(msg)  # noqa: TRY301 -- restaura de forma transaccional.
@@ -253,35 +211,6 @@ class AsyncGame:
             msg = "Cadena de turnos inválida"
             raise ValueError(msg)
 
-    def _player(self, user_id: int, name: str) -> Client:
-        port = _LocalPort(user_id, self._on_event)
-        player = Client(
-            user_id,
-            cast("ConnectionServer", port),
-            self.server,
-            name,
-            soy_admin=False,
-        )
-        port.owner = player
-        player.marcar_handshake(True)  # noqa: FBT003
-        return player
-
-    def _on_event(self, user_id: int, event: dict[str, Any]) -> None:
-        if user_id == self.user_id:
-            if event.get("mensaje") == "command_result":
-                self._events[event["command_id"]] = deepcopy(event)
-            self._receive(user_id, event)
-
-    def holder(self) -> int:
-        """Obtiene el destinatario actual.
-
-        Returns:
-            Jugador del turno o administrador mientras se configura.
-
-        """
-        turn = self.server.public_snapshot().get("turno")
-        return int(turn["jugador_id"]) if isinstance(turn, dict) else self.user_id
-
     def apply(self, payload: dict[str, Any]) -> dict[str, Any] | None:
         """Valida un comando y lo aplica con las mismas tareas que usa TCP.
 
@@ -303,14 +232,7 @@ class AsyncGame:
         ):
             msg = "Este turno ya se entregó o pertenece a otro jugador"
             raise ValueError(msg)
-        player = next(
-            player
-            for player in self.server.dame_clientes()
-            if player.userid() == self.user_id
-        )
-        self.server.encolar_comando(player, data)
-        self.server.serialized(lambda: None)
-        result = self._events.get(data["command_id"])
+        result = self._apply_as(self.user_id, data)
         if (
             result is not None
             and result.get("accepted")
@@ -342,10 +264,6 @@ class AsyncGame:
                 },
             },
         )
-
-    def save_draft(self) -> None:
-        """Conserva el trabajo aceptado para continuar después de cerrar."""
-        self._repository.save(self.draft())
 
     def export_turn(self) -> dict[str, Any]:
         """Sella el turno terminado para compartirlo una sola vez.
@@ -430,35 +348,3 @@ class AsyncGame:
             msg = "Este archivo está destinado a otro jugador"
             raise ValueError(msg)
         return True
-
-    def sync_local(self) -> None:
-        """Proyecta identidad, estado y datos privados del jugador local."""
-        player = next(
-            player
-            for player in self.server.dame_clientes()
-            if player.userid() == self.user_id
-        )
-        player.transmisor.enviar_userid(self.user_id)
-        player.transmisor.enviar_session_token(self.user_id, player.reconnect_token())
-        self.server.enviar_username()
-        self.server.enviar_colores_asignados()
-        player.transmisor.enviar_snapshot({
-            **self.server.public_snapshot(),
-            "resync": True,
-        })
-        if self.server.game is not None:
-            self.server.enviar_tarjetas_jugador(player)
-            self.server.enviar_objetivo_secreto(player)
-            if self.holder() == self.user_id:
-                self.server.enviar_unidades_disponibles()
-        elif player.es_admin():
-            player.transmisor.sos_admin()
-
-    def close(self) -> None:
-        """Guarda y detiene el motor offline."""
-        if not self._closed:
-            try:
-                self.save_draft()
-            finally:
-                self._closed = True
-                self.server.detener()

@@ -91,6 +91,7 @@ class VentanaConectar(QDialog):
         self.port: QLineEdit
         self.username: QLineEdit
         self.theme_selector: QComboBox
+        self.rules_selector: QComboBox
         self._conexion: ConnectionClient | None = None
         self._browser: RoomBrowser | None = None
         self._saved_identity: tuple[int, str] | None = None
@@ -188,6 +189,8 @@ class VentanaConectar(QDialog):
 
         form_layout.addRow(user_label, self.username)
         form_layout.addRow(self.theme_label, self.theme_selector)
+        self.rules_label = QLabel(_("Perfil de reglas:"))
+        form_layout.addRow(self.rules_label, self.rules_selector)
 
         parent_layout.addLayout(form_layout)
         self.host_hint = QLabel(
@@ -282,6 +285,8 @@ class VentanaConectar(QDialog):
             self.addr.setText(self._join_address)
         self.addr.setReadOnly(hosting)
         self.host_hint.setVisible(hosting)
+        self.rules_label.setVisible(hosting)
+        self.rules_selector.setVisible(hosting)
         self.title_label.setText(
             _("Crear partida") if hosting else _("Unirme a una partida")
         )
@@ -311,6 +316,12 @@ class VentanaConectar(QDialog):
         selected_index = self.theme_selector.findData(selected_theme)
         if selected_index >= 0:
             self.theme_selector.setCurrentIndex(selected_index)
+        self.rules_selector = QComboBox()
+        self.rules_selector.addItem(_("Clásico"), "classic")
+        self.rules_selector.addItem(_("Revancha"), "revancha")
+        self.rules_selector.setCurrentIndex(
+            self.rules_selector.findData(selected_theme)
+        )
 
         self.addr.setStyleSheet(styles.INPUT_STYLE)
         self.port.setStyleSheet(styles.INPUT_STYLE)
@@ -418,7 +429,9 @@ class VentanaConectar(QDialog):
         repository = files.network_repository() if files is not None else None
         runtime = HostRuntime(repository=repository)
         try:
-            port = runtime.create_game(theme, port)
+            port = runtime.create_game(
+                theme, port, rules_profile=str(self.rules_selector.currentData())
+            )
         except OSError, ValueError:
             runtime.close()
             raise
@@ -471,6 +484,9 @@ class VentanaConectar(QDialog):
         self.theme_label.setText(_("Mapa:"))
         self.theme_selector.setItemText(0, _("Clásico"))
         self.theme_selector.setItemText(1, _("Revancha"))
+        self.rules_label.setText(_("Perfil de reglas:"))
+        self.rules_selector.setItemText(0, _("Clásico"))
+        self.rules_selector.setItemText(1, _("Revancha"))
         self.mode_selector.setItemText(0, _("Unirme a una partida"))
         self.mode_selector.setItemText(1, _("Crear partida"))
         self.mode_label.setText(_("Acción:"))

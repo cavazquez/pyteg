@@ -33,6 +33,7 @@ gráfica en Python.
 
 ## Características clave
 - Cliente gráfico con 🖥️ PySide6 y animación de dados en las batallas
+- Inicio común para jugar localmente con bots, en LAN o por archivos; acceso a partidas recientes.
 - **Efectos visuales inmersivos**: Atacante ve animación completa, espectadores ven titilación de países y pérdidas flotantes
 - **Sistema de sonidos**: Efectos de audio para batallas, movimientos, turnos y eventos del juego con controles de volumen
 - Modo multijugador con servidor 🔌 TCP y validación de estados (sin cifrado; pensado para redes de confianza, p. ej. LAN). Detalle del modelo de amenaza: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#seguridad-y-modelo-de-amenaza) y [ADR-009](docs/DECISIONS.md#adr-009-tcp-sin-cifrado-y-red-de-confianza).
@@ -68,9 +69,9 @@ uv sync
 
 ## Jugar en red local desde el cliente
 
-1. Ejecutá `uv run pyteg-client` y abrí **Conectar**.
-2. Elegí **Crear partida**, tu nombre, mapa y puerto. La ventana muestra las
-   direcciones locales que podés compartir.
+1. Ejecutá `uv run pyteg-client`, elegí **LAN** en el inicio y continuá.
+2. Elegí **Crear partida**, tu nombre, mapa, perfil de reglas y puerto. La
+   ventana muestra las direcciones locales que podés compartir.
 3. Los demás jugadores eligen **Unirme a una partida** y seleccionan la sala
    en **Salas en la red**. El cliente completa dirección, puerto y mapa.
    También se puede ingresar la dirección manualmente.
@@ -100,12 +101,40 @@ entre sí a los puertos TCP del juego y de recuperación (asignado automáticame
 El descubrimiento utiliza UDP 45471, multicast local y broadcast. Si la red
 bloquea esos anuncios, se puede usar la dirección manual.
 
+### Inicio y partidas locales con bots
+
+Al abrir el cliente aparece **Jugar Pyteg**. También podés volver con
+**Partida → Nueva partida…** (`Ctrl+N`) o con el botón **Jugar**.
+
+- **Local**: elegí tu nombre y entre 0 y 7 bots de dificultad básica. El valor
+  inicial es un humano contra tres bots; cero bots permite jugar solo.
+- **LAN**: continuá para crear una sala o unirte a una descubierta en tu red.
+- **Por archivos**: escribí los nombres de los participantes; cada uno juega
+  su turno en su propia copia sin un reloj de turno.
+
+El **mapa** y el **perfil de reglas** se eligen por separado: por ejemplo,
+mapa Clásico con reglas Revancha. Después, el administrador puede personalizar
+mecánicas, objetivos y cartas individuales desde la configuración existente.
+En modo local, la duración predeterminada sigue siendo 20 segundos; el
+administrador puede cambiarla antes de empezar.
+
+Los bots colocan refuerzos, usan cartas y misiles y atacan con ventaja usando
+sus propios eventos del protocolo. Juegan desde la interfaz a un ritmo visible.
+Los guardados conservan los bots y sus decisiones pendientes para retomar una
+partida interrumpida. La dificultad disponible es básica.
+
+La pantalla de inicio ofrece **partidas y archivos recientes**, incluidos los
+autoguardados. Para abrir un documento también podés arrastrar un `.pyteg`,
+`.pyturn` o `.pyreplay` sobre la ventana principal, usar `Ctrl+O`, o iniciar
+`pyteg-client --open /ruta/al/archivo.pyteg`.
+
 ### Guardar y reabrir partidas
 
 - **Partida → Guardar partida…** (`Ctrl+S`) exporta un archivo `.pyteg`.
 - **Partida → Abrir partida o turno…** (`Ctrl+O`) abre un guardado, incluso
-  después de cerrar todos los clientes. El mapa y las reglas se recuperan del
-  archivo. La reapertura crea otra sala para poder retomar esa copia.
+  después de cerrar todos los clientes. El mapa, las reglas y el modo se
+  recuperan del archivo. Una partida local retoma sus bots; una partida LAN
+  crea otra sala para poder retomar esa copia.
 - Los demás jugadores eligen la nueva sala y **Recuperar mi jugador desde un
   guardado…**, usando su propio archivo. El reloj espera a que vuelvan todos;
   el anfitrión puede usar **Reanudar partida guardada** para continuar antes.
@@ -116,14 +145,21 @@ bloquea esos anuncios, se puede usar la dirección manual.
 
 ### Jugar por archivos, sin servidor central
 
-1. Abrí **Partida → Nueva partida por archivos…** y elegí mapa y nombres
+1. Elegí **Por archivos** en el inicio, mapa, perfil de reglas y nombres
    de 1 a 8 jugadores. El primer jugador administra la configuración de reglas,
    objetivos y situaciones usando los mismos controles que en red.
 2. Iniciá la partida y jugá tu turno. Este modo no tiene límite de tiempo.
 3. Al finalizar, usá **Partida → Exportar turno…** y compartí el `.pyturn`
    con el jugador al que le toca. El archivo incluye el destinatario.
-4. Ese jugador abre el archivo con `Ctrl+O`, juega y exporta la continuación.
+4. Ese jugador abre el archivo con `Ctrl+O` o lo arrastra a la ventana. Antes
+   de importar ve autor, destinatario, ronda, países controlados y los cambios
+   respecto de su copia. Puede cancelar sin modificar la partida. Después
+   juega y exporta la continuación.
    Cuando vuelve a tocarte, abrí el nuevo archivo en tu copia anterior.
+
+Al exportar aparece la ruta del archivo y botones para **Copiar ruta** o
+**Abrir carpeta**. También queda disponible **Partida → Abrir carpeta de
+exportaciones**. El archivo se comparte manualmente por el medio elegido.
 
 El trabajo local se autoguarda. Exportar repetidamente produce la misma entrega;
 el cliente reconoce archivos duplicados, atrasados, dirigidos a otro jugador
@@ -194,7 +230,7 @@ uv sync --group dev
 Compilar binarios (modo onefile + standalone) para servidor y cliente:
 ```bash
 # ⚙️ Nuitka; las entradas y los recursos se validan antes de compilar
-uv run python scripts/build_binaries.py --version 0.1.0
+uv run python scripts/build_binaries.py --version 0.2.0
 ```
 
 Los ejecutables quedarán en `dist/`.
@@ -348,7 +384,7 @@ Los binarios compilados para múltiples plataformas están disponibles en la [p�
 
 Los binarios son standalone (no requieren Python instalado) e incluyen todos los assets necesarios.
 Los nombres usan la versión sin el prefijo `v` del tag, por ejemplo
-`pyteg-0.1.0-linux-x86_64.tar.gz` para `v0.1.0`.
+`pyteg-0.2.0-linux-x86_64.tar.gz` para `v0.2.0`.
 
 ### Crear un nuevo release
 Para crear un nuevo release con binarios compilados:
@@ -364,16 +400,17 @@ Para crear un nuevo release con binarios compilados:
 3. **Crear y pushear el tag**:
    ```bash
    git add pyproject.toml uv.lock docs/CHANGELOG.md
-   git commit -m "release: 0.1.0"
-   git tag v0.1.0
+   uv lock
+   git commit -m "release: 0.2.0"
+   git tag v0.2.0
    git push origin master
-   git push origin v0.1.0
+   git push origin v0.2.0
    ```
 
 4. **🔄 GitHub Actions automáticamente**:
    - Construirá binarios para todas las plataformas
    - Ejecutará los tests en cada plataforma
-   - Creará un **borrador de release privado** con los binarios adjuntos
+   - Creará un **borrador de release sin publicar** con los binarios adjuntos
    - Generará archivos comprimidos para cada plataforma
 
 5. **Publicar el release manualmente**:

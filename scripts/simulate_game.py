@@ -36,7 +36,7 @@ import sys
 import time
 import tomllib
 import uuid
-from collections import Counter, deque
+from collections import Counter
 from dataclasses import dataclass, field
 from functools import partial
 from operator import itemgetter
@@ -44,6 +44,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
+from pyteg.client.bots import choose_exchange, is_frontier, shortest_distance
 from pyteg.client.event_processor import ClientEventProcessor
 from pyteg.client.state_model import ClientStateModel
 from pyteg.codecs_utils import NulDelimitedUtf8Codec
@@ -741,9 +742,11 @@ class Simulation:
         )
 
     def _frontier(self, bot: Bot, country: str) -> bool:
-        return any(
-            bot.countries[neighbor][0] != bot.userid
-            for neighbor in self.adjacency[country]
+        return is_frontier(
+            self.adjacency,
+            {name: owner for name, (owner, _) in bot.countries.items()},
+            bot.userid,
+            country,
         )
 
     @staticmethod
@@ -812,28 +815,16 @@ class Simulation:
             self.forced_card_exchanges += 1
 
     def _card_selection(self, bot: Bot) -> list[dict[str, str]]:
-        """Select a valid three-card exchange from a public card snapshot.
+        """Select a valid exchange from this player's private hand.
 
         Returns:
-            Three cards with one valid symbol combination, or an empty list.
+            Cards with a valid symbol combination, or an empty list.
 
         """
-        cards_by_symbol: dict[str, list[dict[str, str]]] = {}
-        for card in bot.cards:
-            cards_by_symbol.setdefault(card["simbolo"], []).append(card)
-        for cards in cards_by_symbol.values():
-            if len(cards) >= self.rules.cards_for_exchange:
-                return cards[: self.rules.cards_for_exchange]
-        distinct: list[dict[str, str]] = []
-        seen_symbols: set[str] = set()
-        for card in bot.cards:
-            if card["simbolo"] not in seen_symbols:
-                distinct.append(card)
-                seen_symbols.add(card["simbolo"])
-        return (
-            distinct[: self.rules.cards_for_exchange]
-            if len(distinct) == self.rules.cards_for_exchange
-            else []
+        return choose_exchange(
+            bot.state_model.private_cards,
+            self.rules.cards_for_exchange,
+            equivalences=self.rules.continent_card_exchange_map,
         )
 
     def exchange_cards(self, bot: Bot) -> None:
@@ -846,11 +837,11 @@ class Simulation:
         if not self.exercise_cards:
             return
         selection = self._card_selection(bot)
-        if len(selection) != self.rules.cards_for_exchange:
+        if not selection:
             return
         cards_before = len(bot.cards)
         self.command(bot, "canjear_tarjetas", tarjetas=selection)
-        if len(bot.cards) != cards_before - self.rules.cards_for_exchange:
+        if len(bot.cards) != cards_before - len(selection):
             msg = "Card exchange did not consume the selected cards"
             raise RuntimeError(msg)
         self.card_exchanges += 1
@@ -885,19 +876,7 @@ class Simulation:
             Number of adjacency hops, or ``-1`` when no path exists.
 
         """
-        if origin == target:
-            return 0
-        queue: deque[tuple[str, int]] = deque([(origin, 0)])
-        visited = {origin}
-        while queue:
-            country, distance = queue.popleft()
-            for neighbor in self.adjacency[country]:
-                if neighbor == target:
-                    return distance + 1
-                if neighbor not in visited:
-                    visited.add(neighbor)
-                    queue.append((neighbor, distance + 1))
-        return -1
+        return shortest_distance(self.adjacency, origin, target)
 
     def _missile_damage(self, distance: int) -> int:
         """Return the configured damage for a missile distance.

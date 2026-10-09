@@ -14,6 +14,8 @@ from pyteg.config import (
     CARDS_FOR_EXCHANGE,
     DEFAULT_MAP_THEME,
 )
+from pyteg.core.cartas.canje import seleccion_valida
+from pyteg.core.cartas.tarjeta_de_pais import TarjetaDePais
 from pyteg.gui.widgets.tarjeta import TarjetaWidget
 from pyteg.i18n import translate as _
 
@@ -133,16 +135,31 @@ class TarjetasSelectionMixin:
             ``True`` si la selección cumple las reglas de canje habilitadas en la UI.
 
         """
-        cantidad = len(self.tarjetas_seleccionadas)
+        return self._seleccion_valida() or self._puede_realizar_canje_especial()
 
-        if cantidad == CARDS_FOR_EXCHANGE:
-            simbolos = [tarjeta.simbolo for tarjeta in self.tarjetas_seleccionadas]
-            unique_count = len(set(simbolos))
-            return unique_count in {1, CARDS_FOR_EXCHANGE}
-        if cantidad == 1:
-            return self._puede_realizar_canje_especial()
+    def _seleccion_valida(self: TarjetasSelectionHost) -> bool:
+        """Evalúa la mano con las equivalencias recibidas del motor.
 
-        return False
+        Returns:
+            True si las cartas representan un canje de unidades generales.
+
+        """
+        model = getattr(self.parent(), "client_state_model", None)
+        rules = getattr(model, "rules", None) or {}
+        cards = [
+            TarjetaDePais(
+                widget.pais,
+                widget.simbolo,
+                tipo=self.tarjetas[widget.index].get("tipo", "pais"),
+                continente=self.tarjetas[widget.index].get("continente"),
+            )
+            for widget in self.tarjetas_seleccionadas
+        ]
+        return seleccion_valida(
+            cards,
+            equivalencias=rules.get("continent_card_exchanges", {}),
+            cantidad_variables=rules.get("cards_for_exchange", CARDS_FOR_EXCHANGE),
+        )
 
     def _puede_realizar_canje_especial(self: TarjetasSelectionHost) -> bool:
         """Verifica si se puede realizar un canje especial (país + tarjeta).
@@ -151,7 +168,11 @@ class TarjetasSelectionMixin:
             ``True`` solo con una tarjeta seleccionada; el servidor valida el país.
 
         """
-        return len(self.tarjetas_seleccionadas) == 1
+        return (
+            len(self.tarjetas_seleccionadas) == 1
+            and self.tarjetas[self.tarjetas_seleccionadas[0].index].get("tipo", "pais")
+            == "pais"
+        )
 
     def seleccionar_todas(self: TarjetasSelectionHost) -> None:
         """Selecciona todas las tarjetas disponibles."""

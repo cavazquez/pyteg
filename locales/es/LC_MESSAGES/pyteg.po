@@ -665,8 +665,10 @@ msgstr "Acción:"
 msgid "Tu computadora alojará la partida mientras jugás."
 msgstr "Tu computadora alojará la partida mientras jugás."
 
-msgid "Los demás jugadores se conectan a tu dirección y puerto en la red local."
-msgstr "Los demás jugadores se conectan a tu dirección y puerto en la red local."
+msgid ""
+"Los demás jugadores se conectan a tu dirección y puerto en la red local."
+msgstr ""
+"Los demás jugadores se conectan a tu dirección y puerto en la red local."
 
 msgid "Anfitrión"
 msgstr "Anfitrión"
@@ -873,7 +875,6 @@ msgstr ""
 "partida."
 
 # Saved games, LAN discovery, turn files and replay
-
 msgid "Abrir partida o turno"
 msgstr "Abrir partida o turno"
 
@@ -1051,3 +1052,148 @@ msgid ""
 msgstr ""
 "Ya existe una conexión activa o en curso en esta ventana. Desconéctala antes"
 " de conectar otra."
+
+msgid "Abrir archivo…"
+msgstr "Abrir archivo…"
+
+msgid "Abrir carpeta"
+msgstr "Abrir carpeta"
+
+msgid "Abrir carpeta de exportaciones"
+msgstr "Abrir carpeta de exportaciones"
+
+msgid ""
+"Al importar se reemplaza la copia local por esta continuación. Conservá el "
+"archivo recibido para compartirlo o volver a consultarlo."
+msgstr ""
+"Al importar se reemplaza la copia local por esta continuación. Conservá el "
+"archivo recibido para compartirlo o volver a consultarlo."
+
+msgid "Archivo exportado"
+msgstr "Archivo exportado"
+
+msgid "Atacar país seleccionado"
+msgstr "Atacar país seleccionado"
+
+msgid "Bots (dificultad básica):"
+msgstr "Bots (dificultad básica):"
+
+msgid "Cambios desde tu copia: {} países"
+msgstr "Cambios desde tu copia: {} países"
+
+msgid "Conectar al servidor"
+msgstr "Conectar al servidor"
+
+msgid ""
+"Continuá para crear una sala o buscar una partida en tu red. Quien la crea "
+"puede personalizar todas las reglas."
+msgstr ""
+"Continuá para crear una sala o buscar una partida en tu red. Quien la crea "
+"puede personalizar todas las reglas."
+
+msgid "Copiar ruta"
+msgstr "Copiar ruta"
+
+msgid "El archivo está listo para compartir:"
+msgstr "El archivo está listo para compartir:"
+
+msgid "Elegir partida local, LAN o por archivos"
+msgstr "Elegir partida local, LAN o por archivos"
+
+msgid ""
+"Entrega {} · {} → {}\n"
+"Mapa: {} · Ronda {}\n"
+"Fecha: {}"
+msgstr ""
+"Entrega {} · {} → {}\n"
+"Mapa: {} · Ronda {}\n"
+"Fecha: {}"
+
+msgid "Finalizar tu turno actual"
+msgstr "Finalizar tu turno actual"
+
+msgid "Importar turno"
+msgstr "Importar turno"
+
+msgid ""
+"Ingresá de 1 a 8 nombres separados por comas. Cada jugador recibe y entrega "
+"su turno como un archivo, sin límite de tiempo."
+msgstr ""
+"Ingresá de 1 a 8 nombres separados por comas. Cada jugador recibe y entrega "
+"su turno como un archivo, sin límite de tiempo."
+
+msgid "Jugador"
+msgstr "Jugador"
+
+msgid "Jugador 1"
+msgstr "Jugador 1"
+
+msgid "Jugar"
+msgstr "Jugar"
+
+msgid "Jugar Pyteg"
+msgstr "Jugar Pyteg"
+
+msgid "LAN"
+msgstr "LAN"
+
+msgid "LAN · crear o unirse"
+msgstr "LAN · crear o unirse"
+
+msgid "Local"
+msgstr "Local"
+
+msgid "Local · humano contra bots"
+msgstr "Local · humano contra bots"
+
+msgid "Modo:"
+msgstr "Modo:"
+
+msgid "Mover unidades entre países"
+msgstr "Mover unidades entre países"
+
+msgid "No se pudo actualizar el índice de recientes: %s"
+msgstr "No se pudo actualizar el índice de recientes: %s"
+
+msgid "Nueva partida"
+msgstr "Nueva partida"
+
+msgid "Nueva partida o abrir un archivo"
+msgstr "Nueva partida o abrir un archivo"
+
+msgid "Nueva partida…"
+msgstr "Nueva partida…"
+
+msgid "Partida local · bots básicos"
+msgstr "Partida local · bots básicos"
+
+msgid "Partidas y archivos recientes"
+msgstr "Partidas y archivos recientes"
+
+msgid "País"
+msgstr "País"
+
+msgid "Países controlados:"
+msgstr "Países controlados:"
+
+msgid "Por archivos"
+msgstr "Por archivos"
+
+msgid "Por archivos · turnos asíncronos"
+msgstr "Por archivos · turnos asíncronos"
+
+msgid "Repetición"
+msgstr "Repetición"
+
+msgid "Tu nombre:"
+msgstr "Tu nombre:"
+
+msgid ""
+"Un humano y hasta siete bots básicos. Podés jugar solo con cero bots. "
+"Después elegís objetivos, situaciones y el resto de las reglas."
+msgstr ""
+"Un humano y hasta siete bots básicos. Podés jugar solo con cero bots. "
+"Después elegís objetivos, situaciones y el resto de las reglas."
+
+msgid "Unidades"
+msgstr "Unidades"

@@ -103,7 +103,7 @@ class PaisBattleFxMixin:
             self._titilacion_effect.setStrength(0.0)
             cast("QGraphicsPixmapItem", self).setGraphicsEffect(self._titilacion_effect)
 
-            self._titilacion_timer = QTimer()
+            self._titilacion_timer = QTimer(self._titilacion_effect)
             self._titilacion_timer.timeout.connect(self._alternar_titilacion)
             self._titilacion_timer.start(500)
 
@@ -137,6 +137,7 @@ class PaisBattleFxMixin:
         try:
             if self._titilacion_timer:
                 self._titilacion_timer.stop()
+                self._titilacion_timer.deleteLater()
                 self._titilacion_timer = None
 
             if self._titilacion_effect:
@@ -186,7 +187,9 @@ class PaisBattleFxMixin:
             opacity_effect = QGraphicsOpacityEffect()
             self._perdida_flotante.setGraphicsEffect(opacity_effect)
 
-            self._opacity_animation = QPropertyAnimation(opacity_effect, b"opacity")
+            self._opacity_animation = QPropertyAnimation(
+                opacity_effect, b"opacity", opacity_effect
+            )
             self._opacity_animation.setDuration(2000)
             self._opacity_animation.setStartValue(1.0)
             self._opacity_animation.setEndValue(0.0)
@@ -196,11 +199,11 @@ class PaisBattleFxMixin:
 
             self._opacity_animation.start()
 
-            self._movimiento_timer = QTimer()
+            self._movimiento_timer = QTimer(opacity_effect)
             self._movimiento_timer.timeout.connect(self._mover_perdida_arriba)
             self._movimiento_timer.start(50)
 
-            QTimer.singleShot(2000, self._detener_movimiento)
+            QTimer.singleShot(2000, opacity_effect, self._detener_movimiento)
 
         except (AttributeError, RuntimeError) as e:
             _LOG.warning("Error animando pérdida flotante en %s: %s", self._nombre, e)

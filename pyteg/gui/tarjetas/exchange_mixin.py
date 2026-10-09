@@ -24,8 +24,6 @@ class TarjetasExchangeMixin:
         if not self._puede_realizar_canje():
             return
 
-        cantidad_seleccionadas = len(self.tarjetas_seleccionadas)
-
         tarjetas_info = [
             {"pais": tarjeta.pais, "simbolo": tarjeta.simbolo, "index": tarjeta.index}
             for tarjeta in self.tarjetas_seleccionadas
@@ -33,7 +31,7 @@ class TarjetasExchangeMixin:
 
         transmisor = self._get_transmisor()
         try:
-            if cantidad_seleccionadas == 1:
+            if not self._seleccion_valida():
                 tarjeta = self.tarjetas_seleccionadas[0]
                 transmisor.canje_especial(tarjeta.pais)
             else:

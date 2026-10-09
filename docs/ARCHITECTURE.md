@@ -68,13 +68,39 @@ del modelo público y del log. Requieren participantes y red de confianza.
 - **Descubrimiento**: `RoomAnnouncer` publica metadatos públicos por UDP 45471;
   `RoomBrowser` conserva salas compatibles con caducidad y deduplicación por
   sala/época. La dirección procede del datagrama, y el mapa se valida por hash.
-- **Adapter local**: `OfflineConnection` y `AsyncGame` envían las mismas tareas
-  al mismo ejecutor que TCP. Usan puertos locales inertes y `NullTurnTimer`, sin
-  listener ni sockets. La entrega sella la copia del jugador y conserva una
+- **Transporte en memoria**: `InProcessGame` conecta identidades al mismo motor
+  y ejecutor que TCP. Separa eventos públicos y privados por destinatario y
+  comparte creación de jugadores, reconexión, sincronización y guardado.
+  `OfflineConnection` adapta esos eventos al modelo y los widgets Qt.
+- **Turnos por archivos**: `AsyncGame` utiliza ese transporte y `NullTurnTimer`,
+  sin listener ni sockets. La entrega sella la copia del jugador y conserva una
   cadena de hashes para rechazar duplicados y continuaciones incompatibles.
+  `TurnPreview` reconstruye sólo el historial público antes de abrirla.
 - **Historial**: `GameHistory` registra diferencias del snapshot público y
   resultados de combate. `Replay` reconstruye posiciones con caché acotada.
   `ReplayWindow` usa una escena independiente sin selección ni acciones de juego.
+
+### Bots e inicio de partidas
+
+`StartDialog` reúne Local, LAN y turnos por archivos, el mapa y el perfil de
+reglas. `GameFilesManager` crea la sesión elegida y coordina recientes,
+autoguardados, importación con vista previa, arrastrar archivos y exportación.
+Cancelar una vista previa conserva la sesión abierta.
+
+`LocalGame` añade un humano y hasta siete bots sobre `InProcessGame`. Cada bot
+recibe sus propios `ClientStateModel` y `ClientEventProcessor`: su estrategia
+consulta el mapa público y su mano, sin recorrer datos privados del motor.
+`BasicBotStrategy.next_command` elige una acción normal del protocolo;
+`LocalGame.bot_step` la envía como ese jugador, espera el resultado del
+ejecutor y conserva las decisiones pendientes. `OfflineConnection` programa
+una acción por tick de un timer Qt, para permitir interacción entre acciones.
+
+Los bots y el simulador comparten búsqueda de distancias, fronteras y canjes.
+El diálogo de cartas, el bot y el servidor usan `seleccion_valida` para las
+equivalencias de país, continente, comodín y supertarjeta. El motor valida
+propiedad, fase, turno y reglas activas. Los guardados locales conservan
+identidades, estrategias y reloj; la duración inicial es 20 segundos y el
+administrador puede modificarla. La dificultad disponible es básica.
 
 ### Identidad del jugador (dominio vs presentación)
 - **Dominio (servidor / core)**: el jugador se identifica de forma canónica con **`userid: int`** (dueño de país en el mapa, orden de turnos, canjes, validadores, combate, objetivos secretos, victoria).
