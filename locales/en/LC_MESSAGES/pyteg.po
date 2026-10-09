@@ -1380,3 +1380,35 @@ msgstr "Normal: reinforces borders and preserves defense while advancing."
 msgid "Difícil: prioriza su objetivo y evalúa riesgos y ataques siguientes."
 msgstr ""
 "Hard: prioritizes its objective and evaluates risks and follow-up attacks."
+
+msgid "Anfitrión con migración"
+msgstr "Host with migration"
+
+msgid "Entre pares"
+msgstr "Peer to peer"
+
+msgid "Tipo de red:"
+msgstr "Network type:"
+
+msgid ""
+"Cada participante valida la partida. Se necesita una mayoría conectada."
+msgstr ""
+"Each participant validates the game. A connected majority is required."
+
+msgid "Conectando entre pares…"
+msgstr "Connecting to peers…"
+
+msgid "Entre pares · conectado"
+msgstr "Peer to peer · connected"
+
+msgid "Entre pares · esperando una mayoría"
+msgstr "Peer to peer · waiting for a majority"
+
+msgid "Error entre pares: {}"
+msgstr "Peer connection error: {}"
+
+msgid "Tu conexión: {}"
+msgstr "Your connection: {}"
+
+msgid "Se necesitan {} de {} participantes."
+msgstr "{} of {} participants are required."

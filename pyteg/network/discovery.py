@@ -37,6 +37,7 @@ class Room:
     port: int
     players: int
     state: str
+    mode: str = "host"
 
     @classmethod
     def parse(cls, raw: bytes, host: str) -> Room | None:
@@ -50,10 +51,12 @@ class Room:
             return None
         try:
             data = json.loads(raw)
+            mode = data.get("mode", "host") if isinstance(data, dict) else None
             if (
                 not isinstance(data, dict)
-                or data.get("message") != "pyteg_room"
-                or data.get("protocol") != PROTOCOL_VERSION
+                or mode not in {"host", "peer"}
+                or (data.get("message"), data.get("protocol"))
+                != ("pyteg_room", PROTOCOL_VERSION)
                 or data.get("theme") not in {"classic", "revancha"}
                 or data.get("map_hash") != map_hash_for_theme(data["theme"])
             ):
@@ -82,6 +85,7 @@ class Room:
                 data["port"],
                 data["players"],
                 data["state"],
+                data.get("mode", "host"),
             )
         except ValueError, TypeError, KeyError, OSError:
             return None

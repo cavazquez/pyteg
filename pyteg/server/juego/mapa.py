@@ -14,6 +14,7 @@ from pyteg.exceptions import CountryNotFoundError
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable
+    from random import Random
 
     from pyteg.core.partida.reglas import ThemeRules
 
@@ -38,6 +39,7 @@ class Mapa:
         mapa_raw = build_mapa()
         self._build_mapa = build_mapa
         self._rules = rules
+        self._random_source: Random | None = None
         self._islas = {str(pais) for pais in (islas or ())}
         # Convertir listas a CountryData para mejor type safety
         self._mapa: dict[str, CountryData] = {}
@@ -64,6 +66,10 @@ class Mapa:
         """Asocia el perfil público a los cálculos dependientes del tema."""
         self._rules = rules
         self._missile_system = MissileSystem(self, rules)
+
+    def set_random_source(self, rng: Random) -> None:
+        """Asocia la fuente de una transición reproducible entre pares."""
+        self._random_source = rng
 
     def pais_existe(self, pais: str) -> bool:
         """Indica si un país está definido en el mapa.
@@ -331,10 +337,11 @@ class Mapa:
 
         # Mezclar los jugadores para una asignación aleatoria
         jugadores_mezclados = jugadores.copy()
-        shuffle(jugadores_mezclados)
+        shuffler = self._random_source.shuffle if self._random_source else shuffle
+        shuffler(jugadores_mezclados)
 
         # Mezclar la lista de países
-        shuffle(paises)
+        shuffler(paises)
 
         # Asignar la cantidad base de países a cada jugador
         indice = 0

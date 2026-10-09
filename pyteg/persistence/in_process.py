@@ -57,7 +57,9 @@ class InProcessGame:
         self._events: dict[str, dict[str, Any]] = {}
         self._closed = False
 
-    def _player(self, user_id: int, name: str) -> Client:
+    def _player(
+        self, user_id: int, name: str, *, reconnect_token: str | None = None
+    ) -> Client:
         port = _LocalPort(user_id, self._on_event)
         player = Client(
             user_id,
@@ -65,6 +67,7 @@ class InProcessGame:
             self.server,
             name,
             soy_admin=False,
+            reconnect_token=reconnect_token,
         )
         port.owner = player
         player.marcar_handshake(True)  # noqa: FBT003
@@ -121,6 +124,15 @@ class InProcessGame:
         self.server.encolar_comando(player, data)
         self.server.serialized(lambda: None)
         return deepcopy(self._events.pop(data["command_id"], None))
+
+    def apply(self, payload: dict[str, Any]) -> dict[str, Any] | None:
+        """Aplica un comando validado del jugador local.
+
+        Returns:
+            Resultado de la acción si el protocolo lo confirma.
+
+        """
+        return self._apply_as(self.user_id, payload)
 
     def sync_player(self, user_id: int) -> None:
         """Envía datos públicos y sólo los datos privados de ese jugador."""

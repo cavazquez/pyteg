@@ -5,6 +5,11 @@ Todas las fechas en formato YYYY-MM-DD.
 ## [Unreleased]
 
 ### Added
+- **Tiempo real entre pares**: nuevo selector LAN junto a Anfitrión con
+  migración. Cada cliente valida acciones, votos persistentes por posición,
+  mayorías conjuntas, reloj acordado, reincorporación por cualquier par y
+  guardados de identidad. Cuatro ventanas Qt ejercitan turnos, combate, caída
+  del creador y reconexión en ambos mapas y perfiles de reglas.
 - **Dificultad de bots**: Fácil, Normal y Difícil desde el inicio local, con
   estrategias intercambiables, nivel persistido y recuperación de guardados
   anteriores. Normal cuida fronteras y defensa; Difícil prioriza su objetivo y

@@ -38,6 +38,12 @@ class GameHistory:
         self._latest: dict[str, Any] | None = None
         self._records: list[dict[str, Any]] = []
         self._events: list[dict[str, Any]] = []
+        self._record_time: str | None = None
+
+    def set_record_time(self, timestamp: str) -> None:
+        """Fija la marca temporal compartida de una transición entre pares."""
+        datetime.fromisoformat(timestamp)
+        self._record_time = timestamp
 
     def observe(self, kind: str, data: dict[str, Any]) -> None:
         """Conserva sólo resultados públicos de combate de la transición actual."""
@@ -83,7 +89,7 @@ class GameHistory:
         self._records.append({
             "action": action,
             "userid": user_id,
-            "time": datetime.now(UTC).isoformat(),
+            "time": self._record_time or datetime.now(UTC).isoformat(),
             "turn": deepcopy(current.get("turno")),
             "payload": public_payload,
             "events": deepcopy(self._events),

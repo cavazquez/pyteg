@@ -21,6 +21,8 @@ from pyteg.colores import (
 )
 
 if TYPE_CHECKING:
+    from random import Random
+
     from pyteg.protocols import IClientProtocol
 
 
@@ -41,6 +43,12 @@ class ServerColor:
         ]
         self._usados: list[IColor] = []
         self._lock = threading.RLock()
+        self._random_source: Random | None = None
+
+    def set_random_source(self, rng: Random) -> None:
+        """Usa la misma asignación de color en las réplicas de una transición."""
+        with self._lock:
+            self._random_source = rng
 
     def asignar_color_aleatorio(self, client: IClientProtocol) -> bool:
         """Asigna un color aleatorio disponible a un cliente.
@@ -57,7 +65,10 @@ class ServerColor:
             colores_disponibles = self._colores_disponibles()
             if not colores_disponibles:
                 return False
-            color = secrets.choice(colores_disponibles)
+            chooser = (
+                self._random_source.choice if self._random_source else secrets.choice
+            )
+            color = chooser(colores_disponibles)
             self._usados.append(color)
             client.asignar_color(copy(color))
             return True

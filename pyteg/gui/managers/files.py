@@ -14,6 +14,7 @@ from pyteg.client.bot_strategies import DEFAULT_BOT_DIFFICULTY
 from pyteg.client.conexion.connection import ConnectionClient
 from pyteg.client.conexion.transmisor import ClientTransmisor
 from pyteg.client.offline import OfflineConnection
+from pyteg.client.peer_connection import PeerConnection
 from pyteg.gui.dialogs.async_setup import AsyncSetupDialog
 from pyteg.gui.dialogs.exported_file import ExportedFileDialog
 from pyteg.gui.dialogs.replay import ReplayWindow
@@ -21,6 +22,7 @@ from pyteg.gui.dialogs.start import StartDialog
 from pyteg.gui.dialogs.turn_preview import TurnPreviewDialog
 from pyteg.i18n import translate as _
 from pyteg.logger import get_logger
+from pyteg.network.peer_runtime import PeerNode
 from pyteg.persistence.archive import (
     FileRepository,
     make_archive,
@@ -130,9 +132,15 @@ class GameFilesManager:
             payload = archive["payload"]
             if archive["kind"] == "replay":
                 return f"{path.name} · {_('Repetición')}"
-            checkpoint = payload.get("checkpoint") or payload["envelope"]["checkpoint"]
+            checkpoint = (
+                payload["peer"]["document"]["state"]["checkpoint"]
+                if "peer" in payload
+                else payload.get("checkpoint") or payload["envelope"]["checkpoint"]
+            )
             mode = (
-                _("Local")
+                _("Entre pares")
+                if "peer" in payload
+                else _("Local")
                 if "local" in payload
                 else _("Por archivos")
                 if "async" in payload or archive["kind"] == "turn"
@@ -220,7 +228,9 @@ class GameFilesManager:
             return
         try:
             connection = self.window.conexion
-            if (
+            if isinstance(connection, PeerConnection) and connection.node is not None:
+                write_archive(path, connection.node.draft())
+            elif (
                 isinstance(connection, OfflineConnection)
                 and connection.game is not None
             ):
@@ -292,7 +302,9 @@ class GameFilesManager:
                     return False
             finally:
                 dialog.deleteLater()
-        if (
+        if "peer" in archive["payload"]:
+            self._open_peer(archive)
+        elif (
             archive["kind"] == "turn"
             or "async" in archive["payload"]
             or "local" in archive["payload"]
@@ -302,6 +314,16 @@ class GameFilesManager:
             self._open_network(path, archive)
         self._remember(path)
         return True
+
+    def _open_peer(self, archive: dict[str, Any]) -> None:
+        checkpoint = archive["payload"]["peer"]["document"]["state"]["checkpoint"]
+        self.window.set_map_theme(checkpoint["theme"])
+        self.window.reset_session_state()
+        peer = PeerConnection(self.window)
+        repository = self.network_repository()
+        peer.start(
+            lambda: PeerNode.open(archive, host="0.0.0.0", repository=repository)  # noqa: S104 -- reabrir un participante LAN.
+        )
 
     def _open_offline(self, archive: dict[str, Any]) -> None:
         offline = OfflineConnection(self.window)
@@ -439,6 +461,11 @@ class GameFilesManager:
 
     def _history(self) -> dict[str, Any]:
         connection = self.window.conexion
+        if isinstance(connection, PeerConnection) and connection.node is not None:
+            return cast(
+                "dict[str, Any]",
+                connection.node.document["state"]["checkpoint"]["history"],
+            )
         if isinstance(connection, OfflineConnection) and connection.game is not None:
             return cast(
                 "dict[str, Any]",

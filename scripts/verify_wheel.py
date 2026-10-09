@@ -8,6 +8,12 @@ from pathlib import Path
 from zipfile import ZipFile
 
 REQUIRED_FILES = (
+    "pyteg/client/peer_connection.py",
+    "pyteg/network/peer_runtime.py",
+    "pyteg/network/peer_consensus.py",
+    "pyteg/network/peer_state.py",
+    "pyteg/network/peer_transport.py",
+    "pyteg/persistence/peer_game.py",
     "pyteg/client/bots.py",
     "pyteg/client/bot_strategies.py",
     "pyteg/client/bot_planning.py",

@@ -25,6 +25,7 @@ if TYPE_CHECKING:
     from pyteg.gui.main_window import Gui
     from pyteg.gui.managers.protocols import MainWindowProtocol
     from pyteg.persistence.archive import ArchiveRepository
+    from pyteg.persistence.in_process import InProcessGame
 
 
 _LOG = get_logger(__name__)
@@ -45,7 +46,7 @@ class OfflineConnection(QObject):
             cast("MainWindowProtocol", window), self.state_model
         )
         self.hosting = SimpleNamespace(paused=False)
-        self.game: AsyncGame | LocalGame | None = None
+        self.game: InProcessGame | None = None
         self._active = False
         self._availability_timer = QTimer(self)
         self._availability_timer.setSingleShot(True)

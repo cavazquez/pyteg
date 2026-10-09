@@ -12,6 +12,7 @@ from pyteg.core.cartas.tarjeta_de_pais import TarjetaDePais, _to_userid
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Mapping, Sequence
+    from random import Random
 
     from pyteg.protocols import IJugador
 
@@ -47,6 +48,7 @@ class Mazo:
         self._simbolos = list(simbolos)
         self._simbolos_por_pais = dict(simbolos_por_pais or {})
         self._cartas_extra = list(cartas_extra)
+        self._random_source: Random | None = None
         self.mazo: dict[str, TarjetaDePais] = {}
         for tarjeta in tarjetas:
             self.mazo[tarjeta.pais] = tarjeta
@@ -75,6 +77,10 @@ class Mazo:
                 tipo=tipo,
                 continente=continente,
             )
+
+    def set_random_source(self, rng: Random) -> None:
+        """Comparte la extracción de cartas entre réplicas de una transición."""
+        self._random_source = rng
 
     def build_tarjetas_de_paises(
         self,
@@ -254,7 +260,8 @@ class Mazo:
     def asignar_tarjeta(
         self,
         jugador: IJugador | int,
-        mezclar: Callable[[list[TarjetaDePais], int], list[TarjetaDePais]] = sample,
+        mezclar: Callable[[list[TarjetaDePais], int], list[TarjetaDePais]]
+        | None = None,
         *,
         tipo: str = "pais",
         continente: str | None = None,
@@ -281,7 +288,10 @@ class Mazo:
             disponibles = [
                 tarjeta for tarjeta in disponibles if tarjeta.se_puede_asignar()
             ]
-        tarjetas = mezclar(disponibles, len(disponibles))
+        sampler = mezclar or (
+            self._random_source.sample if self._random_source else sample
+        )
+        tarjetas = sampler(disponibles, len(disponibles))
         for tarjeta in tarjetas:
             if tarjeta.se_puede_asignar():
                 tarjeta.asignar(jugador)

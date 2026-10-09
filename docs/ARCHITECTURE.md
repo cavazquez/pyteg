@@ -54,6 +54,53 @@ espera las identidades históricas antes de reanudar, o la acción del anfitrió
 Los mementos contienen cartas, objetivos y tokens privados; se mantienen fuera
 del modelo público y del log. Requieren participantes y red de confianza.
 
+### Tiempo real entre pares
+
+El formulario LAN ofrece **Anfitrión con migración** y **Entre pares**. En el
+segundo, cada proceso tiene `PeerNode`, `PeerPort` y un `PeerGame` propio. Todos
+pueden proponer, validar y votar; ninguna conexión enruta todas las acciones.
+El administrador configura reglas, pero no es la autoridad de red.
+
+- `network/peer_consensus.py`: una posición Paxos con promesa, número aceptado,
+  valor aceptado y nonce durables. La fase de preparación conserva el mayor
+  valor previo; cualquier par puede terminarlo si cae su proponente.
+- `network/peer_runtime.py`: preparación, aceptación, certificado y difusión;
+  sólo instala el estado después de persistir el documento y el siguiente voto.
+  Las altas y bajas necesitan mayorías tanto del grupo anterior como del nuevo.
+  Una minoría no puede avanzar, cambiar su membresía ni adelantar el reloj.
+- `network/peer_state.py`: transición pura sobre un memento anterior. Cada
+  votante la reproduce con las mismas reglas, compara el hash completo y vota
+  sólo si coincide. Los nonces de la preparación generan una semilla nueva;
+  dados, reparto, objetivos, colores, cartas y situaciones comparten esa fuente.
+  El historial usa la misma marca temporal de la propuesta.
+- `persistence/peer_game.py`: adaptador del motor existente, con reloj autónomo
+  desactivado. Retiene eventos privados y públicos hasta el commit, luego
+  entrega sólo los del jugador de esa ventana. Los candidatos se descartan si
+  falla el acuerdo. La idempotencia de comandos permanece dentro del memento.
+- `client/peer_connection.py`: cola de comandos fuera de Qt, señales para
+  snapshots y eventos confirmados, disponibilidad, guardado y descubrimiento.
+  Todos los participantes anuncian el mismo ID de sala con su propio endpoint.
+
+El reloj usa pasos de un segundo sujetos al mismo acuerdo; cada votante
+comprueba su intervalo monotónico. Cuando llega a cero, el ejecutor normal
+finaliza el turno. Sin mayoría no hay pasos ni vencimientos. Después de ocho
+segundos sin respuesta, cualquier participante puede proponer una baja; la
+membresía anterior aún debe aprobarla. La reconexión autentica el token
+histórico y actualiza el endpoint mediante otra transición conjunta.
+
+Los autoguardados conservan estado, identidad, clave de sala, promesas y valor
+aceptado antes de responder al emisor, usando `fsync` y reemplazo atómico. Abrir
+un autoguardado de pares conserva la misma sala. Consultar otro participante
+permite recuperar commits que no llegaron antes de desconectarse.
+
+El algoritmo sigue las condiciones de [Paxos Made Simple de Lamport](https://lamport.azurewebsites.net/pubs/paxos-simple.pdf)
+para conservar valores aceptados y mayorías; las transiciones de membresía usan
+mayorías conjuntas, como se describe en el [artículo de Raft](https://raft.github.io/raft.pdf).
+Los MAC autentican mensajes externos a la sala; el modelo sigue suponiendo
+participantes y LAN de confianza. Los motores contienen información privada,
+no hay protección contra un jugador que modifique su programa, cifrado ni
+descubrimiento o conexión automática a través de NAT.
+
 ### Persistencia, descubrimiento y partidas por archivos
 
 - **Memento**: el originador `Server` expone `capture_state`, `restore_state`,

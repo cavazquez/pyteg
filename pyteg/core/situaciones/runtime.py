@@ -89,6 +89,10 @@ class SituationRuntime:
         self._rounds_started: set[int] = set()
         self._context = SituationContext(mapa)
 
+    def set_random_source(self, rng: random.Random) -> None:
+        """Usa dados reproducibles durante una transición acordada por pares."""
+        self._dice_source = _RandomDice(rng)
+
     @classmethod
     def none(cls, mapa: IMapProtocol) -> SituationRuntime:
         """Crea un runtime con Null Object y sin cartas.

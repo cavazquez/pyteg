@@ -67,6 +67,16 @@ class RoomCatalogTests(unittest.TestCase):
         self.now = ROOM_EXPIRY_SECONDS
         self.assertEqual(self.catalog.rooms(), [])
 
+    def test_mode_distinguishes_peers_and_compatible_host_rooms(self) -> None:
+        """Los anuncios anteriores siguen siendo salas con anfitrión."""
+        self._send()
+        self.assertEqual(self.catalog.rooms()[0].mode, "host")
+        self._send(mode="peer")
+        self.assertEqual(self.catalog.rooms()[0].mode, "peer")
+        self.catalog = RoomCatalog(lambda: self.now)
+        self._send(mode="unknown")
+        self.assertEqual(self.catalog.rooms(), [])
+
     def test_rejects_bad_versions_maps_ports_and_types(self) -> None:
         """Los datos incorrectos no se muestran como una sala seleccionable."""
         for changes in (

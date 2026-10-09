@@ -1237,3 +1237,35 @@ msgstr "Normal: refuerza fronteras y cuida la defensa al avanzar."
 
 msgid "Difícil: prioriza su objetivo y evalúa riesgos y ataques siguientes."
 msgstr "Difícil: prioriza su objetivo y evalúa riesgos y ataques siguientes."
+
+msgid "Anfitrión con migración"
+msgstr "Anfitrión con migración"
+
+msgid "Entre pares"
+msgstr "Entre pares"
+
+msgid "Tipo de red:"
+msgstr "Tipo de red:"
+
+msgid ""
+"Cada participante valida la partida. Se necesita una mayoría conectada."
+msgstr ""
+"Cada participante valida la partida. Se necesita una mayoría conectada."
+
+msgid "Conectando entre pares…"
+msgstr "Conectando entre pares…"
+
+msgid "Entre pares · conectado"
+msgstr "Entre pares · conectado"
+
+msgid "Entre pares · esperando una mayoría"
+msgstr "Entre pares · esperando una mayoría"
+
+msgid "Error entre pares: {}"
+msgstr "Error entre pares: {}"
+
+msgid "Tu conexión: {}"
+msgstr "Tu conexión: {}"
+
+msgid "Se necesitan {} de {} participantes."
+msgstr "Se necesitan {} de {} participantes."

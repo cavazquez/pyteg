@@ -12,6 +12,7 @@ from PySide6.QtWidgets import QApplication, QWidget
 
 from pyteg.client.app import Client
 from pyteg.client.offline import OfflineConnection
+from pyteg.client.peer_connection import PeerConnection
 from pyteg.gui.dialogs.async_setup import AsyncSetupDialog
 from pyteg.gui.dialogs.conectar import VentanaConectar
 from pyteg.gui.dialogs.replay import ReplayWindow
@@ -21,6 +22,10 @@ from pyteg.persistence.archive import FileRepository, read_archive, write_archiv
 from pyteg.persistence.asynchronous import AsyncGame
 from pyteg.persistence.history import Replay
 from pyteg.protocol import map_hash_for_theme
+from scripts.smoke_qt_multiclient import (
+    _free_port,  # noqa: PLC2701 -- helpers de TCP y Qt compartidos.
+    _wait_for,  # noqa: PLC2701 -- espera eventos Qt reales.
+)
 from tests.qt_fixtures import dispose_widget
 from tests.test_game_archives import complete_turn
 
@@ -207,4 +212,65 @@ class GuiGameFilesTests(unittest.TestCase):
         self.assertEqual(dialog.addr.text(), room.host)
         self.assertEqual(dialog.port.text(), str(room.port))
         self.assertEqual(dialog.theme_selector.currentData(), "revancha")
+        self.assertEqual(dialog.network_selector.currentData(), "host")
+        peer_room = Room(
+            "peer",
+            1,
+            "Entre pares",
+            "classic",
+            map_hash_for_theme("classic"),
+            "192.168.1.31",
+            40001,
+            4,
+            "JUGANDO",
+            "peer",
+        )
+        dialog.room_selector.addItem("Entre pares", peer_room)
+        dialog.room_selector.setCurrentIndex(2)
+        self.assertEqual(dialog.network_selector.currentData(), "peer")
+        self.assertEqual(dialog.addr.text(), peer_room.host)
+        dialog.update_language("es")
+        self.assertEqual(dialog.network_selector.currentData(), "peer")
         dialog.reject()
+
+    def test_peer_selector_creates_a_real_room_and_saves_its_identity(self) -> None:
+        """El selector LAN crea pares y Guardar conserva votos e identidad."""
+        with patch(
+            "pyteg.gui.dialogs.conectar.dialog.RoomBrowser",
+            side_effect=OSError("sin UDP"),
+        ):
+            dialog = VentanaConectar(self.window)
+        self.addCleanup(dispose_widget, dialog)
+        dialog.network_selector.setCurrentIndex(1)
+        dialog.mode_selector.setCurrentIndex(1)
+        dialog.port.setText(str(_free_port()))
+        dialog.username.setText("Un par")
+        dialog.connect_to_server()
+
+        def ready() -> bool:
+            peer = self.window.conexion
+            return isinstance(peer, PeerConnection) and peer.node is not None
+
+        _wait_for(self.app, ready, 10, "creación desde selector de pares")
+        peer = self.window.conexion
+        self.assertIsInstance(peer, PeerConnection)
+        if not isinstance(peer, PeerConnection) or peer.node is None:
+            self.fail("El selector no creó un par")
+        node = peer.node
+        self.addCleanup(node.close)
+        self.assertIsNone(self.window.host_runtime)
+        self.assertTrue(self.window.client.es_admin())
+        self.window.files_manager.refresh()
+        self.assertTrue(self.window.files_manager.actions["save"].isEnabled())
+        path = self.directory / "peer-manual.pyteg"
+        with patch(
+            "pyteg.gui.managers.files.QFileDialog.getSaveFileName",
+            return_value=(str(path), ""),
+        ):
+            self.window.files_manager.save_game()
+        saved = read_archive(path)
+        self.assertEqual(saved["payload"]["peer"]["userid"], node.user_id)
+        self.assertIn("slot", saved["payload"]["peer"])
+        self.assertIn("Entre pares", self.window.files_manager.describe_recent(path))
+        peer.desconectar()
+        node.close()

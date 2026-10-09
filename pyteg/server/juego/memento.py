@@ -87,6 +87,26 @@ _TURN_FIELDS = {
 }
 
 
+def prepare_shared_transition(server: Server, seed: int, timestamp: str) -> None:
+    """Configura entropía y tiempo de una única transición replicada.
+
+    El transporte proporciona una semilla nueva en cada acuerdo; todos los
+    motores ejecutan las reglas con las mismas extracciones y dados.
+    """
+    rng = random.Random(seed)  # noqa: S311 -- consenso reproducible, sin credenciales.
+    server.history.set_record_time(timestamp)
+    server.objetivos_secretos._rng = rng
+    server._game_coordinator._situation_rng = rng
+    server.color.set_random_source(rng)
+    server.mapa.set_random_source(rng)
+    server.mazo.set_random_source(rng)
+    if server.game is not None:
+        server.game._dice_rng = rng
+        runtime = server.game._situation_runtime
+        runtime._deck._rng = rng
+        runtime.set_random_source(rng)
+
+
 class _OfflineConnection:
     """Puerto inerte de un jugador histórico antes de recuperar su socket."""
 

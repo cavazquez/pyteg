@@ -72,11 +72,29 @@ uv sync
 1. Ejecutá `uv run pyteg-client`, elegí **LAN** en el inicio y continuá.
 2. Elegí **Crear partida**, tu nombre, mapa, perfil de reglas y puerto. La
    ventana muestra las direcciones locales que podés compartir.
+   En **Tipo de red** elegí **Anfitrión con migración** o **Entre pares**.
 3. Los demás jugadores eligen **Unirme a una partida** y seleccionan la sala
    en **Salas en la red**. El cliente completa dirección, puerto y mapa.
    También se puede ingresar la dirección manualmente.
 4. El administrador configura las reglas y comienza la partida. El mapa y el
    perfil de reglas siguen siendo elecciones independientes.
+
+**Anfitrión con migración** aloja el motor en un jugador y pasa ese rol a otro
+si se cae. **Entre pares** mantiene un motor y un puerto en cada cliente: cada
+acción se valida y confirma por mayoría, sin un anfitrión de juego único.
+Podés unirte contactando a cualquier participante. La sala descubierta completa
+también el tipo de red; para una dirección manual elegí el mismo tipo que sus
+jugadores.
+
+En **Entre pares**, cerrar al creador permite continuar a los demás si conservan
+mayoría. Con cuatro jugadores hacen falta tres. Sin mayoría se pausan acciones
+y reloj; el grupo minoritario no puede crear otra continuación. El administrador
+sigue configurando las reglas y los turnos conservan sus 20 segundos por defecto.
+**Guardar partida** incluye la identidad y los votos de ese jugador. Reabrir
+el autoguardado recupera esa sesión; **Recuperar mi jugador desde un guardado…**
+permite conectarse a otro participante si cambió la dirección. Usá el guardado
+más reciente de cada jugador. El alcance es LAN o direcciones accesibles entre
+todos los participantes; no incluye atravesar automáticamente routers/NAT.
 
 Si se cierra o cae el anfitrión, los clientes intentan reconectarse y luego
 recuperan el motor en otro participante por orden de ingreso. La partida se

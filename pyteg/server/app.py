@@ -35,7 +35,11 @@ from pyteg.server.juego.command_executor import GameCommandExecutor
 from pyteg.server.juego.coordinator import ServerGameCoordinator
 from pyteg.server.juego.estado import Estado
 from pyteg.server.juego.mapa import Mapa
-from pyteg.server.juego.memento import export_checkpoint, restore_checkpoint
+from pyteg.server.juego.memento import (
+    export_checkpoint,
+    prepare_shared_transition,
+    restore_checkpoint,
+)
 from pyteg.server.juego.recovery import finish_migration, reconnect_migrated
 from pyteg.server.logging_setup import configure_server_logging
 from pyteg.toml_reader import TomlReader
@@ -192,6 +196,10 @@ class Server:
     def restore_state(self, state: dict[str, Any]) -> None:
         """Restaura un motor nuevo; conserva identidades para reconectarlas."""
         self.migration_sessions = restore_checkpoint(self, state)
+
+    def prepare_shared_transition(self, seed: int, timestamp: str) -> None:
+        """Configura una transición que todos los pares validarán localmente."""
+        self.serialized(lambda: prepare_shared_transition(self, seed, timestamp))
 
     def finish_recovery(self, remaining: int | None) -> None:
         """Finaliza la recuperación dentro del serializador del motor."""

@@ -22,6 +22,7 @@ from PySide6.QtWidgets import (
 from pyteg.client.conexion.connection import ConnectionClient
 from pyteg.client.conexion.transmisor import ClientTransmisor
 from pyteg.client.hosting import local_game_addresses
+from pyteg.client.peer_connection import PeerConnection
 from pyteg.config import DEFAULT_MAP_THEME
 from pyteg.exceptions import ImagenNoEncontradaError
 from pyteg.gui.dialogs.conectar import styles
@@ -34,6 +35,7 @@ from pyteg.gui.dialogs.conectar.validation import (
 from pyteg.i18n import translate as _
 from pyteg.logger import get_logger
 from pyteg.network.discovery import Room, RoomBrowser
+from pyteg.network.peer_runtime import PeerNode
 from pyteg.persistence.archive import read_archive
 from pyteg.server.hosting.runtime import HostRuntime
 from pyteg.toml_reader import TomlReaderError
@@ -92,9 +94,10 @@ class VentanaConectar(QDialog):
         self.username: QLineEdit
         self.theme_selector: QComboBox
         self.rules_selector: QComboBox
-        self._conexion: ConnectionClient | None = None
+        self._conexion: ConnectionClient | PeerConnection | None = None
         self._browser: RoomBrowser | None = None
         self._saved_identity: tuple[int, str] | None = None
+        self._saved_peer: dict[str, Any] | None = None
 
         self._setup_window()
 
@@ -121,7 +124,7 @@ class VentanaConectar(QDialog):
     def _setup_window(self) -> None:
         """Configura las propiedades básicas de la ventana."""
         self.setWindowTitle(_("Crear o unirse a una partida"))
-        self.setMinimumSize(QSize(480, 520))
+        self.setMinimumSize(QSize(480, 560))
         self.setWindowFlags(
             Qt.WindowType.Dialog
             | Qt.WindowType.CustomizeWindowHint
@@ -144,7 +147,7 @@ class VentanaConectar(QDialog):
         desc_label.setStyleSheet(styles.DESC_LABEL_STYLE)
         parent_layout.addWidget(desc_label)
 
-    def _setup_form(self, parent_layout: QVBoxLayout) -> None:
+    def _setup_form(self, parent_layout: QVBoxLayout) -> None:  # noqa: PLR0915 -- formulario completo de LAN.
         """Configura el formulario con los campos de entrada."""
         form_layout = QFormLayout()
         form_layout.setSpacing(15)
@@ -163,6 +166,14 @@ class VentanaConectar(QDialog):
         self.mode_label = QLabel(_("Acción:"))
         self.mode_label.setStyleSheet(styles.FORM_LABEL_STYLE)
         form_layout.addRow(self.mode_label, self.mode_selector)
+        self.network_selector = QComboBox()
+        self.network_selector.addItem(_("Anfitrión con migración"), "host")
+        self.network_selector.addItem(_("Entre pares"), "peer")
+        self.network_selector.setStyleSheet(styles.INPUT_STYLE)
+        self.network_selector.currentIndexChanged.connect(self._update_mode)
+        self.network_label = QLabel(_("Tipo de red:"))
+        self.network_label.setStyleSheet(styles.FORM_LABEL_STYLE)
+        form_layout.addRow(self.network_label, self.network_selector)
         self.room_selector = QComboBox()
         self.room_selector.addItem(_("Ingresar dirección manualmente"), None)
         self.room_selector.setStyleSheet(styles.INPUT_STYLE)
@@ -249,6 +260,9 @@ class VentanaConectar(QDialog):
             self.theme_selector.setCurrentIndex(
                 self.theme_selector.findData(room.theme)
             )
+            self.network_selector.setCurrentIndex(
+                self.network_selector.findData(room.mode)
+            )
 
     def _restore_identity(self) -> None:
         path, _filter = QFileDialog.getOpenFileName(
@@ -257,9 +271,16 @@ class VentanaConectar(QDialog):
         if not path:
             return
         try:
-            payload = read_archive(path, kind="game")["payload"]
-            user_id = payload["userid"]
-            checkpoint = payload["envelope"]["checkpoint"]
+            archive = read_archive(path, kind="game")
+            payload = archive["payload"]
+            self._saved_peer = archive if "peer" in payload else None
+            identity = payload.get("peer", payload)
+            user_id = identity["userid"]
+            checkpoint = (
+                identity["document"]["state"]["checkpoint"]
+                if self._saved_peer
+                else payload["envelope"]["checkpoint"]
+            )
             player = next(
                 player
                 for player in checkpoint["players"]
@@ -269,6 +290,9 @@ class VentanaConectar(QDialog):
             self.username.setText(player["username"])
             self.theme_selector.setCurrentIndex(
                 self.theme_selector.findData(checkpoint["theme"])
+            )
+            self.network_selector.setCurrentIndex(
+                self.network_selector.findData("peer" if self._saved_peer else "host")
             )
         except (OSError, ValueError, KeyError, TypeError, StopIteration) as error:
             self._show_error(str(error))
@@ -295,6 +319,13 @@ class VentanaConectar(QDialog):
             if hosting
             else _("Ingresa los datos para conectarte a una partida existente")
         )
+        if self.network_selector.currentData() == "peer":
+            self.description_label.setText(
+                _(
+                    "Cada participante valida la partida. "
+                    "Se necesita una mayoría conectada."
+                )
+            )
         self.connect_button.setText(_("Crear partida") if hosting else _("Conectar"))
 
     def _create_input_fields(self) -> None:
@@ -396,6 +427,12 @@ class VentanaConectar(QDialog):
         try:
             if isinstance(conexion_actual, ConnectionClient):
                 conexion_actual.desconectar()
+            if self.network_selector.currentData() == "peer":
+                self._connect_peers(
+                    selected_theme, addr, port, username, hosting=hosting
+                )
+                self.accept()
+                return
             if hosting:
                 port = self._create_host(selected_theme, port)
             elif self._saved_identity is not None:
@@ -410,6 +447,45 @@ class VentanaConectar(QDialog):
 
         except (ConnectionError, OSError, ValueError) as e:
             self._show_error(_("Error al conectar: {}").format(str(e)))
+
+    def _connect_peers(
+        self, theme: str, addr: str, port: int, username: str, *, hosting: bool
+    ) -> None:
+        files = getattr(self._main_window, "files_manager", None)
+        repository = files.network_repository() if files is not None else None
+        previous = getattr(self._main_window, "host_runtime", None)
+        if isinstance(previous, HostRuntime):
+            previous.close()
+            self._main_window.host_runtime = None
+        self._main_window.reset_session_state()
+        peer = PeerConnection(self._main_window)
+        profile = str(self.rules_selector.currentData())
+        identity, saved = self._saved_identity, self._saved_peer
+        if hosting:
+            advertised = local_game_addresses()[0]
+            peer.start(
+                lambda: PeerNode.create(
+                    theme,
+                    username,
+                    profile,
+                    host="0.0.0.0",  # noqa: S104 -- sala LAN solicitada por el usuario.
+                    port=port,
+                    advertise_host=advertised,
+                    repository=repository,
+                )
+            )
+        else:
+            peer.start(
+                lambda: PeerNode.join(
+                    (addr, port),
+                    username,
+                    identity=identity,
+                    saved_archive=saved,
+                    host="0.0.0.0",  # noqa: S104 -- cada par recibe conexiones LAN.
+                    repository=repository,
+                )
+            )
+        self._conexion = peer
 
     def _create_host(self, theme: str, port: int) -> int:
         """Crea el anfitrión y conserva sus recursos sólo si pudo reservar el puerto.
@@ -490,6 +566,9 @@ class VentanaConectar(QDialog):
         self.mode_selector.setItemText(0, _("Unirme a una partida"))
         self.mode_selector.setItemText(1, _("Crear partida"))
         self.mode_label.setText(_("Acción:"))
+        self.network_label.setText(_("Tipo de red:"))
+        self.network_selector.setItemText(0, _("Anfitrión con migración"))
+        self.network_selector.setItemText(1, _("Entre pares"))
         self.room_label.setText(_("Salas en la red:"))
         self.room_selector.setItemText(0, _("Ingresar dirección manualmente"))
         self.restore_identity_button.setText(
