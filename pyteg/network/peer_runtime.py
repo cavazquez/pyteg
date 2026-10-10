@@ -13,7 +13,7 @@ import secrets
 import threading
 import time
 import uuid
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
 from copy import deepcopy
 from datetime import UTC, datetime
 from functools import partial
@@ -862,16 +862,21 @@ class PeerNode:
         futures = [
             self._io.submit(self._request, record, message, body) for record in records
         ]
-        for future in as_completed(futures):
-            try:
-                reply = future.result()
-            except OSError, ValueError, KeyError, TypeError, RuntimeError:
-                continue
-            if "document" in reply:
-                self._install_document(reply["document"])
-            replies.append(reply)
-            if enough(replies):
-                break
+        pending = set(futures)
+        while pending and not self._stop.is_set():
+            completed, pending = wait(pending, timeout=0.1, return_when=FIRST_COMPLETED)
+            for future in completed:
+                if future.cancelled():
+                    continue
+                try:
+                    reply = future.result()
+                except OSError, ValueError, KeyError, TypeError, RuntimeError:
+                    continue
+                if "document" in reply:
+                    self._install_document(reply["document"])
+                replies.append(reply)
+                if enough(replies):
+                    return replies
         return replies
 
     def submit(self, command: dict[str, Any]) -> dict[str, Any] | None:

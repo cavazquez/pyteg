@@ -4,9 +4,10 @@
 
 from __future__ import annotations
 
+import threading
 import time
 import unittest
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import Future, ThreadPoolExecutor
 from copy import deepcopy
 from typing import Any
 from unittest.mock import patch
@@ -127,6 +128,29 @@ class PeerNetworkTests(unittest.TestCase):
         self.nodes.append(joined)
         self.same_state(self.nodes)
         self.assertEqual(joined.user_id, 2)
+
+    def test_shutdown_stops_a_collection_waiting_for_cancelled_work(self) -> None:
+        node = self.room(players=1)[0]
+        cancelled: Future[dict[str, Any]] = Future()
+        cancelled.cancel()
+        entered = threading.Event()
+
+        def collect() -> None:
+            entered.set()
+            node._collect(
+                node.document["state"]["members"],
+                "status",
+                {},
+                lambda _replies: False,
+            )
+
+        with patch.object(node._io, "submit", return_value=cancelled):
+            worker = threading.Thread(target=collect, daemon=True)
+            worker.start()
+            self.assertTrue(entered.wait(1))
+            node.close()
+            worker.join(timeout=1)
+        self.assertFalse(worker.is_alive(), "El cierre dejó bloqueada una recolección")
 
     def test_creator_can_disappear_and_any_other_peer_commits(self) -> None:
         nodes = self.room()

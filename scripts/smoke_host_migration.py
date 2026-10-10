@@ -16,7 +16,7 @@ import tempfile
 from copy import deepcopy
 from functools import partial
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import QApplication
@@ -168,6 +168,35 @@ def _checkpoint(window: Gui) -> dict[str, Any]:
     return window.host_runtime.latest_checkpoint() or {}
 
 
+def _confirmed_host(windows: list[Gui]) -> Gui | None:
+    """Obtiene el anfitrión que coincide con la autoridad de todas las réplicas.
+
+    Returns:
+        Ventana del anfitrión confirmado o None mientras las copias difieren.
+
+    """
+    if not windows:
+        return None
+    authority = {
+        (_checkpoint(window).get("epoch"), _checkpoint(window).get("owner_id"))
+        for window in windows
+    }
+    if len(authority) != 1:
+        return None
+    epoch, owner = authority.pop()
+    for window in windows:
+        runtime = window.host_runtime
+        if runtime is None or runtime.server is None or window.client.userid() != owner:
+            continue
+        replication = runtime.server.host_replication
+        if replication is not None and (replication.epoch, replication.owner_id) == (
+            epoch,
+            owner,
+        ):
+            return window
+    return None
+
+
 def _send_unit(window: Gui, country: str, command_id: str) -> None:
     _connection(window).send_data(
         json.dumps({
@@ -183,6 +212,18 @@ def _send_unit(window: Gui, country: str, command_id: str) -> None:
 def _require(condition: object, message: str) -> None:
     if not condition:
         raise RuntimeError(message)
+
+
+def _require_host(windows: list[Gui]) -> Gui:
+    """Obtiene el dueño confirmado o interrumpe el escenario inconsistente.
+
+    Returns:
+        Ventana del anfitrión vigente.
+
+    """
+    host = _confirmed_host(windows)
+    _require(host is not None, "Las réplicas no coinciden en el anfitrión vigente")
+    return cast("Gui", host)
 
 
 def _run(args: argparse.Namespace) -> int:  # noqa: PLR0914, PLR0915 -- escenario de dos migraciones.
@@ -288,11 +329,12 @@ def _run(args: argparse.Namespace) -> int:  # noqa: PLR0914, PLR0915 -- escenari
             )
             for window in windows
         ]
+        initial_epoch = _checkpoint(windows[0])["epoch"]
         worker.kill()
         worker.wait(timeout=5)
         wait(
             lambda: all(
-                _checkpoint(window).get("epoch") == 1
+                _checkpoint(window).get("epoch", -1) > initial_epoch
                 and window.conexion is not None
                 and window.conexion.esta_conectado()
                 for window in windows
@@ -302,20 +344,11 @@ def _run(args: argparse.Namespace) -> int:  # noqa: PLR0914, PLR0915 -- escenari
         wait(
             lambda: (
                 all(not _connection(window).hosting.paused for window in windows)
-                and any(
-                    window.host_runtime is not None
-                    and window.host_runtime.server is not None
-                    for window in windows
-                )
+                and _confirmed_host(windows) is not None
             ),
             "reanudación del reloj",
         )
-        successor = next(
-            window
-            for window in windows
-            if window.host_runtime is not None
-            and window.host_runtime.server is not None
-        )
+        successor = _require_host(windows)
         _require(
             not _server(successor).host_migrating, "El sucesor no reanudó la partida"
         )
@@ -355,13 +388,18 @@ def _run(args: argparse.Namespace) -> int:  # noqa: PLR0914, PLR0915 -- escenari
             ),
             "nueva acción con el sucesor",
         )
+        successor = _require_host(windows)
+        first_epoch = _checkpoint(successor)["epoch"]
         _connection(successor).desconectar()
         survivors = [window for window in windows if window is not successor]
         remaining_identities = [window.client.userid() for window in survivors]
         wait(
-            lambda: all(
-                _checkpoint(window).get("epoch") == _SECOND_PLAYER
-                for window in survivors
+            lambda: (
+                all(
+                    _checkpoint(window).get("epoch", -1) > first_epoch
+                    for window in survivors
+                )
+                and _confirmed_host(survivors) is not None
             ),
             "segunda migración",
         )
