@@ -179,6 +179,25 @@ def _client_userid(client: Client) -> int:
     return int(user_id)
 
 
+def _start_match(app: QApplication, windows: list[Gui], timeout: float) -> None:
+    """Configura e inicia la partida con el administrador confirmado por Qt."""
+    admin = next(window for window in windows if window.client.es_admin())
+    admin.transmisor.empezar(segundos=120, paises_para_victoria=0)
+    _wait_for(
+        app,
+        lambda: admin.estado_actual == "EsperarJugadores",
+        timeout,
+        "configuración de partida",
+    )
+    admin.transmisor.empezar_partida()
+    _wait_for(
+        app,
+        lambda: all(window.estado_actual == "JUGANDO" for window in windows),
+        timeout,
+        "inicio de partida",
+    )
+
+
 def main() -> int:  # noqa: PLR0914 -- recursos del recorrido multicliente.
     """Ejecuta el smoke y devuelve cero si conserva la identidad.
 
@@ -231,25 +250,13 @@ def main() -> int:  # noqa: PLR0914 -- recursos del recorrido multicliente.
                     window.conexion is not None and window.conexion.esta_conectado()
                     for window in windows
                 )
+                and any(client.es_admin() for client in clients)
             ),
             args.timeout,
             "handshake de los clientes Qt",
         )
         user_ids = [_client_userid(client) for client in clients]
-        windows[0].transmisor.empezar(segundos=120, paises_para_victoria=0)
-        _wait_for(
-            app,
-            lambda: windows[0].estado_actual == "EsperarJugadores",
-            args.timeout,
-            "configuración de partida",
-        )
-        windows[0].transmisor.empezar_partida()
-        _wait_for(
-            app,
-            lambda: all(window.estado_actual == "JUGANDO" for window in windows),
-            args.timeout,
-            "inicio de partida",
-        )
+        _start_match(app, windows, args.timeout)
 
         reconnect_client = clients[1]
         reconnect_user_id = _client_userid(reconnect_client)
