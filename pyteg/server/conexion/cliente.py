@@ -11,6 +11,7 @@ from copy import deepcopy
 from typing import TYPE_CHECKING, Any
 
 from pyteg.logger import get_logger
+from pyteg.network.identity import engine_token, public_key
 from pyteg.protocol_validation import MessageValidationError, validate_server_command
 from pyteg.server.conexion.transmisor import ServerTransmisor
 
@@ -49,6 +50,12 @@ class Client:
         self._username = username
         self._soy_admin = soy_admin
         self._reconnect_token = reconnect_token or secrets.token_urlsafe(32)
+        key = getattr(conn, "network_public_key", None)
+        self._network_key: str | None = (
+            public_key(key) if isinstance(key, str) else None
+        )
+        if self._network_key is not None:
+            self._reconnect_token = engine_token(self._network_key)
         self._pending_reconnect = False
         self._handshake_status: bool | None = None
         self._migration_enabled = False
@@ -84,10 +91,10 @@ class Client:
         self._soy_admin = bool(es_admin)
 
     def reconnect_token(self) -> str:
-        """Devuelve el token privado que permite recuperar la sesión.
+        """Devuelve el identificador de sesión usado por el motor.
 
         Returns:
-            Token privado de la identidad.
+            Token interno; las conexiones de red se autentican con su clave.
 
         """
         return self._reconnect_token
@@ -95,6 +102,20 @@ class Client:
     def set_reconnect_token(self, token: str) -> None:
         """Actualiza el token después de recuperar una identidad."""
         self._reconnect_token = token
+
+    def network_key(self) -> str | None:
+        """Obtiene la clave pública de la identidad autenticada de red.
+
+        Returns:
+            Clave pública o ``None`` en los puertos internos sin identidad de red.
+
+        """
+        return self._network_key
+
+    def set_network_key(self, key: str) -> None:
+        """Restaura una identidad pública sin guardar su clave privada."""
+        self._network_key = public_key(key)
+        self._reconnect_token = engine_token(self._network_key)
 
     def marcar_reconexion_pendiente(self, *, pendiente: bool = True) -> None:
         """Marca la conexión como pendiente de autenticación de reconexión."""
@@ -498,6 +519,15 @@ class Client:
             data: Valor JSON recibido desde la conexión TCP.
 
         """
+        try:
+            unwrap = getattr(self._conn, "unwrap_command", None)
+            if callable(unwrap):
+                data = unwrap(data)
+        except ValueError as error:
+            self._enviar_error_protocolo("invalid_signature", str(error))
+            self.cerrar(flush_outgoing=True)
+            return
+
         try:
             validated_data = validate_server_command(data)
         except MessageValidationError as error:

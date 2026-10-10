@@ -43,9 +43,13 @@ from pyteg.gui.dialogs.conectar import VentanaConectar
 from pyteg.gui.dialogs.dice_animation import BattleResultDialog
 from pyteg.gui.managers.window import WindowManager
 from pyteg.toml_reader import TomlReader
+from scripts.secure_fixture import server_invitation
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+
+    from pyteg.network.security import Invitation
+    from pyteg.server.hosting.runtime import HostRuntime
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_TIMEOUT = 45.0
@@ -78,8 +82,15 @@ def _server_listening(port: int) -> bool:
         return False
 
 
-def _connect_window(
-    client: Client, port: int, theme: str, username: str, *, visible: bool = False
+def _connect_window(  # noqa: PLR0913 -- configuración del cliente Qt de prueba.
+    client: Client,
+    port: int,
+    theme: str,
+    username: str,
+    *,
+    invitation: Invitation,
+    runtime: HostRuntime | None = None,
+    visible: bool = False,
 ) -> Gui:
     """Crea una ventana Qt de juego y la conecta al servidor local.
 
@@ -95,6 +106,11 @@ def _connect_window(
     dialog.addr.setText("127.0.0.1")
     dialog.port.setText(str(port))
     dialog.username.setText(username)
+    dialog.invitation_entry.setText(invitation.encode())
+    if runtime is not None:
+        user_id = client.userid()
+        if user_id is not None:
+            dialog._saved_identity = user_id, runtime.identity.export_private()  # noqa: SLF001 -- misma identidad del recorrido de prueba.
     dialog.connect_to_server()
     if visible:
         window.resize(1024, 720)
@@ -378,6 +394,7 @@ def _skip_country_render(
     _adapter: QtClientStateAdapter,
     _state: dict[str, Any],
     _names: set[str] | None = None,
+    **_options: Any,
 ) -> None:
     """Evita el coste del render del tablero en el backend offscreen."""
 
@@ -407,7 +424,7 @@ def _reconnect_client(  # noqa: PLR0913, PLR0917
     all_windows: list[Gui],
     timeout: float,
 ) -> Gui:
-    """Reemplaza una ventana Qt desconectada usando el token de sesión.
+    """Reemplaza una ventana Qt conservando su identidad criptográfica.
 
     Returns:
         Nueva ventana Qt autenticada con la misma identidad.
@@ -418,6 +435,10 @@ def _reconnect_client(  # noqa: PLR0913, PLR0917
     if user_id is None or not client.reconnect_token():
         _fail("El cliente Qt no tiene identidad o token para reconectar")
     connection = _connection(current_window)
+    invitation = connection.invitation
+    runtime = current_window.host_runtime
+    if invitation is None or runtime is None:
+        _fail("El cliente no conserva su invitación e identidad segura")
     connection.desconectar()
     _wait_for(
         app,
@@ -439,7 +460,13 @@ def _reconnect_client(  # noqa: PLR0913, PLR0917
     current_window.close()
 
     replacement = _connect_window(
-        client, port, current_window.map_theme, "QtGame2-Reconnected", visible=visible
+        client,
+        port,
+        current_window.map_theme,
+        "QtGame2-Reconnected",
+        visible=visible,
+        invitation=invitation,
+        runtime=runtime,
     )
     all_windows.append(replacement)
     _wait_for(
@@ -497,6 +524,7 @@ def _play_game(  # noqa: C901, PLR0912, PLR0914, PLR0915
     app: QApplication,
     port: int,
     args: argparse.Namespace,
+    invitation: Invitation,
 ) -> dict[str, Any]:
     """Configura, juega y valida la partida con las ventanas solicitadas.
 
@@ -511,7 +539,12 @@ def _play_game(  # noqa: C901, PLR0912, PLR0914, PLR0915
     windows: list[Gui] = []
     for index, client in enumerate(clients, start=1):
         window = _connect_window(
-            client, port, args.theme, f"QtGame{index}", visible=args.visible
+            client,
+            port,
+            args.theme,
+            f"QtGame{index}",
+            visible=args.visible,
+            invitation=invitation,
         )
         all_windows.append(window)
         windows.append(window)
@@ -519,15 +552,18 @@ def _play_game(  # noqa: C901, PLR0912, PLR0914, PLR0915
     try:
         _wait_for(
             app,
-            lambda: all(
-                window.conexion is not None and window.client.userid() is not None
-                for window in windows
+            lambda: (
+                all(
+                    window.conexion is not None and window.client.userid() is not None
+                    for window in windows
+                )
+                and any(window.client.es_admin() for window in windows)
             ),
             timeout,
             "handshake de las ventanas Qt",
         )
         _trace("handshake done")
-        admin = windows[0]
+        admin = next(window for window in windows if window.client.es_admin())
         reader = TomlReader.from_theme(args.theme)
         victory_target = math.ceil(len(reader.todos_los_paises()) / args.clients) + 1
         _send_command(
@@ -824,7 +860,9 @@ def main() -> int:
             stack.enter_context(
                 patch.object(ClientTaskVictoria, "run", _report_victory)
             )
-            result = _play_game(app, port, args)
+            result = _play_game(
+                app, port, args, server_invitation(server, args.timeout)
+            )
     except (OSError, RuntimeError, TypeError, ValueError) as error:
         result = {"status": "failed", "failure": str(error)}
     finally:

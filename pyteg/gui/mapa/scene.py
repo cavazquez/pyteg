@@ -22,6 +22,7 @@ from PySide6.QtWidgets import (
 
 from pyteg.config import DEFAULT_MAP_THEME
 from pyteg.core.mapa.theme_layout import ThemeVisualConnection
+from pyteg.gui.mapa.country_labels import add_country_labels, country_label_bounds
 from pyteg.gui.mapa.landmass_layers import add_landmass_layers
 from pyteg.gui.mapa.menu import Menu
 from pyteg.gui.mapa.overlap_check import (
@@ -297,6 +298,11 @@ class QCustomGraphicsScene(QGraphicsScene):
             self, reader.get_conexiones_visuales(), self.paises, theme=theme
         )
         self._apply_country_z_order()
+        self.country_labels = add_country_labels(self, theme)
+        label_layers = [*self.landmass_borders]
+        if self.country_labels is not None:
+            label_layers.append(self.country_labels)
+        self.country_label_bounds = country_label_bounds(label_layers, self.paises)
         self._elevate_army_markers()
 
     def refresh_revancha_connection_hints(self, origin: str | None) -> None:

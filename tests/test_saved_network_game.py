@@ -5,11 +5,13 @@ from __future__ import annotations
 
 import unittest
 from copy import deepcopy
+from functools import partial
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import TYPE_CHECKING, Any, cast
 from unittest.mock import patch
 
+from PySide6.QtNetwork import QSsl
 from PySide6.QtWidgets import QApplication
 
 from pyteg.client.app import Client
@@ -65,12 +67,14 @@ class SavedNetworkGameTests(unittest.TestCase):
         *,
         hosting: bool = False,
         identity: Path | None = None,
+        invitation: str = "",
     ) -> None:
         dialog = VentanaConectar(window)
         window.ventana_conectar = dialog
         dialog.addr.setText("127.0.0.1")
         dialog.port.setText(str(port))
         dialog.username.setText("Participante")
+        dialog.invitation_entry.setText(invitation)
         if hosting:
             dialog.mode_selector.setCurrentIndex(1)
         elif identity is not None:
@@ -80,6 +84,10 @@ class SavedNetworkGameTests(unittest.TestCase):
             ):
                 dialog._restore_identity()
         dialog.connect_to_server()
+
+    @staticmethod
+    def _has_identity(window: Gui) -> bool:
+        return window.client.userid() is not None
 
     def _server(self, window: Gui) -> Server:
         self.assertIsNotNone(window.host_runtime)
@@ -112,13 +120,43 @@ class SavedNetworkGameTests(unittest.TestCase):
             server.bump_state_revision()
             server.enviar_snapshot()
 
+    def _assert_secure_windows(self, windows: list[Gui]) -> None:
+        """Comprueba TLS 1.3 e identidades distintas en las cuatro ventanas."""
+        for window in windows:
+            connection = window.conexion
+            self.assertIsInstance(connection, ConnectionClient)
+            if isinstance(connection, ConnectionClient):
+                self.assertTrue(connection._socket.isEncrypted())
+                self.assertEqual(
+                    connection._socket.sessionProtocol(), QSsl.SslProtocol.TlsV1_3
+                )
+        self.assertEqual(
+            len({
+                window.host_runtime.identity.public_key
+                for window in windows
+                if window.host_runtime is not None
+            }),
+            _PLAYERS,
+        )
+
     def test_reopen_after_every_client_closed_restores_all_players(self) -> None:
         """Mapa clásico, reglas de revancha y datos privados sobreviven al cierre."""
         windows = [self._window() for _index in range(4)]
         port = _free_port()
         self._connect(windows[0], port, hosting=True)
+        _wait_for(
+            self.app, lambda: windows[0].client.userid() == 1, 10, "creador seguro"
+        )
+        invitation = (
+            windows[0].host_runtime.invitation("127.0.0.1").encode()
+            if windows[0].host_runtime
+            else ""
+        )
         for window in windows[1:]:
-            self._connect(window, port)
+            self._connect(window, port, invitation=invitation)
+            _wait_for(
+                self.app, partial(self._has_identity, window), 10, "identidad segura"
+            )
         _wait_for(
             self.app,
             lambda: all(
@@ -129,6 +167,7 @@ class SavedNetworkGameTests(unittest.TestCase):
             "cuatro copias de sala",
         )
         server = self._server(windows[0])
+        self._assert_secure_windows(windows)
         windows[0].transmisor.empezar(
             segundos=90,
             paises_para_victoria=0,
@@ -194,7 +233,12 @@ class SavedNetworkGameTests(unittest.TestCase):
         if isinstance(connection, ConnectionClient):
             port = connection.endpoint()[1]
         for window, path in zip(reopened[1:], paths[1:], strict=True):
-            self._connect(window, port, identity=path)
+            invitation = (
+                reopened[0].host_runtime.invitation("127.0.0.1").encode()
+                if reopened[0].host_runtime
+                else ""
+            )
+            self._connect(window, port, identity=path, invitation=invitation)
         _wait_for(
             self.app,
             lambda: (

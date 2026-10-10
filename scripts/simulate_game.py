@@ -31,6 +31,7 @@ import random
 import secrets
 import select
 import socket
+import ssl
 import subprocess  # noqa: S404 -- launches only the local server process
 import sys
 import time
@@ -41,6 +42,7 @@ from dataclasses import dataclass, field
 from functools import partial
 from operator import itemgetter
 from pathlib import Path
+from tempfile import TemporaryDirectory
 from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
@@ -50,8 +52,12 @@ from pyteg.client.state_model import ClientStateModel
 from pyteg.codecs_utils import NulDelimitedUtf8Codec
 from pyteg.core.partida.reglas import load_theme_rules
 from pyteg.core.situaciones.catalog import available_situation_rulesets
+from pyteg.network.game_security import signed_command
+from pyteg.network.identity import Identity
+from pyteg.network.security import Invitation
 from pyteg.protocol import PROTOCOL_VERSION, map_hash_for_theme
 from pyteg.protocol_validation import MessageValidationError, validate_client_event
+from scripts.secure_fixture import player_channel
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -70,6 +76,10 @@ class Bot:
     """A TCP peer backed by the same codec, validator and state model as Qt."""
 
     connection: socket.socket
+    identity: Identity = field(default_factory=Identity, repr=False)
+    room: str = ""
+    nonce: str = ""
+    sequence: int = 0
     userid: int = 0
     codec: NulDelimitedUtf8Codec = field(
         default_factory=lambda: NulDelimitedUtf8Codec(max_frame_bytes=MAX_FRAME_BYTES)
@@ -257,20 +267,24 @@ class Bot:
                 msg = f"Invalid server event: {error}"
                 raise RuntimeError(msg) from error
             if payload.get("mensaje") == "ping":
-                frame = (
-                    json.dumps({
-                        "mensaje": "pong",
-                        "heartbeat_id": payload["heartbeat_id"],
-                    }).encode("utf-8")
-                    + b"\0"
-                )
-                self.connection.sendall(frame)
-                self.sent_wire_bytes += len(frame)
-                self.sent_wire_frames += 1
+                self.send({"mensaje": "pong", "heartbeat_id": payload["heartbeat_id"]})
                 continue
             result.append(payload)
             self._apply(payload)
         return result
+
+    def send(self, payload: dict[str, Any]) -> None:
+        """Firma los comandos de red y conserva los contadores del simulador."""
+        packet = payload
+        if self.room:
+            self.sequence += 1
+            packet = signed_command(
+                self.identity, self.room, self.nonce, self.sequence, payload
+            )
+        frame = json.dumps(packet).encode("utf-8") + b"\0"
+        self.connection.sendall(frame)
+        self.sent_wire_bytes += len(frame)
+        self.sent_wire_frames += 1
 
     def _apply(self, data: dict[str, Any]) -> None:
         kind = str(data.get("mensaje", ""))
@@ -389,6 +403,7 @@ class Simulation:
         )
         self._disconnect_done = False
         self.port = 0
+        self.invitation: Invitation | None = None
         theme_dir = ROOT / "themes" / args.theme
         with (theme_dir / "adyacencias.toml").open("rb") as file:
             self.adjacency = tomllib.load(file)["Adyacencias"]
@@ -490,7 +505,10 @@ class Simulation:
                 [bot.connection for bot in peers], [], [], min(remaining, 0.1)
             )
             for bot in peers:
-                if bot.connection in readable:
+                if bot.connection in readable or (
+                    isinstance(bot.connection, ssl.SSLSocket)
+                    and bot.connection.pending()
+                ):
                     for payload in bot.receive():
                         self._record("receive", bot, payload)
                         if (
@@ -510,10 +528,7 @@ class Simulation:
 
     def _send(self, bot: Bot, payload: dict[str, Any]) -> None:
         self._record("send", bot, payload)
-        frame = json.dumps(payload).encode("utf-8") + b"\0"
-        bot.connection.sendall(frame)
-        bot.sent_wire_bytes += len(frame)
-        bot.sent_wire_frames += 1
+        bot.send(payload)
 
     def command(self, bot: Bot, kind: str, **fields: Any) -> None:
         """Send one action and wait until all peers observe its chat barrier.
@@ -584,7 +599,9 @@ class Simulation:
                 msg = "Invalid country ownership, army count, or incomplete board"
                 raise RuntimeError(msg)
 
-    def connect(self, port: int, process: subprocess.Popen[bytes]) -> None:
+    def connect(
+        self, port: int, process: subprocess.Popen[bytes], invitation_file: Path
+    ) -> None:
         """Connect actual players; readiness probes must not consume admin ID.
 
         Raises:
@@ -593,13 +610,22 @@ class Simulation:
 
         """
         self.port = port
+        while not invitation_file.exists():
+            if process.poll() is not None or time.monotonic() >= self.deadline:
+                msg = "El servidor no entregó una invitación segura"
+                raise RuntimeError(msg)
+            time.sleep(0.05)
+        self.invitation = Invitation.parse(invitation_file.read_text(encoding="utf-8"))
         for _ in range(self.args.clients):
+            identity = Identity()
             while True:
                 if process.poll() is not None:
                     msg = "Server exited during startup; inspect server.log"
                     raise RuntimeError(msg)
                 try:
-                    connection = socket.create_connection(("127.0.0.1", port), 0.2)
+                    connection, nonce = player_channel(
+                        self.invitation, identity, None, self.args.command_timeout
+                    )
                     break
                 except ConnectionRefusedError as error:
                     if time.monotonic() >= self.deadline:
@@ -608,7 +634,12 @@ class Simulation:
                     time.sleep(0.05)
             connection.settimeout(self.args.command_timeout)
             connection.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
-            bot = Bot(connection)
+            bot = Bot(
+                connection,
+                identity=identity,
+                room=self.invitation.session_id,
+                nonce=nonce,
+            )
             self.bots.append(bot)
             self._wait(
                 lambda: bool(self.bots[-1].userid and self.bots[-1].state),
@@ -675,6 +706,9 @@ class Simulation:
             raise RuntimeError(msg)
 
         old_userid = disconnected_bot.userid
+        if self.invitation is None:
+            msg = "El simulador no conserva la invitación de su sala"
+            raise RuntimeError(msg)
         self._wait(
             lambda: (
                 self.reference_bot().players_initialized
@@ -689,7 +723,12 @@ class Simulation:
                 msg = "Timed out reconnecting a simulation client"
                 raise TimeoutError(msg)
             try:
-                connection = socket.create_connection(("127.0.0.1", self.port), 0.2)
+                connection, nonce = player_channel(
+                    self.invitation,
+                    disconnected_bot.identity,
+                    old_userid,
+                    self.args.command_timeout,
+                )
                 break
             except ConnectionRefusedError, OSError:
                 time.sleep(0.05)
@@ -700,7 +739,13 @@ class Simulation:
         # historical missile results, while active peers already have them.
         for peer in active_peers:
             peer.missile_results_consensus_offset = len(peer.missile_results)
-        replacement = Bot(connection, userid=old_userid)
+        replacement = Bot(
+            connection,
+            userid=old_userid,
+            identity=disconnected_bot.identity,
+            room=self.invitation.session_id,
+            nonce=nonce,
+        )
         self.bots.append(replacement)
         self._wait(
             lambda: bool(replacement.state and replacement.pending_session_token),
@@ -1454,6 +1499,21 @@ def _server_child(args: argparse.Namespace) -> None:
         situation_rng=situation_rng,
         situation_ruleset=args.situation_ruleset,
     )
+
+    def publish_invitation(*values: object, **_options: object) -> None:
+        path = os.environ.get("PYTEG_SIMULATION_INVITE_FILE")
+        if path is None:
+            print(*values, flush=True)
+            return
+        value = next(
+            value
+            for value in values
+            if isinstance(value, str) and value.startswith("pyteg://")
+        )
+        pending = Path(path).with_suffix(".pending")
+        pending.write_text(str(value), encoding="utf-8")
+        pending.replace(path)
+
     sys.argv = [
         "pyteg-server",
         "--host",
@@ -1466,14 +1526,19 @@ def _server_child(args: argparse.Namespace) -> None:
         args.situation_ruleset,
         "--quiet",
     ]
-    if args.deterministic_dice:
-        with (
-            patch("secrets.randbelow", dice_rng.randrange),
-            patch("secrets.choice", color_rng.choice),
-        ):
+    with patch(
+        "pyteg.server.conexion.registrar_jugadores.print",
+        publish_invitation,
+        create=True,
+    ):
+        if args.deterministic_dice:
+            with (
+                patch("secrets.randbelow", dice_rng.randrange),
+                patch("secrets.choice", color_rng.choice),
+            ):
+                server_main(server_factory=server_factory)
+        else:
             server_main(server_factory=server_factory)
-    else:
-        server_main(server_factory=server_factory)
 
 
 def main() -> int:
@@ -1492,6 +1557,7 @@ def main() -> int:
     )
     output.mkdir(parents=True, exist_ok=True)
     with (
+        TemporaryDirectory(prefix="pyteg-simulation-identity-") as private_directory,
         (output / "wire.jsonl").open("w", encoding="utf-8") as trace,
         (output / "server.log").open("wb") as server_log,
     ):
@@ -1524,6 +1590,9 @@ def main() -> int:
                 os.environ,
                 PYTHONHASHSEED=str(args.seed % (2**32)),
                 PYTHONUNBUFFERED="1",
+                PYTEG_SIMULATION_INVITE_FILE=str(
+                    Path(private_directory) / "invitation"
+                ),
             )
             process = subprocess.Popen(  # noqa: S603 -- fixed local Python entry point
                 command,
@@ -1532,7 +1601,7 @@ def main() -> int:
                 stdout=server_log,
                 stderr=subprocess.STDOUT,
             )
-            simulation.connect(port, process)
+            simulation.connect(port, process, Path(private_directory) / "invitation")
             simulation.play()
         except (OSError, RuntimeError, ValueError, TypeError, StopIteration) as error:
             failure = f"{type(error).__name__}: {error}"

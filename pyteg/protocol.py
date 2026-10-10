@@ -6,7 +6,7 @@ import hashlib
 
 from pyteg.utils import get_resource_path
 
-PROTOCOL_VERSION = "2"
+PROTOCOL_VERSION = "3"
 SNAPSHOT_VERSION = 1
 
 

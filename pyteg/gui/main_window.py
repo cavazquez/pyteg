@@ -6,12 +6,14 @@ from typing import TYPE_CHECKING, cast
 
 from PySide6.QtCore import QEvent, QSize
 from PySide6.QtGui import QStatusTipEvent
-from PySide6.QtWidgets import QLabel, QMainWindow, QWidget
+from PySide6.QtWidgets import QApplication, QLabel, QMainWindow, QPushButton, QWidget
 
 from pyteg.client.colores.paleta import Colores
 from pyteg.client.conexion.transmisor import ClientNullTransmisor
+from pyteg.client.hosting import local_game_addresses
 from pyteg.config import DEFAULT_MAP_THEME
 from pyteg.gui.facades.main_window_delegates import MainWindowDelegatesMixin
+from pyteg.gui.garbage_collection import install_gui_collection
 from pyteg.gui.managers.cards import CardManager
 from pyteg.gui.managers.config import ConfigManager
 from pyteg.gui.managers.files import GameFilesManager
@@ -107,6 +109,9 @@ class Gui(QMainWindow, MainWindowDelegatesMixin):
 
         """
         super().__init__()
+        app = QApplication.instance()
+        if isinstance(app, QApplication):
+            install_gui_collection(app)
         self._gui_init_core_state(client, map_theme)
         self._gui_init_window_and_managers()
         self._gui_init_turn_tracking()
@@ -117,11 +122,40 @@ class Gui(QMainWindow, MainWindowDelegatesMixin):
             _("Anfitrión y destino de la conexión de la partida")
         )
         self.status_bar.addPermanentWidget(self.network_status_label)
+        self.invitation_button = QPushButton(_("Copiar invitación"), self)
+        self.invitation_button.setToolTip(
+            _("Compartí esta invitación con los jugadores que querés admitir")
+        )
+        self.invitation_button.clicked.connect(self.copy_invitation)
+        self.invitation_button.hide()
+        self.status_bar.addPermanentWidget(self.invitation_button)
         self.files_manager = GameFilesManager(self)
         if self.toolbar is not None:
             self.toolbar.actualizar_estado_conexion(conectado=False)
         self.setAcceptDrops(True)
         self.show()
+
+    def update_invitation_button(self) -> None:
+        """Muestra el enlace sólo cuando esta instancia admite participantes."""
+        node = getattr(self.conexion, "node", None)
+        hosting = self.host_runtime is not None and self.host_runtime.server is not None
+        self.invitation_button.setVisible(node is not None or hosting)
+        self.invitation_button.setText(_("Copiar invitación"))
+
+    def copy_invitation(self) -> None:
+        """Copia una autorización de ingreso con la identidad del destino."""
+        host = local_game_addresses()[0]
+        node = getattr(self.conexion, "node", None)
+        if node is not None:
+            invitation = node.invitation(host)
+        elif self.host_runtime is not None and self.host_runtime.server is not None:
+            invitation = self.host_runtime.invitation(host)
+        else:
+            return
+        QApplication.clipboard().setText(invitation.encode())
+        self.update_status_bar(
+            _("Invitación copiada. Compartila con los jugadores de esta sala.")
+        )
 
     def dragEnterEvent(self, event: QDragEnterEvent) -> None:  # noqa: N802
         """Acepta un único archivo local de partida, turno o repetición."""

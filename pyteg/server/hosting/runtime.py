@@ -2,21 +2,27 @@
 
 from __future__ import annotations
 
-import json
-import secrets
 import socket
 import threading
-import time
 from copy import deepcopy
 from typing import TYPE_CHECKING, Any
 
 from pyteg.codecs_utils import (
     DEFAULT_MAX_FRAME_BYTES,
     FrameCodecError,
-    NulDelimitedUtf8Codec,
 )
 from pyteg.logger import get_logger
 from pyteg.network.discovery import RoomAnnouncer
+from pyteg.network.game_security import GameSecurity
+from pyteg.network.identity import Identity, hex_bytes
+from pyteg.network.peer_transport import exchange as secure_exchange
+from pyteg.network.security import (
+    Invitation,
+    RoomAccess,
+    TlsCredentials,
+    receive_authenticated,
+    send_json,
+)
 from pyteg.persistence.archive import (
     ArchiveRepository,
     MemoryRepository,
@@ -28,7 +34,7 @@ from pyteg.persistence.archive import (
 from pyteg.persistence.wire import decode_envelope, encode_envelope
 from pyteg.protocol import PROTOCOL_VERSION
 from pyteg.protocol_validation import validate_client_event
-from pyteg.server.conexion.registrar_jugadores import PlayerListener
+from pyteg.server.conexion.registrar_jugadores import PlayerListener, network_keys
 from pyteg.server.hosting.checkpoint import CHECKPOINT_VERSION
 from pyteg.server.hosting.consensus import ElectionState, joint_majority, majority
 from pyteg.server.hosting.engine import RecoveryEngine, ServerEngine
@@ -57,6 +63,7 @@ class HostRuntime:
         bind_host: str = "0.0.0.0",  # noqa: S104 -- sala de red local.
         repository: ArchiveRepository | None = None,
         engine: RecoveryEngine | None = None,
+        identity: Identity | None = None,
     ) -> None:
         """Abre un puerto efímero de recuperación; todavía no crea una partida.
 
@@ -67,6 +74,8 @@ class HostRuntime:
         self._bind_host = bind_host
         self._repository = repository or MemoryRepository()
         self._engine = engine or ServerEngine()
+        self.identity = identity or Identity()
+        self._access = RoomAccess()
         self._lock = threading.RLock()
         self._backup_lock = threading.RLock()
         self._election = ElectionState()
@@ -76,6 +85,7 @@ class HostRuntime:
         self._user_id: int | None = None
         self._primary: tuple[str, int] | None = None
         self._primary_epoch: int | None = None
+        self._primary_key: str | None = None
         self._session_id = ""
         self._server: Server | None = None
         self._listener: PlayerListener | None = None
@@ -83,7 +93,8 @@ class HostRuntime:
         self.restored_waiting = False
         self._stop = threading.Event()
         self._slots = threading.BoundedSemaphore(8)
-        self._load_repository()
+        self._load_repository(expected_key=identity.public_key if identity else None)
+        self._tls = TlsCredentials(self.identity)
         self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         try:
             self._socket.bind((bind_host, 0))
@@ -117,11 +128,22 @@ class HostRuntime:
         if self._repository.bind_session(session_id, user_id):
             self._load_repository()
 
-    def _load_repository(self) -> None:
+    def _load_repository(self, *, expected_key: str | None = None) -> None:
         saved = self._repository.load()
         if saved is None or saved["kind"] != "game":
             return
         payload = saved["payload"]
+        if "private_key" not in payload:
+            return
+        saved_identity = Identity.restore(payload["private_key"])
+        if expected_key is None and hasattr(self, "_tls"):
+            expected_key = self.identity.public_key
+        if expected_key is not None and saved_identity.public_key != expected_key:
+            msg = "El guardado pertenece a otra identidad de red"
+            raise ValueError(msg)
+        hex_bytes(payload["invite"], 32)
+        self.identity = saved_identity
+        self._access.token = payload["invite"]
         envelope = payload.get("envelope")
         if isinstance(envelope, dict) and (
             not envelope.get("durable")
@@ -131,8 +153,23 @@ class HostRuntime:
                 and joint_majority(envelope, envelope.get("certificate", []))
             )
         ):
+            own_player = next(
+                (
+                    player
+                    for player in envelope["checkpoint"]["players"]
+                    if player["userid"] == payload.get("userid")
+                ),
+                None,
+            )
+            if (
+                own_player is None
+                or own_player.get("public_key") != saved_identity.public_key
+            ):
+                msg = "La copia no contiene la identidad privada de su jugador"
+                raise ValueError(msg)
             self._checkpoint = deepcopy(envelope)
             self._session_id = envelope["session_id"]
+            self._access.session_id = self._session_id
             self._user_id = payload.get("userid")
             election = payload.get("election")
             if isinstance(election, dict):
@@ -142,6 +179,8 @@ class HostRuntime:
         """Conserva votos sólo al volver a la misma sala guardada."""
         with self._backup_lock:
             self._session_id = session_id
+            if session_id:
+                self._access.session_id = session_id
             if (
                 self._checkpoint is not None
                 and self._checkpoint["session_id"] == session_id
@@ -261,19 +300,49 @@ class HostRuntime:
                 msg = "Esta instancia ya hospeda una partida"
                 raise ValueError(msg)
             self.join_room("")
+            self._access = RoomAccess()
             server = self._engine.create(theme, rules_profile)
+            server.host_replication = HostReplication(
+                server,
+                self.store_checkpoint,
+                session_id=self._access.session_id,
+                transport=self,
+            )
             try:
-                listener = PlayerListener(server, self._bind_host, port)
+                listener = PlayerListener(
+                    server, self._bind_host, port, security=self._game_security(server)
+                )
             except OSError:
                 server.detener()
                 raise
-            server.host_replication = HostReplication(
-                server, self.store_checkpoint, transport=self
-            )
             self._server, self._listener = server, listener
             listener.start()
             self._announce()
             return listener.port
+
+    def _game_security(self, server: Server) -> GameSecurity:
+        return GameSecurity(self._tls, self._access, lambda: network_keys(server))
+
+    def invitation(self, host: str = "127.0.0.1") -> Invitation:
+        """Obtiene un enlace de ingreso que fija la identidad de este anfitrión.
+
+        Returns:
+            Invitación para copiar por un medio de confianza.
+
+        Raises:
+            ValueError: Si esta instancia no tiene una sala activa.
+
+        """
+        if self._listener is None:
+            msg = "Esta instancia no hospeda una sala"
+            raise ValueError(msg)
+        return self._access.invitation(
+            "host",
+            host,
+            self._listener.port,
+            self.identity,
+            self._server.theme if self._server is not None else "classic",
+        )
 
     def store_checkpoint(
         self, envelope: dict[str, Any], *, user_id: int | None = None
@@ -350,6 +419,8 @@ class HostRuntime:
                     "userid": self._user_id or (current or {}).get("owner_id"),
                     "pending": self._pending,
                     "election": self._election.export(),
+                    "private_key": self.identity.export_private(),
+                    "invite": self._access.token,
                 },
             )
         )
@@ -439,6 +510,11 @@ class HostRuntime:
         envelope = request.get("envelope")
         if not isinstance(envelope, dict) or not self._valid_proposal(envelope):
             return {"accepted": False}
+        if (
+            type(request.get("user_id")) is not int
+            or request["user_id"] != envelope["owner_id"]
+        ):
+            return {"accepted": False}
         if self._checkpoint is None:
             primary = self._primary
             if primary is None or source not in {
@@ -454,8 +530,10 @@ class HostRuntime:
                 ),
                 None,
             )
-            if player is None or not secrets.compare_digest(
-                player["token"], str(request.get("token", ""))
+            if (
+                player is None
+                or request.get("_sender_key") != self._primary_key
+                or player.get("public_key") != request.get("_sender_key")
             ):
                 return {"accepted": False}
         else:
@@ -490,6 +568,8 @@ class HostRuntime:
                     {
                         "envelope": envelope,
                         "userid": self._user_id or envelope["owner_id"],
+                        "private_key": self.identity.export_private(),
+                        "invite": self._access.token,
                     },
                 ),
             )
@@ -511,10 +591,20 @@ class HostRuntime:
         if not isinstance(envelope, dict) or not isinstance(user_id, int):
             msg = "El archivo no incluye una sesión recuperable"
             raise ValueError(msg)  # noqa: TRY004 -- archivo inválido.
+        if "private_key" not in payload:
+            msg = (
+                "El guardado de red es anterior a las identidades seguras; "
+                "creá una sala nueva"
+            )
+            raise ValueError(msg)
+        saved_identity = Identity.restore(payload["private_key"])
         with self._lock:
             if self._server is not None or self._stop.is_set():
                 msg = "Ya hay una partida abierta"
                 raise ValueError(msg)
+            self.identity = saved_identity
+            self._tls = TlsCredentials(self.identity)
+            self._access = RoomAccess()
             checkpoint = envelope.get("checkpoint")
             if not isinstance(checkpoint, dict):
                 msg = "Falta el estado de la partida"
@@ -525,12 +615,17 @@ class HostRuntime:
                 server.detener()
                 msg = "La identidad guardada no pertenece a la partida"
                 raise ValueError(msg)
+            if player.network_key() != self.identity.public_key:
+                server.detener()
+                msg = "El guardado no contiene la clave privada de este jugador"
+                raise ValueError(msg)
             try:
                 listener = PlayerListener(
                     server,
                     self._bind_host,
                     port,
                     first_user_id=max(server.migration_sessions, default=0) + 1,
+                    security=self._game_security(server),
                 )
             except OSError:
                 server.detener()
@@ -542,7 +637,11 @@ class HostRuntime:
             # que pudiera seguir activa en otra computadora.
             self.join_room("")
             server.host_replication = HostReplication(
-                server, self.store_checkpoint, owner_id=user_id, transport=self
+                server,
+                self.store_checkpoint,
+                owner_id=user_id,
+                transport=self,
+                session_id=self._access.session_id,
             )
             self._server, self._listener = server, listener
             listener.start()
@@ -568,16 +667,20 @@ class HostRuntime:
         with self._lock:
             return deepcopy(self._checkpoint)
 
-    def primary_connection(self, endpoint: tuple[str, int] | None) -> None:
+    def primary_connection(
+        self, endpoint: tuple[str, int] | None, public_key: str | None = None
+    ) -> None:
         """Impide promover un suplente que todavía ve al anfitrión activo."""
         with self._lock:
             self._primary = endpoint
+            if public_key is not None:
+                self._primary_key = public_key
             self._primary_epoch = (
                 (self._checkpoint or {}).get("epoch") if endpoint is not None else None
             )
 
     def recover(self, request: dict[str, Any]) -> dict[str, Any]:
-        """Autoriza una promoción con el token de un jugador de la sala.
+        """Autoriza una promoción con una prueba de la identidad del jugador.
 
         Returns:
             Destino del anfitrión vigente o del nuevo anfitrión recuperado.
@@ -607,6 +710,8 @@ class HostRuntime:
                     "epoch": envelope["epoch"],
                     "host": self._primary[0],
                     "port": self._primary[1],
+                    "owner_id": envelope["owner_id"],
+                    "public_key": self._primary_key,
                 }
             if self._server is not None and self._server.host_waiting_quorum:
                 authority = self._find_live_authority(envelope, request)
@@ -637,6 +742,7 @@ class HostRuntime:
                 "epoch": replication.epoch,
                 "port": self._listener.port,
                 "owner_id": replication.owner_id,
+                "public_key": self.identity.public_key,
             }
 
     def _authenticate(self, request: dict[str, Any]) -> dict[str, Any]:
@@ -655,11 +761,10 @@ class HostRuntime:
             ),
             None,
         )
-        token = request.get("token")
         if (
             player is None
-            or not isinstance(token, str)
-            or not secrets.compare_digest(player["token"], token)
+            or player.get("public_key") is None
+            or player.get("public_key") != request.get("_sender_key")
         ):
             msg = "La recuperación requiere una sesión válida"
             raise ValueError(msg)
@@ -704,9 +809,16 @@ class HostRuntime:
                     epoch=replication.epoch,
                     port=listener.port,
                     owner_id=replication.owner_id,
+                    public_key=self.identity.public_key,
                 )
         elif primary is not None and self._primary_epoch == envelope["epoch"]:
-            response.update(mensaje="host_alive", host=primary[0], port=primary[1])
+            response.update(
+                mensaje="host_alive",
+                host=primary[0],
+                port=primary[1],
+                owner_id=envelope["owner_id"],
+                public_key=self._primary_key,
+            )
         return response
 
     def _freshest_checkpoint(
@@ -749,7 +861,11 @@ class HostRuntime:
         candidate, term = request.get("candidate"), request.get("term")
         members = envelope.get("members", [envelope["owner_id"]])
         accepted = False
-        if type(candidate) is not int or type(term) is not int:
+        if (
+            type(candidate) is not int
+            or type(term) is not int
+            or candidate != request.get("user_id")
+        ):
             return {"accepted": False, "term": self._election.term}
         with self._backup_lock:
             if (
@@ -780,7 +896,13 @@ class HostRuntime:
             "term": term,
             "sequence": envelope["sequence"],
         }
-        replies = [self._grant_vote(vote_request)]
+        replies = [
+            self._grant_vote({
+                **vote_request,
+                "user_id": self._user_id,
+                "_sender_key": self.identity.public_key,
+            })
+        ]
         for peer in envelope["peers"]:
             if peer["userid"] == self._user_id:
                 continue
@@ -832,35 +954,32 @@ class HostRuntime:
                 return response
         return None
 
-    @staticmethod
     def _query_peer(
+        self,
         peer: dict[str, Any],
         request: dict[str, Any],
         *,
         timeout: float = _PEER_STATUS_TIMEOUT,
     ) -> dict[str, Any]:
-        deadline = time.monotonic() + timeout
+        request = {
+            key: value for key, value in request.items() if not key.startswith("_")
+        }
+        request["user_id"] = self._user_id
         if isinstance(request.get("envelope"), dict):
             request = {**request, "envelope": encode_envelope(request["envelope"])}
-        with socket.create_connection(
-            (peer["host"], peer["port"]), timeout=timeout
-        ) as conn:
-            conn.sendall(NulDelimitedUtf8Codec.encode_frame(json.dumps(request)))
-            codec = NulDelimitedUtf8Codec(_CONTROL_LIMIT)
-            while time.monotonic() < deadline:
-                conn.settimeout(max(0.01, deadline - time.monotonic()))
-                data = conn.recv(65536)
-                if not data:
-                    break
-                frames = codec.feed(data)
-                if frames:
-                    response = json.loads(frames[0])
-                    if isinstance(response, dict):
-                        if isinstance(response.get("envelope"), dict):
-                            response["envelope"] = decode_envelope(response["envelope"])
-                        return response
-                    break
-        return {}
+        response = secure_exchange(
+            (peer["host"], peer["port"]),
+            request,
+            identity=self.identity,
+            expected_key=peer["public_key"],
+            timeout=timeout,
+        )
+        if "userid" in response and response["userid"] != peer["userid"]:
+            msg = "La respuesta suplanta a otro participante"
+            raise ValueError(msg)
+        if isinstance(response.get("envelope"), dict):
+            response["envelope"] = decode_envelope(response["envelope"])
+        return response
 
     def _promote(
         self,
@@ -886,6 +1005,7 @@ class HostRuntime:
                 self._bind_host,
                 0,
                 first_user_id=max(server.migration_sessions, default=0) + 1,
+                security=self._game_security(server),
             )
         except Exception:
             server.detener()
@@ -927,19 +1047,9 @@ class HostRuntime:
 
     def _control(self, conn: socket.socket, source: str) -> None:
         try:
+            conn = self._tls.accept(conn)
             conn.settimeout(2.0)
-            codec = NulDelimitedUtf8Codec(_CONTROL_LIMIT)
-            frames: list[str] = []
-            deadline = time.monotonic() + 2.0
-            while not frames:
-                conn.settimeout(max(0.01, deadline - time.monotonic()))
-                if time.monotonic() >= deadline:
-                    return
-                data = conn.recv(65536)
-                if not data:
-                    return
-                frames = codec.feed(data)
-            request = json.loads(frames[0])
+            request = receive_authenticated(conn, limit=_CONTROL_LIMIT)
             if not isinstance(request, dict) or request.get("mensaje") not in {
                 "recover_host",
                 "host_status",
@@ -962,7 +1072,7 @@ class HostRuntime:
             response = handlers[request["mensaje"]](request)
             if isinstance(response.get("envelope"), dict):
                 response["envelope"] = encode_envelope(response["envelope"])
-            conn.sendall(NulDelimitedUtf8Codec.encode_frame(json.dumps(response)))
+            send_json(conn, response)
         except (OSError, ValueError, KeyError, TypeError, FrameCodecError) as error:
             _LOG.debug("Solicitud de recuperación rechazada: %s", error)
         finally:

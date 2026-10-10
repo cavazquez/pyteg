@@ -75,6 +75,46 @@ Este documento registra decisiones de arquitectura y sus motivaciones.
 - Decisión: Los temas pueden declarar `[[ConexionesVisuales]]` en `adyacencias.toml`, con `origen`, `destino` y una lista opcional de `puntos` intermedios. `TomlReader` valida que ambos países existan, que el par sea una adyacencia y que las coordenadas sean finitas. La escena Qt crea polilíneas con z-order inferior y sin eventos del mouse.
 - Consecuencias: El trazado se puede ajustar sin tocar reglas ni protocolo. Una conexión visual no crea una ruta jugable; para cambiar las reglas hay que modificar `Adyacencias` y sus validaciones.
 
+## ADR-015: Identidades individuales e invitaciones con TLS
+
+- Contexto: las réplicas completas exponían tokens de reconexión y la clave MAC
+  de la sala. Un integrante podía suplantar identidades y votos; el bootstrap
+  entregaba estado antes de admitir al jugador.
+- Decisión: usar claves Ed25519 individuales, con claves privadas sólo en
+  guardados locales. El protocolo 3 exige TLS 1.3 y fija la identidad remota
+  mediante una invitación. Cada ingreso prueba posesión de clave frente a un
+  desafío nuevo; reconectar exige la clave histórica. Los comandos del juego
+  incluyen secuencia y firma por conexión. Los votos entre pares incluyen
+  firmas individuales y una cadena de incorporaciones verificable desde el
+  creador de la sala. Esta decisión sustituye ADR-009 y la autenticación por
+  token de ADR-013 para las conexiones de red.
+- Consecuencias: todos los clientes deben actualizar. Los antiguos guardados
+  de red no contienen las nuevas claves y requieren otra sala; los guardados
+  locales conservan compatibilidad. Los enlaces se comparten con los jugadores
+  que se desea admitir. Las réplicas todavía contienen cartas y objetivos:
+  privacidad completa y BFT quedan fuera de esta etapa. En anfitrión con
+  migración, las confirmaciones se autentican por TLS y sus listas persistidas
+  siguen requiriendo una autoridad de confianza.
+- Referencias: [Ed25519](https://cryptography.io/en/latest/hazmat/primitives/asymmetric/ed25519/),
+  [TLS de Python](https://docs.python.org/3.14/library/ssl.html),
+  [TLS de Qt](https://doc.qt.io/qt-6/qsslsocket.html),
+  [issue #250](https://github.com/cavazquez/pyteg/issues/250).
+
+## ADR-016: Recolección de ciclos de Qt en el hilo gráfico
+
+- Contexto: al encadenar cuatro partidas gráficas entre pares, el GC automático
+  de Python recolectó wrappers de Qt desde un worker del motor. El diagnóstico
+  nativo registró la recolección en `peer-io` mientras Qt pintaba el mapa.
+- Decisión: compartir un `GuiGarbageCollector` por `QApplication`. Desactivar
+  la recolección automática durante la interfaz y recoger los ciclos con un
+  `QTimer` del hilo gráfico; restaurar la configuración al salir. El conteo de
+  referencias de Python continúa funcionando.
+- Consecuencias: la recolección sucede una vez por segundo desde Qt y evita
+  destruir los objetos gráficos en los hilos de red. Los servidores y
+  simuladores sin GUI conservan el GC automático de Python.
+- Referencias: [afinidad de hilos de QObject](https://doc.qt.io/qtforpython-6/PySide6/QtCore/QObject.html#thread-affinity),
+  [control del GC de Python](https://docs.python.org/3.14/library/gc.html).
+
 ## Cómo proponer nuevas decisiones
 1. Agregar una nueva sección ADR-00X con contexto, decisión, consecuencias y referencias.
 2. Enlazar commits/PRs cuando sea posible.

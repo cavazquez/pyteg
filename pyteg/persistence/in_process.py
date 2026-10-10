@@ -139,12 +139,14 @@ class InProcessGame:
         self.server.serialized(partial(self._sync_player, user_id))
 
     def _sync_player(self, user_id: int) -> None:
-        player = next(
-            player
-            for player in self.server.dame_clientes()
-            if player.userid() == user_id
-        )
+        players = self.server.dame_clientes()
+        player = next(player for player in players if player.userid() == user_id)
+        # La identidad propia llega primero. Los nombres y colores posteriores
+        # necesitan que el cliente conozca también a los demás participantes.
         player.transmisor.enviar_userid(user_id)
+        for other in players:
+            if other.userid() != user_id:
+                player.transmisor.enviar_userid(other.userid())
         player.transmisor.enviar_session_token(user_id, player.reconnect_token())
         self.server.enviar_username()
         self.server.enviar_colores_asignados()

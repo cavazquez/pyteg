@@ -9,11 +9,15 @@ from typing import TYPE_CHECKING, Any, Protocol
 
 from pyteg.codecs_utils import NulDelimitedUtf8Codec
 from pyteg.logger import get_logger
+from pyteg.network.game_security import GameSecurity
+from pyteg.network.identity import Identity
+from pyteg.network.security import RoomAccess, TlsCredentials
 from pyteg.server.conexion.build_cliente import ServerBuildClient
 from pyteg.server.conexion.connection import ConnectionServer
 from pyteg.server.msg import MsgError
 
 if TYPE_CHECKING:
+    from pyteg.network.game_security import GameChannel
     from pyteg.server.conexion.cliente import Client
     from pyteg.server.juego.estado import Estado
 
@@ -61,15 +65,17 @@ def _rechazar_conexion(
         conn.close()
 
 
-def _iniciar_cliente(
+def _iniciar_cliente(  # noqa: PLR0913 -- canal autenticado opcional del listener.
     server: ServerLike,
     builder: ServerBuildClient,
     conn: socket.socket,
     addr: tuple[str, int],
     logger: Any,
+    *,
+    channel: GameChannel | None = None,
 ) -> None:
     """Registra un cliente aceptado y arranca su hilo de recepción."""
-    connection = ConnectionServer(conn, addr)
+    connection = ConnectionServer(conn, addr, channel=channel)
     client: Client | None = None
     try:
         user_id, client = builder.build(connection, server)
@@ -116,6 +122,7 @@ class PlayerListener:
         port: int = 65432,
         *,
         first_user_id: int = 1,
+        security: GameSecurity | None = None,
     ) -> None:
         """Reserva el puerto antes de anunciar que el anfitrión está disponible.
 
@@ -124,6 +131,9 @@ class PlayerListener:
 
         """
         self.server = server
+        self._security = security
+        self._slots = threading.BoundedSemaphore(16)
+        self._registration_lock = threading.Lock()
         self._builder = ServerBuildClient(first_user_id)
         self._stop = threading.Event()
         self._thread: threading.Thread | None = None
@@ -158,6 +168,17 @@ class PlayerListener:
                     logger.exception("Error al aceptar una conexión")
                 break
             try:
+                if self._security is not None:
+                    if not self._slots.acquire(blocking=False):
+                        conn.close()
+                        continue
+                    threading.Thread(
+                        target=self._secure_client,
+                        args=(conn, addr),
+                        name="pyteg-secure-admission",
+                        daemon=True,
+                    ).start()
+                    continue
                 if (
                     self.server.estado.es_finalizado()
                     and not getattr(self.server, "migration_sessions", {})
@@ -172,6 +193,37 @@ class PlayerListener:
                 logger.exception("Error al manejar la conexión")
                 with suppress(OSError):
                     conn.close()
+
+    def _secure_client(self, conn: socket.socket, addr: tuple[str, int]) -> None:
+        """Acota handshakes incompletos sin bloquear la escucha de jugadores."""
+        logger = get_logger("server.registrar_jugadores")
+        secure: socket.socket = conn
+        try:
+            security = self._security
+            if security is None:
+                return
+            secure, channel = security.accept(conn)
+            with self._registration_lock:
+                if self._stop.is_set():
+                    secure.close()
+                    return
+                if (
+                    self.server.estado.es_finalizado()
+                    and not getattr(self.server, "migration_sessions", {})
+                    and not self.server.reabrir_lobby_si_vacio()
+                ):
+                    _rechazar_conexion(
+                        secure, "game_in_progress", "El juego ya finalizó.", logger
+                    )
+                    return
+                _iniciar_cliente(
+                    self.server, self._builder, secure, addr, logger, channel=channel
+                )
+        except (OSError, ValueError, KeyError, TypeError) as error:
+            logger.debug("Ingreso seguro rechazado: %s", error)
+            secure.close()
+        finally:
+            self._slots.release()
 
     def close(self) -> None:
         """Libera el puerto y espera el hilo de aceptación."""
@@ -188,7 +240,26 @@ def registrar_jugadores(
     logger = get_logger("server.registrar_jugadores")
     listener: PlayerListener | None = None
     try:
-        listener = PlayerListener(server, host, port)
+        identity, access = Identity(), RoomAccess()
+        credentials = TlsCredentials(identity)
+        security = GameSecurity(credentials, access, lambda: network_keys(server))
+        listener = PlayerListener(server, host, port, security=security)
+        share_host = (
+            socket.gethostbyname(socket.gethostname())
+            if host == "0.0.0.0"  # noqa: S104 -- dirección comodín solicitada.
+            else host
+        )
+        print(
+            "Invitación privada para unirse:",
+            access.invitation(
+                "host",
+                share_host,
+                listener.port,
+                identity,
+                theme=getattr(server, "theme", "classic"),
+            ).encode(),
+            flush=True,
+        )
         listener.run()
     except KeyboardInterrupt:
         logger.info("Deteniendo el servidor por interrupción del usuario")
@@ -197,3 +268,18 @@ def registrar_jugadores(
     finally:
         if listener is not None:
             listener.close()
+
+
+def network_keys(server: Any) -> dict[int, str]:
+    """Consulta el registro público desde el ejecutor serial del motor.
+
+    Returns:
+        Claves de los jugadores actuales e históricos.
+
+    """
+    checkpoint = server.serialized(server.capture_state)
+    return {
+        player["userid"]: player["public_key"]
+        for player in checkpoint["players"]
+        if isinstance(player.get("public_key"), str)
+    }

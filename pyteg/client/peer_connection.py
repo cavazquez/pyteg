@@ -55,6 +55,8 @@ class PeerConnection(OfflineConnection):
         self.window.network_status_label.setText(_("Conectando entre pares…"))
         self.window.refresh_gameplay_actions()
 
+        self.window.update_invitation_button()
+
         def build() -> None:
             try:
                 node = factory()
@@ -157,6 +159,7 @@ class PeerConnection(OfflineConnection):
             )
         )
         self.window.refresh_gameplay_actions()
+        self.window.update_invitation_button()
 
     def esta_ocupada(self) -> bool:
         """Incluye la creación o sincronización pendiente de la sesión.
@@ -180,3 +183,4 @@ class PeerConnection(OfflineConnection):
             node.set_callbacks(lambda _uid, _msg: None, lambda: None)
             threading.Thread(target=node.close, name="peer-close", daemon=True).start()
         self._worker.shutdown(wait=False, cancel_futures=True)
+        self.window.update_invitation_button()

@@ -5,6 +5,9 @@ from __future__ import annotations
 import unittest
 from unittest.mock import MagicMock, patch
 
+from pyteg.network.game_security import GameChannel, signed_command
+from pyteg.network.identity import Identity
+from pyteg.network.security import RoomAccess, challenge
 from pyteg.server.conexion.cliente import Client
 
 
@@ -16,8 +19,13 @@ class TestClienteEjecutarMensaje(unittest.TestCase):
         username: str = "TestUser",
         *,
         handshake_accepted: bool | None = True,
+        channel: GameChannel | None = None,
     ) -> tuple[Client, MagicMock]:
         conn = MagicMock()
+        conn.unwrap_command.side_effect = (
+            channel.unwrap if channel else lambda packet: packet
+        )
+        conn.network_public_key = channel.public_key if channel else None
         server = MagicMock()
         server.mapa = MagicMock()
         server.game = MagicMock()
@@ -68,6 +76,39 @@ class TestClienteEjecutarMensaje(unittest.TestCase):
             "Esta conexión debe completar el handshake antes de enviar comandos.",
         )
         server.encolar_comando.assert_not_called()
+
+    def test_signed_command_is_validated_before_enqueue(self) -> None:
+        """El lector ejecuta solamente comandos firmados por el dueño del canal."""
+        identity, access, nonce = Identity(), RoomAccess(), challenge()["nonce"]
+        channel = GameChannel(identity.public_key, access.session_id, nonce)
+        client, server = self._make_client(channel=channel)
+        payload = {"mensaje": "chat", "msg": "Firmado"}
+        packet = signed_command(identity, access.session_id, nonce, 1, payload)
+        client.ejecutar_mensaje(packet)
+        server.encolar_comando.assert_called_once_with(client, payload)
+        server.encolar_comando.reset_mock()
+        client.ejecutar_mensaje(packet)
+        server.encolar_comando.assert_not_called()
+
+    def test_unsigned_or_foreign_signature_never_reaches_executor(self) -> None:
+        """Copiar un ID público no permite enviar acciones del jugador."""
+        identity, access, nonce = Identity(), RoomAccess(), challenge()["nonce"]
+        for packet in (
+            {"mensaje": "chat", "msg": "Sin firma"},
+            signed_command(
+                Identity(),
+                access.session_id,
+                nonce,
+                1,
+                {"mensaje": "chat", "msg": "Suplantado"},
+            ),
+        ):
+            with self.subTest(fields=set(packet)):
+                client, server = self._make_client(
+                    channel=GameChannel(identity.public_key, access.session_id, nonce)
+                )
+                client.ejecutar_mensaje(packet)
+                server.encolar_comando.assert_not_called()
 
     def test_limpiar_cache_comandos_descarta_resultados_y_payloads(self) -> None:
         """Una revancha no reutiliza idempotencia de la partida anterior."""

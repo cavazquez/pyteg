@@ -19,17 +19,18 @@ from datetime import UTC, datetime
 from functools import partial
 from typing import TYPE_CHECKING, Any, cast
 
+from pyteg.network.identity import Identity, engine_token, hex_bytes, verify
+from pyteg.network.peer_auth import initial_trust, membership_body, validate_trust
 from pyteg.network.peer_consensus import ConsensusSlot, ballot, previously_accepted
 from pyteg.network.peer_state import (
     agreement,
     member_ids,
-    sign,
     transition,
-    valid_signature,
     validate_member,
     validate_state,
 )
 from pyteg.network.peer_transport import PeerPort, exchange
+from pyteg.network.security import Invitation, RoomAccess
 from pyteg.persistence.archive import MemoryRepository, digest, make_archive
 from pyteg.persistence.peer_game import PeerGame
 from pyteg.protocol import PROTOCOL_VERSION
@@ -41,6 +42,10 @@ if TYPE_CHECKING:
 
     from pyteg.network.peer_consensus import Ballot
     from pyteg.persistence.archive import ArchiveRepository
+
+
+# El ingreso confirma una transición completa, con votos, persistencia y difusión.
+_MEMBERSHIP_TIMEOUT = 30.0
 
 
 def _votes_enough(
@@ -74,6 +79,7 @@ class PeerNode:
         port: int = 0,
         advertise_host: str = "127.0.0.1",
         repository: ArchiveRepository | None = None,
+        security_identity: Identity | None = None,
     ) -> None:
         """Reserva recursos sin anunciar una sala parcialmente construida."""
         self._lock = threading.RLock()
@@ -81,7 +87,12 @@ class PeerNode:
         self._stop = threading.Event()
         self._io = ThreadPoolExecutor(max_workers=16, thread_name_prefix="peer-io")
         self._repository = repository or MemoryRepository()
-        self._port = PeerPort(self._handle, host=host, port=port)
+        self.identity = security_identity or Identity()
+        self._access = RoomAccess()
+        self._root_key = self.identity.public_key
+        self._port = PeerPort(
+            self._handle, host=host, port=port, identity=self.identity
+        )
         self._advertise_host = advertise_host
         self._slot = ConsensusSlot()
         self._document: dict[str, Any] = {}
@@ -93,8 +104,6 @@ class PeerNode:
         self._changed: Callable[[], None] = lambda: None
         self._maintenance: threading.Thread | None = None
         self.user_id = 0
-        self.token = ""
-        self.key = ""
         self.game: PeerGame
 
     @property
@@ -113,15 +122,16 @@ class PeerNode:
         """Crea una sala: su creador tiene exactamente los mismos votos."""
         node = cls(**options)
         try:
-            node.user_id, node.token, node.key = (
-                1,
-                secrets.token_hex(32),
-                secrets.token_hex(32),
+            node.user_id = 1
+            node.game = PeerGame.create(
+                theme, name, engine_token(node.identity.public_key), profile
             )
-            node.game = PeerGame.create(theme, name, node.token, profile)
+            node.game.server.dame_clientes()[0].set_network_key(
+                node.identity.public_key
+            )
             state: dict[str, Any] = {
-                "version": 1,
-                "session_id": uuid.uuid4().hex,
+                "version": 2,
+                "session_id": node._access.session_id,
                 "sequence": 0,
                 "parent": None,
                 "checkpoint": node.game.server.capture_state(),
@@ -129,18 +139,21 @@ class PeerNode:
                     {
                         "userid": 1,
                         "name": name,
-                        "token": node.token,
+                        "token": engine_token(node.identity.public_key),
+                        "public_key": node.identity.public_key,
                         "host": node._advertise_host,
                         "port": node.port,
                     }
                 ],
                 "clock": None,
                 "next_userid": 2,
+                "identities": {"1": node.identity.public_key},
             }
             node._document = {
                 "state": validate_state(state),
                 "hash": digest(state),
                 "certificate": None,
+                "trust": initial_trust(state, node.identity),
             }
             node._repository.start_room()
             node._repository.bind_session(state["session_id"], node.user_id)
@@ -159,10 +172,21 @@ class PeerNode:
         *,
         identity: tuple[int, str] | None = None,
         saved_archive: dict[str, Any] | None = None,
+        invitation: Invitation | str | None = None,
         **options: Any,
     ) -> PeerNode:
         """Se incorpora contactando a cualquier participante accesible."""
+        if invitation is None:
+            raise ValueError("Pegá la invitación de la sala para verificar la conexión")
+        invite = (
+            Invitation.parse(invitation) if isinstance(invitation, str) else invitation
+        )
+        if invite.mode != "peer":
+            raise ValueError("La invitación corresponde a otro tipo de red")
+        if identity is not None:
+            options["security_identity"] = Identity.restore(identity[1])
         node = cls(**options)
+        node._root_key = invite.root_key
         try:
             info = exchange(
                 address,
@@ -170,15 +194,22 @@ class PeerNode:
                     "message": "peer_bootstrap",
                     "name": name,
                     "port": node.port,
-                    "identity": list(identity) if identity else None,
+                    "identity": identity[0] if identity else None,
+                    "session_id": invite.session_id,
+                    "invite": invite.token,
                 },
+                identity=node.identity,
+                expected_key=invite.public_key,
             )
             record = validate_member(info["member"])
-            node.user_id, node.token, node.key = (
-                record["userid"],
-                record["token"],
-                info["key"],
-            )
+            node.user_id = record["userid"]
+            if (
+                record["public_key"] != node.identity.public_key
+                or info["document"]["state"]["session_id"] != invite.session_id
+            ):
+                raise ValueError(
+                    "La incorporación no corresponde a esta identidad y sala"
+                )
             node._install_initial(info["document"])
             node._repository.bind_session(
                 node._document["state"]["session_id"], node.user_id
@@ -194,13 +225,30 @@ class PeerNode:
                 == info["document"]["state"]["session_id"]
             ):
                 previous = saved["payload"]["peer"]
-                if previous["token"] != node.token:
+                if previous.get("private_key") != node.identity.export_private():
                     raise ValueError("El autoguardado pertenece a otra identidad")
                 node._restore_saved(previous)
                 node._install_document(info["document"])
             node._persist(node._document, node._slot)
             node._port.start()
-            reply = exchange(address, node._packet("join", {"member": record}))
+            member_proof = node.identity.sign({
+                "session": invite.session_id,
+                "member": record,
+            })
+            reply = exchange(
+                address,
+                node._packet(
+                    "join",
+                    {
+                        "member": record,
+                        "member_signature": member_proof,
+                        "invite": invite.token,
+                    },
+                ),
+                identity=node.identity,
+                expected_key=invite.public_key,
+                timeout=_MEMBERSHIP_TIMEOUT,
+            )
             node._install_document(reply["document"])
             node.start_maintenance()
         except Exception:
@@ -212,14 +260,18 @@ class PeerNode:
     def open(cls, archive: dict[str, Any], **options: Any) -> PeerNode:
         """Reabre una identidad y consulta a sus pares sin sustituir sus votos."""
         saved = archive["payload"]["peer"]
+        if "private_key" not in saved:
+            raise ValueError(
+                "El guardado de red es anterior a las identidades seguras; "
+                "creá una sala nueva"
+            )
+        options["security_identity"] = Identity.restore(saved["private_key"])
         options.setdefault("port", saved["port"])
         node = cls(**options)
         try:
-            node.user_id, node.token, node.key = (
-                saved["userid"],
-                saved["token"],
-                saved["key"],
-            )
+            node.user_id = saved["userid"]
+            node._root_key = saved["root_key"]
+            node._access.token = saved["invite"]
             node._restore_saved(saved)
             node._repository.bind_session(
                 node._document["state"]["session_id"], node.user_id
@@ -227,7 +279,7 @@ class PeerNode:
             durable = node._repository.load()
             if durable is not None and "peer" in durable["payload"]:
                 latest = durable["payload"]["peer"]
-                if latest["token"] != node.token:
+                if latest.get("private_key") != node.identity.export_private():
                     raise ValueError("La identidad guardada es incompatible")
                 if (
                     latest["document"]["state"]["sequence"]
@@ -244,12 +296,14 @@ class PeerNode:
     def _restore_saved(self, saved: dict[str, Any]) -> None:
         if type(self.user_id) is not int or not 1 <= self.user_id <= 2**31:
             raise ValueError("Identidad guardada inválida")
-        for secret in (self.token, self.key):
-            if not isinstance(secret, str) or len(secret) != 64:
-                raise ValueError("Credencial guardada inválida")
-            int(secret, 16)
-        if saved["userid"] != self.user_id or saved["key"] != self.key:
+        if (
+            saved["userid"] != self.user_id
+            or saved.get("private_key") != self.identity.export_private()
+            or saved.get("root_key") != self._root_key
+        ):
             raise ValueError("El guardado no pertenece a esta sala")
+        hex_bytes(saved["invite"], 32)
+        self._access.token = saved["invite"]
         self._install_initial(saved["document"])
         self._slot = ConsensusSlot.restore(saved["slot"])
         if (
@@ -269,7 +323,7 @@ class PeerNode:
             ),
             None,
         )
-        if record is not None and record["token"] != self.token:
+        if record is not None and record.get("public_key") != self.identity.public_key:
             raise ValueError("Credencial de participante inválida")
         game = PeerGame.from_checkpoint(
             state["checkpoint"], self.user_id, 0, datetime.now(UTC).isoformat()
@@ -278,6 +332,7 @@ class PeerNode:
             self.game.close()
         self.game = game
         self._document = deepcopy(document)
+        self._access.session_id = state["session_id"]
         self._seen = {uid: time.monotonic() for uid in member_ids(state["members"])}
 
     def _start(self) -> None:
@@ -320,8 +375,9 @@ class PeerNode:
             {
                 "peer": {
                     "userid": self.user_id,
-                    "token": self.token,
-                    "key": self.key,
+                    "private_key": self.identity.export_private(),
+                    "root_key": self._root_key,
+                    "invite": self._access.token,
                     "port": self.port,
                     "document": document,
                     "slot": slot.snapshot(),
@@ -344,22 +400,57 @@ class PeerNode:
             "actor": self.user_id,
             "body": body,
         }
-        return {**content, "mac": sign(self.key, content)}
+        return {**content, "signature": self.identity.sign(content)}
+
+    def invitation(self, host: str | None = None) -> Invitation:
+        """Obtiene la autorización para compartir esta sala desde este par."""
+        return Invitation(
+            "peer",
+            host or self._advertise_host,
+            self.port,
+            self._access.session_id,
+            self.identity.public_key,
+            self._access.token,
+            self._root_key,
+            self._document["state"]["checkpoint"]["theme"],
+        )
+
+    def _member_key(self, user_id: object) -> str:
+        if type(user_id) is not int:
+            raise TypeError("Identidad de participante inválida")
+        key = self._document["state"]["identities"].get(str(user_id))
+        if not isinstance(key, str):
+            raise TypeError("La identidad no pertenece a esta sala")
+        return key
 
     def _vote_payload(
         self, value: dict[str, Any], number: Ballot, voter: int
     ) -> dict[str, Any]:
         return {
+            "session": value["after"]["session_id"],
             "before": value["after"]["parent"],
             "hash": digest(value["after"]),
             "sequence": value["after"]["sequence"],
             "ballot": list(number),
             "old": member_ids(self._document["state"]["members"]),
             "voter": voter,
+            "membership": (
+                digest(change)
+                if (
+                    change := membership_body(
+                        self._document["state"], value["after"], self._document["trust"]
+                    )
+                )
+                is not None
+                else None
+            ),
         }
 
-    def _validate_document(self, document: dict[str, Any]) -> None:
+    def _validate_document(self, document: dict[str, Any]) -> None:  # noqa: C901 -- límites, cadena de identidades y firmas de la transición.
         state = validate_state(document["state"])
+        validate_trust(
+            document.get("trust"), state, self._root_key, self._document.get("trust")
+        )
         if digest(state) != document["hash"]:
             raise ValueError("La copia entre pares está alterada")
         if state["sequence"] == 0:
@@ -369,8 +460,26 @@ class PeerNode:
         certificate = document["certificate"]
         number = ballot(certificate["ballot"])
         votes = certificate["votes"]
+        if not isinstance(votes, list) or not 1 <= len(votes) <= 8:
+            raise ValueError("Cantidad de votos de pares inválida")
         ids = [vote["voter"] for vote in votes]
         old = certificate["old"]
+        change = certificate.get("membership")
+        if change is not None:
+            if (
+                document["trust"][-1]["body"] != change
+                or change["sequence"] != state["sequence"]
+            ):
+                raise ValueError(
+                    "La transición no corresponde a la incorporación firmada"
+                )
+            expected_old = change["old"]
+        else:
+            expected_old = member_ids(state["members"])
+        if old != expected_old:
+            raise ValueError(
+                "Los votos no corresponden a los participantes autorizados"
+            )
         if (
             len(ids) != len(set(ids))
             or not majority(old, ids)
@@ -379,14 +488,17 @@ class PeerNode:
             raise ValueError("La transición no tiene mayorías de participantes")
         for vote in votes:
             payload = {
+                "session": state["session_id"],
                 "before": state["parent"],
                 "hash": document["hash"],
                 "sequence": state["sequence"],
                 "ballot": list(number),
                 "old": old,
                 "voter": vote["voter"],
+                "membership": digest(change) if change is not None else None,
             }
-            if not valid_signature(self.key, payload, vote["mac"]):
+            key = state["identities"].get(str(vote["voter"]))
+            if key is None or not verify(key, payload, vote.get("signature")):
                 raise ValueError("Certificado de pares inválido")
 
     def _install_document(  # noqa: C901, PLR0912 -- reemplazo atómico de documento, voto y motor.
@@ -473,19 +585,29 @@ class PeerNode:
     def _bootstrap(self, request: dict[str, Any], host: str) -> dict[str, Any]:
         with self._lock:
             state = self._document["state"]
+            if self.user_id not in member_ids(state["members"]):
+                raise ValueError("Este participante ya no admite ingresos a la sala")
+            sender = request["_sender_key"]
+            if request.get("session_id") != state["session_id"]:
+                raise ValueError("La invitación pertenece a otra sala")
             identity = request.get("identity")
             if identity is None:
+                if not self._access.admits(request):
+                    raise ValueError("La sala requiere una invitación válida")
                 if (
                     state["checkpoint"]["state"]
                     not in {Estado.INICIAL, Estado.ESPERAR_JUGADORES}
                     or len(state["members"]) >= 8
                 ):
                     raise ValueError("Esta sala no acepta nuevos jugadores")
-                uid, token = state["next_userid"], secrets.token_hex(32)
+                uid = state["next_userid"]
             else:
-                if not isinstance(identity, list) or len(identity) != 2:
+                if (
+                    type(identity) is not int
+                    or state["identities"].get(str(identity)) != sender
+                ):
                     raise ValueError("Identidad de reconexión inválida")
-                uid, token = identity
+                uid = identity
                 previous = next(
                     (
                         item
@@ -494,20 +616,18 @@ class PeerNode:
                     ),
                     None,
                 )
-                if previous is None or not secrets.compare_digest(
-                    previous["token"], str(token)
-                ):
+                if previous is None:
                     raise ValueError("La identidad no pertenece a esta partida")
             member = validate_member({
                 "userid": uid,
-                "token": token,
+                "token": engine_token(sender),
+                "public_key": sender,
                 "name": request["name"],
                 "host": host,
                 "port": request["port"],
             })
             return {
                 "member": member,
-                "key": self.key,
                 "document": deepcopy(self._document),
             }
 
@@ -519,9 +639,12 @@ class PeerNode:
         content = {
             field: request[field] for field in ("message", "session", "actor", "body")
         }
-        if content["session"] != self._document["state"][
-            "session_id"
-        ] or not valid_signature(self.key, content, request.get("mac")):
+        sender = request.get("_sender_key")
+        if (
+            not isinstance(sender, str)
+            or content["session"] != self._document["state"]["session_id"]
+            or not verify(sender, content, request.get("signature"))
+        ):
             raise ValueError("Mensaje de pares no autenticado")
         actor, message, body = content["actor"], content["message"], content["body"]
         if type(actor) is not int or not isinstance(body, dict):
@@ -530,20 +653,37 @@ class PeerNode:
             record = validate_member({**body["member"], "host": host})
             if record["userid"] != actor:
                 raise ValueError("La identidad solicitada no coincide")
+            if record["public_key"] != sender or not verify(
+                sender,
+                {"session": content["session"], "member": record},
+                body.get("member_signature"),
+            ):
+                raise ValueError("La incorporación no tiene la firma de su jugador")
             historical = any(
                 item["userid"] == actor
                 for item in self._document["state"]["checkpoint"]["players"]
             )
+            if historical:
+                if self._member_key(actor) != sender:
+                    raise ValueError("La reconexión suplanta a otro participante")
+            elif not self._access.admits({
+                "session_id": content["session"],
+                "invite": body.get("invite"),
+            }):
+                raise ValueError("La incorporación requiere una invitación válida")
             self.propose({
                 "kind": "rejoin" if historical else "join",
                 "actor": self.user_id,
                 "id": uuid.uuid4().hex,
                 "member": record,
+                "member_signature": body["member_signature"],
             })
             return {"document": self.document}
         with self._lock:
             if actor not in member_ids(self._document["state"]["members"]):
                 raise ValueError("El emisor ya no participa en el acuerdo")
+            if self._member_key(actor) != sender:
+                raise ValueError("El emisor no posee la identidad que declara")
             self._seen[actor] = time.monotonic()
             if message == "status":
                 return {
@@ -557,6 +697,10 @@ class PeerNode:
             if body["before"] != self._document["hash"]:
                 return {"document": deepcopy(self._document)}
             number = ballot(body["ballot"])
+            if number[1] != actor:
+                raise ValueError(
+                    "La propuesta no corresponde a la identidad del emisor"
+                )
             if message == "prepare":
                 slot = ConsensusSlot.restore(self._slot.snapshot())
                 promise = slot.prepare(number)
@@ -564,8 +708,13 @@ class PeerNode:
                     return {"promised": list(self._slot.promised)}
                 self._persist(self._document, slot)
                 self._slot = slot
-                proof = {"before": body["before"], "voter": self.user_id, **promise}
-                return {**proof, "mac": sign(self.key, proof)}
+                proof = {
+                    "session": content["session"],
+                    "before": body["before"],
+                    "voter": self.user_id,
+                    **promise,
+                }
+                return {**proof, "signature": self.identity.sign(proof)}
             if message == "accept":
                 return self._accept(body, number)
             raise ValueError("Petición de pares desconocida")
@@ -598,9 +747,23 @@ class PeerNode:
             < 8
         ):
             raise ValueError("El participante todavía responde")
-        content = {key: item for key, item in operation.items() if key != "mac"}
-        if not valid_signature(self.key, content, operation.get("mac")):
+        content = {key: item for key, item in operation.items() if key != "signature"}
+        if (
+            operation.get("session") != self._document["state"]["session_id"]
+            or operation.get("before") != self._document["hash"]
+            or not verify(
+                self._member_key(operation.get("actor")),
+                content,
+                operation.get("signature"),
+            )
+        ):
             raise ValueError("Acción de participante no autenticada")
+        if operation["kind"] in {"join", "rejoin"} and not verify(
+            operation["member"]["public_key"],
+            {"session": operation["session"], "member": operation["member"]},
+            operation.get("member_signature"),
+        ):
+            raise ValueError("La incorporación no está firmada por su jugador")
         candidate = None
         if self._candidate is None or self._candidate[0] != digest(value):
             after, candidate, result = transition(
@@ -631,7 +794,13 @@ class PeerNode:
                 self._candidate[1].close()
             self._candidate = digest(value), candidate
         payload = self._vote_payload(value, number, self.user_id)
-        return {"voter": self.user_id, "mac": sign(self.key, payload)}
+        response = {"voter": self.user_id, "signature": self.identity.sign(payload)}
+        change = membership_body(
+            self._document["state"], value["after"], self._document["trust"]
+        )
+        if change is not None:
+            response["membership_signature"] = self.identity.sign(change)
+        return response
 
     def _check_proofs(
         self, proofs: list[dict[str, Any]], number: Ballot, before: str
@@ -642,11 +811,15 @@ class PeerNode:
         ):
             raise ValueError("No hay una mayoría de promesas")
         for proof in proofs:
-            content = {key: value for key, value in proof.items() if key != "mac"}
+            hex_bytes(proof.get("nonce"), 32)
+            content = {key: value for key, value in proof.items() if key != "signature"}
             if (
                 proof["before"] != before
+                or proof.get("session") != self._document["state"]["session_id"]
                 or ballot(proof["ballot"]) != number
-                or not valid_signature(self.key, content, proof["mac"])
+                or not verify(
+                    self._member_key(proof["voter"]), content, proof.get("signature")
+                )
             ):
                 raise ValueError("Promesa de pares inválida")
 
@@ -654,10 +827,26 @@ class PeerNode:
         self, record: dict[str, Any], message: str, body: dict[str, Any]
     ) -> dict[str, Any]:
         response = (
-            self._handle(self._packet(message, body), "127.0.0.1")
+            self._handle(
+                {
+                    **self._packet(message, body),
+                    "_sender_key": self.identity.public_key,
+                },
+                "127.0.0.1",
+            )
             if record["userid"] == self.user_id
-            else exchange((record["host"], record["port"]), self._packet(message, body))
+            else exchange(
+                (record["host"], record["port"]),
+                self._packet(message, body),
+                identity=self.identity,
+                expected_key=record["public_key"],
+            )
         )
+        if any(
+            field in response and response[field] != record["userid"]
+            for field in ("peer", "voter")
+        ):
+            raise ValueError("La respuesta suplanta a otro participante")
         with self._lock:
             self._seen[record["userid"]] = time.monotonic()
         return response
@@ -700,9 +889,13 @@ class PeerNode:
         """Cualquier par puede finalizar un voto anterior antes de su acción."""
         operation = deepcopy(operation)
         operation.setdefault("id", uuid.uuid4().hex)
-        operation["mac"] = sign(self.key, operation)
         with self._proposing:
-            for _attempt in range(8):
+            for attempt in range(8):
+                if attempt:
+                    # Separar propuestas concurrentes permite que termine una ronda
+                    # de votos antes de volver a competir con el reloj u otro par.
+                    delay = min(0.01 * (2**attempt), 0.2)
+                    self._stop.wait(delay + secrets.randbelow(50) / 1000)
                 if self._stop.is_set():
                     raise ValueError("La sesión está cerrada")
                 with self._lock:
@@ -712,6 +905,10 @@ class PeerNode:
                     number = self._counter, self.user_id
                 members = before["members"]
                 body = {"before": previous_hash, "ballot": list(number)}
+                operation.update(session=before["session_id"], before=previous_hash)
+                operation["signature"] = self.identity.sign({
+                    key: item for key, item in operation.items() if key != "signature"
+                })
                 prepared = self._collect(
                     members,
                     "prepare",
@@ -768,15 +965,7 @@ class PeerNode:
                         "La transición quedó pendiente de confirmación; "
                         "se reintentará al recuperar una mayoría"
                     )
-                document = {
-                    "state": value["after"],
-                    "hash": digest(value["after"]),
-                    "certificate": {
-                        "ballot": list(number),
-                        "old": member_ids(members),
-                        "votes": votes,
-                    },
-                }
+                document = self._certificate_document(before, number, value, votes)
                 self._install_document(document, value)
                 # Esperar la difusión evita que una acción inmediata use copias viejas.
                 self._collect(
@@ -794,6 +983,35 @@ class PeerNode:
                 if value["operation"]["id"] == operation["id"]:
                     return cast("dict[str, Any] | None", value["result"])
             raise ValueError("Hay propuestas simultáneas; reintentá la acción")
+
+    def _certificate_document(
+        self,
+        before: dict[str, Any],
+        number: Ballot,
+        value: dict[str, Any],
+        votes: list[dict[str, Any]],
+    ) -> dict[str, Any]:
+        trust = self.document["trust"]
+        change = membership_body(before, value["after"], trust)
+        if change is not None:
+            trust.append({
+                "body": change,
+                "votes": [
+                    {"voter": vote["voter"], "signature": vote["membership_signature"]}
+                    for vote in votes
+                ],
+            })
+        return {
+            "state": value["after"],
+            "hash": digest(value["after"]),
+            "certificate": {
+                "ballot": list(number),
+                "old": member_ids(before["members"]),
+                "votes": votes,
+                "membership": change,
+            },
+            "trust": trust,
+        }
 
     def _retry_ballot(self, replies: list[dict[str, Any]]) -> bool:
         higher = [
@@ -867,7 +1085,7 @@ class PeerNode:
                     self.propose({
                         key: item
                         for key, item in pending["operation"].items()
-                        if key != "mac"
+                        if key != "signature"
                     })
                 elif state["clock"] and due:
                     self.propose({"kind": "tick", "actor": self.user_id})
@@ -899,12 +1117,28 @@ class PeerNode:
                         "message": "peer_bootstrap",
                         "name": previous["username"],
                         "port": self.port,
-                        "identity": [self.user_id, self.token],
+                        "identity": self.user_id,
+                        "session_id": document["state"]["session_id"],
                     },
+                    identity=self.identity,
+                    expected_key=member["public_key"],
                 )
                 self._install_document(info["document"])
                 reply = exchange(
-                    address, self._packet("join", {"member": info["member"]})
+                    address,
+                    self._packet(
+                        "join",
+                        {
+                            "member": info["member"],
+                            "member_signature": self.identity.sign({
+                                "session": document["state"]["session_id"],
+                                "member": info["member"],
+                            }),
+                        },
+                    ),
+                    identity=self.identity,
+                    expected_key=member["public_key"],
+                    timeout=_MEMBERSHIP_TIMEOUT,
                 )
                 self._install_document(reply["document"])
             except OSError, ValueError, KeyError, TypeError:

@@ -225,6 +225,11 @@ def export_checkpoint(server: Server) -> dict[str, Any]:
                 else None,
                 "token": player.reconnect_token(),
                 "cache": player.export_command_cache(),
+                **(
+                    {"public_key": player.network_key()}
+                    if player.network_key() is not None
+                    else {}
+                ),
             }
             for player in cast("list[Client]", players)
         ],
@@ -342,6 +347,8 @@ def _restore_players(
             None,
         )
         player.asignar_color(color)
+        if record.get("public_key") is not None:
+            player.set_network_key(record["public_key"])
         if color is not None:
             server.color.reservar_color(color)
         player.import_command_cache(record["cache"])

@@ -1,0 +1,59 @@
+# Coordenadas del mapa: nombres separados de las fichas de unidades.
+# Las islas pequeñas usan etiquetas exteriores y una línea de referencia.
+[style]
+font = "DejaVu Sans"
+font_size = 7.0
+ink = "#282a30"
+halo = "#fff8ea"
+
+[labels]
+Argentina = { x = 232, y = 348, angle = 70 }
+Brasil = { x = 252, y = 239, size = 8 }
+Peru = { text = "Perú", x = 192, y = 255 }
+Colombia = { x = 220, y = 234, size = 6.5 }
+Chile = { x = 202, y = 352, angle = 80 }
+Uruguay = { x = 265, y = 299, size = 6.5 }
+Sumatra = { x = 550, y = 269, anchor = [555, 278] }
+Borneo = { x = 602, y = 250, anchor = [602, 260] }
+Java = { x = 642, y = 250, anchor = [642, 260] }
+Australia = { x = 604, y = 312, size = 8 }
+Francia = { x = 358, y = 136 }
+Espana = { text = "España", x = 320, y = 154 }
+Islandia = { x = 326, y = 33, anchor = [327, 42] }
+GranBretana = { text = "Gran\nBretaña", x = 355, y = 63, size = 6.5, anchor = [355, 77] }
+Alemania = { x = 389, y = 113, size = 6.5 }
+Italia = { x = 400, y = 168 }
+Polonia = { x = 421, y = 110, size = 6.5 }
+Rusia = { x = 434, y = 87, size = 8 }
+Suecia = { x = 369, y = 25 }
+Sahara = { x = 373, y = 276, size = 8 }
+Etiopia = { text = "Etiopía", x = 461, y = 294 }
+Egipto = { x = 451, y = 254 }
+Madagascar = { x = 516, y = 326, angle = -90, size = 6.5 }
+Zaire = { x = 411, y = 314 }
+Sudafrica = { text = "Sudáfrica", x = 457, y = 333, size = 6.5 }
+Canada = { text = "Canadá", x = 140, y = 65, size = 8 }
+Yukon = { text = "Yukón", x = 82, y = 51 }
+Alaska = { x = 43, y = 79 }
+Groenlandia = { x = 262, y = 30, size = 8 }
+Oregon = { text = "Oregón", x = 80, y = 132, size = 8 }
+California = { x = 111, y = 172, size = 8 }
+Mexico = { text = "México", x = 144, y = 197 }
+NuevaYork = { text = "Nueva York", x = 175, y = 156 }
+Terranova = { x = 187, y = 136 }
+Labrador = { x = 214, y = 69 }
+Arabia = { x = 516, y = 165, size = 6.5 }
+Aral = { x = 479, y = 28 }
+China = { x = 605, y = 113, size = 8 }
+India = { x = 572, y = 157, size = 8 }
+Iran = { text = "Irán", x = 510, y = 86, size = 8 }
+Tartaria = { x = 498, y = 2, size = 6.5 }
+Taimiria = { x = 533, y = -37, size = 6.5, anchor = [533, -28] }
+Japon = { text = "Japón", x = 657, y = 66, angle = -90, anchor = [650, 64] }
+Kamchatka = { x = 584, y = -2, size = 6.5 }
+Siberia = { x = 559, y = 41 }
+Mongolia = { x = 538, y = 58 }
+Gobi = { x = 548, y = 93 }
+Malasia = { x = 617, y = 147, size = 6.5 }
+Turquia = { text = "Turquía", x = 516, y = 143, size = 6.5 }
+Israel = { x = 483, y = 170, size = 6.5 }

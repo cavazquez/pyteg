@@ -46,7 +46,7 @@ class MissileBadgeTests(unittest.TestCase):
 
         badge = cast("QGraphicsRectItem", pais._misiles_badge)
         text = cast("QGraphicsTextItem", pais._misiles_text)
-        self.assertEqual(text.toPlainText(), "🚀 1")
+        self.assertEqual(text.toPlainText(), "1")
         self.assertEqual(badge.brush().color().name(), "#9f1d16")
         self.assertEqual(text.defaultTextColor().name(), "#ffffff")
         self.assertGreater(
@@ -71,7 +71,7 @@ class MissileBadgeTests(unittest.TestCase):
 
         self.assertTrue(badge.isVisible())
         self.assertTrue(text.isVisible())
-        self.assertEqual(text.toPlainText(), "🚀 3")
+        self.assertEqual(text.toPlainText(), "3")
 
 
 if __name__ == "__main__":

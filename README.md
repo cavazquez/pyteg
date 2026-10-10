@@ -36,7 +36,7 @@ gráfica en Python.
 - Inicio común para jugar localmente con bots, en LAN o por archivos; acceso a partidas recientes.
 - **Efectos visuales inmersivos**: Atacante ve animación completa, espectadores ven titilación de países y pérdidas flotantes
 - **Sistema de sonidos**: Efectos de audio para batallas, movimientos, turnos y eventos del juego con controles de volumen
-- Modo multijugador con servidor 🔌 TCP y validación de estados (sin cifrado; pensado para redes de confianza, p. ej. LAN). Detalle del modelo de amenaza: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#seguridad-y-modelo-de-amenaza) y [ADR-009](docs/DECISIONS.md#adr-009-tcp-sin-cifrado-y-red-de-confianza).
+- Multijugador con TLS 1.3, invitaciones e identidades individuales. Alcance de la protección: [modelo de amenaza](docs/ARCHITECTURE.md#seguridad-y-modelo-de-amenaza) y [ADR-015](docs/DECISIONS.md#adr-015-identidades-individuales-e-invitaciones-con-tls).
 - Crear una partida desde el cliente y recuperar automáticamente el anfitrión en otro jugador si se cae.
 - Descubrir salas en la LAN, guardar/reabrir partidas y revisar su historial.
 - Jugar sin conexión mediante archivos de turno compartidos por cualquier medio.
@@ -61,6 +61,22 @@ instalar uv, `uv sync --group dev` instalará o seleccionará Python 3.14.
 - 🐳 Docker (opcional)
 
 ## ⚡ Instalación rápida
+
+### Linux con Snap
+
+La versión de desarrollo se distribuye en el canal **edge**:
+
+```bash
+sudo snap install pyteg --edge
+pyteg
+```
+
+El paquete incluye Python, la interfaz gráfica, ambos mapas y el servidor.
+Para actualizar una instalación existente: `sudo snap refresh pyteg --edge`.
+El servidor independiente se inicia con `pyteg.server`.
+
+### Desde el código fuente
+
 ```bash
 git clone https://github.com/cavazquez/pyteg.git
 cd pyteg
@@ -71,20 +87,19 @@ uv sync
 
 1. Ejecutá `uv run pyteg-client`, elegí **LAN** en el inicio y continuá.
 2. Elegí **Crear partida**, tu nombre, mapa, perfil de reglas y puerto. La
-   ventana muestra las direcciones locales que podés compartir.
+   ventana muestra las direcciones locales disponibles.
    En **Tipo de red** elegí **Anfitrión con migración** o **Entre pares**.
-3. Los demás jugadores eligen **Unirme a una partida** y seleccionan la sala
-   en **Salas en la red**. El cliente completa dirección, puerto y mapa.
-   También se puede ingresar la dirección manualmente.
+3. Usá **Copiar invitación** en la barra de estado y compartí el enlace.
+   Los demás eligen **Unirme a una partida**, pegan el enlace en **Invitación**
+   e ingresan su nombre. El enlace completa dirección, puerto, mapa y tipo de red.
 4. El administrador configura las reglas y comienza la partida. El mapa y el
    perfil de reglas siguen siendo elecciones independientes.
 
 **Anfitrión con migración** aloja el motor en un jugador y pasa ese rol a otro
 si se cae. **Entre pares** mantiene un motor y un puerto en cada cliente: cada
 acción se valida y confirma por mayoría, sin un anfitrión de juego único.
-Podés unirte contactando a cualquier participante. La sala descubierta completa
-también el tipo de red; para una dirección manual elegí el mismo tipo que sus
-jugadores.
+Podés unirte usando la invitación de cualquier participante activo. El
+descubrimiento LAN ayuda a ubicar las salas; el ingreso requiere su invitación.
 
 En **Entre pares**, cerrar al creador permite continuar a los demás si conservan
 mayoría. Con cuatro jugadores hacen falta tres. Sin mayoría se pausan acciones
@@ -112,12 +127,27 @@ participantes, perder dos al mismo tiempo deja la partida esperando; no crea dos
 partidas independientes. Los cambios de participantes requieren mayorías tanto
 del grupo anterior como del nuevo.
 
-Cada cliente habilitado conserva una copia completa y privada del motor en
-disco. Usá esta modalidad con participantes y red de confianza: esas copias
-incluyen cartas, objetivos y credenciales. Los equipos deben poder conectarse
+Cada cliente habilitado conserva una copia completa del motor en disco. Las
+conexiones de juego, recuperación y pares usan TLS 1.3 y verifican la clave
+remota antes de enviar datos. Cada jugador firma con su propia identidad;
+la reconexión requiere su clave privada. Las réplicas contienen claves públicas
+e identificadores internos que no sirven para autenticar otra conexión.
+
+**Guardar partida** conserva la clave privada de tu jugador en tu archivo local;
+compartí la invitación para ingresar a la sala y conservá ese guardado personal.
+La recuperación después de reiniciar necesita ese archivo. Esta revisión usa
+el protocolo de red 3: todos deben actualizar. Los guardados de red anteriores
+no incluyen las claves necesarias para recuperar identidades; creá una sala
+nueva. Los guardados locales siguen siendo compatibles.
+
+Las copias del motor todavía incluyen cartas y objetivos de los demás.
+El anfitrión y el consenso entre pares siguen requiriendo participantes de
+confianza; privacidad completa y tolerancia a jugadores maliciosos quedan
+pendientes en [#250](https://github.com/cavazquez/pyteg/issues/250).
+Los equipos deben poder conectarse
 entre sí a los puertos TCP del juego y de recuperación (asignado automáticamente).
 El descubrimiento utiliza UDP 45471, multicast local y broadcast. Si la red
-bloquea esos anuncios, se puede usar la dirección manual.
+bloquea esos anuncios, se puede compartir directamente la invitación.
 
 ### Inicio y partidas locales con bots
 

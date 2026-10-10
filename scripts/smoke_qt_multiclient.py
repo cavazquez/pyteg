@@ -2,7 +2,7 @@
 
 El smoke no juega una partida completa: verifica la capa que el simulador
 headless no puede cubrir, es decir, que varias ventanas ``Gui`` reciban el
-handshake y que una de ellas pueda recuperar la sesión con su token.
+handshake y que una de ellas pueda recuperar la sesión con su identidad.
 
 Uso desde la raíz del repositorio::
 
@@ -26,9 +26,13 @@ from pyteg.client.app import Client
 from pyteg.client.conexion.connection import ConnectionClient
 from pyteg.gui import Gui
 from pyteg.gui.dialogs.conectar import VentanaConectar
+from scripts.secure_fixture import server_invitation
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+
+    from pyteg.network.security import Invitation
+    from pyteg.server.hosting.runtime import HostRuntime
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CLIENTS = 3
@@ -86,7 +90,14 @@ def _wait_for(
         raise RuntimeError(message)
 
 
-def _connect_window(client: Client, port: int, theme: str, username: str) -> Gui:
+def _connect_window(  # noqa: PLR0913, PLR0917 -- destino e identidad del recorrido Qt.
+    client: Client,
+    port: int,
+    theme: str,
+    username: str,
+    invitation: Invitation,
+    runtime: HostRuntime | None = None,
+) -> Gui:
     window = Gui(client, map_theme=theme)
     window.sound_manager.set_enabled(False)
     window.hide()
@@ -95,6 +106,11 @@ def _connect_window(client: Client, port: int, theme: str, username: str) -> Gui
     dialog.addr.setText("127.0.0.1")
     dialog.port.setText(str(port))
     dialog.username.setText(username)
+    dialog.invitation_entry.setText(invitation.encode())
+    if runtime is not None:
+        user_id = client.userid()
+        if user_id is not None:
+            dialog._saved_identity = user_id, runtime.identity.export_private()  # noqa: SLF001 -- identidad del mismo cliente de prueba.
     dialog.connect_to_server()
     return window
 
@@ -163,7 +179,7 @@ def _client_userid(client: Client) -> int:
     return int(user_id)
 
 
-def main() -> int:
+def main() -> int:  # noqa: PLR0914 -- recursos del recorrido multicliente.
     """Ejecuta el smoke y devuelve cero si conserva la identidad.
 
     Returns:
@@ -181,6 +197,7 @@ def main() -> int:
     port = _free_port()
     server = _start_server(port, args.theme, environment, args.rules_profile)
     app = QApplication([])
+    app.setQuitOnLastWindowClosed(False)
     windows: list[Gui] = []
     clients: list[Client] = []
 
@@ -195,12 +212,15 @@ def main() -> int:
             raise RuntimeError(
                 "El servidor terminó antes de escuchar:\n" + _server_output(server)
             )
+        invitation = server_invitation(server, args.timeout)
 
         for index in range(args.clients):
             client = Client()
             clients.append(client)
             windows.append(
-                _connect_window(client, port, args.theme, f"QtSmoke{index + 1}")
+                _connect_window(
+                    client, port, args.theme, f"QtSmoke{index + 1}", invitation
+                )
             )
 
         _wait_for(
@@ -216,6 +236,20 @@ def main() -> int:
             "handshake de los clientes Qt",
         )
         user_ids = [_client_userid(client) for client in clients]
+        windows[0].transmisor.empezar(segundos=120, paises_para_victoria=0)
+        _wait_for(
+            app,
+            lambda: windows[0].estado_actual == "EsperarJugadores",
+            args.timeout,
+            "configuración de partida",
+        )
+        windows[0].transmisor.empezar_partida()
+        _wait_for(
+            app,
+            lambda: all(window.estado_actual == "JUGANDO" for window in windows),
+            args.timeout,
+            "inicio de partida",
+        )
 
         reconnect_client = clients[1]
         reconnect_user_id = _client_userid(reconnect_client)
@@ -226,6 +260,7 @@ def main() -> int:
         if not isinstance(connection, ConnectionClient):
             message = "El cliente no tiene conexión Qt"
             raise TypeError(message)
+        runtime = windows[1].host_runtime
         connection.desconectar()
         _wait_for(
             app,
@@ -235,7 +270,12 @@ def main() -> int:
         )
 
         replacement = _connect_window(
-            reconnect_client, port, args.theme, "QtSmoke2-Reconnected"
+            reconnect_client,
+            port,
+            args.theme,
+            "QtSmoke2-Reconnected",
+            invitation,
+            runtime,
         )
         windows.append(replacement)
         _wait_for(

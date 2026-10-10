@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from time import monotonic
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any, cast
 
@@ -14,6 +15,11 @@ from pyteg.client.event_processor import ClientEventProcessor
 from pyteg.client.state_adapter import QtClientStateAdapter
 from pyteg.client.state_model import ClientStateModel
 from pyteg.client.tasks.manager import ClientTaskManager
+from pyteg.gui.animation_timing import (
+    BOT_ACTION_INTERVAL_MS,
+    BOT_BATTLE_PAUSE_MS,
+    UNIT_LOSS_DURATION_MS,
+)
 from pyteg.i18n import translate as _
 from pyteg.logger import get_logger
 from pyteg.persistence.asynchronous import AsyncGame
@@ -29,6 +35,10 @@ if TYPE_CHECKING:
 
 
 _LOG = get_logger(__name__)
+_BOT_EFFECTS = {
+    "resultado_batalla": ("atacante_id", BOT_BATTLE_PAUSE_MS),
+    "resultado_misil": ("jugador_id", UNIT_LOSS_DURATION_MS),
+}
 
 
 class OfflineConnection(QObject):
@@ -52,8 +62,9 @@ class OfflineConnection(QObject):
         self._availability_timer.setSingleShot(True)
         self._availability_timer.timeout.connect(self._update_availability)
         self._bot_timer = QTimer(self)
-        self._bot_timer.setInterval(120)
+        self._bot_timer.setInterval(BOT_ACTION_INTERVAL_MS)
         self._bot_timer.timeout.connect(self._play_bot)
+        self._bot_not_before = 0.0
         self.received.connect(self._process)
 
     def create(
@@ -133,11 +144,24 @@ class OfflineConnection(QObject):
         if not self._active or not self.window._vivo:  # noqa: SLF001 -- ciclo de vida Qt.
             return
         validated = validate_client_event(event)
+        self._pause_after_bot_effect(validated)
         applied = self.event_processor.process(validated)
         self.state_adapter.apply(validated, applied)
         if not self.state_adapter.handles(validated["mensaje"]):
             task = ClientTaskManager.msg_to_task(validated)
             task.run(cast("GameWindowProtocol", self.window))
+
+    def _pause_after_bot_effect(self, event: dict[str, Any]) -> None:
+        effect = _BOT_EFFECTS.get(event["mensaje"])
+        if not isinstance(self.game, LocalGame) or effect is None:
+            return
+        user_field, duration_ms = effect
+        if event.get(user_field) not in self.game.bot_ids:
+            return
+        # El intervalo también permite acelerar los recorridos gráficos
+        # de CI sin imponer esperas reales entre sus ataques.
+        delay = duration_ms * self._bot_timer.interval() / BOT_ACTION_INTERVAL_MS / 1000
+        self._bot_not_before = max(self._bot_not_before, monotonic() + delay)
 
     def send_data(self, data: str) -> None:
         """Aplica un comando del transmisor al motor offline."""
@@ -165,6 +189,7 @@ class OfflineConnection(QObject):
             not self._active
             or not self.window.vivo()
             or not isinstance(self.game, LocalGame)
+            or monotonic() < self._bot_not_before
         ):
             return
         try:
@@ -204,6 +229,7 @@ class OfflineConnection(QObject):
         self._active = False
         self._availability_timer.stop()
         self._bot_timer.stop()
+        self._bot_not_before = 0.0
         if self.game is not None:
             try:
                 self.game.close()

@@ -4,17 +4,21 @@ from __future__ import annotations
 
 from typing import cast
 
-from PySide6.QtCore import QEasingCurve, QPropertyAnimation, QTimer
-from PySide6.QtGui import QBrush, QColor, QFont, QPen
+from PySide6.QtCore import QPropertyAnimation, QRectF, Qt, QTimer
+from PySide6.QtGui import QColor, QPen
 from PySide6.QtWidgets import (
     QGraphicsColorizeEffect,
-    QGraphicsOpacityEffect,
+    QGraphicsPathItem,
     QGraphicsPixmapItem,
-    QGraphicsRectItem,
     QGraphicsTextItem,
 )
 
 from pyteg.config import TITILATION_MAX_INTENSITY
+from pyteg.gui.animation_timing import UNIT_GAIN_DURATION_MS, UNIT_LOSS_DURATION_MS
+from pyteg.gui.mapa.army_position import resolve_army_position
+from pyteg.gui.widgets.circulo import Circulo
+from pyteg.gui.widgets.missile_badge import MissileBadge
+from pyteg.gui.widgets.unit_delta import UnitDeltaIndicator
 from pyteg.logger import get_logger
 
 _LOG = get_logger("gui.pais.fx")
@@ -26,14 +30,16 @@ class PaisBattleFxMixin:
     _nombre: str
     _army_x: float
     _army_y: float
-    _misiles_badge: QGraphicsRectItem | None
+    _misiles_badge: MissileBadge | None
     _misiles_text: QGraphicsTextItem | None
     _cantidad_misiles: int
     _titilacion_timer: QTimer | None
     _titilacion_effect: QGraphicsColorizeEffect | None
+    _titilacion_outline: QGraphicsPathItem | None
     _titilacion_intensidad: float
     _titilacion_direccion: int
-    _perdida_flotante: QGraphicsTextItem | None
+    _perdida_flotante: UnitDeltaIndicator | None
+    _refuerzo_flotante: UnitDeltaIndicator | None
     _opacity_animation: QPropertyAnimation | None
     _movimiento_timer: QTimer | None
 
@@ -53,45 +59,59 @@ class PaisBattleFxMixin:
                 return
 
             if self._misiles_badge is None or self._misiles_text is None:
-                badge = QGraphicsRectItem()
-                badge.setParentItem(cast("QGraphicsPixmapItem", self))
-                badge.setBrush(QBrush(QColor("#9F1D16")))
-                badge.setPen(QPen(QColor("#FFE08A"), 1.5))
-                badge.setZValue(20)
-
-                text = QGraphicsTextItem(badge)
-                text.document().setDocumentMargin(0)
-                text.setFont(QFont("Arial", 10, QFont.Weight.Bold))
-                text.setDefaultTextColor(QColor("#FFFFFF"))
-
-                self._misiles_badge = badge
-                self._misiles_text = text
+                self._misiles_badge = MissileBadge()
+                self._misiles_text = self._misiles_badge.count_text
 
             badge = self._misiles_badge
             text = self._misiles_text
             if badge is None or text is None:
                 return
 
-            text.setPlainText(f"🚀 {cantidad}")
+            badge.set_count(cantidad)
             text.setVisible(True)
             badge.setVisible(True)
 
-            text_bounds = text.boundingRect()
-            badge.setRect(
-                0,
-                0,
-                text_bounds.width() + 10,
-                text_bounds.height() + 4,
-            )
-            text.setPos(5, 2)
-            badge.setPos(self._army_x - 15, self._army_y - 45)
+            self._position_missile_badge(badge)
 
             actualizar_tooltip = getattr(self, "_actualizar_tooltip", None)
             if callable(actualizar_tooltip):
                 actualizar_tooltip()
+            badge.setToolTip(cast("QGraphicsPixmapItem", self).toolTip())
 
         except (AttributeError, RuntimeError) as e:
             _LOG.warning("Error actualizando misiles en %s: %s", self._nombre, e)
+
+    def _position_missile_badge(self, badge: MissileBadge) -> None:
+        circle = getattr(self, "_circle", None)
+        if circle is not None:
+            # La escena eleva la ficha por encima de los países vecinos.
+            # El misil comparte su posición y su capa, incluso después
+            # de separar la ficha del sprite del país.
+            scene = circle.scene()
+            obstacles = list(getattr(scene, "country_label_bounds", ()))
+            if scene is not None:
+                obstacles.extend(
+                    item.sceneBoundingRect().adjusted(-1, -1, 1, 1)
+                    for item in scene.items()
+                    if isinstance(item, (Circulo, MissileBadge))
+                    and item is not circle
+                    and item is not badge
+                    and item.isVisible()
+                )
+            badge.place_next_to(circle, obstacles)
+            return
+
+        country = cast("QGraphicsPixmapItem", self)
+        badge.setParentItem(country)
+        pixmap = country.pixmap()
+        x, y = resolve_army_position(
+            pixmap.width(), pixmap.height(), self._army_x, self._army_y
+        )
+        marker = QRectF(x, y, 16, 16)
+        badge.setPos(
+            marker.center().x() - badge.rect().width() / 2,
+            marker.bottom() + 2,
+        )
 
     def iniciar_titilacion_batalla(self) -> None:
         """Inicia el efecto de titilación durante una batalla."""
@@ -100,15 +120,27 @@ class PaisBattleFxMixin:
 
             self._titilacion_effect = QGraphicsColorizeEffect()
             self._titilacion_effect.setColor(QColor(255, 100, 100))
-            self._titilacion_effect.setStrength(0.0)
-            cast("QGraphicsPixmapItem", self).setGraphicsEffect(self._titilacion_effect)
+            self._titilacion_effect.setStrength(TITILATION_MAX_INTENSITY)
+            country = cast("QGraphicsPixmapItem", self)
+            country.setGraphicsEffect(self._titilacion_effect)
+
+            scene = country.scene()
+            if scene is not None:
+                outline = QGraphicsPathItem(country.mapToScene(country.shape()))
+                pen = QPen(QColor("#D32F2F"), 3)
+                pen.setCosmetic(True)
+                outline.setPen(pen)
+                outline.setZValue(900)
+                outline.setAcceptedMouseButtons(Qt.MouseButton.NoButton)
+                scene.addItem(outline)
+                self._titilacion_outline = outline
 
             self._titilacion_timer = QTimer(self._titilacion_effect)
             self._titilacion_timer.timeout.connect(self._alternar_titilacion)
             self._titilacion_timer.start(500)
 
-            self._titilacion_intensidad = 0.0
-            self._titilacion_direccion = 1
+            self._titilacion_intensidad = TITILATION_MAX_INTENSITY
+            self._titilacion_direccion = -1
 
         except (AttributeError, RuntimeError) as e:
             _LOG.warning("Error iniciando titilación en %s: %s", self._nombre, e)
@@ -128,6 +160,10 @@ class PaisBattleFxMixin:
                     self._titilacion_direccion = 1
 
                 self._titilacion_effect.setStrength(self._titilacion_intensidad)
+                if self._titilacion_outline is not None:
+                    self._titilacion_outline.setOpacity(
+                        max(0.3, self._titilacion_intensidad / TITILATION_MAX_INTENSITY)
+                    )
 
         except (AttributeError, RuntimeError) as e:
             _LOG.warning("Error en titilación de %s: %s", self._nombre, e)
@@ -135,6 +171,12 @@ class PaisBattleFxMixin:
     def detener_titilacion_batalla(self) -> None:
         """Detiene el efecto de titilación."""
         try:
+            outline = getattr(self, "_titilacion_outline", None)
+            if outline is not None:
+                scene = outline.scene()
+                if scene is not None:
+                    scene.removeItem(outline)
+                self._titilacion_outline = None
             if self._titilacion_timer:
                 self._titilacion_timer.stop()
                 self._titilacion_timer.deleteLater()
@@ -155,88 +197,42 @@ class PaisBattleFxMixin:
 
     def mostrar_perdida_flotante(self, perdidas: int) -> None:
         """Muestra una animación de pérdidas flotantes en rojo."""
-        try:
-            if self._perdida_flotante:
-                if self._perdida_flotante.scene():
-                    self._perdida_flotante.scene().removeItem(self._perdida_flotante)
-                self._perdida_flotante = None
-
-            texto = f"-{perdidas}"
-            self._perdida_flotante = QGraphicsTextItem(texto)
-            self._perdida_flotante.setParentItem(cast("QGraphicsPixmapItem", self))
-
-            font = QFont("Arial", 16, QFont.Weight.Bold)
-            self._perdida_flotante.setFont(font)
-            self._perdida_flotante.setDefaultTextColor(QColor(255, 0, 0))
-
-            pos_x = self._army_x - 10
-            pos_y = self._army_y - 30
-            self._perdida_flotante.setPos(pos_x, pos_y)
-
-            self._animar_perdida_flotante()
-
-        except (AttributeError, RuntimeError) as e:
-            _LOG.warning("Error mostrando pérdida flotante en %s: %s", self._nombre, e)
-
-    def _animar_perdida_flotante(self) -> None:
-        """Anima la pérdida flotante (movimiento hacia arriba y desvanecimiento)."""
-        try:
-            if not self._perdida_flotante:
-                return
-
-            opacity_effect = QGraphicsOpacityEffect()
-            self._perdida_flotante.setGraphicsEffect(opacity_effect)
-
-            self._opacity_animation = QPropertyAnimation(
-                opacity_effect, b"opacity", opacity_effect
+        if perdidas > 0:
+            self._mostrar_cambio_flotante(
+                -perdidas, "_perdida_flotante", UNIT_LOSS_DURATION_MS
             )
-            self._opacity_animation.setDuration(2000)
-            self._opacity_animation.setStartValue(1.0)
-            self._opacity_animation.setEndValue(0.0)
-            self._opacity_animation.setEasingCurve(QEasingCurve.Type.OutQuad)
 
-            self._opacity_animation.finished.connect(self._limpiar_perdida_flotante)
+    def mostrar_refuerzo_flotante(self, cantidad: int) -> None:
+        """Señala con +N las unidades recibidas, en verde y junto a su ficha."""
+        if cantidad > 0:
+            self._mostrar_cambio_flotante(
+                cantidad, "_refuerzo_flotante", UNIT_GAIN_DURATION_MS
+            )
 
-            self._opacity_animation.start()
-
-            self._movimiento_timer = QTimer(opacity_effect)
-            self._movimiento_timer.timeout.connect(self._mover_perdida_arriba)
-            self._movimiento_timer.start(50)
-
-            QTimer.singleShot(2000, opacity_effect, self._detener_movimiento)
-
-        except (AttributeError, RuntimeError) as e:
-            _LOG.warning("Error animando pérdida flotante en %s: %s", self._nombre, e)
-
-    def _mover_perdida_arriba(self) -> None:
-        """Mueve la pérdida flotante hacia arriba gradualmente."""
+    def _mostrar_cambio_flotante(
+        self, cantidad: int, attribute: str, duration_ms: int
+    ) -> None:
         try:
-            if self._perdida_flotante:
-                pos_actual = self._perdida_flotante.pos()
-                nueva_pos = pos_actual + cast("QGraphicsPixmapItem", self).mapFromScene(
-                    0, -1
-                )
-                self._perdida_flotante.setPos(nueva_pos.x(), nueva_pos.y())
+            circle = getattr(self, "_circle", None)
+            if circle is None:
+                return
+            previous = getattr(self, attribute, None)
+            if previous is not None:
+                previous.stop()
+                previous.deleteLater()
+            indicator = UnitDeltaIndicator(cantidad, circle, duration_ms)
+            setattr(self, attribute, indicator)
 
+            def finished() -> None:
+                if getattr(self, attribute, None) is indicator:
+                    setattr(self, attribute, None)
+
+            indicator.fade_animation.finished.connect(finished)
+            if cantidad < 0:
+                self._movimiento_timer = indicator.movement_timer
+                self._opacity_animation = indicator.fade_animation
+            indicator.start()
         except (AttributeError, RuntimeError) as e:
-            _LOG.debug("Error moviendo pérdida flotante: %s", e)
-
-    def _detener_movimiento(self) -> None:
-        """Detiene el timer de movimiento."""
-        try:
-            if hasattr(self, "_movimiento_timer") and self._movimiento_timer:
-                self._movimiento_timer.stop()
-                self._movimiento_timer = None
-        except (AttributeError, RuntimeError) as e:
-            _LOG.debug("Error deteniendo movimiento: %s", e)
-
-    def _limpiar_perdida_flotante(self) -> None:
-        """Limpia la pérdida flotante después de la animación."""
-        try:
-            if self._perdida_flotante:
-                if self._perdida_flotante.scene():
-                    self._perdida_flotante.scene().removeItem(self._perdida_flotante)
-                self._perdida_flotante = None
-
-        except (AttributeError, RuntimeError) as e:
-            _LOG.debug("Error limpiando pérdida flotante: %s", e)
+            _LOG.warning(
+                "Error mostrando cambio de unidades en %s: %s", self._nombre, e
+            )

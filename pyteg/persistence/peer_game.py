@@ -65,6 +65,8 @@ class PeerGame(InProcessGame):
                     previous.username(),
                     reconnect_token=previous.reconnect_token(),
                 )
+                if (key := previous.network_key()) is not None:
+                    player.set_network_key(key)
                 game.server.registrar_reconexion_pendiente(player.userid(), player)
                 restored = game.server.serialized(
                     partial(
@@ -115,6 +117,7 @@ class PeerGame(InProcessGame):
             player = self._player(
                 record["userid"], record["name"], reconnect_token=record["token"]
             )
+            player.set_network_key(record["public_key"])
             if not self.server.registrar_cliente(player.userid(), player):
                 raise ValueError("La sala está llena o la identidad ya existe")
         elif kind == "rejoin":
@@ -135,6 +138,7 @@ class PeerGame(InProcessGame):
                 record["name"],
                 reconnect_token=record["token"],
             )
+            player.set_network_key(record["public_key"])
             self.server.registrar_reconexion_pendiente(player.userid(), player)
             if not self.server.serialized(
                 partial(

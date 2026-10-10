@@ -79,6 +79,7 @@ class HostReplication:
             "userid": client.userid(),
             "host": client.peer_host(),
             "port": port,
+            "public_key": client.network_key(),
         }
         self._subscribers[client.userid()] = client
 
@@ -171,7 +172,6 @@ class HostReplication:
             "session_id": self.session_id,
             "epoch": self.epoch,
             "user_id": self.owner_id,
-            "token": owner["token"],
             "envelope": envelope,
         }
         peers = [

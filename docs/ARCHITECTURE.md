@@ -15,7 +15,7 @@ el entry point `pyteg-server` continúa usando ese listener de manera independie
 La propiedad de anfitrión y el rol de administrador se gestionan por separado.
 
 - `server/hosting/runtime.py`: ciclo de vida del motor, listener de jugadores y
-  puerto de control autenticado por el token de reconexión del participante.
+  puerto de control TLS autenticado por la clave individual del participante.
 - `server/hosting/replication.py`: sala, época de autoridad y candidatos ordenados
   por `userid`. Sólo las conexiones que negocian `host_migration` y registran
   su puerto reciben copias privadas.
@@ -44,15 +44,19 @@ el lease anterior y exige mayoría del grupo confirmado. Una incorporación o
 baja exige mayorías de los grupos anterior y nuevo. Antes de pedir votos, un
 candidato consulta la autoridad vigente y busca el checkpoint confirmado más
 reciente. Una autoridad que prometió una época superior deja de hospedar.
-Los certificados identifican participantes de confianza; no son firmas ni
+Los RPC de copias y elecciones identifican participantes por sus claves.
+Los certificados del anfitrión conservan listas de confirmantes autenticados
+por el canal; este modo sigue requiriendo una autoridad de confianza y no es
 consenso tolerante a jugadores maliciosos.
 
 `FileRepository` usa escritura temporal, `fsync` y reemplazo atómico. En la GUI,
 el archivo se identifica por sala y jugador, de modo que otra ventana puede
 recuperar los votos anteriores. Abrir explícitamente un guardado crea otra sala;
 espera las identidades históricas antes de reanudar, o la acción del anfitrión.
-Los mementos contienen cartas, objetivos y tokens privados; se mantienen fuera
-del modelo público y del log. Requieren participantes y red de confianza.
+Los mementos contienen cartas, objetivos, claves públicas e identificadores
+internos; se mantienen fuera del modelo público y del log. La clave privada de
+cada jugador se conserva únicamente en su guardado local, fuera del memento.
+La privacidad frente a otros participantes todavía requiere confianza.
 
 ### Tiempo real entre pares
 
@@ -85,10 +89,10 @@ El reloj usa pasos de un segundo sujetos al mismo acuerdo; cada votante
 comprueba su intervalo monotónico. Cuando llega a cero, el ejecutor normal
 finaliza el turno. Sin mayoría no hay pasos ni vencimientos. Después de ocho
 segundos sin respuesta, cualquier participante puede proponer una baja; la
-membresía anterior aún debe aprobarla. La reconexión autentica el token
-histórico y actualiza el endpoint mediante otra transición conjunta.
+membresía anterior aún debe aprobarla. La reconexión prueba posesión de la clave
+histórica y actualiza el endpoint mediante otra transición conjunta.
 
-Los autoguardados conservan estado, identidad, clave de sala, promesas y valor
+Los autoguardados conservan estado, identidad privada propia, invitación, promesas y valor
 aceptado antes de responder al emisor, usando `fsync` y reemplazo atómico. Abrir
 un autoguardado de pares conserva la misma sala. Consultar otro participante
 permite recuperar commits que no llegaron antes de desconectarse.
@@ -96,10 +100,14 @@ permite recuperar commits que no llegaron antes de desconectarse.
 El algoritmo sigue las condiciones de [Paxos Made Simple de Lamport](https://lamport.azurewebsites.net/pubs/paxos-simple.pdf)
 para conservar valores aceptados y mayorías; las transiciones de membresía usan
 mayorías conjuntas, como se describe en el [artículo de Raft](https://raft.github.io/raft.pdf).
-Los MAC autentican mensajes externos a la sala; el modelo sigue suponiendo
-participantes y LAN de confianza. Los motores contienen información privada,
-no hay protección contra un jugador que modifique su programa, cifrado ni
-descubrimiento o conexión automática a través de NAT.
+Las firmas Ed25519 individuales sustituyen al MAC de sala. Los votos vinculan
+sala, posición, estado anterior, propuesta e identidad del votante. Una cadena
+de incorporaciones firmadas, anclada en la clave del creador de la invitación,
+permite verificar identidades al recuperar estados saltando varias posiciones.
+TLS cifra las conexiones y la admisión exige invitación o identidad histórica.
+Paxos continúa suponiendo votantes honestos: las firmas no lo convierten en BFT.
+Los motores contienen información privada y no hay conexión automática a
+través de NAT.
 
 ### Persistencia, descubrimiento y partidas por archivos
 
@@ -184,11 +192,31 @@ reglas y sus módulos, independientemente del mapa.
 
 ## Seguridad y modelo de amenaza
 
-El transporte entre cliente y servidor es **TCP en claro**, sin TLS ni autenticación fuerte entre procesos. El diseño asume **red de confianza** (típicamente LAN o anfitrión controlado): cualquier host que pueda alcanzar el puerto del servidor puede intentar conectar; el juego no ofrece cifrado ni verificación de identidad más allá de las reglas propias de la partida (p. ej. nombres de usuario).
+El protocolo de red 3 usa TLS 1.3 en juego, recuperación y comunicación entre
+pares. La invitación fija la clave pública exacta del destino; el cliente la
+comprueba antes de enviar la autorización de ingreso o un comando. Las salas
+usan certificados propios, sin depender de una autoridad pública de certificados.
 
-**Riesgos conscientes:** lectura o modificación pasiva/activa del tráfico por terceros en la misma red; conexión de clientes no deseados si el puerto es accesible desde Internet sin firewall.
+- `network/identity.py`: claves Ed25519, firmas y registro público de identidades.
+- `network/security.py`: certificados TLS, invitaciones y desafíos nuevos por
+  conexión. La prueba firma el nonce del servidor y la petición completa.
+- `network/game_security.py`: admite un jugador antes de registrar su socket y
+  valida firmas y secuencias de sus comandos, vinculadas a sala y conexión.
+- `network/peer_auth.py`: cadena de membresía firmada y verificación de claves
+  históricas; las claves de un jugador no se reemplazan en estados posteriores.
+- `client/secure_transport.py`: socket TLS de Qt y comprobación de la clave fijada.
 
-**Posibles extensiones futuras** (cambian el protocolo y el despliegue): TLS u otro canal cifrado, contraseña o token de sala, lista de permitidos. No hay hoja de ruta fijada; ver [DECISIONS.md](DECISIONS.md) (ADR-009).
+La clave privada sólo está en el proceso y guardado de su propietario. Los
+archivos se escriben con permisos privados, reemplazo atómico y `fsync`.
+Una invitación permite ingresar a la sala; un ID, nombre o identificador interno
+copiado de una réplica no permite suplantar a otro jugador. El descubrimiento
+UDP anuncia metadatos públicos, sin claves privadas ni invitaciones.
+
+**Alcance pendiente:** las réplicas conservan cartas, objetivos y aleatoriedad
+del motor completo. El anfitrión conserva autoridad sobre las reglas; Paxos
+tolera caídas, pero no votos maliciosos. La privacidad del motor y un consenso
+BFT pertenecen a las siguientes etapas de [#250](https://github.com/cavazquez/pyteg/issues/250).
+Ver [ADR-015](DECISIONS.md#adr-015-identidades-individuales-e-invitaciones-con-tls).
 
 ## Módulos principales (pyteg/)
 - `pyteg/server/app.py`: servidor y loop principal (acepta conexiones, dirige mensajes a tareas). Entry point: `uv run pyteg-server`.

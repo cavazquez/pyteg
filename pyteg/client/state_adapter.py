@@ -8,6 +8,7 @@ from PySide6.QtGui import QColor
 
 from pyteg.gui.managers.players import PlayerStatus
 from pyteg.gui.mapa.projection import render_countries
+from pyteg.gui.mapa.unit_changes import CountryUnitAnimations
 
 if TYPE_CHECKING:
     from pyteg.client.state_model import ApplyEventResult, ClientStateModel
@@ -43,6 +44,7 @@ class QtClientStateAdapter:
         """Asocia la proyección con la ventana y el modelo compartido."""
         self._main_window = main_window
         self._model = model
+        self._unit_animations = CountryUnitAnimations()
 
     @classmethod
     def handles(cls, kind: object) -> bool:
@@ -77,11 +79,11 @@ class QtClientStateAdapter:
     def _apply_owned_event(self, kind: str, event: dict[str, Any]) -> None:
         """Despacha la proyección específica sin duplicar estado público."""
         if kind == "snapshot":
-            self._sync_public_state()
+            self._sync_public_state(animate=event.get("resync") is not True)
         elif kind in {"pais", "misil_agregado"}:
             country = event.get("pais")
             names = {country} if isinstance(country, str) else None
-            self._sync_countries(self._model.snapshot, names)
+            self._sync_countries(self._model.snapshot, names, animate=kind == "pais")
         elif kind == "actualizar_lista_jugadores":
             self._sync_players(self._model.snapshot)
         elif kind == "configuracion_partida":
@@ -97,13 +99,13 @@ class QtClientStateAdapter:
         if callable(callback):
             callback(event)
 
-    def _sync_public_state(self) -> None:
+    def _sync_public_state(self, *, animate: bool = False) -> None:
         """Proyecta el último snapshot completo sobre los widgets disponibles."""
         state = self._model.snapshot
         self._sync_game_state(state)
         self._sync_configuration(state)
         self._sync_players(state)
-        self._sync_countries(state)
+        self._sync_countries(state, animate=animate)
         self._sync_turn(state)
         self._sync_phase(state)
         banner = getattr(self._main_window, "situation_banner", None)
@@ -183,10 +185,15 @@ class QtClientStateAdapter:
             refresh_admin()
 
     def _sync_countries(
-        self, state: dict[str, Any], names: set[str] | None = None
+        self,
+        state: dict[str, Any],
+        names: set[str] | None = None,
+        *,
+        animate: bool = False,
     ) -> None:
         scene = getattr(self._main_window, "scene", None)
         render_countries(scene, state, names)
+        self._unit_animations.update(scene, state, names, animate=animate)
 
         # Propiedad y unidades también determinan qué acción puede ofrecerse
         # para el par seleccionado; un evento de país puede cambiarlo sin que

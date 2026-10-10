@@ -11,7 +11,6 @@ from PySide6.QtSvg import QSvgRenderer
 from PySide6.QtWidgets import (
     QGraphicsColorizeEffect,
     QGraphicsPixmapItem,
-    QGraphicsRectItem,
     QGraphicsTextItem,
 )
 
@@ -24,7 +23,10 @@ from pyteg.i18n import translate as _
 
 if TYPE_CHECKING:
     from PySide6.QtCore import QPropertyAnimation, QTimer
-    from PySide6.QtWidgets import QStyleOptionGraphicsItem, QWidget
+    from PySide6.QtWidgets import QGraphicsPathItem, QStyleOptionGraphicsItem, QWidget
+
+    from pyteg.gui.widgets.missile_badge import MissileBadge
+    from pyteg.gui.widgets.unit_delta import UnitDeltaIndicator
 
 
 class Pais(PaisBattleFxMixin, PaisSelectionMixin, QGraphicsPixmapItem):
@@ -57,11 +59,13 @@ class Pais(PaisBattleFxMixin, PaisSelectionMixin, QGraphicsPixmapItem):
         # Variables para efectos de batalla (ver PaisBattleFxMixin)
         self._titilacion_timer: QTimer | None = None
         self._titilacion_effect: QGraphicsColorizeEffect | None = None
+        self._titilacion_outline: QGraphicsPathItem | None = None
         self._titilacion_intensidad = 0.0
         self._titilacion_direccion = 1
-        self._perdida_flotante: QGraphicsTextItem | None = None
+        self._perdida_flotante: UnitDeltaIndicator | None = None
+        self._refuerzo_flotante: UnitDeltaIndicator | None = None
 
-        self._misiles_badge: QGraphicsRectItem | None = None
+        self._misiles_badge: MissileBadge | None = None
         self._misiles_text: QGraphicsTextItem | None = None
         self._cantidad_misiles = 0
         self._ocupantes_texto: str | None = None

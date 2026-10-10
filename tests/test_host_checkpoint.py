@@ -13,6 +13,7 @@ from unittest.mock import MagicMock, patch
 
 from pyteg.core.partida.pactos import Pact
 from pyteg.core.turnos.timer import NullTurnTimer
+from pyteg.network.identity import Identity
 from pyteg.protocol_validation import MessageValidationError, validate_client_event
 from pyteg.server.app import Server
 from pyteg.server.conexion.cliente import Client
@@ -273,7 +274,10 @@ class HostRuntimeTests(_HostFixture):
 
     def _runtime_copy(self) -> tuple[HostRuntime, dict[str, Any]]:
         original = self._server()
-        runtime = HostRuntime(bind_host="127.0.0.1")
+        self.identities = {user: Identity() for user in (1, 2, 3)}
+        for player in original.dame_clientes():
+            player.set_network_key(self.identities[player.userid()].public_key)
+        runtime = HostRuntime(bind_host="127.0.0.1", identity=self.identities[2])
         self.addCleanup(runtime.close)
         envelope = {
             "mensaje": "host_checkpoint",
@@ -281,7 +285,14 @@ class HostRuntimeTests(_HostFixture):
             "epoch": 0,
             "owner_id": 1,
             "sequence": 1,
-            "peers": [{"userid": 2, "host": "127.0.0.1", "port": runtime.control_port}],
+            "peers": [
+                {
+                    "userid": 2,
+                    "host": "127.0.0.1",
+                    "port": runtime.control_port,
+                    "public_key": runtime.identity.public_key,
+                }
+            ],
             "checkpoint": self._copy(original),
         }
         self.assertTrue(runtime.store_checkpoint(envelope, user_id=2))
@@ -289,7 +300,7 @@ class HostRuntimeTests(_HostFixture):
             "session_id": "session-test",
             "epoch": 0,
             "user_id": 3,
-            "token": "test-token-3",
+            "_sender_key": self.identities[3].public_key,
         }
         return runtime, request
 
@@ -297,7 +308,7 @@ class HostRuntimeTests(_HostFixture):
         """Varios clientes obtienen la misma autoridad, puerto y época."""
         runtime, request = self._runtime_copy()
         with self.assertRaises(ValueError):
-            runtime.recover({**request, "token": "invalid"})
+            runtime.recover({**request, "_sender_key": Identity().public_key})
         self.assertIsNone(runtime.server)
         first = runtime.recover(request)
         second = runtime.recover(request)
@@ -310,14 +321,14 @@ class HostRuntimeTests(_HostFixture):
     def test_connected_standby_does_not_create_another_server(self) -> None:
         """Una caída de un cliente conserva al anfitrión que los demás aún ven."""
         runtime, request = self._runtime_copy()
-        runtime.primary_connection(("127.0.0.1", 65432))
+        runtime.primary_connection(("127.0.0.1", 65432), self.identities[1].public_key)
         self.assertEqual(runtime.recover(request)["mensaje"], "host_alive")
         self.assertIsNone(runtime.server)
 
     def test_isolated_candidate_checks_another_connected_player(self) -> None:
         """Perder sólo una conexión no crea dos partidas en la misma red."""
         runtime, request = self._runtime_copy()
-        other = HostRuntime(bind_host="127.0.0.1")
+        other = HostRuntime(bind_host="127.0.0.1", identity=self.identities[3])
         self.addCleanup(other.close)
         envelope = runtime.latest_checkpoint()
         if envelope is None:
@@ -327,10 +338,11 @@ class HostRuntimeTests(_HostFixture):
             "userid": 3,
             "host": "127.0.0.1",
             "port": other.control_port,
+            "public_key": other.identity.public_key,
         })
         runtime.store_checkpoint(envelope, user_id=2)
         other.store_checkpoint(envelope, user_id=3)
-        other.primary_connection(("127.0.0.1", 65432))
+        other.primary_connection(("127.0.0.1", 65432), self.identities[1].public_key)
         original_status = other.status
 
         def delayed_status(data: dict[str, Any]) -> dict[str, Any]:
@@ -348,7 +360,7 @@ class HostRuntimeTests(_HostFixture):
         """Una consulta válida no convierte a un suplente en anfitrión."""
         runtime, request = self._runtime_copy()
         with self.assertRaises(ValueError):
-            runtime.status({**request, "token": "invalid"})
+            runtime.status({**request, "_sender_key": Identity().public_key})
         self.assertEqual(runtime.status(request)["mensaje"], "host_standby")
         self.assertIsNone(runtime.server)
 

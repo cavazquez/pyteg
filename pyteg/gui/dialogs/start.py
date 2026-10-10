@@ -27,7 +27,27 @@ from pyteg.client.bot_strategies import (
 from pyteg.i18n import translate as _
 
 if TYPE_CHECKING:
+    from PySide6.QtGui import QMouseEvent
+
     from pyteg.gui.main_window import Gui
+
+
+class _RecentFileList(QListWidget):
+    """Lista de archivos con selección que puede quitarse con otro clic."""
+
+    def mousePressEvent(self, event: QMouseEvent) -> None:  # noqa: N802 -- API Qt.
+        """Deselecciona el archivo al repetir el clic o pulsar en el espacio vacío."""
+        deselect = False
+        if (
+            event.button() == Qt.MouseButton.LeftButton
+            and event.modifiers() == Qt.KeyboardModifier.NoModifier
+        ):
+            item = self.itemAt(event.position().toPoint())
+            deselect = item is None or item.isSelected()
+        super().mousePressEvent(event)
+        if deselect:
+            self.clearSelection()
+            self.setCurrentRow(-1)
 
 
 class StartDialog(QDialog):
@@ -89,7 +109,7 @@ class StartDialog(QDialog):
         self.error_label.setWordWrap(True)
         layout.addWidget(self.error_label)
         buttons = QHBoxLayout()
-        self.start_button = QPushButton(_("Continuar"))
+        self.start_button = QPushButton(_("Crear partida"))
         self.start_button.setDefault(True)
         self.start_button.clicked.connect(self._start)
         self.open_button = QPushButton(_("Abrir archivo…"))
@@ -99,7 +119,7 @@ class StartDialog(QDialog):
         layout.addLayout(buttons)
         self.recent_label = QLabel(_("Partidas y archivos recientes"))
         layout.addWidget(self.recent_label)
-        self.recent_list = QListWidget()
+        self.recent_list = _RecentFileList()
         self.recent_list.itemActivated.connect(self._open_recent)
         layout.addWidget(self.recent_list, stretch=1)
         self.mode.currentIndexChanged.connect(self._update_mode)
@@ -110,6 +130,9 @@ class StartDialog(QDialog):
 
     def _update_mode(self) -> None:
         mode = self.mode.currentData()
+        self.start_button.setText(
+            _("Continuar") if mode == "lan" else _("Crear partida")
+        )
         self._form.setRowVisible(self.name, mode != "async")
         self._form.setRowVisible(self.bots, mode == "local")
         self._form.setRowVisible(
@@ -221,7 +244,6 @@ class StartDialog(QDialog):
             label = self._form.labelForField(field)
             if isinstance(label, QLabel):
                 label.setText(_(text))
-        self.start_button.setText(_("Continuar"))
         self.open_button.setText(_("Abrir archivo…"))
         self.recent_label.setText(_("Partidas y archivos recientes"))
         self._update_mode()

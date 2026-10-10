@@ -1412,3 +1412,33 @@ msgstr "Your connection: {}"
 
 msgid "Se necesitan {} de {} participantes."
 msgstr "{} of {} participants are required."
+
+# Secure network invitations
+msgid "Copiar invitación"
+msgstr "Copy invitation"
+
+msgid "Invitación copiada. Compartila con los jugadores de esta sala."
+msgstr "Invitation copied. Share it with the players in this room."
+
+msgid "Invitación:"
+msgstr "Invitation:"
+
+msgid "Pegá la invitación que compartió un jugador"
+msgstr "Paste the invitation shared by a player"
+
+msgid ""
+"Después de crear la sala, usá Copiar invitación y compartí el enlace con los"
+" jugadores."
+msgstr ""
+"After creating the room, use Copy invitation and share the link with the "
+"players."
+
+msgid "Pegá la invitación de la sala e ingresá tu nombre."
+msgstr "Paste the room invitation and enter your name."
+
+msgid ""
+"Cada participante valida la partida. Se necesita una mayoría conectada. Para"
+" unirte, pegá la invitación de un participante."
+msgstr ""
+"Each participant validates the game. A connected majority is required. To "
+"join, paste an invitation from a participant."

@@ -9,6 +9,7 @@ from PySide6.QtCore import QObject, QTimer
 from pyteg.client.tasks.base import IClientTask
 from pyteg.client.tasks.logging_helper import CLIENT_TASKS_LOG
 from pyteg.client.tasks.types import ResultadoBatallaTaskData
+from pyteg.gui.animation_timing import BATTLE_HIGHLIGHT_DURATION_MS
 from pyteg.i18n import _
 
 if TYPE_CHECKING:
@@ -120,13 +121,14 @@ class ClientTaskResultadoBatalla(IClientTask[ResultadoBatallaTaskData]):
             # 3. Programar mostrar pérdidas flotantes después de 2.5 segundos
             if isinstance(main_window, QObject):
                 QTimer.singleShot(
-                    2500,
+                    BATTLE_HIGHLIGHT_DURATION_MS,
                     main_window,
                     lambda: self._mostrar_perdidas_flotantes(main_window),
                 )
             else:
                 QTimer.singleShot(
-                    2500, lambda: self._mostrar_perdidas_flotantes(main_window)
+                    BATTLE_HIGHLIGHT_DURATION_MS,
+                    lambda: self._mostrar_perdidas_flotantes(main_window),
                 )
 
         except (AttributeError, RuntimeError) as e:

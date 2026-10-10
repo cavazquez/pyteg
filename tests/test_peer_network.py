@@ -4,9 +4,11 @@
 
 from __future__ import annotations
 
+import time
 import unittest
 from concurrent.futures import ThreadPoolExecutor
 from copy import deepcopy
+from typing import Any
 from unittest.mock import patch
 
 from pyteg.network.peer_consensus import ConsensusSlot, ballot, previously_accepted
@@ -68,7 +70,9 @@ class PeerNetworkTests(unittest.TestCase):
         self.nodes.append(creator)
         for index in range(1, players):
             node = PeerNode.join(
-                ("127.0.0.1", self.nodes[-1].port), f"Jugador {index + 1}"
+                ("127.0.0.1", self.nodes[-1].port),
+                f"Jugador {index + 1}",
+                invitation=self.nodes[-1].invitation("127.0.0.1"),
             )
             self.nodes.append(node)
         return self.nodes
@@ -105,6 +109,25 @@ class PeerNetworkTests(unittest.TestCase):
                 self.close_nodes()
                 self.nodes.clear()
 
+    def test_join_waits_for_membership_consensus(self) -> None:
+        creator = self.room(players=1)[0]
+        propose = creator.propose
+
+        def delayed_proposal(operation: dict[str, Any]) -> dict[str, Any] | None:
+            # La confirmación puede necesitar varias rondas de votos y disco.
+            time.sleep(3.2)
+            return propose(operation)
+
+        with patch.object(creator, "propose", side_effect=delayed_proposal):
+            joined = PeerNode.join(
+                ("127.0.0.1", creator.port),
+                "Dos",
+                invitation=creator.invitation("127.0.0.1"),
+            )
+        self.nodes.append(joined)
+        self.same_state(self.nodes)
+        self.assertEqual(joined.user_id, 2)
+
     def test_creator_can_disappear_and_any_other_peer_commits(self) -> None:
         nodes = self.room()
         self.start_game(nodes[0])
@@ -136,6 +159,7 @@ class PeerNetworkTests(unittest.TestCase):
         request = node._packet(
             "prepare", {"before": node.document["hash"], "ballot": [9, 1]}
         )
+        request["_sender_key"] = node.identity.public_key
         with (
             patch.object(node._repository, "save", side_effect=OSError("disco lleno")),
             self.assertRaises(OSError),
@@ -204,12 +228,20 @@ class PeerNetworkTests(unittest.TestCase):
     def test_new_room_does_not_restore_an_unrelated_repository(self) -> None:
         repository = MemoryRepository()
         old = PeerNode.create("classic", "Anterior", "classic")
-        old_peer = PeerNode.join(("127.0.0.1", old.port), "Dos", repository=repository)
+        old_peer = PeerNode.join(
+            ("127.0.0.1", old.port),
+            "Dos",
+            repository=repository,
+            invitation=old.invitation("127.0.0.1"),
+        )
         self.nodes.extend((old, old_peer))
         creator = PeerNode.create("revancha", "Nueva", "revancha")
         self.nodes.append(creator)
         joined = PeerNode.join(
-            ("127.0.0.1", creator.port), "Dos", repository=repository
+            ("127.0.0.1", creator.port),
+            "Dos",
+            repository=repository,
+            invitation=creator.invitation("127.0.0.1"),
         )
         self.nodes.append(joined)
         self.assertEqual(
@@ -248,16 +280,27 @@ class PeerNetworkTests(unittest.TestCase):
         self.start_game(nodes[0])
         saved = nodes[1].draft()
         nodes[1].close()
-        replacement = PeerNode.join(
-            ("127.0.0.1", nodes[3].port),
-            "Jugador 2",
-            identity=(2, saved["payload"]["peer"]["token"]),
-            saved_archive=saved,
-        )
+        propose = nodes[3].propose
+
+        def delayed_proposal(operation: dict[str, Any]) -> dict[str, Any] | None:
+            time.sleep(3.2)
+            return propose(operation)
+
+        with patch.object(nodes[3], "propose", side_effect=delayed_proposal):
+            replacement = PeerNode.join(
+                ("127.0.0.1", nodes[3].port),
+                "Jugador 2",
+                identity=(2, saved["payload"]["peer"]["private_key"]),
+                saved_archive=saved,
+                invitation=nodes[3].invitation("127.0.0.1"),
+            )
         nodes[1] = replacement
         self.same_state(nodes)
         self.assertEqual(replacement.user_id, 2)
-        self.assertEqual(replacement.token, saved["payload"]["peer"]["token"])
+        self.assertEqual(
+            replacement.identity.export_private(),
+            saved["payload"]["peer"]["private_key"],
+        )
 
     def test_saved_promises_and_duplicate_commands_survive_restart(self) -> None:
         repository = MemoryRepository()
@@ -270,9 +313,12 @@ class PeerNetworkTests(unittest.TestCase):
         }
         first = node.submit(command)
         node._handle(
-            node._packet(
-                "prepare", {"before": node.document["hash"], "ballot": [2**62, 1]}
-            ),
+            {
+                **node._packet(
+                    "prepare", {"before": node.document["hash"], "ballot": [2**62, 1]}
+                ),
+                "_sender_key": node.identity.public_key,
+            },
             "127.0.0.1",
         )
         saved = node.draft()
@@ -301,7 +347,7 @@ class PeerNetworkTests(unittest.TestCase):
                     "session": node.document["state"]["session_id"],
                     "actor": 1,
                     "body": {},
-                    "mac": "wrong",
+                    "signature": "wrong",
                 },
                 "127.0.0.1",
             )

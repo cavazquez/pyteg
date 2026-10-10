@@ -14,6 +14,7 @@ from PySide6.QtWidgets import QApplication, QLabel
 
 from pyteg.client.hosting import HostSession
 from pyteg.i18n import get_current_language, set_language
+from pyteg.network.identity import Identity
 
 if TYPE_CHECKING:
     from pyteg.client.conexion.connection import ConnectionClient
@@ -39,6 +40,7 @@ class ClientHostingTests(unittest.TestCase):
         self.connection.endpoint = MagicMock(return_value=("127.0.0.1", 65432))
         self.connection.reconnect_to = MagicMock()
         self.connection.reset_replica_revision = MagicMock()
+        self.connection.remote_key = Identity().public_key
         self.window = SimpleNamespace(
             client=MagicMock(),
             host_runtime=None,
@@ -52,6 +54,9 @@ class ClientHostingTests(unittest.TestCase):
         runtime = patch.object(self.session, "runtime", return_value=MagicMock())
         self.runtime = runtime.start().return_value
         self.addCleanup(runtime.stop)
+        verifier = patch("pyteg.client.hosting.verify_socket")
+        verifier.start()
+        self.addCleanup(verifier.stop)
 
     @staticmethod
     def _copy(sequence: int, *, recovering: bool) -> dict[str, Any]:
@@ -103,8 +108,15 @@ class ClientHostingTests(unittest.TestCase):
 
     def test_peer_can_redirect_to_an_already_promoted_host(self) -> None:
         """Una consulta a un suplente puede descubrir la nueva autoridad en otro."""
-        self.session._envelope = {"session_id": "test-room", "epoch": 0}
-        self.session._target = {"host": "192.168.1.2", "port": 12345}
+        key = Identity().public_key
+        self.session._envelope = {
+            "session_id": "test-room",
+            "epoch": 0,
+            "owner_id": 1,
+            "checkpoint": {"players": [{"userid": 3, "public_key": key}]},
+        }
+        self.session._target = {"host": "192.168.1.2", "port": 12345, "public_key": key}
+        self.session._probe_authenticated = True
         self.session._probe = MagicMock()
         self.session._probe.readAll.return_value = (
             json.dumps({
@@ -113,17 +125,28 @@ class ClientHostingTests(unittest.TestCase):
                 "epoch": 1,
                 "host": "192.168.1.3",
                 "port": 65433,
+                "owner_id": 3,
+                "public_key": key,
             }).encode()
             + b"\0"
         )
         self.session._read_recovery_response()
-        self.connection.reconnect_to.assert_called_once_with("192.168.1.3", 65433)
+        self.connection.reconnect_to.assert_called_once_with(
+            "192.168.1.3", 65433, public_key=key
+        )
         self.connection.reset_replica_revision.assert_called_once_with()
 
     def test_late_client_accepts_a_live_host_from_a_newer_epoch(self) -> None:
         """Una copia Qt atrasada acepta el destino conocido por otro suplente."""
-        self.session._envelope = {"session_id": "test-room", "epoch": 0}
-        self.session._target = {"host": "192.168.1.2", "port": 12345}
+        key = Identity().public_key
+        self.session._envelope = {
+            "session_id": "test-room",
+            "epoch": 0,
+            "owner_id": 1,
+            "checkpoint": {"players": [{"userid": 4, "public_key": key}]},
+        }
+        self.session._target = {"host": "192.168.1.2", "port": 12345, "public_key": key}
+        self.session._probe_authenticated = True
         self.session._probe = MagicMock()
         self.session._probe.readAll.return_value = (
             json.dumps({
@@ -132,11 +155,15 @@ class ClientHostingTests(unittest.TestCase):
                 "epoch": 3,
                 "host": "192.168.1.4",
                 "port": 65434,
+                "owner_id": 4,
+                "public_key": key,
             }).encode()
             + b"\0"
         )
         self.session._read_recovery_response()
-        self.connection.reconnect_to.assert_called_once_with("192.168.1.4", 65434)
+        self.connection.reconnect_to.assert_called_once_with(
+            "192.168.1.4", 65434, public_key=key
+        )
         self.connection.reset_replica_revision.assert_called_once_with()
 
     def test_new_confirmed_copy_clears_quorum_watchdog(self) -> None:

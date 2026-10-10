@@ -764,9 +764,10 @@ wheels = [
 
 [[package]]
 name = "pyteg"
-version = "0.2.4"
+version = "0.3.0"
 source = { editable = "." }
 dependencies = [
+    { name = "cryptography" },
     { name = "polib" },
     { name = "pyside6" },
 ]
@@ -790,6 +791,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "cryptography", specifier = "==50.0.0" },
     { name = "polib", specifier = "==1.2.0" },
     { name = "pyside6", specifier = "==6.11.2" },
 ]

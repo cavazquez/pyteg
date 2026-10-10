@@ -25,6 +25,13 @@ divisiones internas se generan a partir de esas mismas máscaras mediante
 sola vez; las siluetas individuales siguen siendo interactivas y tienen PNG
 de respaldo. Los nueve países insulares mantienen sus siluetas independientes.
 
+Los nombres se dibujan en una capa vectorial independiente (`labels.svg`),
+por encima de las fronteras y debajo de las fichas. Las letras están
+convertidas a contornos para que se vean igual aunque cambien las fuentes
+instaladas. Sus posiciones, tamaños, acentos y líneas guía se editan en
+`labels.toml`; se regenera con
+`QT_QPA_PLATFORM=offscreen python -m scripts.generate_map_labels`.
+
 Para cambiar una frontera terrestre, se edita la partición y se regenera. El
 comando `uv run python scripts/generate_classic_geometry.py --check` comprueba
 que los SVG y PNG publicados coincidan con las fuentes. La tabla de reglas en

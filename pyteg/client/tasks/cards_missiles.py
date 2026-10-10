@@ -106,9 +106,23 @@ class ClientTaskResultadoMisil(IClientTask[ResultadoMisilTaskData]):
                 self._pais_origen, self._pais_destino, self._dano
             )
             main_window.update_status_bar(status_mensaje, "blue")
+            self._mostrar_dano(main_window)
 
         except (AttributeError, KeyError, TypeError) as e:
             CLIENT_TASKS_LOG.warning("Error al procesar resultado de misil: %s", e)
+
+    def _mostrar_dano(self, main_window: GameWindowProtocol) -> None:
+        """Muestra la pérdida de unidades junto a la ficha alcanzada."""
+        if (
+            main_window.scene is None
+            or not isinstance(self._pais_destino, str)
+            or not isinstance(self._dano, int)
+            or self._dano <= 0
+        ):
+            return
+        country = main_window.scene.paises.get(self._pais_destino)
+        if country is not None:
+            country.mostrar_perdida_flotante(self._dano)
 
 
 class ClientTaskMisilAgregado(IClientTask[MisilAgregadoTaskData]):

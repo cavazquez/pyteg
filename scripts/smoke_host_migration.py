@@ -41,7 +41,9 @@ _SECOND_PLAYER = 2
 _TIMEOUT = 25.0
 
 
-def _window(theme: str, port: int, name: str, *, hosting: bool) -> Gui:
+def _window(
+    theme: str, port: int, name: str, *, hosting: bool, invitation: str = ""
+) -> Gui:
     window = Gui(Client(), map_theme=theme)
     window.sound_manager.set_enabled(False)
     window.hide()
@@ -51,6 +53,7 @@ def _window(theme: str, port: int, name: str, *, hosting: bool) -> Gui:
     dialog.addr.setText("127.0.0.1")
     dialog.port.setText(str(port))
     dialog.username.setText(name)
+    dialog.invitation_entry.setText(invitation)
     if hosting:
         dialog.mode_selector.setCurrentIndex(1)
     dialog.connect_to_server()
@@ -105,7 +108,12 @@ def _worker(args: argparse.Namespace) -> int:
             window.client.userid() is not None
             and window.client.reconnect_token() is not None
         ):
-            Path(args.ready_file).touch()
+            ready = Path(args.ready_file)
+            if not ready.exists():
+                ready.write_text(
+                    window.host_runtime.invitation("127.0.0.1").encode(),
+                    encoding="utf-8",
+                )
         if (
             stage == 0
             and server.cant_clients() == _CLIENTS
@@ -177,7 +185,7 @@ def _require(condition: object, message: str) -> None:
         raise RuntimeError(message)
 
 
-def _run(args: argparse.Namespace) -> int:  # noqa: PLR0915 -- escenario de dos migraciones.
+def _run(args: argparse.Namespace) -> int:  # noqa: PLR0914, PLR0915 -- escenario de dos migraciones.
     app = QApplication([])
     app.setQuitOnLastWindowClosed(False)
     port = _free_port()
@@ -217,7 +225,11 @@ def _run(args: argparse.Namespace) -> int:  # noqa: PLR0915 -- escenario de dos 
         )
         for index in range(3):
             window = _window(
-                args.theme, port, f"Participante {index + 2}", hosting=False
+                args.theme,
+                port,
+                f"Participante {index + 2}",
+                hosting=False,
+                invitation=ready_file.read_text(encoding="utf-8"),
             )
             windows.append(window)
             wait(partial(_has_token, window.client), "identidad y token")
@@ -289,10 +301,23 @@ def _run(args: argparse.Namespace) -> int:  # noqa: PLR0915 -- escenario de dos 
         )
         wait(
             lambda: (
-                not _server(windows[0]).host_migrating
-                and not _connection(windows[0]).hosting.paused
+                all(not _connection(window).hosting.paused for window in windows)
+                and any(
+                    window.host_runtime is not None
+                    and window.host_runtime.server is not None
+                    for window in windows
+                )
             ),
             "reanudación del reloj",
+        )
+        successor = next(
+            window
+            for window in windows
+            if window.host_runtime is not None
+            and window.host_runtime.server is not None
+        )
+        _require(
+            not _server(successor).host_migrating, "El sucesor no reanudó la partida"
         )
         _require(
             identities == [window.client.userid() for window in windows],
@@ -330,27 +355,38 @@ def _run(args: argparse.Namespace) -> int:  # noqa: PLR0915 -- escenario de dos 
             ),
             "nueva acción con el sucesor",
         )
-        _connection(windows[0]).desconectar()
+        _connection(successor).desconectar()
+        survivors = [window for window in windows if window is not successor]
+        remaining_identities = [window.client.userid() for window in survivors]
         wait(
             lambda: all(
                 _checkpoint(window).get("epoch") == _SECOND_PLAYER
-                for window in windows[1:]
+                for window in survivors
             ),
             "segunda migración",
         )
         wait(
             lambda: (
-                not _server(windows[1]).host_migrating
-                and not _connection(windows[1]).hosting.paused
+                all(not _connection(window).hosting.paused for window in survivors)
+                and any(
+                    window.host_runtime is not None
+                    and window.host_runtime.server is not None
+                    for window in survivors
+                )
             ),
             "continuación con el tercer anfitrión",
         )
         _require(
-            identities[1:] == [window.client.userid() for window in windows[1:]],
+            remaining_identities == [window.client.userid() for window in survivors],
             "Cambió la identidad en la segunda migración",
         )
         _require(
-            _server(windows[1]).estado.es_jugando(),
+            any(
+                window.host_runtime is not None
+                and window.host_runtime.server is not None
+                and window.host_runtime.server.estado.es_jugando()
+                for window in survivors
+            ),
             "La segunda migración cerró la partida",
         )
         print(

@@ -4,44 +4,46 @@
 
 from __future__ import annotations
 
-import json
 import socket
 import threading
 import time
 from typing import TYPE_CHECKING, Any
 
-from pyteg.codecs_utils import NulDelimitedUtf8Codec
-from pyteg.persistence.archive import MAX_ARCHIVE_BYTES, canonical_bytes
+from pyteg.network.identity import Identity
+from pyteg.network.security import (
+    TlsCredentials,
+    connect_tls,
+    proof,
+    receive_authenticated,
+    receive_json,
+    send_json,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
 _TIMEOUT = 3.0
-_READ_SIZE = 64 * 1024
 _CONNECTIONS = 16
 
 
-def _receive(connection: socket.socket) -> dict[str, Any]:
-    codec = NulDelimitedUtf8Codec(MAX_ARCHIVE_BYTES)
-    while chunk := connection.recv(_READ_SIZE):
-        frames = codec.feed(chunk)
-        if frames:
-            message = json.loads(frames[0])
-            if not isinstance(message, dict):
-                raise ValueError("El mensaje de pares debe ser un objeto")
-            return message
-    raise ConnectionError("La conexión terminó antes de completar el mensaje")
-
-
-def exchange(address: tuple[str, int], request: dict[str, Any]) -> dict[str, Any]:
-    """Envía una petición acotada y espera exactamente una respuesta."""
-    raw = canonical_bytes(request)
-    if len(raw) > MAX_ARCHIVE_BYTES:
-        raise ValueError("La transición excede el tamaño permitido")
-    with socket.create_connection(address, timeout=_TIMEOUT) as connection:
-        connection.settimeout(_TIMEOUT)
-        connection.sendall(raw + b"\0")
-        response = _receive(connection)
+def exchange(
+    address: tuple[str, int],
+    request: dict[str, Any],
+    *,
+    identity: Identity | None = None,
+    expected_key: str | None = None,
+    timeout: float = _TIMEOUT,
+) -> dict[str, Any]:
+    """Verifica el destino TLS y firma una petición ligada a su desafío nuevo."""
+    if identity is None or expected_key is None:
+        raise ValueError(
+            "La conexión requiere una identidad y una invitación verificable"
+        )
+    with connect_tls(address, expected_key, timeout) as connection:
+        connection.settimeout(timeout)
+        greeting = receive_json(connection, limit=4096)
+        send_json(connection, proof(identity, greeting, request))
+        response = receive_json(connection)
         if response.get("error"):
             raise ValueError(str(response["error"]))
         return response
@@ -56,9 +58,11 @@ class PeerPort:
         *,
         host: str = "127.0.0.1",
         port: int = 0,
+        identity: Identity | None = None,
     ) -> None:
         """Reserva el puerto y prepara límites de tiempo y concurrencia."""
         self._handler = handler
+        self._tls = TlsCredentials(identity or Identity())
         self._stop = threading.Event()
         self._slots = threading.BoundedSemaphore(_CONNECTIONS)
         self._workers: set[threading.Thread] = set()
@@ -104,10 +108,10 @@ class PeerPort:
 
     def _serve(self, connection: socket.socket, host: str) -> None:
         try:
-            with connection:
-                connection.settimeout(_TIMEOUT)
+            with self._tls.accept(connection) as secure:
+                secure.settimeout(_TIMEOUT)
                 try:
-                    response = self._handler(_receive(connection), host)
+                    response = self._handler(receive_authenticated(secure), host)
                 except (
                     OSError,
                     ValueError,
@@ -117,15 +121,11 @@ class PeerPort:
                     RecursionError,
                 ) as error:
                     response = {"error": str(error)}
-                raw = canonical_bytes(response)
-                if len(raw) > MAX_ARCHIVE_BYTES:
-                    raw = canonical_bytes({
-                        "error": "La copia excede el tamaño permitido"
-                    })
-                connection.sendall(raw + b"\0")
+                send_json(secure, response)
         except OSError:
             pass
         finally:
+            connection.close()
             with self._lock:
                 self._workers.discard(threading.current_thread())
             self._slots.release()

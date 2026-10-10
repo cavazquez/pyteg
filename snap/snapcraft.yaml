@@ -1,0 +1,115 @@
+name: pyteg
+base: core26
+adopt-info: pyteg
+summary: Juego de estrategia por turnos, local y multijugador
+description: |
+  Conquistá países, reforzá tus fronteras y cumplí objetivos en Pyteg.
+  Jugá contra bots de tres dificultades o con otros jugadores en una LAN.
+  Elegí entre un anfitrión con migración automática y una partida entre
+  pares en tiempo real. También podés compartir partidas por archivos.
+
+  Incluye dos mapas, reglas configurables, cartas, misiles, objetivos
+  secretos, guardado de partidas y una interfaz en español e inglés.
+grade: devel
+confinement: strict
+license: GPL-3.0
+icon: snap/gui/pyteg.svg
+website: https://github.com/cavazquez/pyteg
+source-code: https://github.com/cavazquez/pyteg
+issues: https://github.com/cavazquez/pyteg/issues
+
+platforms:
+  amd64:
+
+environment:
+  LD_LIBRARY_PATH: $SNAP/usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR:$SNAP/usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR/pulseaudio:$SNAP/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR
+  PYTHONPATH: $SNAP/lib/python3.14/site-packages
+  PYTHONHOME: $SNAP/usr
+  PYTHONDONTWRITEBYTECODE: '1'
+  FONTCONFIG_PATH: $SNAP/etc/fonts
+  XDG_DATA_DIRS: $SNAP/usr/share:/usr/share
+
+layout:
+  /etc/fonts:
+    bind: $SNAP/etc/fonts
+  /usr/share/fonts:
+    bind: $SNAP/usr/share/fonts
+
+apps:
+  pyteg:
+    command: bin/pyteg-launch client
+    desktop: usr/share/applications/pyteg.desktop
+    extensions: [gpu]
+    plugs:
+      - home
+      - desktop
+      - desktop-legacy
+      - x11
+      - wayland
+      - opengl
+      - audio-playback
+      - network
+      - network-bind
+  server:
+    command: bin/pyteg-launch server
+    plugs:
+      - home
+      - network
+      - network-bind
+
+parts:
+  pyteg:
+    plugin: python
+    source: .
+    build-packages:
+      - python3.14-venv
+      - gettext
+    stage-packages:
+      - python3.14-venv
+      - libssl3t64
+      - libglib2.0-0t64
+      - libpulse0
+      - libasound2t64
+      - libfontconfig1
+      - libfreetype6
+      - fonts-dejavu-core
+      - libx11-xcb1
+      - libxrender1
+      - libxi6
+      - libxext6
+      - libxkbcommon0
+      - libxkbcommon-x11-0
+      - libxcb-cursor0
+      - libxcb-icccm4
+      - libxcb-image0
+      - libxcb-keysyms1
+      - libxcb-randr0
+      - libxcb-render-util0
+      - libxcb-shape0
+      - libxcb-xfixes0
+      - libxcb-xinerama0
+      - libxcb-xkb1
+      - libwayland-client0
+      - libwayland-cursor0
+      - libwayland-egl1
+    override-pull: |
+      craftctl default
+      craftctl set version="$(python3 -c 'import tomllib; print(tomllib.load(open("pyproject.toml", "rb"))["project"]["version"])')"
+    override-build: |
+      python3 scripts/manage_translations.py compile
+      craftctl default
+      # Mantener los alias de Python dentro del snap también en builds incrementales.
+      for interpreter in python python3 python3.14; do
+        ln -sf ../usr/bin/python3.14 "$CRAFT_PART_INSTALL/bin/$interpreter"
+      done
+      install -Dm644 LICENSE "$CRAFT_PART_INSTALL/usr/share/doc/pyteg/LICENSE"
+  desktop:
+    plugin: dump
+    source: snap
+    organize:
+      gui/pyteg.desktop: usr/share/applications/pyteg.desktop
+      gui/pyteg.svg: usr/share/icons/hicolor/scalable/apps/pyteg.svg
+    stage:
+      - bin/pyteg-launch
+      - usr/share/applications/pyteg.desktop
+      - usr/share/icons/hicolor/scalable/apps/pyteg.svg

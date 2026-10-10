@@ -18,6 +18,9 @@ eggs/
 lib/
 lib64/
 parts/
+stage/
+prime/
+*.snap
 sdist/
 var/
 *.egg-info/

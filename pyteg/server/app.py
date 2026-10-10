@@ -901,6 +901,38 @@ class Server:
         client.marcar_reconexion_pendiente(pendiente=False)
         return False
 
+    def _authenticated_reconnect_token(
+        self, client: Client, user_id: int, token: str
+    ) -> str | None:
+        """Comprueba la identidad antes de usar el token interno del motor.
+
+        Returns:
+            Token del motor o ``None`` si la clave no corresponde a este jugador.
+
+        """
+        historical = self.migration_sessions.get(int(user_id))
+        if historical is None and self.game is not None:
+            historical = cast(
+                "Client | None",
+                next(
+                    (
+                        player
+                        for player in self.game.jugadores()
+                        if player.userid() == int(user_id)
+                    ),
+                    None,
+                ),
+            )
+        if client.network_key() is not None:
+            if historical is None or client.network_key() != historical.network_key():
+                return None
+            # El token queda como dato interno del motor; la red autentica
+            # posesión de clave privada y firma cada comando de reconexión.
+            return historical.reconnect_token()
+        if historical is not None and historical.network_key() is not None:
+            return None
+        return token
+
     def reconectar_cliente(  # noqa: C901, PLR0911, PLR0912
         self, client: Client, user_id: int, token: str
     ) -> bool:
@@ -911,6 +943,12 @@ class Server:
             token o la identidad no son válidos.
 
         """
+        authenticated_token = self._authenticated_reconnect_token(
+            client, user_id, token
+        )
+        if authenticated_token is None:
+            return False
+        token = authenticated_token
         if int(user_id) in self.migration_sessions and client.es_reconexion_pendiente():
             return reconnect_migrated(self, client, int(user_id), token)
         game = self.game

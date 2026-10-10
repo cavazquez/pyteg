@@ -5,20 +5,19 @@
 
 from __future__ import annotations
 
-import hashlib
-import hmac
 import ipaddress
 import operator
 from copy import deepcopy
 from datetime import datetime
 from typing import Any
 
-from pyteg.persistence.archive import canonical_bytes, digest
+from pyteg.network.identity import engine_token, public_key, validate_identities
+from pyteg.persistence.archive import digest
 from pyteg.persistence.peer_game import PeerGame
 from pyteg.protocol import map_hash_for_theme
 from pyteg.server.hosting.consensus import majority
 
-PEER_STATE_VERSION = 1
+PEER_STATE_VERSION = 2
 
 
 def member_ids(members: list[dict[str, Any]]) -> list[int]:
@@ -41,6 +40,7 @@ def validate_member(record: object) -> dict[str, Any]:
         "token",
         "host",
         "port",
+        "public_key",
     }:
         raise ValueError("Participante de pares inválido")
     if (
@@ -57,10 +57,13 @@ def validate_member(record: object) -> dict[str, Any]:
         raise ValueError("Participante de pares inválido")
     ipaddress.IPv4Address(record["host"])
     int(record["token"], 16)
+    public_key(record["public_key"])
+    if record["token"] != engine_token(record["public_key"]):
+        raise ValueError("Credencial interna del motor inválida")
     return deepcopy(record)
 
 
-def validate_state(state: object) -> dict[str, Any]:
+def validate_state(state: object) -> dict[str, Any]:  # noqa: C901 -- esquema público acotado.
     """Valida el documento compartido; el motor valida su propio checkpoint."""
     if not isinstance(state, dict):
         raise ValueError("Estado de pares inválido")  # noqa: TRY004 -- error uniforme para archivos y red.
@@ -73,6 +76,7 @@ def validate_state(state: object) -> dict[str, Any]:
         "members",
         "clock",
         "next_userid",
+        "identities",
     }
     if (
         set(state) != required
@@ -93,6 +97,11 @@ def validate_state(state: object) -> dict[str, Any]:
     ):
         raise ValueError("Estado de pares inválido")
     members = [validate_member(item) for item in state["members"]]
+    identities = validate_identities(state["identities"])
+    if any(
+        identities.get(str(item["userid"])) != item["public_key"] for item in members
+    ):
+        raise ValueError("La identidad del participante no está autorizada")
     int(state["session_id"], 16)
     ids = member_ids(members)
     if ids != sorted(set(ids)) or state["next_userid"] <= max(ids):
@@ -121,20 +130,6 @@ def validate_state(state: object) -> dict[str, Any]:
     ):
         raise ValueError("Reloj compartido inválido")
     return deepcopy(state)
-
-
-def sign(key: str, value: object) -> str:
-    """Autentica mensajes entre los participantes de confianza de la sala."""
-    return hmac.new(
-        key.encode("ascii"), canonical_bytes(value), hashlib.sha256
-    ).hexdigest()
-
-
-def valid_signature(key: str, value: object, signature: object) -> bool:
-    """Comprueba un MAC sin tratar los certificados como protección antitrampas."""
-    return isinstance(signature, str) and hmac.compare_digest(
-        sign(key, value), signature
-    )
 
 
 def _clock_after(
@@ -208,7 +203,12 @@ def transition(  # noqa: C901, PLR0912, PLR0915 -- una transición completa se v
                         "Los nuevos jugadores sólo pueden ingresar al lobby"
                     )
                 after["next_userid"] += 1
-            elif existing is not None and existing["token"] != record["token"]:
+                if str(record["userid"]) in before["identities"]:
+                    raise ValueError("La identidad ya estaba asignada")
+                after["identities"][str(record["userid"])] = record["public_key"]
+            elif (
+                before["identities"].get(str(record["userid"])) != record["public_key"]
+            ):
                 raise ValueError("Credencial de reconexión inválida")
             if existing is None:
                 if len(before["members"]) >= 8:

@@ -5,11 +5,16 @@ from __future__ import annotations
 import queue
 import select
 import socket
+import ssl
 import threading
 import time
+from typing import TYPE_CHECKING
 
 from pyteg.codecs_utils import FrameCodecError, NulDelimitedUtf8Codec
 from pyteg.logger import get_logger
+
+if TYPE_CHECKING:
+    from pyteg.network.game_security import GameChannel
 
 LOGGER = get_logger(__name__)
 _RECEIVE_BUFFER_BYTES = 65_536
@@ -20,15 +25,30 @@ _SEND_DEADLINE_SECONDS = 2.0
 class ConnectionServer:
     """Wrapper para manejar la conexión de socket del servidor con un cliente."""
 
-    def __init__(self, connection: socket.socket, addr: tuple[str, int]) -> None:
+    def __init__(
+        self,
+        connection: socket.socket,
+        addr: tuple[str, int],
+        *,
+        channel: GameChannel | None = None,
+    ) -> None:
         """Inicializa la conexión del servidor.
 
         Args:
             connection: Socket de conexión.
             addr: Tupla con (host, puerto) de la dirección del cliente.
+            channel: Identidad y secuencia verificadas por la admisión TLS.
 
         """
         self._conn = connection
+        self._channel = channel
+        self._secure = isinstance(connection, ssl.SSLSocket)
+        self._tls_io_lock = threading.Lock()
+        self._receive_timeout: float | None = None
+        if self._secure:
+            # Las llamadas a una misma sesión TLS se serializan sin bloquear
+            # al lector mientras el escritor envía eventos.
+            connection.setblocking(False)  # noqa: FBT003 -- API de sockets.
         self._addr = addr
         self._codec = NulDelimitedUtf8Codec()
         self._close_lock = threading.RLock()
@@ -45,6 +65,25 @@ class ConnectionServer:
         self._writer_stopped = threading.Event()
         self._writer_thread: threading.Thread | None = None
 
+    @property
+    def network_public_key(self) -> str | None:
+        """Obtiene la identidad comprobada antes de registrar la conexión.
+
+        Returns:
+            Clave pública del jugador o ``None`` para un puerto interno.
+
+        """
+        return self._channel.public_key if self._channel is not None else None
+
+    def unwrap_command(self, data: object) -> object:
+        """Valida autoría para TCP seguro; el motor local conserva su puerto puro.
+
+        Returns:
+            Comando cuya firma y secuencia corresponden a esta conexión.
+
+        """
+        return self._channel.unwrap(data) if self._channel is not None else data
+
     def set_receive_timeout(self, timeout: float | None) -> None:
         """Configura el límite de espera del próximo ``recv``.
 
@@ -56,6 +95,10 @@ class ConnectionServer:
             timeout: Segundos de espera o ``None`` para bloquear.
 
         """
+        if self._secure:
+            with self._receive_state_lock:
+                self._receive_timeout = timeout
+            return
         setter = getattr(self._conn, "settimeout", None)
         if not callable(setter):
             return
@@ -106,7 +149,11 @@ class ConnectionServer:
 
         """
         try:
-            encode_data = self._conn.recv(_RECEIVE_BUFFER_BYTES)
+            encode_data = (
+                self._receive_secure()
+                if self._secure
+                else self._conn.recv(_RECEIVE_BUFFER_BYTES)
+            )
             if not encode_data:
                 try:
                     self._codec.finish()
@@ -144,6 +191,30 @@ class ConnectionServer:
             self._codec.pending_bytes,
         )
         return messages
+
+    def _receive_secure(self) -> bytes:
+        with self._receive_state_lock:
+            timeout = self._receive_timeout
+        deadline = time.monotonic() + timeout if timeout is not None else None
+        while not self._closed:
+            if deadline is not None and (remaining := deadline - time.monotonic()) <= 0:
+                raise TimeoutError
+            wait = min(remaining, 0.2) if deadline is not None else 0.2
+            want_write = False
+            with self._tls_io_lock:
+                try:
+                    return self._conn.recv(_RECEIVE_BUFFER_BYTES)
+                except ssl.SSLWantReadError:
+                    pass
+                except ssl.SSLWantWriteError:
+                    want_write = True
+            select.select(
+                [] if want_write else [self._conn],
+                [self._conn] if want_write else [],
+                [],
+                wait,
+            )
+        return b""
 
     def send(self, data: str) -> None:
         """Encola datos al cliente sin bloquear la transición de juego.
@@ -243,6 +314,7 @@ class ConnectionServer:
         deadline = time.monotonic() + _SEND_DEADLINE_SECONDS
         remaining_data = memoryview(frame)
         sent_completely = True
+        want_read = False
         while remaining_data and sent_completely:
             with self._close_lock:
                 if self._closed:
@@ -257,8 +329,11 @@ class ConnectionServer:
                 break
 
             try:
-                _readable, writable, _exceptional = select.select(
-                    [], [self._conn], [], remaining_seconds
+                readable, writable, _exceptional = select.select(
+                    [self._conn] if want_read else [],
+                    [] if want_read else [self._conn],
+                    [],
+                    remaining_seconds,
                 )
             except AttributeError, TypeError, ValueError:
                 sent_completely = self._send_frame_without_select(remaining_data)
@@ -269,20 +344,22 @@ class ConnectionServer:
                 sent_completely = False
                 break
 
-            if not writable:
+            if not (readable if want_read else writable):
                 LOGGER.warning("Cliente lento al enviar hacia %s", self._addr)
                 self.close()
                 sent_completely = False
                 break
 
             try:
-                sent = self._conn.send(remaining_data)
+                sent, want_read = self._send_chunk(remaining_data)
             except (ConnectionError, OSError) as error:
                 self._log_send_error("Error de socket al enviar", error)
                 self.close()
                 sent_completely = False
                 break
 
+            if sent is None:
+                continue
             if sent <= 0:
                 LOGGER.warning("El socket no aceptó datos hacia %s", self._addr)
                 self.close()
@@ -291,6 +368,17 @@ class ConnectionServer:
             remaining_data = remaining_data[sent:]
 
         return sent_completely
+
+    def _send_chunk(self, data: memoryview) -> tuple[int | None, bool]:
+        try:
+            if self._secure:
+                with self._tls_io_lock:
+                    return self._conn.send(data), False
+            return self._conn.send(data), False
+        except ssl.SSLWantReadError:
+            return None, True
+        except ssl.SSLWantWriteError:
+            return None, False
 
     def _log_send_error(self, message: str, error: Exception) -> None:
         """Registra errores de salida salvo cuando el cierre ya fue pedido."""

@@ -35,7 +35,9 @@ from pyteg.gui.dialogs.conectar.validation import (
 from pyteg.i18n import translate as _
 from pyteg.logger import get_logger
 from pyteg.network.discovery import Room, RoomBrowser
+from pyteg.network.identity import Identity
 from pyteg.network.peer_runtime import PeerNode
+from pyteg.network.security import Invitation
 from pyteg.persistence.archive import read_archive
 from pyteg.server.hosting.runtime import HostRuntime
 from pyteg.toml_reader import TomlReaderError
@@ -98,6 +100,7 @@ class VentanaConectar(QDialog):
         self._browser: RoomBrowser | None = None
         self._saved_identity: tuple[int, str] | None = None
         self._saved_peer: dict[str, Any] | None = None
+        self._invitation: Invitation | None = None
 
         self._setup_window()
 
@@ -181,6 +184,15 @@ class VentanaConectar(QDialog):
         self.room_label = QLabel(_("Salas en la red:"))
         self.room_label.setStyleSheet(styles.FORM_LABEL_STYLE)
         form_layout.addRow(self.room_label, self.room_selector)
+        self.invitation_label = QLabel(_("Invitación:"))
+        self.invitation_entry = QLineEdit()
+        self.invitation_entry.setMaxLength(1024)
+        self.invitation_entry.setPlaceholderText(
+            _("Pegá la invitación que compartió un jugador")
+        )
+        self.invitation_entry.setStyleSheet(styles.INPUT_STYLE)
+        self.invitation_entry.textChanged.connect(self._apply_invitation)
+        form_layout.addRow(self.invitation_label, self.invitation_entry)
 
         addr_label = QLabel(_("Dirección:"))
         addr_label.setStyleSheet(styles.FORM_LABEL_STYLE)
@@ -206,8 +218,8 @@ class VentanaConectar(QDialog):
         parent_layout.addLayout(form_layout)
         self.host_hint = QLabel(
             _(
-                "Los demás jugadores se conectan a tu dirección y puerto "
-                "en la red local."
+                "Después de crear la sala, usá Copiar invitación "
+                "y compartí el enlace con los jugadores."
             )
         )
         self.host_hint.setWordWrap(True)
@@ -264,6 +276,23 @@ class VentanaConectar(QDialog):
                 self.network_selector.findData(room.mode)
             )
 
+    def _apply_invitation(self, value: str) -> None:
+        """Completa el destino desde el enlace que autoriza y verifica la sala."""
+        self._invitation = None
+        try:
+            invitation = Invitation.parse(value)
+        except ValueError:
+            return
+        self._invitation = invitation
+        self.addr.setText(invitation.host)
+        self.port.setText(str(invitation.port))
+        self.network_selector.setCurrentIndex(
+            self.network_selector.findData(invitation.mode)
+        )
+        self.theme_selector.setCurrentIndex(
+            self.theme_selector.findData(invitation.theme)
+        )
+
     def _restore_identity(self) -> None:
         path, _filter = QFileDialog.getOpenFileName(
             self, _("Recuperar mi jugador"), "", "Pyteg (*.pyteg)"
@@ -272,36 +301,47 @@ class VentanaConectar(QDialog):
             return
         try:
             archive = read_archive(path, kind="game")
-            payload = archive["payload"]
-            self._saved_peer = archive if "peer" in payload else None
-            identity = payload.get("peer", payload)
-            user_id = identity["userid"]
-            checkpoint = (
-                identity["document"]["state"]["checkpoint"]
-                if self._saved_peer
-                else payload["envelope"]["checkpoint"]
-            )
-            player = next(
-                player
-                for player in checkpoint["players"]
-                if player["userid"] == user_id
-            )
-            self._saved_identity = user_id, player["token"]
-            self.username.setText(player["username"])
-            self.theme_selector.setCurrentIndex(
-                self.theme_selector.findData(checkpoint["theme"])
-            )
-            self.network_selector.setCurrentIndex(
-                self.network_selector.findData("peer" if self._saved_peer else "host")
-            )
+            self._apply_saved_identity(archive)
         except (OSError, ValueError, KeyError, TypeError, StopIteration) as error:
             self._show_error(str(error))
+
+    def _apply_saved_identity(self, archive: dict[str, Any]) -> None:
+        payload = archive["payload"]
+        is_peer = "peer" in payload
+        identity = payload.get("peer", payload)
+        user_id = identity["userid"]
+        checkpoint = (
+            identity["document"]["state"]["checkpoint"]
+            if is_peer
+            else payload["envelope"]["checkpoint"]
+        )
+        player = next(
+            player for player in checkpoint["players"] if player["userid"] == user_id
+        )
+        if "private_key" not in identity:
+            msg = "El guardado no contiene una identidad segura de red"
+            raise ValueError(msg)
+        secret = identity["private_key"]
+        if Identity.restore(secret).public_key != player.get("public_key"):
+            msg = "El guardado no contiene la clave privada de este jugador"
+            raise ValueError(msg)
+        self._saved_identity = user_id, secret
+        self._saved_peer = archive if is_peer else None
+        self.username.setText(player["username"])
+        self.theme_selector.setCurrentIndex(
+            self.theme_selector.findData(checkpoint["theme"])
+        )
+        self.network_selector.setCurrentIndex(
+            self.network_selector.findData("peer" if is_peer else "host")
+        )
 
     def _update_mode(self) -> None:
         hosting = self.mode_selector.currentData() == "host"
         self.room_selector.setVisible(not hosting)
         self.room_label.setVisible(not hosting)
         self.restore_identity_button.setVisible(not hosting)
+        self.invitation_label.setVisible(not hosting)
+        self.invitation_entry.setVisible(not hosting)
         if hosting and not self.addr.isReadOnly():
             self._join_address = self.addr.text()
             self.addr.setText(", ".join(local_game_addresses()))
@@ -317,13 +357,14 @@ class VentanaConectar(QDialog):
         self.description_label.setText(
             _("Tu computadora alojará la partida mientras jugás.")
             if hosting
-            else _("Ingresa los datos para conectarte a una partida existente")
+            else _("Pegá la invitación de la sala e ingresá tu nombre.")
         )
         if self.network_selector.currentData() == "peer":
             self.description_label.setText(
                 _(
                     "Cada participante valida la partida. "
-                    "Se necesita una mayoría conectada."
+                    "Se necesita una mayoría conectada. "
+                    "Para unirte, pegá la invitación de un participante."
                 )
             )
         self.connect_button.setText(_("Crear partida") if hosting else _("Conectar"))
@@ -388,7 +429,7 @@ class VentanaConectar(QDialog):
         """Aplica estilos generales al diálogo."""
         self.setStyleSheet(styles.DIALOG_STYLE)
 
-    def connect_to_server(self) -> None:  # noqa: C901 -- operación transaccional de UI.
+    def connect_to_server(self) -> None:
         """Intenta conectarse al servidor con los datos proporcionados."""
         conexion_actual = getattr(self._main_window, "conexion", None)
         if conexion_actual is not None and conexion_actual.esta_ocupada():
@@ -401,6 +442,21 @@ class VentanaConectar(QDialog):
             return
 
         hosting = self.mode_selector.currentData() == "host"
+        if not hosting:
+            try:
+                self._invitation = Invitation.parse(self.invitation_entry.text())
+            except ValueError as error:
+                self._show_error(str(error))
+                self.invitation_entry.setFocus()
+                return
+            self.addr.setText(self._invitation.host)
+            self.port.setText(str(self._invitation.port))
+            self.network_selector.setCurrentIndex(
+                self.network_selector.findData(self._invitation.mode)
+            )
+            self.theme_selector.setCurrentIndex(
+                self.theme_selector.findData(self._invitation.theme)
+            )
         result = validate(
             "127.0.0.1" if hosting else self.addr.text(),
             self.port.text(),
@@ -408,12 +464,8 @@ class VentanaConectar(QDialog):
         )
         if isinstance(result, ValidationError):
             self._show_error(result.message)
-            if result.field == "addr":
-                self.addr.setFocus()
-            elif result.field == "port":
-                self.port.setFocus()
-            elif result.field == "username":
-                self.username.setFocus()
+            fields = {"addr": self.addr, "port": self.port, "username": self.username}
+            fields[result.field].setFocus()
             return
 
         addr, port, username = result
@@ -435,10 +487,15 @@ class VentanaConectar(QDialog):
                 return
             if hosting:
                 port = self._create_host(selected_theme, port)
-            elif self._saved_identity is not None:
-                self._main_window.client.set_userid(self._saved_identity[0])
-                self._main_window.client.set_reconnect_token(self._saved_identity[1])
-            self._conexion = ConnectionClient(self._main_window, addr, port, username)
+            else:
+                self._prepare_join_runtime()
+            self._conexion = ConnectionClient(
+                self._main_window,
+                addr,
+                port,
+                username,
+                invitation=None if hosting else self._invitation,
+            )
             self._main_window.conexion = self._conexion
             self._conexion.conectar()
 
@@ -447,6 +504,27 @@ class VentanaConectar(QDialog):
 
         except (ConnectionError, OSError, ValueError) as e:
             self._show_error(_("Error al conectar: {}").format(str(e)))
+
+    def _prepare_join_runtime(self) -> None:
+        previous = getattr(self._main_window, "host_runtime", None)
+        if isinstance(previous, HostRuntime):
+            previous.close()
+        self._main_window.reset_session_state()
+        restored = (
+            Identity.restore(self._saved_identity[1])
+            if self._saved_identity is not None
+            else None
+        )
+        files = getattr(self._main_window, "files_manager", None)
+        repository = files.network_repository() if files is not None else None
+        if repository is not None:
+            repository.start_room()
+        self._main_window.host_runtime = HostRuntime(
+            repository=repository, identity=restored
+        )
+        if self._saved_identity is not None:
+            self._main_window.client.set_userid(self._saved_identity[0])
+            self._main_window.client.set_reconnect_token("signed-identity")
 
     def _connect_peers(
         self, theme: str, addr: str, port: int, username: str, *, hosting: bool
@@ -481,6 +559,7 @@ class VentanaConectar(QDialog):
                     username,
                     identity=identity,
                     saved_archive=saved,
+                    invitation=self._invitation,
                     host="0.0.0.0",  # noqa: S104 -- cada par recibe conexiones LAN.
                     repository=repository,
                 )
@@ -503,6 +582,8 @@ class VentanaConectar(QDialog):
             previous.close()
         files = getattr(self._main_window, "files_manager", None)
         repository = files.network_repository() if files is not None else None
+        if repository is not None:
+            repository.start_room()
         runtime = HostRuntime(repository=repository)
         try:
             port = runtime.create_game(
@@ -570,14 +651,18 @@ class VentanaConectar(QDialog):
         self.network_selector.setItemText(0, _("Anfitrión con migración"))
         self.network_selector.setItemText(1, _("Entre pares"))
         self.room_label.setText(_("Salas en la red:"))
+        self.invitation_label.setText(_("Invitación:"))
+        self.invitation_entry.setPlaceholderText(
+            _("Pegá la invitación que compartió un jugador")
+        )
         self.room_selector.setItemText(0, _("Ingresar dirección manualmente"))
         self.restore_identity_button.setText(
             _("Recuperar mi jugador desde un guardado…")
         )
         self.host_hint.setText(
             _(
-                "Los demás jugadores se conectan a tu dirección y puerto "
-                "en la red local."
+                "Después de crear la sala, usá Copiar invitación "
+                "y compartí el enlace con los jugadores."
             )
         )
         self._update_mode()

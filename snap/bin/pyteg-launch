@@ -1,0 +1,12 @@
+#!/bin/sh
+set -eu
+
+mode="$1"
+shift
+cd "$SNAP_USER_DATA"
+
+case "$mode" in
+    client) exec "$SNAP/usr/bin/python3.14" "$SNAP/bin/pyteg-client" "$@" ;;
+    server) exec "$SNAP/usr/bin/python3.14" "$SNAP/bin/pyteg-server" "$@" ;;
+    *) exit 2 ;;
+esac

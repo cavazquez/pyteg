@@ -19,6 +19,8 @@ from pyteg.codecs_utils import (
     IncompleteFrameError,
     NulDelimitedUtf8Codec,
 )
+from pyteg.network.identity import Identity
+from pyteg.network.security import RoomAccess
 from pyteg.server.conexion.connection import ConnectionServer
 
 if TYPE_CHECKING:
@@ -75,7 +77,7 @@ class _FakeQtSocket:
         self.readyRead = _FakeSignal()
         self.errorOccurred = _FakeSignal()
         self.stateChanged = _FakeSignal()
-        self.connected = _FakeSignal()
+        self.encrypted = _FakeSignal()
         self._chunks = list(chunks)
         self.disconnected = False
         self.sent: list[bytes] = []
@@ -199,7 +201,7 @@ class TestTcpConnectionFraming(unittest.TestCase):
         self.assertEqual(connection.receiver(), [])
         self.assertEqual(connection.receiver(), [message])
 
-    @patch("pyteg.client.conexion.connection.QTcpSocket")
+    @patch("pyteg.client.conexion.connection.tls_socket")
     @patch("pyteg.client.conexion.connection.ClientTaskManager.msg_to_task")
     def test_qtcp_adapter_reassembles_fragmented_utf8(
         self,
@@ -218,13 +220,14 @@ class TestTcpConnectionFraming(unittest.TestCase):
         msg_to_task.return_value = first_task
 
         connection = ConnectionClient(MagicMock())
+        connection._security_ready = True  # noqa: SLF001 -- canal ya autenticado.
         connection.read_data()
 
         self.assertEqual(msg_to_task.call_args_list, [call(payload)])
         first_task.run.assert_called_once()
         self.assertFalse(fake_socket.disconnected)
 
-    @patch("pyteg.client.conexion.connection.QTcpSocket")
+    @patch("pyteg.client.conexion.connection.tls_socket")
     def test_qtcp_connection_reports_busy_while_connected_or_connecting(
         self,
         qtcp_socket: MagicMock,
@@ -233,12 +236,13 @@ class TestTcpConnectionFraming(unittest.TestCase):
         fake_socket = _FakeQtSocket([])
         qtcp_socket.return_value = fake_socket
         connection = ConnectionClient(MagicMock())
+        connection._security_ready = True  # noqa: SLF001 -- canal ya autenticado.
 
         self.assertTrue(connection.esta_ocupada())
         fake_socket.socket_state = QAbstractSocket.SocketState.UnconnectedState
         self.assertFalse(connection.esta_ocupada())
 
-    @patch("pyteg.client.conexion.connection.QTcpSocket")
+    @patch("pyteg.client.conexion.connection.tls_socket")
     def test_qt_state_disconnect_installs_null_transmitter(
         self,
         qtcp_socket: MagicMock,
@@ -249,11 +253,12 @@ class TestTcpConnectionFraming(unittest.TestCase):
         main_window.transmisor = MagicMock()
 
         connection = ConnectionClient(main_window)
+        connection._security_ready = True  # noqa: SLF001 -- canal ya autenticado.
         connection.on_state_changed(QAbstractSocket.SocketState.UnconnectedState)
 
         self.assertIsInstance(main_window.transmisor, ClientNullTransmisor)
 
-    @patch("pyteg.client.conexion.connection.QTcpSocket")
+    @patch("pyteg.client.conexion.connection.tls_socket")
     @patch("pyteg.client.conexion.connection.ClientTaskManager.msg_to_task")
     def test_qtcp_adapter_ignores_invalid_messages_and_keeps_reading(
         self,
@@ -272,13 +277,14 @@ class TestTcpConnectionFraming(unittest.TestCase):
         msg_to_task.return_value = valid_task
 
         connection = ConnectionClient(MagicMock())
+        connection._security_ready = True  # noqa: SLF001 -- canal ya autenticado.
         connection.read_data()
 
         self.assertEqual(msg_to_task.call_args_list, [call(valid_payload)])
         valid_task.run.assert_called_once()
         self.assertFalse(fake_socket.disconnected)
 
-    @patch("pyteg.client.conexion.connection.QTcpSocket")
+    @patch("pyteg.client.conexion.connection.tls_socket")
     @patch("pyteg.client.conexion.connection.ClientTaskManager.msg_to_task")
     def test_qt_state_events_bypass_legacy_task_dispatch(
         self,
@@ -319,6 +325,7 @@ class TestTcpConnectionFraming(unittest.TestCase):
 
         main_window = MagicMock()
         connection = ConnectionClient(main_window)
+        connection._security_ready = True  # noqa: SLF001 -- canal ya autenticado.
         connection.read_data()
 
         msg_to_task.assert_not_called()
@@ -327,7 +334,7 @@ class TestTcpConnectionFraming(unittest.TestCase):
             connection.state_model.command_results["cmd-1"]["accepted"], True
         )
 
-    @patch("pyteg.client.conexion.connection.QTcpSocket")
+    @patch("pyteg.client.conexion.connection.tls_socket")
     def test_qt_adapter_answers_heartbeat_ping(self, qtcp_socket: MagicMock) -> None:
         """El cliente responde al ping sin enviarlo a las tareas de juego."""
         ping = {"mensaje": "ping", "heartbeat_id": "probe-1"}
@@ -337,12 +344,19 @@ class TestTcpConnectionFraming(unittest.TestCase):
         qtcp_socket.return_value = fake_socket
 
         connection = ConnectionClient(MagicMock())
-        connection.read_data()
+        connection._security_ready = True  # noqa: SLF001 -- canal ya autenticado.
+        connection.invitation = RoomAccess().invitation(
+            "host", "127.0.0.1", 12345, Identity()
+        )
+        with patch.object(
+            connection.hosting, "runtime", return_value=MagicMock(identity=Identity())
+        ):
+            connection.read_data()
 
         decoded = NulDelimitedUtf8Codec()
         messages = decoded.feed(fake_socket.sent[0])
         self.assertEqual(
-            json.loads(messages[0]),
+            json.loads(messages[0])["command"],
             {
                 "mensaje": "pong",
                 "heartbeat_id": "probe-1",

@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Pyteg
+Comment=Juego de estrategia por turnos
+Exec=pyteg
+Icon=${SNAP}/meta/gui/pyteg.svg
+Terminal=false
+Categories=Game;StrategyGame;
+StartupWMClass=pyteg-client

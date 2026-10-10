@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import gc
 import json
 import time
 from copy import deepcopy
@@ -137,7 +138,15 @@ def play(  # noqa: C901, PLR0914, PLR0915 -- recorrido gráfico con caída y rei
             else:
                 address = "127.0.0.1", node(windows[index - 1]).port
                 name = f"Jugador {index + 1}"
-                peer.start(partial(PeerNode.join, address, name, repository=repository))
+                peer.start(
+                    partial(
+                        PeerNode.join,
+                        address,
+                        name,
+                        repository=repository,
+                        invitation=node(windows[index - 1]).invitation("127.0.0.1"),
+                    )
+                )
             wait(
                 partial(ready, peer),
                 "identidad Qt",
@@ -208,18 +217,25 @@ def play(  # noqa: C901, PLR0914, PLR0915 -- recorrido gráfico con caída y rei
             msg = "Falta el par para reincorporarse"
             raise RuntimeError(msg)
         restored = PeerConnection(windows[0])
+        restore_errors: list[str] = []
+        restored.failed.connect(restore_errors.append)
         identity = saved["payload"]["peer"]
         restored.start(
             lambda: PeerNode.join(
                 ("127.0.0.1", target.port),
                 "Jugador 1",
-                identity=(1, identity["token"]),
+                identity=(1, identity["private_key"]),
                 saved_archive=saved,
+                invitation=target.invitation("127.0.0.1"),
             )
         )
         wait(
-            lambda: restored.node is not None, "reconexión a través del cuarto jugador"
+            lambda: restored.node is not None or bool(restore_errors),
+            "reconexión a través del cuarto jugador",
         )
+        if restore_errors:
+            msg = f"La reconexión entre pares falló: {restore_errors[-1]}"
+            raise RuntimeError(msg)
         wait(
             lambda: all(
                 len(node(window).document["state"]["members"]) == _PLAYERS
@@ -251,6 +267,9 @@ def play(  # noqa: C901, PLR0914, PLR0915 -- recorrido gráfico con caída y rei
             window.deleteLater()
         QCoreApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
         app.processEvents()
+        # Recolectar los ciclos de wrappers Qt en el hilo gráfico antes de
+        # que las asignaciones del motor siguiente activen el GC en un worker.
+        gc.collect()
 
 
 def main() -> int:

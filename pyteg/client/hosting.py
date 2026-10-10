@@ -7,11 +7,13 @@ import time
 from typing import TYPE_CHECKING, Any
 
 from PySide6.QtCore import QObject, QTimer
-from PySide6.QtNetwork import QAbstractSocket, QNetworkInterface, QTcpSocket
+from PySide6.QtNetwork import QAbstractSocket, QNetworkInterface, QSslSocket
 
+from pyteg.client.secure_transport import tls_socket, verify_socket
 from pyteg.codecs_utils import FrameCodecError, NulDelimitedUtf8Codec
 from pyteg.i18n import translate as _
 from pyteg.logger import get_logger
+from pyteg.network.security import proof
 from pyteg.server.hosting.runtime import HostRuntime
 
 if TYPE_CHECKING:
@@ -84,9 +86,10 @@ class HostSession(QObject):
         self._saved_token: str | None = None
         self._peers: list[dict[str, Any]] = []
         self._envelope: dict[str, Any] | None = None
-        self._probe: QTcpSocket | None = None
+        self._probe: QSslSocket | None = None
         self._probe_codec = NulDelimitedUtf8Codec(4096)
         self._target: dict[str, Any] | None = None
+        self._probe_authenticated = False
         self._deadline = QTimer(self)
         self._deadline.setSingleShot(True)
         self._deadline.timeout.connect(self._next_candidate)
@@ -146,7 +149,9 @@ class HostSession(QObject):
             self._quorum_since = None
             was_paused = self.paused
             self.paused = event.get("recovering") is True
-            self.runtime().primary_connection(self.connection.endpoint())
+            self.runtime().primary_connection(
+                self.connection.endpoint(), self.connection.remote_key
+            )
             owner = event["owner_id"]
             role = _("Anfitrión") if owner == user_id else _("Conectado")
             if self.paused:
@@ -167,7 +172,9 @@ class HostSession(QObject):
         if kind == "hello" and "host_migration" in event.get("capabilities", []):
             self.enabled = True
             self.runtime()
-            self.runtime().primary_connection(self.connection.endpoint())
+            self.runtime().primary_connection(
+                self.connection.endpoint(), self.connection.remote_key
+            )
             self._watchdog.start()
         if self.enabled and kind == "hello_ack" and event.get("accepted"):
             self.runtime().set_identity(self.window.client.userid())
@@ -181,7 +188,9 @@ class HostSession(QObject):
             self.recovering = False
             self._quorum_since = None
             self._deadline.stop()
-            self.runtime().primary_connection(self.connection.endpoint())
+            self.runtime().primary_connection(
+                self.connection.endpoint(), self.connection.remote_key
+            )
             self._show_status("Partida recuperada")
         if self.enabled and kind == "reconexion":
             self.runtime().set_identity(self.window.client.userid())
@@ -263,28 +272,25 @@ class HostSession(QObject):
             self._show_status("No hay un anfitrión disponible")
             return
         self._target = self._peers.pop(0)
-        probe = QTcpSocket(self)
+        probe = tls_socket(self)
+        self._probe_authenticated = False
         self._probe = probe
         self._probe_codec = NulDelimitedUtf8Codec(4096)
-        probe.connected.connect(self._send_recovery_request)
+        probe.encrypted.connect(self._send_recovery_request)
         probe.readyRead.connect(self._read_recovery_response)
         probe.errorOccurred.connect(
             lambda error, probe=probe: self._probe_error(probe, error)
         )
-        probe.connectToHost(self._target["host"], self._target["port"])
+        probe.connectToHostEncrypted(self._target["host"], self._target["port"])
         self._deadline.start(_PROBE_TIMEOUT_MS)
 
     def _send_recovery_request(self) -> None:
-        if self._probe is None or self._envelope is None:
+        if self._probe is None or self._envelope is None or self._target is None:
             return
-        request = {
-            "mensaje": "recover_host",
-            "session_id": self._envelope["session_id"],
-            "epoch": self._envelope["epoch"],
-            "user_id": self._saved_id,
-            "token": self._saved_token,
-        }
-        self._probe.write(NulDelimitedUtf8Codec.encode_frame(json.dumps(request)))
+        try:
+            verify_socket(self._probe, self._target["public_key"])
+        except ValueError, TypeError:
+            self._next_candidate()
 
     def _read_recovery_response(self) -> None:
         if self._probe is None or self._envelope is None or self._target is None:
@@ -293,24 +299,50 @@ class HostSession(QObject):
             responses = self._probe_codec.feed(bytes(self._probe.readAll()))
             if not responses:
                 return
+            verify_socket(self._probe, self._target["public_key"])
             response = json.loads(responses[0])
+            if not self._probe_authenticated:
+                request = {
+                    "mensaje": "recover_host",
+                    "session_id": self._envelope["session_id"],
+                    "epoch": self._envelope["epoch"],
+                    "user_id": self._saved_id,
+                }
+                packet = proof(self.runtime().identity, response, request)
+                self._probe.write(
+                    NulDelimitedUtf8Codec.encode_frame(json.dumps(packet))
+                )
+                self._probe_authenticated = True
+                return
             destination = _recovery_destination(response, self._envelope, self._target)
             if destination is None:
                 self._next_candidate()
                 return
             host, port, promoted = destination
+            owner = response.get("owner_id", self._envelope["owner_id"])
+            key = next(
+                (
+                    player.get("public_key")
+                    for player in self._envelope["checkpoint"]["players"]
+                    if player["userid"] == owner
+                ),
+                None,
+            )
+            if not isinstance(key, str) or response.get("public_key") != key:
+                self._next_candidate()
+                return
             if promoted:
                 self.connection.reset_replica_revision()
             self._close_probe()
             self._restore_identity()
-            self.connection.reconnect_to(host, port)
+            self.connection.reconnect_to(host, port, public_key=key)
             self._deadline.start(_PROBE_TIMEOUT_MS)
         except (ValueError, TypeError, KeyError, FrameCodecError) as error:
             _LOG.warning("Respuesta de recuperación inválida: %s", error)
             self._next_candidate()
 
     def _probe_error(
-        self, probe: QTcpSocket, _error: QAbstractSocket.SocketError
+        self, probe: QSslSocket, _error: QAbstractSocket.SocketError
     ) -> None:
         if self.recovering and probe is self._probe:
             QTimer.singleShot(
@@ -343,6 +375,9 @@ class HostSession(QObject):
     def _show_status(self, text: str) -> None:
         text = _(text)
         self.window.network_status = text
+        update_invitation = getattr(self.window, "update_invitation_button", None)
+        if callable(update_invitation):
+            update_invitation()
         label = getattr(self.window, "network_status_label", None)
         if label is not None:
             label.setText(text.split(" · ", 1)[0])

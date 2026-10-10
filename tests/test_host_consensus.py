@@ -12,6 +12,7 @@ from tempfile import TemporaryDirectory
 from typing import Any
 from unittest.mock import patch
 
+from pyteg.network.identity import Identity
 from pyteg.persistence.archive import FileRepository, digest
 from pyteg.persistence.asynchronous import AsyncGame
 from pyteg.server.hosting.consensus import (
@@ -165,6 +166,9 @@ class RuntimeVoteTests(unittest.TestCase):
         """Crea jugadores y un memento completo."""
         self.session = AsyncGame.create("classic", ["Uno", "Dos", "Tres", "Cuatro"])
         self.addCleanup(self.session.close)
+        self.identities = {user: Identity() for user in range(1, 5)}
+        for player in self.session.server.dame_clientes():
+            player.set_network_key(self.identities[player.userid()].public_key)
         self.checkpoint = self.session.server.capture_state()
         self.now = 0.0
 
@@ -188,10 +192,14 @@ class RuntimeVoteTests(unittest.TestCase):
         })
         return envelope
 
-    def _runtime(self, repository: FileRepository | None = None) -> HostRuntime:
-        runtime = HostRuntime(bind_host="127.0.0.1", repository=repository)
+    def _runtime(
+        self, repository: FileRepository | None = None, user: int = 2
+    ) -> HostRuntime:
+        runtime = HostRuntime(
+            bind_host="127.0.0.1", repository=repository, identity=self.identities[user]
+        )
         self.addCleanup(runtime.close)
-        runtime.set_identity(2)
+        runtime.set_identity(user)
         runtime._election = ElectionState(lambda: self.now)
         return runtime
 
@@ -233,8 +241,8 @@ class RuntimeVoteTests(unittest.TestCase):
             request = {
                 "session_id": "durable-room",
                 "epoch": 0,
-                "user_id": 3,
-                "token": self.checkpoint["players"][2]["token"],
+                "user_id": 2,
+                "_sender_key": self.identities[2].public_key,
                 "sequence": 1,
                 "candidate": 2,
                 "term": 1,
@@ -258,7 +266,7 @@ class RuntimeVoteTests(unittest.TestCase):
                 restarted.close()
 
     def test_authentication_is_required_for_votes(self) -> None:
-        """Un token incorrecto no puede reservar una época ni un candidato."""
+        """Sin prueba de identidad no se reserva una época ni un candidato."""
         runtime = self._runtime()
         proposal = self._envelope()
         runtime.stage_checkpoint(proposal)
@@ -296,7 +304,11 @@ class RuntimeVoteTests(unittest.TestCase):
             replacement = FileRepository(
                 Path(directory) / "window-two.pyteg", session_scoped=True
             )
-            restarted = HostRuntime(bind_host="127.0.0.1", repository=replacement)
+            restarted = HostRuntime(
+                bind_host="127.0.0.1",
+                repository=replacement,
+                identity=self.identities[2],
+            )
             self.addCleanup(restarted.close)
             restarted.join_room("durable-room")
             restarted.set_identity(2)
@@ -328,10 +340,15 @@ class RuntimeVoteTests(unittest.TestCase):
         self.assertEqual(actual["sequence"], 2)
 
     def _cluster(self) -> dict[int, HostRuntime]:
-        runtimes = {user: self._runtime() for user in (2, 3, 4)}
+        runtimes = {user: self._runtime(user=user) for user in (2, 3, 4)}
         proposal = self._envelope()
         proposal["peers"] = [
-            {"userid": user, "host": "127.0.0.1", "port": runtime.control_port}
+            {
+                "userid": user,
+                "host": "127.0.0.1",
+                "port": runtime.control_port,
+                "public_key": runtime.identity.public_key,
+            }
             for user, runtime in runtimes.items()
         ]
         proposal["digest"] = digest({
@@ -357,7 +374,7 @@ class RuntimeVoteTests(unittest.TestCase):
             "session_id": "durable-room",
             "epoch": 0,
             "user_id": 2,
-            "token": self.checkpoint["players"][1]["token"],
+            "_sender_key": self.identities[2].public_key,
         }
 
     def test_two_survivors_of_four_cannot_promote(self) -> None:
@@ -423,6 +440,8 @@ class RuntimeVoteTests(unittest.TestCase):
         self.assertTrue(
             runtime._grant_vote({
                 **self._request(),
+                "user_id": 3,
+                "_sender_key": self.identities[3].public_key,
                 "candidate": 3,
                 "term": 2,
                 "sequence": 1,
